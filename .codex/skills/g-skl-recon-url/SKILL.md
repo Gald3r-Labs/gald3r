@@ -18,6 +18,12 @@ Depends on **g-skl-crawl**. Run `@g-crawl SETUP` first if crawl4ai is not instal
 
 ---
 
+## Clean Room Boundary
+
+This capture skill may store source material in the vault for research, provenance, and later review. When captured content is used for `--deep`, `g-skl-res-deep`, or any adoption workflow, downstream outputs must be clean-room reverse specs: behavior-level summaries, interfaces, workflows, data shapes, constraints, and architectural patterns only. Do not copy source code, comments, docs prose, prompts, tests, or unique strings into generated gald3r artifacts except tiny attributed excerpts that are license-compatible and necessary for review. Record source URL/path, license when discoverable, capture date, and extraction limits so reviewers can separate source evidence from original gald3r specifications.
+
+---
+
 ## Operation: INGEST_URL
 
 Ingest a single URL.

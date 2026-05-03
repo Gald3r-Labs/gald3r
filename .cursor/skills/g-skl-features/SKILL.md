@@ -4,11 +4,13 @@ description: Own and manage all feature data — FEATURES.md index, features/ in
 ---
 # g-features
 
-**Files Owned**: `.gald3r/FEATURES.md`, `.gald3r/features/featNNN_*.md`
+**Files Owned**: `.gald3r/FEATURES.md`, `.gald3r/features/**/*.md` (flat `featNNN_*.md` and nested `.../featNNN_*.md`)
 
 **Activate for**: "stage a feature", "new feature", "collect approach", "promote feature", "rename feature", "feature status", "spec this feature", "what features do we have", "harvest collected approaches".
 
-**Hierarchy**: `FEATURES.md` is the index. Each `features/featNNN_*.md` moves through: `staging → specced → committed → shipped`.
+**Hierarchy**: `FEATURES.md` is the index. Each feature file moves through: `staging → specced → committed → shipped`.
+
+**Path resolver**: treat any `.md` under `.gald3r/features/` whose basename matches `feat-\d+` as a feature file. Do not assume only `.gald3r/features/featNNN_slug.md`.
 
 ---
 
@@ -27,6 +29,11 @@ created_date: 'YYYY-MM-DD'
 promoted_date: ''        # date moved from staging → specced
 committed_date: ''       # date first task created (specced → committed)
 completed_date: ''       # date last task verified (committed → shipped)
+# Optional hierarchy (Task 514) — flat files without these fields remain valid:
+parent_feature: ''      # feat-NNN id of parent capability (must exist when set)
+feature_area: ''        # logical grouping (e.g. platform, gald3r_backend); may mirror folder prefix
+depth: 0                # optional path depth under features/; when set, must match folder depth
+children: []            # explicit child feat- ids (auditability; do not infer only from folders)
 # Optional — only present when this feature gates on a cross-project order:
 cross_project_ref:
   - order_id: "ord-abc123"          # links to .gald3r/linking/sent_orders/order_*.md
@@ -44,6 +51,23 @@ cross_project_ref:
 - `g-skl-pcac-read` updates the cached `status` and `last_synced` automatically when a `broadcast_completion` ping arrives from the remote project.
 - Session start (`g-rl-25`) and `@g-pcac-status` surface features with at least one entry where `status` is not `completed` as externally-gated.
 
+### Hierarchy validation (dry-run, no writes)
+
+Run from repo root:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/gald3r_feature_hierarchy_sync.ps1 -ProjectRoot .
+```
+
+Detects duplicate `id:` values, missing `parent_feature` targets, stale `children:` entries, and `depth:` vs folder mismatches. Use `-WarnOnly` for advisory exit code 0; `-Json` for machine-readable output.
+
+### Migration: flat → nested (non-destructive)
+
+1. Prefer `git mv` so history follows the file: e.g. `.gald3r/features/featNNN_x.md` → `.gald3r/features/<area>/featNNN_x.md`.
+2. Set optional `feature_area`, `parent_feature`, `children`, and `depth` in frontmatter after the move.
+3. Update `FEATURES.md` link column to the new relative path (ID `feat-NNN` stays stable).
+4. Do not delete superseded paths; if splitting one feature into two files, keep provenance in the child `## Summary` and optionally leave a one-line stub file at the old path pointing to the successor (human decision — not required for `git mv`).
+
 **Feature body sections**:
 - `## Summary` — 1-3 sentences: what user-visible capability this delivers
 - `## Collected Approaches` — table of approaches gathered from harvest tools, research, discussions
@@ -56,16 +80,16 @@ cross_project_ref:
 
 ## Operation: STAGE (create new staging feature)
 
-**Usage**: `STAGE "Feature Title" [--goal G-NN] [--tier slim|full|adv] [--from-harvest path]`
+**Usage**: `STAGE "Feature Title" [--goal G-NN] [--tier slim|full|adv] [--from-harvest path] [--area kebab/sub/path]`
 
-1. **Determine next feat ID**: read `FEATURES.md` — find highest `feat-NNN` across ALL sections → next = highest + 1
+1. **Determine next feat ID**: scan **all** `.gald3r/features/**/*.md` matching `feat-\d+` in the basename — highest `feat-NNN` wins → next = highest + 1 (do not read only the flat folder).
 
 2. **Scope check** (ask unless `--from-harvest` provided):
    - What user-visible capability does this enable?
    - Which goal does this connect to? (optional)
    - Any approaches already identified?
 
-3. **Create feature file** at `.gald3r/features/featNNN_descriptive_slug.md`:
+3. **Create feature file** at `.gald3r/features/featNNN_descriptive_slug.md` **or**, when `--area platform/onboarding` (example) is supplied, `.gald3r/features/platform/onboarding/featNNN_descriptive_slug.md` (create intermediate directories). Set YAML `feature_area:` to the area string and `depth:` to the number of path segments under `features/`.
    ```yaml
    ---
    id: feat-NNN
@@ -174,7 +198,7 @@ Converts a specced feature into active TASKS.md work. Human-driven — does NOT 
 
 Safe rename — preserves all data, updates all references.
 
-1. Read feature file — get current slug from filename
+1. Read feature file — resolve by **ID** using the hierarchy resolver (nested or flat path)
 2. Derive new slug: lowercase, hyphens, max 40 chars (e.g., `feat-036_new_feature_name.md`)
 3. Rename file: `git mv` from old slug to new slug
 4. Update YAML `title:` field
@@ -218,6 +242,8 @@ Filters apply to limit output. `--status staging` shows only staging features.
 ---
 
 ## FEATURES.md Index Structure
+
+Maintain a **Feature hierarchy** section (after lifecycle tables) that groups rows by top-level folder under `features/` (use `_flat_root` for files sitting directly in `features/`) and by `status`. Nested and flat files use the same row shape: `| [feat-NNN](relative/path/from/features/) | ... |`.
 
 ```markdown
 # FEATURES.md — {project_name} Feature Registry

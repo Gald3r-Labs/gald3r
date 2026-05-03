@@ -34,11 +34,29 @@ triggers:
 @g-medic                      # L1 triage only (safe default, always applies)
 @g-medic --level 2            # L1 + L2 (report generated; --apply to execute fixes)
 @g-medic --level 3            # L1 + L2 + L3 (requires --apply to write fixes)
-@g-medic --level 4            # L1 + L2 + L3 + L4 (requires PCAC topology)
+@g-medic --level 4            # L1 + L2 + L3 + L4 (Workspace-Control plus optional PCAC)
 @g-medic --ecosystem          # alias for --level 4
 @g-medic --dry-run            # any level: report only, no writes
 @g-medic --level 2 --apply   # apply L2 fixes after generating report
+@g-medic --curate             # feature/subsystem fragmentation analysis (dry-run; no moves)
+@g-medic --curate --apply -ProposalJson .gald3r/reports/medic_curate_proposal_*.json  # git mv from approved JSON only
 ```
+
+### Dry-Run and Output Contract
+
+- `@g-medic --dry-run` is strictly read-only for L1-L4: no task status changes, no TTL resets, no identity/version writes, no backlog regeneration, no report files, and no member-repo changes. It may read `.gald3r/` and print findings only.
+- L1 "auto-applies" only when `--dry-run` is absent. If `--dry-run` is present, L1 must report what it would create/update/reset instead of writing.
+- If a report finds material drift, blockers, high/critical bugs, phantoms/orphans, stale claims, parser skips, or workspace/member risks, surface the full operational findings to the user. Do not hide them behind a short summary. Summaries may be added after the full findings.
+- For any count above 25, include either the complete ID/file list inline or a named report artifact path containing the complete list. Compressed ranges are acceptable only as an additional convenience, never as the only evidence.
+- `--curate` is a special curation workflow: by default it writes gitignored proposal/report files for human review; pass the script-level `-NoReportFiles` option when the user requests a no-disk-side-effect dry run.
+
+### Curation mode (`--curate`, Task 517)
+
+**Default (dry-run)**: runs `scripts/gald3r_medic_curate.ps1` — counts feature/subsystem sprawl (recursive subsystem count), runs hierarchy sync helpers with `-WarnOnly`, adds a **fragmentation** section (duplicate `feat-NNN` hits in `FEATURES.md`, subsystem specs on disk not indexed in `SUBSYSTEMS.md` via sync JSON), and writes a human report plus `medic_curate_proposal_<stamp>.json` under `.gald3r/reports/` (gitignored). The proposal keeps top-level `moves` empty for safety, but now includes non-binding `suggested_moves` and `index_candidates` with source, target, risk/confidence, and rationale so the reviewer has concrete candidates to approve/edit/reject.
+
+**No report files (CI / no disk side effects)**: pass `-NoReportFiles` to `gald3r_medic_curate.ps1` — prints the same report + proposal JSON to stdout only (no `medic_curate_*.md` / proposal files / `medic_curate_latest.json`).
+
+**Apply**: **never** implied. Requires `-ProposalJson` pointing at a proposal JSON that includes non-empty top-level `moves`; dry-run `suggested_moves` are advisory only and must be copied into `moves` after review. Script **backs up** each source under `.gald3r/reports/medic_curate_backup_<stamp>/`, performs `git mv` for each entry (paths must stay under `.gald3r/features/` or `.gald3r/subsystems/`; duplicate from/to rejected), **literal path replace** in `FEATURES.md`, `SUBSYSTEMS.md`, and `.gald3r/tasks/*.md` for moved paths, writes a manifest JSON, then runs `gald3r_subsystem_diagrams_generate.ps1`. Refuses when the working tree has unrelated dirty paths. **Never targets** workspace member marker-only `.gald3r/` trees — pass controller repo root only.
 
 **Default behavior**: `@g-medic` with no args runs L1 only (auto-applies — it's always safe).
 
@@ -46,7 +64,9 @@ triggers:
 
 ## PCAC Inbox Health Gate
 
-Before mode detection, call `g-hk-pcac-inbox-check.ps1` without `-BlockOnConflict` when present and capture the result. L1 triage must continue even when `INBOX CONFLICT GATE` is reported so health scoring can surface the conflict. Open PCAC conflicts block L2-L4 planning/apply work, task claiming, implementation, and verification after L1 completes; require `@g-pcac-read` before continuing. Non-conflict requests, broadcasts, and syncs remain advisory and should be surfaced in output.
+Before mode detection, determine whether the project is a PCAC participant. PCAC is active only when `.gald3r/linking/link_topology.md` declares at least one parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares PCAC project linking relationships. A Workspace-Control manifest and local `INBOX.md` alone do not make a project part of a PCAC group.
+
+Only when PCAC is active, call `g-hk-pcac-inbox-check.ps1` without `-BlockOnConflict` when present and capture the result. L1 triage must continue even when `INBOX CONFLICT GATE` is reported so health scoring can surface the conflict. Open PCAC conflicts block L2-L4 planning/apply work, task claiming, implementation, and verification after L1 completes; require `@g-pcac-read` before continuing. Non-conflict requests, broadcasts, and syncs remain advisory and should be surfaced in output. If PCAC is not active, skip the hook and report `PCAC: not configured / skipped`.
 
 ## Mode Detection (Run Before Any Level)
 
@@ -78,7 +98,7 @@ Report selected mode at the start:
 ## Level 1 — Triage (Structural Integrity)
 
 *Safe to run any time. Fully autonomous. Blast radius: files and folders only.*
-*Applied automatically with no `--apply` needed. Runs in all modes.*
+*Applied automatically with no `--apply` needed unless `--dry-run` is present. Runs in all modes.*
 
 ### L1-A: Folder Structure
 
@@ -95,6 +115,7 @@ linking/          INBOX.md, shared contracts
 ```
 
 Report any folders created.
+In `--dry-run`, report missing folders as `would_create` and do not create them.
 
 ### L1-B: Root File Audit
 
@@ -110,6 +131,8 @@ Check each required root file. Create from template if missing:
 | `CONSTRAINTS.md` | Create header-only stub | Has `## Architectural Constraints`? |
 | `SUBSYSTEMS.md` | Create empty template | Subsystem Sync (L1-D) |
 | `IDEA_BOARD.md` | Create empty template | Has `## Active Ideas`? |
+
+In `--dry-run`, report missing files as `would_create` and do not create them.
 
 ### L1-C: .identity Integrity
 
@@ -129,6 +152,17 @@ vault_location= ← fill with "{LOCAL}" if missing
 - **Bugs**: for each BUGS.md row: check `bugs/bugNNN_*.md` exists. Missing → PHANTOM ⚠️
 - **Features**: same phantom/orphan pattern.
 - **Subsystems**: activate `g-subsystems → SYNC CHECK`. Add stub entries for subsystems referenced in tasks but missing from registry.
+
+#### L1-D Parser Contract — Active Index Scope (mandatory)
+
+Medic sync checks MUST distinguish active control-plane records from historical or imported inventory. Do not use recursive file scans for active orphan/phantom counts.
+
+- **Active `TASKS.md` rows**: count every active task row matching a status indicator in either supported index format: bullet rows like `- [✅] **Task 090**: ...` and table rows like `| [📋] | [090](tasks/task090_*.md) | ... |` or `| [🔍] | T123 | ... |`. Normalize Markdown links, optional `Task`/`T` prefixes, leading zeros, and subtask suffixes while preserving the suffix (`052-1` is distinct from `052`). Deduplicate by normalized task ID before computing totals; matching duplicate rows are duplicate inventory findings, while conflicting duplicate statuses are critical parser findings.
+- **Active task files**: scan only direct children of `.gald3r/tasks/` matching `task<id>_*.md` or `task<id>-<suffix>_*.md`. Exclude all recursive subdirectories from active orphan math, including `archive/`, `bkup/`, `backup/`, `quarantine/`, `adopted/`, `imports/`, and any future historical bucket.
+- **Historical/imported task files**: report separately as archival inventory with their source metadata (`source_harvest`, `adopted_from`, `workspace_repos`, `delegated_to`, `source_quarantine`, etc.). Never call these active orphans unless the file is a direct child of `.gald3r/tasks/`.
+- **Phantom** means an active `TASKS.md` row has no matching direct child task file.
+- **Orphan** means a direct child task file has no matching active `TASKS.md` row.
+- If a diagnostic reports more than 25 IDs, include the full list in the report body or a named report artifact path. Do not only emit compressed ranges when the user asked for operational status.
 
 ### L1-E: Sequential ID Integrity
 
@@ -176,7 +210,7 @@ Write new `gald3r_version` to `.gald3r/.identity`. Append to `.gald3r/reports/UP
 
 ### L1 Output
 
-Brief console summary:
+Full operational report plus optional brief console summary:
 ```
 🩺 g-medic L1 — {project_name} | TRIAGE complete
    ✅ tasks/  ✅ bugs/  ⚠️ features/ CREATED
@@ -308,39 +342,62 @@ Write `MEDIC_REPORT_L3.md` to `.gald3r/reports/` with full findings + remediatio
 
 ---
 
-## Level 4 — Ecosystem (Linked Projects)
+## Level 4 — Ecosystem (Workspace + Optional PCAC)
 
-*Requires PCAC topology (T117). Requires `--level 4` or `--ecosystem` flag + human approval per project.*
-*Blast radius: linked projects.*
-*Falls back gracefully if no topology: prints "L4 requires linked projects — run @g-pcac-adopt first"*
+*Requires `--level 4` or `--ecosystem` flag. Workspace-Control checks run whenever `.gald3r/linking/workspace_manifest.yaml` exists. PCAC-only checks run only when active PCAC topology exists.*
+*Blast radius: controller plus manifest-declared workspace members for read-only diagnostics; PCAC-linked projects only when PCAC is active.*
+*If Workspace-Control is active and PCAC is inactive, do not skip L4. Print "PCAC: not active; PCAC topology/inbox checks skipped. Workspace-Control: active; L4 workspace checks ran using workspace_manifest.yaml."*
 
-### L4-A: Peer Capability Readiness
+### L4-0: Mode Split (Mandatory)
+
+Before running L4, classify both coordination systems independently:
+
+- **Workspace-Control active**: `.gald3r/linking/workspace_manifest.yaml` exists and parses. Run L4-W checks.
+- **PCAC active**: `.gald3r/linking/link_topology.md` exists and declares at least one non-empty parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares active PCAC relationships. Run L4-P checks.
+- **Neither active**: report that L4 has no workspace or PCAC coordination surface.
+- **Do not conflate them**: a missing PCAC topology must never suppress Workspace-Control L4 checks.
+
+### L4-W: Workspace-Control Checks
+
+When Workspace-Control is active:
+
+- Parse `.gald3r/linking/workspace_manifest.yaml` as the canonical member registry.
+- Validate manifest syntax, repository IDs, roles, lifecycle statuses, local paths, write policies, and routing policy fields.
+- Check each existing manifest member's git root, branch, upstream, dirty status, and member `.gald3r/` marker-only compliance.
+- Surface missing planned members separately from broken existing members.
+- Report Workspace-Control health separately from PCAC health.
+
+### L4-P: PCAC Checks (Only When PCAC Is Active)
+
+Run the following only when PCAC is active:
+
+### L4-P1: Peer Capability Readiness
 
 - Load `.gald3r/linking/peers/*_capabilities.md`
 - Find features/tasks this project depends on that a peer hasn't marked `ready`
 - Flag: `"Blocked dependency: {this_task} waits on {peer_slug}:{capability} (status: {status})"`
 
-### L4-B: Cross-Project Constraint Conflicts
+### L4-P2: Cross-Project Constraint Conflicts
 
 - Load peer capability snapshots
 - Compare each peer's known constraints against this project's constraints
 - Contradictions (Peer A: "no Docker"; this project: "requires Docker for adv tier") → flag
 
-### L4-C: Cross-Project Feature Contract Validation
+### L4-P3: Cross-Project Feature Contract Validation
 
 - Find features with `cross_project_ref:` slug
 - For each: check peer's version of the same feature (via PCAC INFO or snapshot)
 - Spec contradictions → flag: "Feature contract mismatch: {slug} — {this_project} spec vs {peer_slug} spec differ"
 
-### L4-D: Stale Peer Snapshots
+### L4-P4: Stale Peer Snapshots
 
 - Peer capabilities last synced > N days ago (default 7) → flag: "Stale peer snapshot: {peer_slug} (last sync: {date})"
 
-### L4-E: Long-Blocked Cross-Project Tasks
+### L4-P5: Long-Blocked Cross-Project Tasks
 
 - Tasks with `cross_project_ref` blocked on peer completion for > 14 days → surface for human escalation
 
-### L4-F: Suggests PCAC Actions
+### L4-P6: Suggested PCAC Actions
 
 For each finding, generate a suggested PCAC coordination message (does NOT send without explicit per-message human approval):
 ```
@@ -351,7 +408,7 @@ Suggested: [SYNC] to gald3r_valhalla — request capability status update for "v
 
 ### L4 Output
 
-Write `MEDIC_REPORT_L4.md` to `.gald3r/reports/` (one per affected peer + consolidated ecosystem health score).
+Write `MEDIC_REPORT_L4.md` to `.gald3r/reports/` (workspace findings plus optional affected-peer findings and consolidated ecosystem health score).
 
 ```
 🌐 Ecosystem Health Score: 72/100 (Degraded)
@@ -370,7 +427,7 @@ Each level is a superset of the previous:
 | L1 | Triage | Files / folders | No (auto) |
 | L2 | Diagnosis | `.gald3r/` data | Yes (for fixes) |
 | L3 | Surgery | Subsystems + contracts | Yes (required) |
-| L4 | Ecosystem | Linked projects | Yes + per-message approval |
+| L4 | Ecosystem | Workspace members + optional PCAC linked projects | Yes for fixes; per-message approval for PCAC sends |
 
 ---
 

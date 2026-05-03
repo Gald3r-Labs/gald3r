@@ -1,6 +1,6 @@
-﻿---
+---
 name: g-skl-git-commit
-description: Create well-structured git commits following gald3r conventions, with proper type prefixes, task references, and agent footers for autonomous commits.
+description: Create well-structured git commits following gald3r conventions, with proper type prefixes, task references, and clean trailers (no AI co-author footers per C-021).
 ---
 # gald3r-git-commit
 
@@ -45,14 +45,12 @@ Phase: {N}
 
 3. **Compose message** using format above
 
-4. **For autonomous agent commits**, add footer:
+4. **Trailers** (use these only — see CONSTRAINTS.md C-021):
    ```
    Task: #NNN
    Phase: N
-   Agent: {agent_id}
-   Model: {model_name}
-   Rules-Version: {version}
    ```
+   No `Agent:`, `Model:`, `Rules-Version:`, or `Co-Authored-By:` lines for AI agents. C-021 prohibits AI co-author attribution to keep commercial-licensing and acquisition IP records clean. Cursor IDE's built-in agent co-author footer setting must also be disabled by every operator.
 
 5. **Commit**:
    ```powershell
@@ -124,7 +122,9 @@ Use `scripts/gald3r_worktree.ps1` for agent-owned isolated checkouts in the gald
 
 - Default root is `$env:GALD3R_WORKTREE_ROOT` when set; otherwise `<repo-parent>/.gald3r-worktrees/<repo-name>`.
 - Branches use `gald3r/{task_id}/{role}/{repo_slug}/{owner}-{suffix}`.
-- The create path blocks when the active checkout is dirty unless the caller supplies `-AllowDirty` after recording explicit ownership.
+- The create path blocks when the active checkout is dirty unless the caller supplies `-AllowDirty` after recording explicit ownership in the owning task or bug `## Status History`.
+- **`-AllowDirty` policy**: do not pass `-AllowDirty` for `g-go*`, `g-go-code*`, `g-go-review*`, or any `--swarm` coordinator flow unless every dirty path in **each git root in the active touch set** (orchestration + `workspace_repos` members and v2 expansions per `g-rl-33`) is owned exclusively by the active task or bug and a Status History row documents that override **for that root**. Otherwise clean those checkouts first (`g-rl-33` Clean Controller Gate).
+- **Touch-set hygiene**: before creating worktrees for those flows, satisfy the Clean Controller Gate and Pre-Reconciliation Clean Gate in `g-rl-33` on **every root in the computed touch set** so checkpoint and review-result commits are not blocked by unrelated dirty state in any included repository.
 - Cleanup is report-only unless `-Apply` is provided, and removal is limited to directories with `.gald3r-worktree.json` ownership metadata.
 - When committing from a worktree, run `git status` and `git commit` from that worktree's repository root, not from the control checkout.
 
@@ -229,3 +229,29 @@ Release checklist:
 git config core.hooksPath .cursor/hooks   # Enable (also activates pre-commit hook)
 git config --unset core.hooksPath         # Disable
 ```
+---
+
+## Cursor IDE Trailer Workaround (T804 / C-021)
+
+Cursor's AI agent shell silently rewrites every `git commit ...` command issued from the agent to append a `Co-authored-by: Cursor <cursoragent@cursor.com>` trailer. The injection happens at the IDE shell layer (no git hook, no commit template, no git config) and is NOT bypassed by `--no-verify`, `-F <file>`, `--trailer "..."`, or `git commit --amend`. Even the lower-level `git commit-tree` invocation is rewritten by the interceptor.
+
+Per CONSTRAINTS.md C-021 this trailer is forbidden. Use the helper:
+
+```powershell
+# Initial commit (no parent, fresh repo):
+$msgFile = Join-Path $env:TEMP 'gald3r_msg.txt'
+$msg | Set-Content -Path $msgFile -NoNewline -Encoding utf8
+cmd.exe /c "scripts\gald3r_clean_commit.bat INITIAL `"$msgFile`""
+Remove-Item $msgFile
+
+# Follow-up commit (parented at HEAD):
+$msgFile = Join-Path $env:TEMP 'gald3r_msg.txt'
+$msg | Set-Content -Path $msgFile -NoNewline -Encoding utf8
+cmd.exe /c "scripts\gald3r_clean_commit.bat FOLLOWUP `"$msgFile`""
+Remove-Item $msgFile
+```
+
+The helper invokes `git write-tree` + `git commit-tree` + `git update-ref` from inside a child `cmd.exe` process — the IDE shell wrapper does not reach inside that subprocess to inject the trailer. Verify with `git cat-file -p HEAD` afterward.
+
+The user should also disable Cursor's "AI as co-author" setting at the IDE level (it lives in Cursor settings, not in any project file). Both layers are required: the helper handles agent commits in this project; the IDE setting handles human commits and any other project.
+

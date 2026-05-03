@@ -27,6 +27,10 @@ Activates **g-skl-recon-yt** → CAPTURE operation.
 After capturing, runs deep analysis of the transcript and writes a recon report to
 `vault/research/recon/{slug}/`. Equivalent to running `@g-res-deep` on the video note.
 
+## Clean Room Boundary
+
+These commands support clean-room research and reverse-spec work. Capture/recon may observe and summarize source behavior, interfaces, workflows, data shapes, and architectural patterns; generated gald3r artifacts must use original wording and local architecture terms, not copied source code, docs prose, prompts, tests, or unique strings. Keep source URL, license, and capture provenance in recon notes; treat source file paths as traceability, not implementation instructions. Adoption requires human approval through `@g-res-review` / `@g-res-apply`.
+
 ## Notes
 
 - No video download — transcript only

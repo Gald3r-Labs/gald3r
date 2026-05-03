@@ -93,9 +93,11 @@ This prevents architectural drift and ensures changes respect subsystem boundari
 **Step 5: ACTIVE_BACKLOG.md**
 - Older than 26 hours → flag as stale, offer regeneration
 
-**Step 6: Cross-Project INBOX Check** (if `.gald3r/linking/INBOX.md` exists)
+**Step 6: Cross-Project INBOX Check** (only when PCAC is configured)
 
-`g-hk-pcac-inbox-check.ps1` runs this check automatically at session start. Behavior (T168):
+Run this check only when the current project is a PCAC participant. PCAC is active only when `.gald3r/linking/link_topology.md` exists and declares at least one non-empty parent, child, or sibling relationship, or when `.gald3r/PROJECT.md` explicitly declares PCAC project linking relationships. A Workspace-Control manifest and a local `.gald3r/linking/INBOX.md` alone do **not** make a project part of a PCAC group.
+
+When PCAC is active, `g-hk-pcac-inbox-check.ps1` runs this check automatically at session start. Behavior (T168):
 
 - **Per-item display, not just counts** — the hook surfaces each open INBOX item with a one-line summary (type, source project, subject, age in hours/days). Items are grouped by type with subheadings, sorted within each group oldest-first, and truncated at 10 per group with a "+N more" note.
 

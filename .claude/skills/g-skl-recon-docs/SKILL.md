@@ -18,6 +18,12 @@ Depends on **g-skl-crawl** (crawl4ai). Run `@g-crawl SETUP` first.
 
 ---
 
+## Clean Room Boundary
+
+This capture skill may store source material in the vault for research, provenance, and later review. When captured content is used for `--deep`, `g-skl-res-deep`, or any adoption workflow, downstream outputs must be clean-room reverse specs: behavior-level summaries, interfaces, workflows, data shapes, constraints, and architectural patterns only. Do not copy source code, comments, docs prose, prompts, tests, or unique strings into generated gald3r artifacts except tiny attributed excerpts that are license-compatible and necessary for review. Record source URL/path, license when discoverable, capture date, and extraction limits so reviewers can separate source evidence from original gald3r specifications.
+
+---
+
 ## Operation: INGEST_DOC
 
 Add or update a documentation URL.
@@ -116,5 +122,5 @@ analysis_depth: full_text
 
 All notes written by this skill must conform to **`.gald3r/vault/VAULT_OBSIDIAN_STANDARD.md`** (or the copy at `{vault_location}`): §1 frontmatter, §3 tags (`platform-doc` + platform slug + path-derived topics), UTF-8 **no BOM**.
 
-Bulk / scheduled workflows: use **`g-platform-crawl`** for Firecrawl batch semantics; after large crawls run `scripts/gen_vault_moc.py` as documented there.
+Bulk / scheduled workflows: use **`g-platform-crawl`** for crawl4ai-backed batch documentation crawls; after large crawls run `scripts/gen_vault_moc.py` as documented there.
 
