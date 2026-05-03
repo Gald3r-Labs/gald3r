@@ -1,0 +1,8 @@
+name: slim
+tier_prefix: S
+template_dir: gald3r_template_slim/
+destination: "{LOCAL_PATH_TO_SLIM_REPO}"
+remote: "{GITHUB_SLIM_REMOTE_URL}"
+included_tiers: [slim]
+operational_requirement: none
+description: "Baseline {project_name} — git clone only, zero dependencies."

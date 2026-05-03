@@ -1,0 +1,8 @@
+name: full
+tier_prefix: F
+template_dir: gald3r_template_full/
+destination: "{LOCAL_PATH_TO_FULL_REPO}"
+remote: "{GITHUB_FULL_REMOTE_URL}"
+included_tiers: [slim, full]
+operational_requirement: api-keys
+description: "Full-featured {project_name} — requires API keys and network access."

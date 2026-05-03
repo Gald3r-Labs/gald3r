@@ -1,0 +1,8 @@
+name: adv
+tier_prefix: A
+template_dir: gald3r_template_adv/
+destination: "{LOCAL_PATH_TO_ADV_REPO}"
+remote: "{GITHUB_ADV_REMOTE_URL}"
+included_tiers: [slim, full, adv]
+operational_requirement: docker
+description: "Advanced {project_name} — requires Docker backend and managed cloud services."

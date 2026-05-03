@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-session-start.ps1"
+      }
+    ],
+    "stop": [
+      {
+        "command": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-agent-complete.ps1"
+      }
+    ],
+    "beforeShellExecution": [
+      {
+        "command": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-validate-shell.ps1"
+      }
+    ]
+  }
+}
