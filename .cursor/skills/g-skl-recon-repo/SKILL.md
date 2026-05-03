@@ -16,6 +16,12 @@ Optionally, pass `--deep` to run `g-skl-res-deep` after capture and produce a fu
 
 ---
 
+## Clean Room Boundary
+
+This capture skill may store source material in the vault for research, provenance, and later review. When captured content is used for `--deep`, `g-skl-res-deep`, or any adoption workflow, downstream outputs must be clean-room reverse specs: behavior-level summaries, interfaces, workflows, data shapes, constraints, and architectural patterns only. Do not copy source code, comments, docs prose, prompts, tests, or unique strings into generated gald3r artifacts except tiny attributed excerpts that are license-compatible and necessary for review. Record source URL/path, license when discoverable, capture date, and extraction limits so reviewers can separate source evidence from original gald3r specifications.
+
+---
+
 ## Operation: CAPTURE
 
 ```
@@ -26,7 +32,7 @@ Optionally, pass `--deep` to run `g-skl-res-deep` after capture and produce a fu
 
 ### Steps
 
-1. **Read key files**: README.md, package.json / pyproject.toml / Cargo.toml / go.mod, LICENSE, primary source files (max 20)
+1. **Read key files**: README.md, package.json / pyproject.toml / Cargo.toml / go.mod, LICENSE, primary source files (max 20). Summarize behavior and structure; do not preserve source snippets beyond tiny attributed, license-compatible excerpts.
 2. **Extract**: purpose, tech stack, architecture, notable patterns, license, activity level
 3. **Write vault note** to `research/repos/{owner}__{repo}.md` with Obsidian frontmatter:
    ```yaml

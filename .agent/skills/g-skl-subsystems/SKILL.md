@@ -4,7 +4,7 @@ description: Own and manage SUBSYSTEMS.md (registry + mermaid graph) and subsyst
 ---
 # g-subsystems
 
-**Files Owned**: `.gald3r/SUBSYSTEMS.md`, `.gald3r/subsystems/{name}.md`
+**Files Owned**: `.gald3r/SUBSYSTEMS.md`, `.gald3r/subsystems/**/*.md` (flat `name.md` or nested `domain/name.md`)
 
 **Activate for**: "add subsystem", "g-subsystem-add", "update subsystem spec", "g-subsystem-upd", "deprecate subsystem", "g-subsystem-del", "what subsystems exist", "@g-subsystems", sync check for subsystem drift, before modifying any subsystem's code.
 
@@ -47,13 +47,18 @@ Ask: *"Would a curious developer reading this name want to click into it?"*
 
 If proposed name fails the convention → suggest a compliant alternative and wait for confirmation before creating.
 
-Create `.gald3r/subsystems/{name}.md`:
+Create `.gald3r/subsystems/{name}.md` (or nested `.gald3r/subsystems/<domain>/<name>.md` when using folder grouping). **Task frontmatter `subsystems:`** continues to use the logical `name:` value — nested folders do not change the identifier agents put in tasks.
 
 ```yaml
 ---
 name: subsystem-name
 status: active | planned | deprecated
 min_tier: slim | full | adv
+# Optional hierarchy (Task 515) — orthogonal to dependencies:
+parent_subsystem: ''   # logical name of parent grouping (must exist when set)
+domain: ''           # e.g. platform, harvest, adopted
+layer: ''             # e.g. policy, transport, presentation
+children: []          # logical child subsystem names (explicit; not inferred only from folders)
 dependencies: [other-subsystem-names]
 dependents: [subsystem-names-that-depend-on-this]
 locations:
@@ -112,6 +117,16 @@ Collect all unique `subsystems:` values from task files. Compare to SUBSYSTEMS.m
 - In SUBSYSTEMS.md but no spec file → create spec stub
 - Spec file exists but `min_tier:` is missing from YAML frontmatter → flag as incomplete: `⚠️ {name} — missing min_tier field. Add: min_tier: slim | full | adv`
 
+**Hierarchy validation (dry-run, no writes)** — recursively scans `.gald3r/subsystems/**/*.md` (excluding generated artifact names), validates parent/child metadata, duplicate names, `locations:` for **index-listed** specs, optional parent/child **domain** mismatch, **SUBSYSTEMS.md** link targets that point at missing files, and emits `disk_not_indexed` in `-Json` for specs not referenced from the index.
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/gald3r_subsystem_hierarchy_sync.ps1 -ProjectRoot .
+```
+
+Use `-WarnOnly` for advisory exit 0; `-Json` for automation. **Do not conflate** this with the dependency graph: `dependencies:` / `dependents:` describe runtime coupling; `parent_subsystem` / `children` / nested folders describe documentation ownership grouping.
+
+**Regenerate architecture diagrams** (Mermaid, separate tree vs dependency views; includes nested spec paths): `scripts/gald3r_subsystem_diagrams_generate.ps1` (see `SUBSYSTEMS.md` → Generated architecture diagrams).
+
 ---
 
 ## Operation: DEPRECATE SUBSYSTEM (g-subsystem-del)
@@ -129,6 +144,8 @@ Collect all unique `subsystems:` values from task files. Compare to SUBSYSTEMS.m
 ---
 
 ## SUBSYSTEMS.md Structure
+
+Add a **navigable hierarchy** view: keep the existing index + mermaid dependency graph, and link to generated `reports/architecture/SUBSYSTEM_TREE.md` (containment) and `DEPENDENCY_GRAPH.md` (depends-on) so readers can switch lenses without merging the two models.
 
 ```markdown
 # SUBSYSTEMS.md — {project_name}

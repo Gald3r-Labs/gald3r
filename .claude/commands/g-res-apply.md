@@ -10,8 +10,8 @@ Activates **g-skl-res-apply** → REVIEW, DRY-RUN, or APPLY operation.
 
 ```
 @g-res-apply REVIEW {slug}
-@g-res-apply DRY-RUN {slug} [--mode=approved|all]
-@g-res-apply APPLY {slug} [--mode=approved|all|category:{cat}]
+@g-res-apply DRY-RUN {slug} [--mode=approved|all|category:{cat}]
+@g-res-apply APPLY {slug} [--mode=approved|all|category:{cat}]  # all requires clean-room approval for every selected feature
 @g-res-apply APPLY {slug} --target {child_project}   # route to a child project (T118)
 ```
 
@@ -36,7 +36,7 @@ Creates all gald3r artifacts:
 
 ## FEATURES.md Approval Status
 
-Before running APPLY with `--mode=approved`, open the `04_FEATURES.md` and set feature statuses:
+Before running APPLY, open `FEATURES.md` and set feature statuses:
 
 | Status | Meaning |
 |--------|---------|
@@ -44,13 +44,14 @@ Before running APPLY with `--mode=approved`, open the `04_FEATURES.md` and set f
 | `[✅]` | Approved for intake |
 | `[❌]` | Rejected (skipped) |
 | `[⏸]` | Deferred (skip now, review later) |
+| `[🔍]` | Needs clean-room or implementation-detail review (skipped) |
 
 ## Mode Options
 
 | Mode | What gets processed |
 |------|-------------------|
 | `--mode=approved` | Only `[✅]` features |
-| `--mode=all` | All features (ignores status) |
+| `--mode=all` | All clean-room-approved features; refuses unreviewed, `[🔍]`, `[⏸]`, and `[❌]` items unless the user explicitly signs a clean-room exception |
 | `--mode=category:{cat}` | Only features in that category |
 
 ## Never Overwrites
@@ -72,7 +73,7 @@ Automatically detects when a proposed subsystem overlaps with an existing one:
 # Preview maestro2 recon report (nothing written)
 @g-res-apply REVIEW maestro2
 
-# Intake all 168 maestro2 features
+# Intake all clean-room-approved maestro2 features
 @g-res-apply APPLY maestro2 --mode=all
 
 # Only intake approved gald3r_forge features
@@ -83,7 +84,11 @@ Automatically detects when a proposed subsystem overlaps with an existing one:
 ```
 
 ## Input File
-`vault/research/recon/{slug}/04_FEATURES.md` (produced by `@g-res-deep`)
+`vault/research/recon/{slug}/FEATURES.md` (produced by `@g-res-deep`)
+
+## Clean Room Boundary
+
+These commands support clean-room research and reverse-spec work. Capture/recon may observe and summarize source behavior, interfaces, workflows, data shapes, and architectural patterns; generated gald3r artifacts must use original wording and local architecture terms, not copied source code, docs prose, prompts, tests, or unique strings. Keep source URL, license, and capture provenance in recon notes; treat source file paths as traceability, not implementation instructions. Adoption requires human approval through `@g-res-review` / `@g-res-apply`.
 
 ## See Also
 - `@g-res-deep` — Analyzes a repo and produces the recon report

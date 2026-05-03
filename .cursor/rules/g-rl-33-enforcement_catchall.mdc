@@ -98,11 +98,65 @@ Any of these → full task creation workflow (file first, TASKS.md second, YAML,
 
 ## PCAC INBOX Gate
 
-Before task claiming, implementation, verification, planning, status work, or swarm partitioning, run the re-callable `g-hk-pcac-inbox-check.ps1 -BlockOnConflict` hook when present. If it reports `INBOX CONFLICT GATE` or exits with code `2`, stop and run `@g-pcac-read` before continuing. Exception: `g-medic` L1 triage runs the hook without `-BlockOnConflict`, completes health scoring, records the PCAC conflict severity, then blocks L2-L4 planning/apply work and all claim/implementation/review/planning work until `@g-pcac-read` resolves the conflict. Swarm coordinators rerun the check every 30 minutes and before final summaries.
+Before task claiming, implementation, verification, planning, status work, or swarm partitioning, first determine whether the current project is a **PCAC participant**. PCAC is active only when `.gald3r/linking/link_topology.md` exists and declares at least one non-empty parent, child, or sibling relationship, or when `.gald3r/PROJECT.md` explicitly declares PCAC project linking relationships. A Workspace-Control manifest (`.gald3r/linking/workspace_manifest.yaml`) and a local `INBOX.md` alone do **not** make a project part of a PCAC group.
+
+If and only if the current project is a PCAC participant, run the re-callable `g-hk-pcac-inbox-check.ps1 -BlockOnConflict` hook when present. If it reports `INBOX CONFLICT GATE` or exits with code `2`, stop and run `@g-pcac-read` before continuing. Exception: `g-medic` L1 triage runs the hook without `-BlockOnConflict`, completes health scoring, records the PCAC conflict severity, then blocks L2-L4 planning/apply work and all claim/implementation/review/planning work until `@g-pcac-read` resolves the conflict. Swarm coordinators rerun the check every 30 minutes and before final summaries only while PCAC is active.
+
+If the project is not a PCAC participant, skip the PCAC hook and report `PCAC: not configured / skipped` when status or medic output includes gate state.
+
+## Gald3r Housekeeping Commit Gate (T531 — `g-go*` only, controller-only)
+
+Sits between the **PCAC INBOX Gate** and the **Clean Controller Gate** on the `g-go`, `g-go-code`, `g-go-review`, `g-go-swarm`, `g-go-code-swarm`, and `g-go-review-swarm` paths. It runs at two points: (a) **preflight** — before claims, worktrees, coding, review, or swarm partitioning; and (b) **post-coordinator-write** — immediately after `g-go*` coordinator-owned shared `.gald3r` writes (task/bug status updates, review-result writes, sent_orders ledger updates, safe report/log outputs) and before the next major phase.
+
+Behavior at each invocation:
+
+1. Run `scripts/gald3r_housekeeping_commit.ps1` against the orchestration git root. The helper reads `git status --porcelain=v1 -uall`, classifies every dirty path against an explicit allowlist of safe controller `.gald3r/` coordination paths and a deny list of sensitive/identity/config paths, and returns one of: `clean`, `safe-gald3r-housekeeping`, `safe-gald3r-coordination`, `unsafe-gald3r`, `mixed-dirty`, `conflict`, `drift-detected`, or `committed-*` (when `-Apply`).
+2. If `clean` → continue without writing.
+3. If `safe-gald3r-housekeeping` (preflight) or `safe-gald3r-coordination` (post-write) → invoke the helper with `-Apply`. The helper stages **only** the classified-safe paths via explicit `git add -- <paths>`, re-checks for drift, then commits with one of:
+   - `chore(gald3r): preflight gald3r housekeeping`
+   - `chore(gald3r): commit g-go coordination state`
+   Include `Task: #<id>` / `Bug: BUG-<id>` in the body when ownership is clear (the helper accepts `-TaskId` / `-BugId`). `git add .` is **never** used.
+4. If `unsafe-gald3r`, `mixed-dirty`, `conflict`, or `drift-detected` → preserve the existing **Clean Controller Gate** hard-block. Do not auto-commit. Report the exact unsafe paths and reasons; user action required.
+5. Member-repo targets (marker-only `.gald3r/` with `.identity` but no manifest and no `TASKS.md`) are refused with `config-fault`. The helper never writes member repository `.gald3r/` content.
+
+Concurrency / drift protection: in `--swarm` flows only the coordinator runs this gate, and the helper re-checks `git status` immediately before staging and again immediately after committing; if another writer altered the tree between classify and stage, the helper aborts the staging and exits non-zero with `drift-detected` so the coordinator falls back to the hard-gate path.
+
+This gate is **controller-only `g-go*` behavior**. It is not a global rule for every gald3r command. Member repositories' marker-only `.gald3r/` policy is unchanged.
+
+## Clean Controller Gate (orchestration repo)
+
+After the PCAC gate passes and **before** task or bug claims, T170 worktree allocation (`gald3r_worktree.ps1 -Action Create`), swarm partitioning, or any coordinator-owned write to shared `.gald3r` ledgers (for example `.gald3r/TASKS.md`, `.gald3r/BUGS.md`, task/bug files when acting as coordination surfaces), `CHANGELOG.md`, generated Copilot instructions, or parity output, agents MUST verify the **orchestration git root** is clean enough to land the required checkpoint or review-result commit.
+
+- The **Gald3r Housekeeping Commit Gate** runs first (see the section directly above). It may auto-commit dirty paths that are exclusively safe controller `.gald3r/` housekeeping; only paths it classifies as unsafe / mixed / unknown reach this gate as blockers.
+- Run `git status --short` at the repository root from which `g-go*`, `g-go-code*`, or `g-go-review*` is executed (Workspace-Control owner when a manifest is active).
+- Any path **outside** this run's explicit coordinator staging allowlist for the active task and bug IDs is a **blocker**: stop before those mutations; commit, stash, or split unrelated work first. Preserve any bucket handoff artifacts already produced and list the paths that blocked progress.
+- Do **not** pass `gald3r_worktree.ps1 -AllowDirty` for `g-go*`, `g-go-code*`, `g-go-review*`, or `--swarm` flows unless every dirty path is owned exclusively by the active task/bug scope and a `## Status History` row documents that override.
+
+## Member touch-set clean gate (v1 — `workspace_repos`)
+
+The orchestration git root is **always** in the clean gate's touch set. When the active task or bug declares **`workspace_repos:`** naming one or more manifest `repository.id` values, extend the **Clean Controller Gate** and **Pre-Reconciliation Clean Gate** to each **additional** repository root resolved from those IDs (blast radius follows declared cross-repo scope).
+
+- If `.gald3r/linking/workspace_manifest.yaml` exists, map each listed ID (deduplicated) to `repositories[?].local_path`. For each path that exists on disk, resolve the git root with `git -C "<path>" rev-parse --show-toplevel` (PowerShell quoting as needed). Run `git status --short` at that root. Apply the same **explicit coordinator staging allowlist** rule per root: unrelated dirty paths are **blockers** for claims, worktrees, coordinator shared writes, and checkpoint/review-result commits until committed, stashed, split, or documented per-root in the owning task or bug `## Status History` when policy permits the same `-AllowDirty` discipline as the orchestration root.
+- Skip member IDs whose `local_path` is missing while `lifecycle_status` is a planned/bootstrap gap (report per `g-skl-workspace`); those do **not** expand the touch set until paths exist.
+- If the manifest is missing while `workspace_repos` is non-empty, or a listed ID is unknown under `repositories:`, treat that as a **blocker** for coordinator writes that depend on workspace routing until the manifest or frontmatter is repaired (single-repo-only work queued to the orchestration root alone may still run if `workspace_repos` lists only the owner id and resolves).
+
+## Touch-set expansion (v2 — optional blast-radius signals)
+
+Union the following extra repository roots into the touch set (same `git status --short` + allowlist rules as v1), **in addition to** the orchestration root and any `workspace_repos` members:
+
+1. **`extended_touch_repos:`** — optional task/bug YAML list of additional `repository.id` values present in the workspace manifest (identical resolution rules as v1). Use when planners know the operation spans repos beyond `workspace_repos`.
+2. **`touch_repos:` (swarm handoff)** — In `--swarm` runs, when bucket work edits roots not already covered by `workspace_repos` + `extended_touch_repos:`, bucket summaries and the coordinator reconciliation block MUST list those ids under `touch_repos:` so the union is gated before shared writes.
+3. **Subsystem `locations:` absolute paths** — When the active item declares **`subsystems:`**, read each `.gald3r/subsystems/{name}.md` frontmatter **`locations:`** (all nested list items and string values). For every value that matches a host **absolute** path (`^[A-Za-z]:[/\\]` on Windows, or POSIX `/` rooted at `/` for non-Windows), if that path exists, resolve `git -C <dir> rev-parse --show-toplevel` using the path's directory when the path is a file. Each distinct git root **other than** the orchestration root joins the touch set. Pure relative entries (`.gald3r/...`, `skills/...`) do not expand the set. **Non-goal:** never require every manifest member to be clean for every `g-go` run.
+
+## Pre-Reconciliation Clean Gate (`--swarm`)
+
+Immediately **before** the coordinator applies bucket handoffs to the primary checkout, updates shared `.gald3r` indexes, touches `CHANGELOG.md`, or creates checkpoint / review-result commits, **re-run** `git status --short` on the **orchestration root and every other repository root in the computed touch set** (orchestration + v1 `workspace_repos` members + v2 expansions). If unrelated dirty paths appeared during parallel bucket work in **any** of those roots, **fail closed**: do not write shared ledgers or docs; keep patches, artifacts, and evidence; report **per-root** blockers using the same narrow non-commit reasons as the Review Result Commit gate.
+
+The orchestration root may also be passed through the **Gald3r Housekeeping Commit Gate (post-write mode)** between major phases (after task/bug status writes, after review-result writes, after sent_orders ledger updates, after safe report/log outputs). In post-write mode, when the dirty set is exclusively safe controller `.gald3r/` coordination, the coordinator creates a focused `chore(gald3r): commit g-go coordination state` commit and continues; otherwise the standard fail-closed behavior above applies.
 
 ## Swarm Reconciliation Gate
 
-In `g-go --swarm`, `g-go-code --swarm`, and `g-go-review --swarm`, bucket agents are handoff producers. They return patch bundles, generated artifacts, evidence, changed-file inventories, and proposed Status History rows. Bucket agents MUST NOT directly write shared `.gald3r` status/index files, `CHANGELOG.md`, generated Copilot prompts, parity output, final staging, or commits. The coordinator performs all shared writes in one final pass after deterministic reconciliation.
+In `g-go --swarm`, `g-go-code --swarm`, and `g-go-review --swarm`, bucket agents are handoff producers. They return patch bundles, generated artifacts, evidence, changed-file inventories, and proposed Status History rows. When v2 applies, handoffs and coordinator summaries MUST include `touch_repos:` listing any additional manifest `repository.id` values whose git roots were edited whenever that set is not already covered by the claimed task's `workspace_repos` + `extended_touch_repos:`. Bucket agents MUST NOT directly write shared `.gald3r` status/index files, `CHANGELOG.md`, generated Copilot prompts, parity output, final staging, or commits. The coordinator performs all shared writes in one final pass after deterministic reconciliation **only after** the Pre-Reconciliation Clean Gate passes.
 
 Swarm worktrees MUST stage by explicit path allowlist only. `git add .` is forbidden in bucket worktrees because it can leak transient ownership files such as `.gald3r-worktree.json`, terminal transcripts, local logs, or other non-deliverable artifacts. If a bucket patch touches shared coordination files, the coordinator must either reject that portion or convert it into a coordinator-owned final write.
 

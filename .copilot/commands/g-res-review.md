@@ -29,6 +29,10 @@ Activates **g-skl-res-review** → REVIEW operation.
 `@g-res-review` **never modifies `.gald3r/`** — it only updates approval status markers in the
 `vault/research/recon/{slug}/04_FEATURES.md` review columns.
 
+## Clean Room Boundary
+
+These commands support clean-room research and reverse-spec work. Capture/recon may observe and summarize source behavior, interfaces, workflows, data shapes, and architectural patterns; generated gald3r artifacts must use original wording and local architecture terms, not copied source code, docs prose, prompts, tests, or unique strings. Keep source URL, license, and capture provenance in recon notes; treat source file paths as traceability, not implementation instructions. Adoption requires human approval through `@g-res-review` / `@g-res-apply`.
+
 ## See Also
 
 - `@g-res-deep` — Run the deep analysis pass to generate a recon report

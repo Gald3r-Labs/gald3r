@@ -253,7 +253,7 @@ When ENABLE scans a subsystem spec file, apply these regexes (case-insensitive) 
 | `api[_\-]?key|API Key|OPENAI_KEY|ANTHROPIC_|PERPLEXITY_|sk-[A-Za-z0-9]` | requires external API keys | `api-keys` tier |
 | `openai|anthropic|perplexity|gemini API` | cloud AI service | `api-keys` tier |
 | `vault_location|research/platforms|research/github|ingest[_-]doc` | vault subsystem — needs network for crawl | `api-keys` tier |
-| `crawl4ai|playwright|firecrawl` | web crawling | `api-keys` tier |
+| `crawl4ai|playwright` | web crawling | `api-keys` tier |
 | *no match* | file-only behavior | lowest tier |
 
 When two signals match, higher-requirement tier wins (docker > api-keys > none). If the project has no `docker` tier, a docker-class signal downshifts to the highest available tier. Likewise if no `api-keys` tier exists, api-keys-class signals downshift to the highest available.

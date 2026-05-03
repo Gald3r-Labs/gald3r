@@ -20,7 +20,7 @@ description: Own and manage all release data — RELEASES.md index and releases/
 ---
 id: 1                         # Sequential release ID (integer)
 name: 'v1.1 — Spring Drop'    # Human-readable release name
-version: '1.1.0'              # SemVer version string
+version: '1.4'              # SemVer version string
 target_date: '2026-04-23'     # Planned ship date (YYYY-MM-DD)
 status: planned                # planned | in_progress | released | deferred
 cadence_days: 14               # Days between releases (default: 14)

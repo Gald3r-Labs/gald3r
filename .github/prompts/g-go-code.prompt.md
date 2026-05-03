@@ -5,12 +5,28 @@ Implementation-only backlog execution: $ARGUMENTS
 This command runs **coding and bug-fixing** — it does NOT verify. Every completed item is
 marked `[🔍]` (Awaiting Verification) so a **separate agent session** can independently confirm it.
 
+## Implementation-Only Boundary
+
+`g-go-code` and `g-go-code --swarm` must not spawn reviewer agents, run `g-go-review`, run `g-go-review-swarm`, or invoke `gald3r-code-reviewer` / full adversarial review subagents.
+
+Allowed implementation readiness checks are limited to smoke/unit-style evidence:
+- Import/build/typecheck/lint commands relevant to the changed files.
+- Focused unit tests or existing fast test gates.
+- Acceptance-criteria self-check against the task or bug spec.
+- Workspace, constraint, stub/TODO, and bug-discovery gates required before marking `[🔍]`.
+
+The output may include a review handoff and checkpoint SHA. It must not perform the review. Use `g-go` / `g-go --swarm` for implement-plus-auto-review, or `g-go-review` / `g-go-review --swarm` for review-only.
+
 ---
 
 
-### PCAC Inbox Gate (Before Claiming Work)
+### PCAC Inbox Gate (Only When PCAC Is Configured)
 
-Before task claiming, implementation, verification, planning, or swarm partitioning, run the re-callable PCAC inbox check when the hook exists:
+Before task claiming, implementation, verification, planning, or swarm partitioning, first determine whether this project is a PCAC participant. PCAC is configured only when `.gald3r/linking/link_topology.md` declares at least one parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares PCAC project linking relationships. A Workspace-Control manifest and local `INBOX.md` alone do not make the project a PCAC group member.
+
+If PCAC is configured, run the re-callable PCAC inbox check when the hook exists.
+
+> **Tool routing (BUG-031)**: on Windows, invoke this snippet through the **PowerShell tool**, not Bash. It uses PowerShell-only syntax (`@(...)` array, `Where-Object`, `Test-Path`, `Select-Object`, pipeline). Routing it through Bash produces a parse error such as ``syntax error near unexpected token `('`` — that failure is a tool-selection error, **NOT** a real PCAC conflict gate. Re-run via PowerShell. On Linux/macOS hosts use `pwsh` if available; if neither shell can reach the hook, treat the gate as advisory and let Workspace-Control routing re-evaluate.
 
 ```powershell
 $hook = @( ".cursor\hooks\g-hk-pcac-inbox-check.ps1", ".claude\hooks\g-hk-pcac-inbox-check.ps1", ".agent\hooks\g-hk-pcac-inbox-check.ps1", ".codex\hooks\g-hk-pcac-inbox-check.ps1", ".opencode\hooks\g-hk-pcac-inbox-check.ps1" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
@@ -18,6 +34,47 @@ if ($hook) { powershell -NoProfile -ExecutionPolicy Bypass -File $hook -ProjectR
 ```
 
 Installed templates may call the equivalent hook from the active IDE folder. If the check reports `INBOX CONFLICT GATE` or exits with code `2`, stop immediately and run `@g-pcac-read`; do not claim tasks, create worktrees, spawn reviewers, or continue planning until conflicts are resolved. Non-conflict requests, broadcasts, and syncs are advisory and should be surfaced in the session summary.
+
+
+### Gald3r Housekeeping Commit Gate (T531)
+
+<!-- T531-HOUSEKEEPING-GATE -->
+After the PCAC gate is skipped or passes and **before** the Clean Controller Gate hard-blocks the run, run the safety classifier helper at the orchestration root:
+
+```powershell
+.\scripts\gald3r_housekeeping_commit.ps1 -Mode preflight -Apply -TaskId <id-when-known> -Json
+```
+
+Behavior:
+
+- **`clean`** -> continue.
+- **`safe-gald3r-housekeeping`** -> the helper stages **only** allowlisted controller `.gald3r/` paths via explicit `git add -- <paths>` (never `git add .`), re-checks for drift, and creates a focused `chore(gald3r): preflight gald3r housekeeping` commit. The run continues automatically.
+- **`unsafe-gald3r` / `mixed-dirty` / `conflict` / `drift-detected` / unknown `.gald3r` paths / member-repo `config-fault`** -> the helper exits non-zero, the existing Clean Controller Gate hard-block applies, and the run STOPs with the exact unsafe paths listed.
+
+The helper allowlist covers the safe controller `.gald3r/` coordination surfaces (TASKS.md, BUGS.md, FEATURES.md, PRDS.md, SUBSYSTEMS.md, IDEA_BOARD.md, learned-facts.md, tasks/, bugs/, features/, prds/, subsystems/, reports/, logs/pcac_auto_actions.log, linking/sent_orders/, linking/INBOX.md). The deny list covers `.identity`, `.user_id`, `.project_id`, `.vault_location`, `vault/`, `config/`, `.gald3r-worktree.json`, secret-named files, and unknown `.gald3r/` paths. Member-repo targets (marker-only `.gald3r/`) are refused -- this gate is **controller-only**.
+
+Re-run the helper in `-Mode post-write -Apply` immediately after coordinator-owned shared `.gald3r` writes (task/bug status writes, review-result writes, sent_orders ledger updates, safe report/log outputs) and before the next major phase so the shared-state dirty window stays short. In `--swarm` flows only the coordinator runs the helper; bucket agents remain handoff producers.
+### Clean Controller Gate (before claims, worktrees, reconciliation)
+
+After the PCAC gate is skipped or passes:
+
+1. At the **orchestration git root** (the repo from which you run this command — normally the Workspace-Control owner, e.g. `gald3r_dev`): run `git status --short`. If anything is listed **outside** this run's explicit coordinator staging allowlist for the active task and bug IDs, **STOP** here. Do not claim tasks or bugs, create or reuse T170 worktrees, partition swarms, or write coordinator-owned updates to `.gald3r/TASKS.md`, `.gald3r/BUGS.md`, other shared `.gald3r` coordination files, `CHANGELOG.md`, generated Copilot prompts, or parity output until unrelated changes are committed, stashed, or moved to a prior focused commit. Preserve any bucket handoff artifacts already produced and list the paths that blocked progress.
+
+2. **`gald3r_worktree.ps1 -AllowDirty`**: do not use this switch for `g-go`, `g-go-code`, `g-go-review`, or any `--swarm` variant **except** when every dirty path is owned exclusively by the active task/bug scope and a `## Status History` row documents that override. Otherwise clean the checkout first. The same **per-root** `-AllowDirty` discipline applies to every repository included in the touch set below when multi-repo work is in scope.
+
+3. **Member touch-set (v1 — `workspace_repos`)** — The orchestration root is **always** gated. When the active task or bug declares **`workspace_repos:`** with manifest `repository.id` entries, extend the gate to each **other** resolved member root (blast radius follows declared cross-repo scope). Read `.gald3r/linking/workspace_manifest.yaml` when present; map each listed ID (deduplicated) to `repositories[?].local_path`. For each existing path, run `git -C "<path>" rev-parse --show-toplevel` then `git status --short` at that root. Apply the same **explicit coordinator staging allowlist** per root. Skip IDs whose paths are missing while `lifecycle_status` is a planned/bootstrap gap (report only; do not expand the touch set). If the manifest is missing while `workspace_repos` is non-empty, or an ID is unknown under `repositories:`, **STOP** multi-repo coordinator work until manifest or frontmatter is repaired (controller-only queue items whose `workspace_repos` lists only the owner id may proceed once that id resolves).
+
+4. **Touch-set expansion (v2 — optional signals)** — Union extra repository roots into the same per-root checks (still **not** a blanket scan of every manifest member):
+   - **`extended_touch_repos:`** — optional task/bug YAML list of additional manifest `repository.id` values beyond `workspace_repos`.
+   - **`touch_repos:` (swarm handoffs)** — In `--swarm` runs, when bucket work edits roots not already covered by `workspace_repos` + `extended_touch_repos:`, bucket summaries and the coordinator reconciliation block MUST list those ids under `touch_repos:` so the union is gated before shared writes.
+   - **Subsystem `locations:` absolutes** — When the active item declares **`subsystems:`**, read each `.gald3r/subsystems/{name}.md` frontmatter **`locations:`** (all nested strings). For values matching a host **absolute** path (`^[A-Za-z]:[/\\]` on Windows, or POSIX `/` rooted at `/` elsewhere), if the path exists, resolve `git -C <dir> rev-parse --show-toplevel` (use the file's parent directory when the path is a file). Each distinct root **other than** the orchestration root joins the touch set. Relative paths do not expand the set.
+
+### Pre-Reconciliation Clean Gate (before coordinator shared writes)
+
+Also re-run the **Gald3r Housekeeping Commit Gate** with `-Mode post-write -Apply` against the orchestration root immediately after each coordinator-owned shared `.gald3r` write so safe controller coordination state lands in a focused `chore(gald3r): commit g-go coordination state` commit before the next major phase begins.
+
+
+Immediately before the coordinator merges bucket results into the primary checkout, updates shared `.gald3r` indexes or task/bug files as coordinator-owned writes, touches `CHANGELOG.md`, or creates checkpoint / review-result commits: **re-run** `git status --short` on the **orchestration root and every other repository root in the computed touch set** (steps 1 + 3 + 4). For `--swarm` runs, if unrelated dirty paths appear in **any** of those roots during parallel bucket work, **fail closed** — do not apply those shared writes; keep patches, artifacts, and evidence; report **per-root** blockers using the same blocker family as checkpoint and review-result commits.
 
 ## Execution Protocol
 
@@ -46,7 +103,7 @@ Read in this order:
 - **Skip non-expired `[📝]` speccing claims** — log owner/expiry in Skipped section as "Speccing-In-Progress"
 - For stale `[📝]` claims, append a Status History takeover row naming the prior `spec_owner` before proceeding
 - **NOT** `[🚨]` (requires-user-attention) — **skip entirely**, log in Skipped section as "Requires-User-Attention — human review needed"
-- No unmet dependencies
+- No unmet dependencies, with the rolling-pipeline exception below: a dependency at `[🔍]` counts as **implementation-satisfied** for follow-on coding unless the downstream task declares `requires_verified_dependencies: true`
 - Not `ai_safe: false`
 - Priority: Critical → High → Medium → Low
 
@@ -77,7 +134,7 @@ Installed templates may call the helper from the `g-skl-git-commit/scripts/gald3
 Rules:
 - Worktree root defaults to `$env:GALD3R_WORKTREE_ROOT`, else `<repo-parent>/.gald3r-worktrees/<repo-name>`.
 - The helper must refuse nested worktrees inside the active checkout.
-- The helper blocks when the active checkout is dirty unless the current task explicitly owns that direct-root work and the operator supplies the documented override.
+- The helper blocks when the active checkout is dirty unless the **Clean Controller Gate** is satisfied with a documented `-AllowDirty` override in the owning task or bug `## Status History` (see `g-rl-33`).
 - Map helper JSON to claim metadata: `worktree_path` → `worktree_path`, `worktree_branch` → `worktree_branch`, `created_at` → `worktree_created_at`, and `owner` → `worktree_owner`.
 - Run implementation commands from the worktree root. Keep the primary checkout for queue coordination and final status writes.
 - Pre-create all queued item worktrees before marking any item `[🔍]`; this prevents legitimate gald3r status writes from making later worktree creation look unsafe.
@@ -171,6 +228,29 @@ Default review handoff is branch-addressable. After successful implementation re
 
 Snapshot review mode is fallback-only. Use it when the user explicitly requests uncommitted review, when a source cannot be made branch-addressable, or when a failed reconciliation must be inspected read-only. Do not make dirty snapshot mode the default.
 
+### 7c. Rolling Implementation Waves
+
+`g-go-code` and `g-go-code --swarm` must optimize for throughput. A code-complete checkpoint is a stable handoff point, not a global stop sign.
+
+After a checkpoint commit is created:
+
+1. Recompute the runnable queue immediately.
+2. Treat dependencies that are `[🔍]` / `awaiting-verification` as implementation-satisfied when they have a branch-addressable checkpoint and the downstream task does not declare `requires_verified_dependencies: true`.
+3. Start the next coding wave from the latest checkpoint or member-repo branch that contains the dependency output.
+4. Record checkpoint-dependent downstream work in the dependent task's Status History:
+   `Started on unverified dependency T{id} at checkpoint {sha}; rework required if review fails.`
+5. Continue coding until no runnable work remains, a PCAC conflict appears, Workspace-Control preflight fails, or a task explicitly requires verified dependencies.
+
+Review remains mandatory, but `g-go-code*` only prepares the handoff. It must not start the review lane itself. A later review failure requeues only the failed item and any downstream tasks that explicitly consumed its checkpoint. Do not stop unrelated implementation work merely because a prior item is awaiting review.
+
+Tasks may force the old strict behavior with:
+
+```yaml
+requires_verified_dependencies: true
+```
+
+Use that field for destructive operations, irreversible migrations, public release/signing, production writes, security-sensitive changes, or any task whose acceptance criteria explicitly require verified predecessor behavior.
+
 ### 8. Final Status Batch + Handoff
 
 After all attempted items are implemented and validated, reconcile their worktree diffs into the primary checkout, then batch-write `.gald3r/TASKS.md`, `.gald3r/BUGS.md`, task files, bug files, docs logs, and changelog entries for all successful items. Do not let one item's status write block another item's worktree creation.
@@ -204,7 +284,8 @@ After the final shared-write pass, create the checkpoint commit before review. I
 ### Handoff
 {N} task(s) / {M} bug(s) moved to [🔍].
 Implementation checkpoint: {branch}@{commit_sha} (default review source)
-For independent verification: open a NEW agent session and run @g-go-review.
+Handoff only: for independent verification, open a NEW agent session and run @g-go-review. Do not launch that reviewer from g-go-code.
+Rolling waves: {continued|stopped}; next runnable queue: {ids or none}; verified-dependency blockers: {ids or none}
 ```
 
 ## Behavioral Rules
@@ -212,7 +293,9 @@ For independent verification: open a NEW agent session and run @g-go-review.
 | Rule | Why |
 |------|-----|
 | Never ask questions mid-execution | Uninterrupted autonomous work |
+| Never spawn reviewer agents from g-go-code* | Implementation mode stays focused on coding and readiness checks |
 | Mark completed items `[🔍]`, never `[✅]` | Enforce independent verification gate |
+| Keep coding across `[🔍]` dependencies unless strict verification is declared | Preserve fast product development while review catches up |
 | Log every decision made | Future agents and humans need the audit trail |
 | Skip tasks you can't complete | Maximize total output |
 | Respect CONSTRAINTS.md | Never violate project guardrails |
@@ -238,6 +321,7 @@ Swarm mode partitions the work queue into conflict-safe buckets and spawns N par
 - If exactly 1 qualifying item remains and preflight passes → automatically downgrade to standard single-agent implementation mode and continue without asking for confirmation:
   `[SWARM] Single runnable item — auto-downgrading to @g-go-code standard mode`
 - If 2 or more qualifying items remain → continue with swarm agent-count calculation and partitioning.
+- After each checkpoint, rerun S1/S2 as a rolling wave. Previously completed `[🔍]` dependencies from this or earlier checkpoints count as implementation-satisfied unless a downstream task declares `requires_verified_dependencies: true`.
 
 **Step S3: Compute agent count** (Smart Agent Count Formula)
 
@@ -303,7 +387,8 @@ After all sub-agents complete:
 5. Batch-write `.gald3r/TASKS.md`, `.gald3r/BUGS.md`, task files, bug files, `CHANGELOG.md`, generated Copilot prompts/instructions, and parity outputs only after bucket outputs are reconciled.
 6. Run parity sync and prompt regeneration at most once from the coordinator after final shared writes.
 7. Create one code-complete checkpoint commit from the primary checkout so review swarms can create clean `review-swarm` worktrees from a committed source.
-8. Write the unified handoff:
+8. Recompute the work queue for the next rolling wave. Continue immediately when new items become runnable through `[🔍]` checkpoint dependencies and no strict verification gate applies.
+9. Write the unified handoff when no further coding wave can run:
 
 ```markdown
 ## Swarm Implementation Session Summary
@@ -328,7 +413,8 @@ After all sub-agents complete:
 ### Handoff
 {total} task(s) / {total} bug(s) moved to [🔍].
 Implementation checkpoint: {branch}@{commit_sha} (default review-swarm source)
-For independent verification: open a NEW agent session and run @g-go-review --swarm.
+Handoff only: for independent verification, open a NEW agent session and run @g-go-review --swarm. Do not launch that reviewer from g-go-code-swarm.
+Rolling waves completed: {count}; checkpoint-dependent downstream items: {ids}; strict verified-dependency blockers: {ids or none}
 ```
 
 ---

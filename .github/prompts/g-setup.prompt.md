@@ -65,7 +65,7 @@ project_id={new-uuid}
 project_name={project_name}
 user_id={user_id_from_appdata_or_ask}
 user_name={user_name}
-gald3r_version=1.0.0
+gald3r_version=1.4
 vault_location={LOCAL}
 ```
 

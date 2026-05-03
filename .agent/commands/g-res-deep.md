@@ -31,6 +31,10 @@ Writes to `vault/research/recon/{slug}/`:
 - `04_FEATURES.md` — structured feature list (input for `@g-res-apply`)
 - `05_synthesis.md` — adoption recommendations
 
+## Clean Room Boundary
+
+These commands support clean-room research and reverse-spec work. Capture/recon may observe and summarize source behavior, interfaces, workflows, data shapes, and architectural patterns; generated gald3r artifacts must use original wording and local architecture terms, not copied source code, docs prose, prompts, tests, or unique strings. Keep source URL, license, and capture provenance in recon notes; treat source file paths as traceability, not implementation instructions. Adoption requires human approval through `@g-res-review` / `@g-res-apply`.
+
 ## See Also
 
 - `@g-recon-repo` — Lightweight capture first (then `--deep` or this command)

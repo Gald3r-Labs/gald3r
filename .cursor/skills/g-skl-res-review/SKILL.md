@@ -19,6 +19,12 @@ Review is NOT vault ingestion (that stores knowledge for RAG). It is specificall
 
 ---
 
+## Clean Room Review Gate
+
+Before marking a recon feature `[✅]`, reviewers must confirm the feature is expressed as behavior/specification, not copied implementation. Check that source references are provenance only, license is recorded or marked unknown, and no source code, docs prose, prompts, tests, or unique strings are being approved for direct reuse. If the suggestion depends on implementation details that cannot be cleanly rephrased, mark it `[🔍] needs-review` or `[⏸] defer` instead of approving it.
+
+---
+
 ## Vault-Aware Output Path (T081)
 
 Every operation resolves the output base path before doing anything else.
@@ -217,11 +223,12 @@ When `@g-res-review {github_url}` targets an unmirrored repo:
 ## Hard Constraints
 
 - **Never modify project code, configs, or skills** — review only writes vault notes, IDEA_BOARD entries, and feature staging docs
-- **Feature staging posting requires explicit user confirmation per suggestion** (or APPLY with a reviewed harvest)
-- **APPLY never creates tasks** — feature → tasks only via `/g-feat-promote`
+- **Feature staging posting requires explicit user confirmation per suggestion** (or APPLY with a reviewed harvest) and clean-room approval
+- **Review never creates tasks** — this skill only reviews and stages suggestions; task creation happens later via `g-res-apply APPLY` after clean-room approval or via `/g-feat-promote` for feature-staging flows
 - **Zero scope creep** — if a suggestion would take >2 days to implement, mark complexity `high` and let the user decide whether to promote
 - **Vault-first writes** (T081): when `vault_location` ≠ `{LOCAL}`, output goes to the shared vault to prevent duplicated work across projects
 - **Dedup-first scans** (T081): always consult `_recon_index.yaml` before running a new review; respect `--max-age-days` (default 30)
+- **No verbatim reuse** — review suggestions must not approve copied source code, docs prose, prompts, tests, or unique strings for direct reuse
 
 ---
 

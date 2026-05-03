@@ -1,6 +1,6 @@
 ---
 name: g-skl-res-apply
-version: 1.1.0
+version: 1.4
 description: >
   Convert a reverse-spec FEATURES.md (produced by g-skl-res-deep) into gald3r
   artifacts: project goals, PRDs, subsystem specs (merge or create), and tasks.
@@ -90,9 +90,18 @@ After APPLY completes, update the existing `_recon_index.yaml` entry with `statu
 3. **Group features into tasks** — do NOT create one task per feature. Group related features within a category into a single coherent task (aim for 3-8 features per task).
 4. **Extract goals from `enables:`** — the `enables:` array in each feature often contains project-level goal language. Distill these into goal entries.
 5. **PRD per category** — create one PRD file per feature category.
-6. **Never filter** — if a feature is approved, intake it exactly as specified.
-7. **Source references** — every task file must include the `source_files:` from the feature's `FEATURES.md` entry.
+6. **Respect approval scope** — if a feature is approved, intake its behavior-level intent after clean-room transformation; do not copy source wording or implementation details.
+7. **Source references** — every task file must include the `source_files:` from the feature's `FEATURES.md` entry as provenance only, not as implementation instructions.
 8. **Vault-first reads** (T081) — respect `vault_location`; never hardcode `research/harvests/` when a shared vault is configured.
+9. **Clean-room confirmation** — require human confirmation before APPLY unless the recon report already records clean_room_boundary: true and reviewed approvals.
+
+---
+
+## Clean Room APPLY Gate
+
+Before APPLY writes any `.gald3r/` artifact, confirm the selected features have passed clean-room review. APPLY must transform approved features into original gald3r goals, PRDs, subsystem specs, and tasks using local project language. It must not copy source code, comments, documentation prose, prompts, tests, generated strings, or distinctive implementation structure from the recon source. `source_files` and source URLs are retained only as provenance and audit trail.
+
+If a feature description appears to rely on copied wording or implementation detail, stop and require human review. When license information is missing or restrictive, preserve the observation as research but do not generate adoption artifacts until the user explicitly approves a clean-room rewrite path.
 
 ---
 
@@ -132,13 +141,14 @@ Does NOT write anything.
 
 ```
 g-res-apply APPLY {slug} [--mode=approved|all|category:{cat}] [--max-age-days N] [--force]
+# --mode=all still requires clean-room approval for every selected feature
 ```
 
 Full intake. Creates all gald3r artifacts for the selected features.
 
 **Mode options:**
 - `--mode=approved` (default) — only features with `status: "[✅]"`
-- `--mode=all` — all features regardless of status
+- `--mode=all` — all clean-room-approved features; refuse unreviewed, `[🔍]`, `[⏸]`, and `[❌]` items unless the user explicitly signs a clean-room exception
 - `--mode=category:CHARACTER_SYSTEM` — only features in a specific category
 
 **Steps (in order):**
@@ -147,8 +157,9 @@ Full intake. Creates all gald3r artifacts for the selected features.
 - Resolve `{recon_base}` and `input_path` (see Path Resolution above)
 - Consult `_recon_index.yaml` for the slug (see Dedup pre-flight above)
 - Load `input_path`
+- Verify clean-room metadata (`clean_room_boundary`, source, license when available); warn and require confirmation if missing
 - Parse frontmatter YAML: target_name, features[], subsystem_candidates
-- Filter features by mode
+- Filter features by mode; `--mode=all` must still exclude unreviewed, `[🔍]`, `[⏸]`, and `[❌]` items unless an explicit clean-room exception is recorded
 
 #### Step 2 — Extract Project Goals
 - For each feature, read `enables:` array
@@ -227,13 +238,13 @@ Harvested from `{target_name}` via `g-skl-res-deep` analysis.
 Feature IDs: {comma-separated list}
 
 ## Problem Statement
-{Synthesized from feature descriptions}
+{Original gald3r wording synthesized from behavior-level feature descriptions}
 
 ## Proposed Features
 ...
 
 ## Acceptance Criteria
-{Generated from enables[] across all features in this category}
+{Original acceptance criteria generated from enables[] across all features in this category}
 
 ## Out of Scope
 {Features marked [❌] in this category}

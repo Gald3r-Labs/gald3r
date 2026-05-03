@@ -14,7 +14,7 @@ min_tier: slim
 
 **Canonical Registry**: `.gald3r/linking/workspace_manifest.yaml`
 
-Do not infer workspace members from sibling folder names, `template_*` directories, git remotes, or docs artifacts. The Task 174 docs seed manifest is provenance only. The Task 179 YAML registry is the parseable source of truth.
+Do not infer workspace members from sibling folder names, inferred `gald3r_template_*` siblings, git remotes, or docs artifacts. The Task 174 docs seed manifest is provenance only. The Task 179 YAML registry is the parseable source of truth.
 
 ---
 
@@ -23,6 +23,10 @@ Do not infer workspace members from sibling folder names, `template_*` directori
 `g-skl-workspace` is the read-only Workspace-Control Mode entry point. It lets agents inspect a configured workspace, validate the manifest and routing metadata, list controlled members, and explain export/sync plans before any future task authorizes writes. Every manifest repository is treated as an independent git root with its own status, branch, remote, rollback, and worktree context.
 
 Task 170 defines the shared worktree primitive for those git boundaries. When a workflow needs isolation, it must call the Gald3r worktree helper per repository, not once at the workspace root. In gald3r_dev the helper is `scripts/gald3r_worktree.ps1`; installed templates carry the same helper in the `g-skl-git-commit/scripts/` skill directory for each IDE target. Worktree root defaults to `$env:GALD3R_WORKTREE_ROOT` or `<repo-parent>/.gald3r-worktrees/<repo-name>`, branch names use `gald3r/{task_id}/{role}/{repo_slug}/{owner}-{suffix}`, and cleanup may only remove directories that contain `.gald3r-worktree.json` ownership metadata.
+
+### g-go blast-radius clean gates (T495 / T496)
+
+`g-rl-33` **Clean Controller** and **Pre-Reconciliation** gates apply per **git root** in the computed **touch set**: always the orchestration checkout; plus manifest-resolved roots for task/bug `workspace_repos:` (v1); optionally `extended_touch_repos:`, swarm coordinator `touch_repos:`, and subsystem spec `locations:` entries that are **absolute filesystem paths** (v2). Each included root gets the same `git status --short` + explicit coordinator allowlist discipline described elsewhere in this skill for export/adopt/member-write preflights. Use **this skill** and `workspace_manifest.yaml` as the authoritative map from `repository.id` → `local_path`; report planned-missing members per lifecycle rules **without** expanding the touch set until paths exist.
 
 Workspace-Control differs from PCAC:
 
@@ -373,6 +377,8 @@ Keep STATUS concise. Do not print full manifest contents unless the user asks fo
 
 Lists only repositories declared in `repositories[]`. Never discover extra members by scanning directories.
 
+Render each manifest repository ID exactly once. Do not repeat a member block in the main table, detail section, or boundary reminder; if a rendering mistake is noticed, correct the output before returning it.
+
 ### Output Fields
 
 For each repository:
@@ -400,6 +406,8 @@ If command arguments are available later, support these report-only filters:
 - `--role control_project`
 - `--role controlled_member`
 - `--lifecycle active`
+- `--lifecycle active_member`
+- `--lifecycle adopted`
 - `--lifecycle planned_clean_member`
 - `--writes allowed|blocked`
 
@@ -423,6 +431,8 @@ Run all PARSE_MANIFEST checks, plus:
 4. Every `repositories[].lifecycle_status` is one of:
    - `active`
    - `active_bootstrap`
+   - `active_member`
+   - `adopted`
    - `planned_clean_member`
    - `migration_source`
    - `deprecated`
@@ -1286,6 +1296,45 @@ Status and report surfaces may embed a compact Workspace-Control snapshot by reu
 
 `platform_parity_sync.ps1`, `platform_parity_check.ps1`, `tier_sync.ps1`, `g-skl-tier-setup`, and `g-skl-template-export` remain the existing parity/export surfaces. `g-skl-workspace` reports how those tools would interact with member repos; it does not change propagation semantics or run scripts.
 
+For the `gald3r_dev` source repository only, edits to core gald3r framework/platform surfaces are self-hosting changes. If a task changes reusable files under `.cursor/`, `.claude/`, `.agent/`, `.codex/`, `.opencode/`, `.copilot/`, `.github/prompts/`, shared rules, skills, commands, agents, hooks, or generated Copilot instructions, completion requires one of:
+
+- Run `scripts/platform_parity_sync.ps1 -SelfHostingRootSource` and, when approved, `scripts/platform_parity_sync.ps1 -SelfHostingRootSource -Sync`. This uses the root `.cursor/` tree as the maintainer source, syncs root platform folders and `gald3r_template_adv/`, then runs `tier_sync.ps1` so `gald3r_template_full/` and `gald3r_template_slim/` receive tier-filtered content.
+- Record an explicit root-only exception, e.g. `g-gald3r-export` maintainer tooling, proprietary local skills, or personality content intentionally shipped through `personality_packs/` instead of templates.
+
+`gald3r_dev-only` command wording means the command is executed only from the source/control repository; it does not by itself exempt reusable framework edits from template parity.
+
+### Scoped Dirty-State Handling
+
+Workspace-Control dirty checks are path-scoped. A dirty repository is a hard blocker only when dirty paths overlap planned writes, protected control files, or a requested member write. Unrelated dirty or untracked paths are advisory and must be reported, not used as a blanket stop sign. Examples:
+
+- `gald3r_template_full/temp_docs/` is unrelated to a planned command/skill parity write: warn, do not block.
+- A dirty `.cursor/skills/g-skl-workspace/SKILL.md` in a target template overlaps a planned parity write: block unless the active task explicitly authorizes merging that path.
+- A dirty `.gald3r/linking/workspace_manifest.yaml` overlaps control-plane writes: block or require an explicit controller-write decision.
+
+#### T225 Dirty-State Taxonomy (5-class)
+
+`scripts/workspace_template_export.py` and any future Workspace-Control dirty-state surface classify every dirty entry into one of five canonical classes. The literal strings are stable so tasks/bugs that depend on this surface can `grep` and reference them directly:
+
+| Class | Definition | Disposition |
+|-------|------------|-------------|
+| `overlapping-target` | Modified or staged path that overlaps a planned write. | **Block** apply. |
+| `unrelated-dirty` | Modified or staged path that does NOT overlap planned writes. | Advisory warning; apply may proceed. |
+| `untracked-target` | Untracked file (`?? path` in `git status --short`) inside a planned-write path. | **Block** apply (treated identically to `overlapping-target`). |
+| `untracked-unrelated` | Untracked file outside any planned-write path. | Advisory warning. |
+| `protected-path` | Path matching `DEFAULT_EXCLUDES`, `SUSPICIOUS_PATH_PARTS`, the secret-shaped literal scan, or a reparse-point/symlink. | Skipped from the export plan; surfaced via `plan.skipped` / `plan.hygiene_findings`. |
+
+`overlapping-target` and `untracked-target` share the same overlap pipeline — `parse_status_paths` deliberately includes `?? path` lines so `paths_overlap` / `overlapping_status_paths` treat untracked-on-target as a hard block. `unrelated-dirty` and `untracked-unrelated` fail the overlap test and land in the advisory warning bucket. `protected-path` is enforced earlier, at exclude/hygiene scan time, before overlap evaluation.
+
+#### Path-overlap normalization (case + separator)
+
+`paths_overlap` normalizes both inputs before comparing:
+
+- Replaces `\` with `/` so backslash-emitting tooling on Windows still aligns with `git status` output.
+- Strips leading and trailing `/`.
+- Lower-cases on Windows only (`os.name == "nt"`), because the default Windows file system is case-insensitive and `core.ignorecase=true` is the standard git config (BUG-030). On Linux/macOS the comparison stays case-sensitive so genuinely distinct files (e.g. `Foo.py` vs `foo.py`) are treated as separate paths.
+
+Worktrees reduce branch and checkout collisions, but they do not remove per-repository dirty state. Always evaluate dirtiness against the operation's planned path set before blocking.
+
 ---
 
 ## Safety Rules
@@ -1299,7 +1348,7 @@ Status and report surfaces may embed a compact Workspace-Control snapshot by reu
 - Treat `workspace_repos` as an allow-list, not proof of permission.
 - Treat `workspace_touch_policy` as maximum allowed touch type, not proof that every change is safe.
 - Refuse ad hoc workspace member inference from folder names alone.
-- Refuse nested member-repo assumptions: in-repo `template_*` folders are migration sources, not member repos.
+- Refuse nested member-repo assumptions: inferred `gald3r_template_*` sibling folders are not manifest members unless declared in `repositories[]`.
 - Never write existing, adopted, planned, or registered member repos from this skill. The only exception is SPAWN_APPLY creating the new empty repo described above.
 - Never write the source project's `.gald3r/` from ADOPT; adoption is non-destructive on the source side by default.
 - Never silently overwrite a control-project artifact during ADOPT apply; collisions must be resolved by an explicit plan decision.
@@ -1323,3 +1372,21 @@ Before claiming Workspace-Control work is ready for review:
 - The response names `.gald3r/linking/workspace_manifest.yaml` as canonical and does not rely on the docs seed manifest.
 - INIT/MEMBER ADD/MEMBER REMOVE dry-runs produce explicit no-write plans and apply modes write only the manifest registry.
 - Any user-facing docs/changelog updates required by the active task are complete.
+
+---
+
+## License posture awareness (C-020)
+
+`workspace_manifest.yaml` repository entries carry a `license:` field whose allowed values are:
+
+| Value | Use |
+|-------|-----|
+| `FSL-1.1-Apache` | Public repos under Fair Source License 1.1 + Apache 2.0 future grant. Canonical template: `scripts/license_templates/LICENSE_FSL_TEMPLATE.txt` (controller repo). |
+| `Proprietary` | Private repos under all-rights-reserved proprietary terms. Canonical template: `scripts/license_templates/LICENSE_PROPRIETARY_TEMPLATE.txt`. |
+
+`STATUS`, `VALIDATE`, and `MEMBER LIST` operations surface each member's posture and any drift (LICENSE missing, content does not match canonical template, manifest entry missing the `license:` key). License drift is a hard `g-wrkspc-validate` failure unless `-WarnOnly` is passed.
+
+The authoritative posture map is `g:\gald3r_ecosystem\LICENSING_STRATEGY.md` and `.gald3r/CONSTRAINTS.md` C-020. License posture changes require updating all three: strategy doc, manifest entries, and per-repo `LICENSE`/`NOTICE` files in a single coordinated task. Bare LICENSE edits without a manifest update violate C-020.
+
+The license check is implemented inside `scripts/validate_workspace_members_gald3r.ps1` (alongside the existing T213 marker check). Pass `-SkipLicenseCheck` to suppress the license sweep when only marker diagnostics are wanted.
+

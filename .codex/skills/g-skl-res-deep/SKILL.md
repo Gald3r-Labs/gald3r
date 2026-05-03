@@ -12,6 +12,14 @@ description: Analyze any external repository and produce a structured FEATURES.m
 
 ---
 
+## Clean Room Reverse-Spec Contract
+
+`g-skl-res-deep` is a research and specification tool, not an implementation copier. Agents may inspect source material to understand externally visible behavior, workflows, data models, interfaces, configuration surfaces, and architectural tradeoffs. Outputs must transform those observations into original prose and structured requirements. Do not copy source code, comments, docs prose, prompts, tests, generated strings, or distinctive implementation structure into recon outputs except tiny attributed excerpts that are license-compatible and necessary as evidence.
+
+Every recon report must preserve provenance (`source`, license when discoverable, capture date, and source file references) while keeping `FEATURES.md` entries behavior-level. `source_files` are traceability pointers only; they are not implementation instructions. If a feature cannot be described without copying implementation details, mark it `[🔍] needs-review` and require a human clean-room decision before APPLY.
+
+---
+
 ## Vault-Aware Output Path (T081)
 
 Every operation resolves the output base path before doing anything else.
@@ -184,7 +192,7 @@ completed: {YYYY-MM-DD}
 
 **Goal**: Read the most important files in each module and catalog every distinct feature.
 
-**Reporter Rule**: Document every distinct capability observed. Do NOT skip features because "the target project already has this." The human decides what to adopt.
+**Reporter Rule**: Document every distinct capability observed in original wording. Do NOT skip features because "the target project already has this." The human decides what to adopt. Do NOT copy source implementation, docs prose, prompts, tests, or unique strings.
 
 **Write** → `{output_dir}/03_feature_scan.md`.
 
@@ -192,7 +200,7 @@ completed: {YYYY-MM-DD}
 
 #### Pass 4: Deep Dives 🔬
 
-**Goal**: For features worth detailed examination, read the full implementation.
+**Goal**: For features worth detailed examination, inspect implementation only to understand behavior, interfaces, data flow, and constraints. Do not transcribe implementation text or structure.
 
 **Write** → `{output_dir}/04_deep_dives.md`.
 
@@ -200,7 +208,7 @@ completed: {YYYY-MM-DD}
 
 #### Pass 5: Synthesis 📋
 
-**Goal**: Produce the final FEATURES.md — the human-readable harvest report.
+**Goal**: Produce the final FEATURES.md — a clean-room, behavior-level harvest report for human review.
 
 **Write** → `{output_dir}/FEATURES.md` with **Obsidian-standard frontmatter** (T044, T081 AC-8):
 
@@ -219,6 +227,9 @@ passes_completed: [1, 2, 3, 4, 5]
 features_total: N
 features_approved: 0
 analyst: {agent-id or "human"}
+clean_room_boundary: true
+license_observed: {license-or-unknown}
+verbatim_excerpt_policy: tiny_attributed_excerpts_only
 ---
 
 # Harvest: {project name}
@@ -364,4 +375,4 @@ Idempotent: re-running the script updates existing entries without duplicating t
 **With `g-skl-vault`**: When vault is configured, output writes go through the file-first vault path — no MCP required.
 
 **Reporter Rule — always enforced**:
-> "We are documenting what this project does, not deciding what gald3r needs. A feature being already present in gald3r is NOT a reason to skip it — it's a reason to note the overlap and learn from the alternative approach."
+> "We are documenting what this project does, not copying how it is written. A feature being already present in gald3r is NOT a reason to skip it — it is a reason to note the behavioral overlap and learn from the alternative approach in original wording."

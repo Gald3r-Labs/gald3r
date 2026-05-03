@@ -1,4 +1,4 @@
-﻿---
+---
 description: "Git workflow conventions — commit message format and branch standards"
 globs:
 alwaysApply: false
@@ -75,6 +75,7 @@ Use `scripts/gald3r_worktree.ps1` as the shared primitive for agent-owned worktr
 - Default root: `$env:GALD3R_WORKTREE_ROOT`, or `<repo-parent>/.gald3r-worktrees/<repo-name>` when unset.
 - Never create worktrees inside the active repository checkout.
 - `Create` blocks on a dirty active checkout unless an explicit `-AllowDirty` override is used after recording ownership.
+- For `g-go*`, `g-go-code*`, `g-go-review*`, and `--swarm` flows, follow `g-rl-33` **Clean Controller Gate** and **Pre-Reconciliation Clean Gate** on the **computed touch set** of git roots (orchestration + manifest members from `workspace_repos:` and v2 expansions per `g-rl-33`) before claims, worktrees, and coordinator shared writes; do not use `-AllowDirty` there except with documented task/bug ownership in `## Status History` **per root** that policy allows.
 - Task claims created from worktrees should record `worktree_path`, `worktree_branch`, `worktree_created_at`, and `worktree_owner`.
 - Cleanup is report-only unless `-Apply` is provided and may remove only directories with `.gald3r-worktree.json` ownership metadata.
 

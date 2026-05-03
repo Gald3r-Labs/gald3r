@@ -25,6 +25,10 @@ After capturing, runs a deep analysis pass (5-pass strategy from `g-res-deep`) a
 full recon report to `vault/research/recon/{slug}/04_FEATURES.md` and supporting docs.
 Equivalent to running `@g-res-deep` after capture.
 
+## Clean Room Boundary
+
+These commands support clean-room research and reverse-spec work. Capture/recon may observe and summarize source behavior, interfaces, workflows, data shapes, and architectural patterns; generated gald3r artifacts must use original wording and local architecture terms, not copied source code, docs prose, prompts, tests, or unique strings. Keep source URL, license, and capture provenance in recon notes; treat source file paths as traceability, not implementation instructions. Adoption requires human approval through `@g-res-review` / `@g-res-apply`.
+
 ## Notes
 
 - Uses existing `repos_location` mirrors when available; falls back to GitHub web scraping
