@@ -16,6 +16,17 @@
 
 ---
 
+## [Gald3r](https://gald3r.ai) Line Up
+
+| Repo | Description |
+|-----------|-----------------------|
+| [Gald3r](https://github.com/wrm3/gald3r) | Original Clonable Template — Now mirror of Gald3r Slim |
+| [Gald3r_Template_Slim](https://github.com/wrm3/gald3r_template_slim) |Gald3r Clonable Template — Just the Gald3r System |
+| [Gald3r_Template_Full](https://github.com/wrm3/gald3r_template_full) | Gald3r Clonable Template — Installable Skill & Personality Packs |
+| [Gald3r_Template_Adv](https://github.com/wrm3/gald3r_template_adv) | Gald3r Clonable Template — Advanced |
+| [Gald3r_Throne](https://github.com/wrm3/gald3r_throne) | Gald3r Tauri Webapp Interface |
+| [Gald3r_Valhalla](https://github.com/wrm3/gald3r_valhalla) | Gald3r Backend |
+
 ## The Problem
 
 You have great AI coding agents. And they forget everything the moment you close the chat.
