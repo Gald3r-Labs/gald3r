@@ -25,6 +25,7 @@
 | [Gald3r_Template_Full](https://github.com/wrm3/gald3r_template_full) | Gald3r Clonable Template — Installable Skill & Personality Packs |
 | [Gald3r_Template_Adv](https://github.com/wrm3/gald3r_template_adv) | Gald3r Clonable Template — Advanced |
 | [Gald3r_Throne](https://github.com/wrm3/gald3r_throne) | Gald3r Tauri Webapp Interface |
+| [Gald3r_Agent](https://github.com/wrm3/gald3r_agent) | Gald3r Agent Harness & Model |
 | [Gald3r_Valhalla](https://github.com/wrm3/gald3r_valhalla) | Gald3r Backend |
 
 ## The Problem
