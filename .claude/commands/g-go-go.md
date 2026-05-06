@@ -246,6 +246,7 @@ Never crash on optional backend failure; deferring affected work and continuing 
 | Per-repo commits only — no cross-repo single commits | Each manifest member is an independent git root |
 | Marker-only `.gald3r/` invariant is absolute | Member control-plane writes are forbidden, period |
 | `[🚨]` items are NEVER auto-retried | Human-only resolution by policy (T047) |
+| **TASKS.md dual-format scan (MANDATORY)** — TASKS.md contains tasks in two formats that MUST both be scanned: (1) bullet-list `- [STATUS] **Task NNN**:...` and (2) markdown-table `\| [STATUS] \| [NNN](path) \| title \| type \| deps \|`. A grep that only matches the bullet format silently drops the entire table backlog. Before declaring "no runnable work", verify both patterns were searched. Missing table-format tasks and claiming the queue is empty is a spec violation equivalent to a complexity-aversion stop. | Queue completeness — prevents silent task starvation |
 
 ---
 
