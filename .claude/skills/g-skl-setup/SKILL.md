@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-setup
 description: Initialize gald3r in a project — folder structure and template files for task management.
 ---
@@ -38,7 +38,46 @@ Outcomes:
   2. Run `@g-wrkspc-spawn` (new empty member) or `@g-wrkspc-adopt` (existing standalone gald3r project) if the target should be a workspace member. Both paths use `scripts/bootstrap_member_gald3r_marker.ps1` to create the marker pair (`.identity` + `PROJECT.md`) — they do NOT install the full gald3r control plane in members.
 - exit `2` (ERROR) — manifest unparseable. Resolve before continuing. If the project is genuinely standalone (no `.gald3r/linking/workspace_manifest.yaml` in any ancestor), the helper returns ALLOW; an actual exit `2` indicates a broken manifest.
 
-Installed projects ship the same helper at `scripts/check_member_repo_gald3r_guard.ps1`. Template directories (`gald3r_template_slim/`, `gald3r_template_full/`, `gald3r_template_adv/`) are the only legitimate exception for live `.gald3r/` writes outside the control project.
+Installed projects ship the same helper at `scripts/check_member_repo_gald3r_guard.ps1`. External template repos (`G:/gald3r_ecosystem/gald3r_template_slim`, `G:/gald3r_ecosystem/gald3r_template_full`, `G:/gald3r_ecosystem/gald3r_template_adv`) are the only legitimate exception for live `.gald3r/` writes outside the control project.
+
+### Step 0.5 — Git Readiness Check
+
+Run this after Step 0 passes and **before** any `.gald3r/` folder creation. Skip entirely if Step 0 blocked (member-repo targets do not need this check).
+
+**1. Is this a git repo?**
+```
+git rev-parse --is-inside-work-tree
+```
+- Exit 0 → repo exists, continue to check 2.
+- Non-zero exit → not a git repo. Offer (default Y):
+  ```
+  "This directory is not a git repo. Initialize git? [Y/n]"
+  → Y: git init && git commit --allow-empty -m "chore: initial commit"
+  → N: warn "g-go-go autopilot requires git; some features will not work" then continue
+  ```
+
+**2. Does a `dev` branch exist?**
+```
+git branch --list dev
+```
+- Non-empty output → dev exists, skip.
+- Empty → no dev branch. Offer (default Y):
+  ```
+  "No 'dev' branch found. Create dev from current HEAD? [Y/n]"
+  → Y: git checkout -b dev
+        [if remote exists] git push --set-upstream origin dev
+        git checkout - (return to original branch)
+  → N: warn "g-go-go autopilot will MERGE-BLOCKED without a dev branch"
+  ```
+
+**3. Remote check (info only — never blocks setup)**
+```
+git remote -v
+```
+- No remote configured → print info note only:
+  `"No git remote configured. g-go-go autopilot cross-session merges require push access. Add later: git remote add origin <url>"`
+
+**All prompts default to Y and are non-blocking** — declining any prompt adds a warning but does not stop the setup. The agent should present options as numbered choices in its response, then run the chosen commands.
 
 ### Step 1 — Detect if existing (check before creating anything)
    ```
@@ -56,11 +95,11 @@ Installed projects ship the same helper at `scripts/check_member_repo_gald3r_gua
 
 3. **If gald3r_install unavailable**, create manually:
    - Folders: `.gald3r/`, `.gald3r/tasks/`, `.gald3r/features/`, `.gald3r/bugs/`, `.gald3r/subsystems/`, `.gald3r/reports/`, `.gald3r/logs/`, `.gald3r/specifications_collection/`
-   - Create `.gald3r/specifications_collection/README.md` with the index template (see template in `gald3r_template_full/.gald3r/specifications_collection/README.md`)
-   - Create `.gald3r/learned-facts.md` from the template in `gald3r_template_full/.gald3r/learned-facts.md`
+   - Create `.gald3r/specifications_collection/README.md` with the index template (see template in `G:/gald3r_ecosystem/gald3r_template_full/.gald3r/specifications_collection/README.md`)
+   - Create `.gald3r/learned-facts.md` from the template in `G:/gald3r_ecosystem/gald3r_template_full/.gald3r/learned-facts.md`
    - If `.gald3r/.identity` contains `vault_location`, create `{vault_location}/log.md` as a seed file (one header line — `append_log()` will populate it on first ingest)
    - If `.gald3r/.identity` contains `vault_location`, create `{vault_location}/projects/{project_name}/` directory; this is where `repos.txt` and `repo_tracker.json` will live when `github_sync.py` runs
-   - If `.gald3r/.identity` contains `vault_location` **and** `{vault_location}/obsidian_setup.md` does not already exist, copy `gald3r_template_full/.gald3r/vault/obsidian_setup.md` (or the installed equivalent at `{skill_root}/reference/obsidian_setup.md`) to `{vault_location}/obsidian_setup.md`. This seeds the one-page Obsidian setup guide so vault users can find it immediately.
+   - If `.gald3r/.identity` contains `vault_location` **and** `{vault_location}/obsidian_setup.md` does not already exist, copy `G:/gald3r_ecosystem/gald3r_template_full/.gald3r/vault/obsidian_setup.md` (or the installed equivalent at `{skill_root}/reference/obsidian_setup.md`) to `{vault_location}/obsidian_setup.md`. This seeds the one-page Obsidian setup guide so vault users can find it immediately.
    - **Research-type projects:** when creating `TASKS.md`, add a research log section below the task list
    - Files: Use g-project (CREATE PROJECT.MD) and g-plan (CREATE PLAN.MD) for all file generation
    - Seed `CONSTRAINTS.md` with:
@@ -104,7 +143,7 @@ Installed projects ship the same helper at `scripts/check_member_repo_gald3r_gua
 
    > **NOT in slim:** `config/`, `experiments/`, `linking/`, `vault/`, `phases/`
    > These belong in `gald3r_dev` only. Do not create them here.
-   > **When `linking/` IS created** (full tier): also seed `.gald3r/linking/capabilities.md` using the template at `gald3r_template_full/.gald3r/linking/capabilities.md`. Replace `{project_slug}` and `{project_name}` placeholders with the actual project name. Replace `{YYYY-MM-DD}` with today's date.
+   > **When `linking/` IS created** (full tier): also seed `.gald3r/linking/capabilities.md` using the template at `G:/gald3r_ecosystem/gald3r_template_full/.gald3r/linking/capabilities.md`. Replace `{project_slug}` and `{project_name}` placeholders with the actual project name. Replace `{YYYY-MM-DD}` with today's date.
 
 6. **Create PROJECT.MD scaffolding**:
    - `.gald3r/PROJECT.md` — include a **Project Linking** section (parents, children, siblings); starts with `relationships: none`
@@ -139,7 +178,17 @@ Installed projects ship the same helper at `scripts/check_member_repo_gald3r_gua
    
    Update SUBSYSTEMS.md with the index table, sub-features table, integrations table, and mermaid interconnection graph.
 
-8. **Print next steps**:
+8. **Write skills lock file** (T1043 / REDACTED-HARVEST-136):
+   After platform skill directories are placed (whether by `gald3r_install` MCP, by `bin/install.js`, or manually), write `gald3r-skills-lock.json` at project root via:
+   ```powershell
+   .\scripts\gald3r_skills_lock.ps1 -Action WRITE -ProjectPath . -Tier <slim|full|adv>
+   ```
+   - Records SHA-256 hash of each installed `SKILL.md` so future runs can detect tamper / drift.
+   - Pair with `-Action VERIFY` during `gald3r_validate.ps1` runs.
+   - Pair with `-Action UPGRADE -SourceRoot <gald3r_dev path>` to classify each installed skill as `unchanged | local-modified | upstream-changed | both-changed | new | removed` before pulling a new gald3r version.
+   - Lock file format and operations documented in `docs/SKILLS_LOCK_FORMAT.md`.
+
+9. **Print next steps**:
    - Review `.gald3r/PROJECT.md` and confirm mission and goals
    - Review SUBSYSTEMS.md and adjust detected components
    - Review subsystem spec files in `.gald3r/subsystems/` for accuracy
