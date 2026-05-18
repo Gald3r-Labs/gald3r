@@ -65,17 +65,17 @@ You finish a feature and ask the same agent to verify it. It passes everything �
 
 | Component | Count | What it covers |
 |-----------|-------|----------------|
-| **Agents** | 9 | Task manager, code reviewer, QA engineer, project planner, infrastructure, ideas, verifier, project initializer, PCAC coordinator |
-| **Skill Packs** | 7 | Core task management, feature pipeline, multi-project coordination (PCAC), knowledge vault, code quality, git/workflow, IDE CLI |
-| **Skills** | 58 | 58 individual skills — recon suite (docs/file/repo/url/yt), research suite (deep/review/apply), release management, platform skills (6 IDEs), medic, tier-setup, PCAC (10 skills), tasks, bugs, plan, project, features, subsystems, vault, constraints, code review, git, crawl, learn, subsystem-graph, swot, verify-ladder, and more |
-| **Commands** | 89 | Full `@g-*` command surface — task management, bug management, feature pipeline, release management, recon, research, code quality, vault, multi-repo, ideas, constraints, subsystems, swarm, and maintenance |
-| **Hooks** | 12 | Session start, agent complete, pre-commit, pre-push, PCAC inbox check, vault operations |
-| **Rules** | 12 | Always-apply: documentation, git workflow, error reporting, task completion gates, TODO/stub lifecycle, bug discovery |
-| **IDE Platforms** | 6 | Cursor, Claude Code, Gemini, Codex, OpenCode, GitHub Copilot |
+| **Agents** | 12 | Task manager, code reviewer, QA engineer, project planner, infrastructure, ideas, verifier, project initializer, PCAC coordinator |
+| **Skill Packs** | 142+ | 142 optional packs across 20 categories (Vercel, HuggingFace, Cursor Team Kit, Superpowers, AI Media, AI Video Tools, Cloud Providers, Blockchain, 3D Graphics, Community, Content Creation, Startup Tools, Phantom Connect, Context7, Continual Learning, Create Plugin, Firecrawl, Infrastructure, User Skills, and more) |
+| **Skills** | 195 | 58 individual skills — recon suite (docs/file/repo/url/yt), research suite (deep/review/apply), release management, platform skills (21 platforms), medic, tier-setup, PCAC (10 skills), tasks, bugs, plan, project, features, subsystems, vault, constraints, code review, git, crawl, learn, subsystem-graph, swot, verify-ladder, and more |
+| **Commands** | 146 | Full `@g-*` command surface — task management, bug management, feature pipeline, release management, recon, research, code quality, vault, multi-repo, ideas, constraints, subsystems, swarm, and maintenance |
+| **Hooks** | 17 | Session start, agent complete, pre-commit, pre-push, PCAC inbox check, vault operations |
+| **Rules** | 15 | Always-apply: documentation, git workflow, error reporting, task completion gates, TODO/stub lifecycle, bug discovery |
+| **IDE Platforms** | 21 | 16 installer-managed + 5 reference-skill platforms (see Quick Start for full list) |
 
 ### Agents
 
-gald3r ships 9 specialized agents — each is a focused persona with a defined scope, tool set, and activation criteria. Agents are plain markdown files living in `.cursor/agents/`, `.claude/agents/`, etc. They are **inert until you copy the platform folder into your project.**
+gald3r ships 12 specialized agents — each is a focused persona with a defined scope, tool set, and activation criteria. Agents are plain markdown files living in `.cursor/agents/`, `.claude/agents/`, etc. They are **inert until you copy the platform folder into your project.**
 
 | Agent | File | What it does |
 |-------|------|-------------|
@@ -88,6 +88,9 @@ gald3r ships 9 specialized agents — each is a focused persona with a defined s
 | `g-agnt-verifier` | `g-agnt-verifier.md` | Standalone verification specialist. Operates identically to the code-reviewer but can be invoked explicitly on a single task or file set. Used when a dedicated reviewer session is warranted outside the normal `@g-go-review` flow. |
 | `g-agnt-project-initializer` | `g-agnt-project-initializer.md` | Bootstrap agent. Runs `@g-setup` end-to-end for a brand-new project: creates `.gald3r/.identity`, seeds all structural files, registers the project, and produces a starter `PROJECT.md` and `PLAN.md`. |
 | `g-agnt-pcac-coordinator` | `g-agnt-pcac-coordinator.md` | Cross-project coordinator. Manages the full PCAC topology — reads the INBOX, routes broadcasts from parent projects, handles requests from children, syncs contracts with siblings, and resolves conflicts before session work begins. |
+| `g-agnt-workspace-manager` | `g-agnt-workspace-manager.md` | Workspace-Control specialist. Manages the workspace manifest, member repo boundaries, marker bootstrap/remediation, and cross-repo clean gates for multi-repository orchestration. |
+| `g-agnt-marketing` | `g-agnt-marketing.md` | Growth and distribution agent. Orchestrates SEO, GEO (AI search visibility), content, community, and launch channel strategies for indie founders and small teams. |
+| `g-agnt-test` | `g-agnt-test.md` | Test plan manager. Creates and maintains fast (L1), comprehensive (L2), and regression (L3) test plans. Enforces C-013 (test plan maintenance), C-014 (fast gate), and C-015 (pre-release comprehensive gate). |
 
 ### Skill Packs
 
@@ -215,11 +218,11 @@ your-project/
 │   └── vault/                 # Local vault (if .vault_location = {LOCAL})
 │
 ├── .cursor/                   # Cursor IDE
-│   ├── agents/                # 9 gald3r agents
-│   ├── skills/                # 47 skills (g-skl-*)
-│   ├── commands/              # 76 @g-* commands
-│   ├── hooks/                 # 12 PowerShell automation hooks
-│   └── rules/                 # 12 always-apply rules
+│   ├── agents/                # 12 gald3r agents
+│   ├── skills/                # 195 skills (g-skl-*)
+│   ├── commands/              # 146 @g-* commands
+│   ├── hooks/                 # 17 PowerShell automation hooks
+│   └── rules/                 # 15 always-apply rules
 │
 ├── .claude/                   # Claude Code  (identical to .cursor/)
 ├── .agent/                    # Gemini        (identical, adapted format)
@@ -894,7 +897,30 @@ gald3r ships a swappable personality system. Each personality pack is a set of a
 | `bsg-megafan` | BSG reimagined — miniseries + 4 seasons + Razor + The Plan + Caprica + Blood & Chrome |
 ## Optional Skill Packs
 
-Beyond the built-in gald3r system skills, `skill_packs/` contains **optional, domain-specific packs** you install on demand. These are not loaded by default — nothing installs until you run the pack's `install.ps1`. Each pack deploys to all 5 IDE targets (`.cursor/`, `.claude/`, `.agent/`, `.codex/`, `.opencode/`).
+Beyond the 195 built-in gald3r system skills, `skill_packs/` contains **142 optional, domain-specific packs across 20 categories** you install on demand. These are not loaded by default — nothing installs until you run the pack's `install.ps1`. Each pack deploys to all IDE targets (`.cursor/`, `.claude/`, `.agent/`, `.codex/`, `.opencode/`).
+
+| Category | Packs | Description |
+|----------|-------|-------------|
+| `vercel` | 25 | AI SDK, AI Gateway, Next.js, Next Cache, Turbopack, Routing Middleware, Runtime Cache, Vercel Functions, Blob/Storage, Deployments/CI-CD, Chat SDK, Sandbox, Marketplace, Auth, next-forge, next-upgrade, shadcn, Vercel CLI, Vercel Agent, Vercel Workflow, env-vars, knowledge-update, react-best-practices, bootstrap, verification |
+| `cursor-team-kit` | 19 | compiler-errors-check, cli-control, ui-control, deslop, ci-fix, merge-conflicts-fix, pr-comments-get, ci-loop, pr-easy-review, branch-pr-new, pr-review-canvas, review-ship, smoke-tests-run, verify-this, review-weekly, work-summary, workflow-from-chats, receiving-code-review, requesting-code-review |
+| `superpowers` | 13 | brainstorming, agents-parallel-dispatch, plans-execute, branch-finish, code-review-receive, code-review-request, subagent-development, debug-systematic, tdd, git-worktrees, superpowers-guide, verify-completion, writing-plans, writing-skills |
+| `huggingface` | 10 | hf-cli, hf-dataset-viewer, hf-datasets, hf-evaluation, hf-jobs, hf-model-trainer, hf-paper-publisher, hf-tool-builder, hf-trackio, huggingface-gradio |
+| `user-skills` | 12 | babysit, canvas, hook-create, rule-create, skill-create, subagent-create, cursor-sdk, skills-migrate, shell, prs-split, statusline, cursor-settings-update |
+| `ai-video-tools` | 8 | (AI video generation and editing tools) |
+| `cloud-providers` | 16 | Cloudflare DNS, AWS, GCP, Azure, Hetzner, Oracle Cloud, and more |
+| `phantom-connect` | 7 | social-login-add, phantom-wallet-mcp, sol-transaction-send, browser-app-setup, react-app-setup, react-native-app-setup, message-sign |
+| `startup-tools` | 4 | (Startup toolchain and growth skills) |
+| `ai-ml-dev` | 3 | (AI/ML development and training skills) |
+| `ai-media` | 2 | Seedance 2.0, Higgsfield cinematic video generation |
+| `3d-graphics` | 5 | (3D modeling and rendering skills) |
+| `community` | 4 | (Community building and management skills) |
+| `content-creation` | 4 | (Content writing and marketing skills) |
+| `infrastructure` | 4 | MCP builder, project scaffolding, GitHub integration |
+| `blockchain` | 1 | (Blockchain/Web3 development) |
+| `create-plugin` | 2 | plugin-scaffold-create, review-plugin-submission |
+| `context7` | 1 | context7-mcp — live library docs via Context7 MCP |
+| `firecrawl` | 1 | Full web crawling and scraping with LLM-optimized output |
+| `continual-learning` | 1 | Continual learning patterns for agent sessions |
 
 ```powershell
 # Install a pack into the current project
