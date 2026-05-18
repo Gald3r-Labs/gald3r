@@ -9,7 +9,7 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-FSL--1.1--Apache-purple.svg" alt="License: FSL-1.1-Apache"></a>
-  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/version-1.4.0-green.svg" alt="Version"></a>
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/version-1.5.1-green.svg" alt="Version"></a>
   <a href="https://www.python.org"><img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python 3.10+"></a>
   <a href="https://github.com/wrm3/gald3r"><img src="https://img.shields.io/github/stars/wrm3/gald3r?style=social" alt="GitHub stars"></a>
 </p>
@@ -122,7 +122,7 @@ The staging layer between idea capture and the task backlog. Features are resear
 | `g-skl-features` | *(listed above — FEATURES.md and the full staging lifecycle)* |
 | `g-skl-recon-repo` | Deep repo analysis (replaces reverse-spec) — 5-pass: skeleton → module map → feature scan → deep dives → synthesis |
 | `g-skl-res-review` | Review a recon report and mark features approved/rejected before apply |
-| `g-skl-res-apply` | Apply approved recon findings into `.gald3r/features/` staging (replaces harvest-intake) |
+| `g-skl-res-apply` | Apply approved recon findings into `.gald3r/features/` staging |
 | `g-skl-res-deep` | Follow-up deep dive on a specific approved feature from a recon report |
 
 **🔗 Multi-Project Coordination Pack (PCAC)**
@@ -349,7 +349,7 @@ Ideas don't go straight to tasks. gald3r now provides a structured feature pipel
 
 @g-recon-repo https://github.com/some/project
 # 5-pass deep analysis: skeleton → module map → feature scan → deep dives → synthesis
-# Output: research/harvests/some__project/ for human review
+# Output: research/recon/some__project/ for human review
 
 @g-res-review some__project
 # Review findings — mark individual items approved/rejected
@@ -362,7 +362,7 @@ Ideas don't go straight to tasks. gald3r now provides a structured feature pipel
 
 | Phase | Description |
 |-------|-------------|
-| `staging` | Research phase — collecting approaches from harvest tools, discussions, external repos |
+| `staging` | Research phase — collecting approaches from external analysis, discussions, external repos |
 | `specced` | Formal requirements written — acceptance criteria defined |
 | `committed` | Active tasks created in TASKS.md — being coded |
 | `shipped` | Fully implemented and verified |
@@ -396,7 +396,7 @@ vault_location=/path/to/shared        # Shared vault: multiple projects contribu
 - Architectural decisions extracted from discussions via `@g-learn`
 - Platform documentation crawled for offline reference (Cursor, Claude, Gemini APIs, etc.)
 - YouTube transcripts and video research notes
-- Harvest reports from external repo analysis
+- Recon reports from external repo analysis
 
 ---
 
@@ -460,7 +460,7 @@ The staging layer between idea capture and the task backlog. Features collect ap
 | Skill | What it does |
 |-------|-------------|
 | `g-skl-features` | STAGE a new feature, COLLECT approaches, SPEC requirements, PROMOTE to tasks, RENAME slugs |
-| `g-skl-recon-repo` | Deep repo analysis — 5-pass: skeleton → module map → feature scan → deep dives → synthesis. Output in `research/harvests/{slug}/` — no `.gald3r/` writes until human approves |
+| `g-skl-recon-repo` | Deep repo analysis — 5-pass: skeleton → module map → feature scan → deep dives → synthesis. Output in `research/recon/{slug}/` — no `.gald3r/` writes until human approves |
 | `g-skl-recon-url` | One-time URL capture and analysis into `research/articles/` with deduplication |
 | `g-skl-recon-docs` | Platform doc recon with freshness tracking; stale docs surfaced at session start |
 | `g-skl-recon-yt` | YouTube transcript extraction via yt-dlp — offline, no API key, stored in `research/videos/` |
@@ -580,6 +580,10 @@ Headless, multi-agent, and terminal-first usage of each supported IDE. Covers se
 | `@g-subsystem-upd` | Update subsystem spec or Activity Log |
 | `@g-subsystem-del` | Delete a subsystem from the registry |
 | `@g-subsystem-graph` | Generate visual subsystem dependency graph |
+| `@g-prd-add` | Create a new Product Requirements Document (governance/audit artifact) |
+| `@g-prd-upd` | Update a PRD (blocked on released/superseded status) |
+| `@g-prd-del` | Archive a PRD (soft-delete; audit trail preserved) |
+| `@g-prd-revise` | Create v2 of a released PRD; atomically supersedes the original |
 
 **Feature Pipeline**
 
@@ -632,6 +636,8 @@ Headless, multi-agent, and terminal-first usage of each supported IDE. Covers se
 | Command | What it does |
 |---------|-------------|
 | `@g-code-review` | Structured review: security, performance, quality, architecture |
+| `@g-test` | Create or run test plans (L1 fast, L2 comprehensive, L3 regression) |
+| `@g-crr` | Clean-room rewrite pipeline: analyze external patterns then produce original implementation |
 | `@g-git-commit` | Conventional commit with task reference and agent footer |
 | `@g-git-sanity` | Pre-commit check: staged secrets, large files, sync drift |
 | `@g-git-push` | Pre-push gate: regular vs release validation |
@@ -663,6 +669,10 @@ Headless, multi-agent, and terminal-first usage of each supported IDE. Covers se
 | `@g-go-swarm` | Coordinate multi-agent swarm execution across the backlog |
 | `@g-go-code-swarm` | Multi-agent implementation swarm |
 | `@g-go-review-swarm` | Multi-agent review swarm |
+| `@g-go-go` | Autopilot loop - repeatedly calls `@g-go` until the backlog is clear or all remaining tasks are blocked |
+| `@g-mission` | Autonomous completion loop - runs `@g-go` iterations until your stated verifiable condition is met; evaluator self-checks each iteration; turn-budgeted |
+| `@g-juggernaut` | Alias for `@g-mission` — unstoppable forward momentum flavor |
+| `@g-kamikaze` | Alias for `@g-mission` — all-in commitment flavor |
 
 **Release Management**
 
@@ -673,6 +683,18 @@ Headless, multi-agent, and terminal-first usage of each supported IDE. Covers se
 | `@g-release-status` | Show current release status and progress |
 | `@g-release-accelerate` | Identify what can be fast-tracked to hit a release target |
 | `@g-release-publish` | Finalize and publish a release (CHANGELOG, VERSION, tag) |
+| `@g-ship` | Ship a versioned release from `[Unreleased]` CHANGELOG entries - bumps VERSION, tags, optionally publishes GitHub release |
+
+**Personality & Skill Pack Management**
+
+| Command | What it does |
+|---------|-------------|
+| `@g-pers-list` | List all available personality packs and show which is currently active |
+| `@g-pers-pick` | Swap the active personality pack - removes old rules/skills from all platform dirs, installs new ones |
+| `@g-skill-pack-list` | List available skill packs and per-skill install status across active platform dirs |
+| `@g-skill-pack-add` | Install a skill pack or individual skill to all active platform dirs |
+| `@g-skill-pack-del` | Remove a skill pack or individual skill from all active platform dirs |
+| `@g-skill-pack-save` | Save a user-evolved skill back into the pack with `_evolved` suffix to survive updates |
 
 **Maintenance**
 
@@ -736,7 +758,7 @@ project_id=<generated-uuid>
 project_name=my-project
 user_id=<your-user-id>
 user_name=YourName
-gald3r_version=1.4.0
+gald3r_version=1.5.1
 ```
 
 ### Vault Location
@@ -763,6 +785,33 @@ OPENAI_API_KEY=your-key-here
 
 ---
 
+
+---
+
+## Personality Packs
+
+gald3r ships a swappable personality system. Each personality pack is a set of always-apply rules that give agents a consistent character voice across every response. Use `@g-pers-pick` to swap personalities at any time.
+
+**personality-rules** — Always-apply character voice packs (install one at a time)
+
+| Personality | What it adds |
+|------------|-------------|
+| `silicon_valley_personality` | HBO Silicon Valley cast — Richard, Gilfoyle, Dinesh, Erlich, Jared, and supporting characters across every response |
+| `norse_personality` | Norse pantheon startup team — Odin, Thor, Loki, Sindri, Freyja, Tyr, the Norns, and the Nine Realms framing |
+| `star_wars_personality` | Star Wars characters — Luke, Vader, Yoda, droids, Mandalore, Andor-era, sequels cast |
+| `star_trek_personality` | Star Trek characters — Kirk, Spock, Picard, Janeway, Sisko, Burnham, Pike, Mariner |
+| `firefly_personality` | Firefly / Serenity crew — Mal, Zoe, Wash, Kaylee, Inara, Jayne, River, Simon, Book (Mandarin curses included) |
+| `bsg_personality` | Battlestar Galactica reimagined — Adama, Roslin, Starbuck, Tigh, Six, Cavil, the Hybrid ("so say we all") |
+
+**fandom-skills** — Encyclopedic mega-fan reference (pairs with personality-rules for deep canon depth)
+
+| Skill | What it covers |
+|-------|---------------|
+| `silicon-valley-superfan` | Complete HBO Silicon Valley episode guide, character arcs, and technical references |
+| `star-trek-megafan` | All Trek series and films: TOS / TNG / DS9 / VOY / ENT / DIS / PIC / SNW / LDS / PRO |
+| `star-wars-megafan` | Star Wars canon — films, Mandalorian, Andor, Clone Wars, comics, expanded universe |
+| `firefly-serenity-megafan` | Complete Firefly + Serenity 'verse (14 episodes + film + comics) |
+| `bsg-megafan` | BSG reimagined — miniseries + 4 seasons + Razor + The Plan + Caprica + Blood & Chrome |
 ## Optional Skill Packs
 
 Beyond the built-in gald3r system skills, `skill_packs/` contains **optional, domain-specific packs** you install on demand. These are not loaded by default — nothing installs until you run the pack's `install.ps1`. Each pack deploys to all 5 IDE targets (`.cursor/`, `.claude/`, `.agent/`, `.codex/`, `.opencode/`).
@@ -779,6 +828,41 @@ To uninstall: delete the skill directories listed in the pack's `PACK.md`.
 
 ---
 
+
+---
+
+**🤖 ai-media** - AI video generation via Seedance 2.0 and Higgsfield cinematic models
+
+| Skill | What it does |
+|-------|-------------|
+| `skl-seedance` | Seedance 2.0 text-to-video and image-to-video via fal.ai, VolcEngine, or Replicate |
+| `skl-higgsfield` | Higgsfield DoP cinematic image-to-video with NSFW handling and async status polling |
+
+---
+
+**☁️ cloud-providers** - Cloud infrastructure management across 8 major providers
+
+| Skill | What it does |
+|-------|-------------|
+| `skl-cloudflare-dns` | DNS zones, records, SSL/TLS, wrangler CLI, bulk operations |
+| `skl-cloudflare-workers` | Workers, Pages, KV/D1/R2/Durable Objects, Cron triggers |
+| `skl-cloudflare-tunnels` | Tunnels, Zero Trust access policies, WARP, Docker integration |
+| `skl-aws-iam` | IAM users/roles/policies, STS, Secrets Manager, 5 policy templates |
+| `skl-aws-compute` | EC2, Lambda, ECS, App Runner, CDK patterns |
+| `skl-aws-storage` | S3, RDS, DynamoDB, EFS, Backup with bucket policy templates |
+| `skl-aws-networking` | VPC (3-tier template), Route 53, CloudFront, ALB, VPN, peering |
+| `skl-hetzner` | VPS, dedicated, Object Storage, hcloud CLI, Docker cloud-init |
+| `skl-digitalocean` | Droplets, App Platform, managed DBs, DOKS, Spaces |
+
+---
+
+**💬 community** - Community management across Discord, Telegram, and Slack
+
+| Skill | What it does |
+|-------|-------------|
+| `skl-discord` | Discord server setup, bots, moderation, growth playbook, analytics, GitHub/CI webhooks |
+| `skl-telegram` | Telegram bots, channels, groups, moderation, notifications, growth, Mini Apps |
+| `skl-slack` | Slack workspace management, app/bot dev (Bolt SDK), Block Kit UI, Workflow Builder, webhooks |
 **🎬 ai-video-tools** — AI video generation, avatar creation, animated GIFs, explainer production, and multi-platform ad specs
 
 | Skill | What it does |
