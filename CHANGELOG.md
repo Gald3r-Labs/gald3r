@@ -9,6 +9,15 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+### Changed
+### Fixed
+### Removed
+
+---
+
+## [1.5.1] - 2026-05-18 (README sync, personality packs, new commands, recon terminology)
+
+### Added
 
 - `docs/PLUGINS.md`: plugin author guide covering skill pack structure, distribution, naming guidelines, and licensing options for third-party extensions.
 - README "Plugins & Skill Packs" section with naming guideline and licensing clarification (plugins are separate works, any license allowed).
