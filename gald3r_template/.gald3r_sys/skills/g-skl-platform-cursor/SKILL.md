@@ -1,0 +1,431 @@
+---
+name: g-skl-platform-cursor
+description: Authoritative reference for Cursor IDE customization in gald3r projects. Covers .cursor/ folder layout, all supported primitives (rules/skills/agents/commands/hooks/MCP), parity tiers, vault doc location, crawl freshness gate, and install verification.
+crawl_max_age_days: 7
+vault_doc_path: research/platforms/cursor/
+vault_docs_url: https://docs.cursor.com
+---
+
+# g-skl-platform-cursor
+
+Activate for: setting up Cursor in a gald3r project, authoring rules/skills/agents/commands/hooks, understanding .cursor/ structure, verifying Cursor parity, or answering questions about Cursor's capabilities.
+
+---
+
+## Crawl Freshness Gate
+
+```
+1. Read {vault_location}/.crawl_schedule.json
+2. Find entry for: https://docs.cursor.com
+3. If entry missing OR (today - last_crawl) > 7 days:
+   → TRIGGER g-skl-recon-docs with URL https://docs.cursor.com
+   → READ new vault notes at research/platforms/cursor/
+   → UPDATE sections: "Platform Overview", "Supported Primitives", "Common Pitfalls"
+4. Else: proceed with current content
+```
+
+**Self-Update Procedure**: After a fresh crawl, update sections 1, 3, and 9 of this SKILL.md using StrReplace on the changed content.
+
+---
+
+## 1. Platform Overview
+
+**Cursor** is an AI-first IDE built on VS Code, with deep agent mode integration. It runs locally as a desktop application.
+
+- **Agent mode**: Background agents that autonomously complete multi-step tasks
+- **Inline completions**: Tab-to-accept AI suggestions
+- **Chat**: Sidebar chat with @ references to files, symbols, docs, and skills
+- **Rules**: Auto-applied context injected into every session
+- **Skills**: On-demand specialist procedures (`.cursor/rules/` or SKILL.md files)
+- **MCP**: MCP servers accessible via Cursor's settings or `.cursor/mcp.json`
+
+**gald3r target tier**: Canonical source. All gald3r features originate in `.cursor/` and propagate to other platforms.
+
+---
+
+## 2. Folder Layout
+
+```
+.cursor/
+├── rules/                    ← Always-apply rules (.mdc format, loaded every session)
+│   └── g-rl-*.mdc            ← Numbered rules (00-always, 01-docs, 25-session-start, etc.)
+├── skills/                   ← Agent skills (auto-discovered by Cursor)
+│   └── g-skl-*/SKILL.md      ← Each skill in its own folder
+├── agents/                   ← Specialist agent definitions (markdown)
+│   └── g-agnt-*.md
+├── commands/                 ← @g-* slash commands (referenced via @ in chat)
+│   └── g-*.md
+├── hooks/                    ← PowerShell automation hooks
+│   ├── hooks.json            ← (NOTE: Cursor uses hooks.json in .cursor/hooks/ — NOT used; hooks run via rules or manual)
+│   └── g-hk-*.ps1
+└── mcp.json                  ← MCP server configuration (or in Cursor settings)
+```
+
+**Key**: `.mdc` extension is Cursor-specific for rules. Other platforms use `.md`.
+
+---
+
+## 3. Supported Primitives
+
+| Primitive | Location | Format | Auto-loaded? |
+|---|---|---|---|
+| Always-apply rules | `.cursor/rules/g-rl-*.mdc` | Markdown + frontmatter | ✅ Every session |
+| Skills | `.cursor/skills/<name>/SKILL.md` | Markdown + frontmatter | ✅ When relevant |
+| Agents | `.cursor/agents/g-agnt-*.md` | Markdown | Manual select |
+| Commands | `.cursor/commands/g-*.md` | Markdown | Via `@command-name` |
+| MCP servers | `.cursor/mcp.json` or Cursor settings | JSON | ✅ Auto-connect |
+| Hooks | No native hooks.json — PowerShell scripts run manually or via rules | PS1 | Manual |
+
+---
+
+## 3a. Hook capabilities (T600)
+
+T600 / `feat-106` extends gald3r's hook layer with four contract-level features harvested from REDACTED-PROJECT, plus a 6-event worktree lifecycle. **Design-of-record:** [`docs/20260506_000000_Cursor_T600_HOOK_SYSTEM_EXTENSIONS.md`](../../../docs/20260506_000000_Cursor_T600_HOOK_SYSTEM_EXTENSIONS.md).
+
+| Feature | What it adds | Reference |
+|---|---|---|
+| **HTTP hook type (B-2)** | `hooks.json` entries with `"type": "http"`, `"url"`, `"allow_hosts"`, `"timeout_ms"`, `"auth_header_env"`. Reference caller: `.claude/hooks/g-hk-http-event.ps1` (parity-propagation to `.cursor/hooks/` is a follow-up). | Design doc §1 |
+| **Glob tool matcher (B-3)** | `pre_tool_use` / `post_tool_use` entries gain `"tool_match": ["bash_*", "file_*"]`. Helper: `Test-HookToolMatch` in `scripts/gald3r_hook_helpers.ps1`. | Design doc §2 |
+| **`block_on_failure` (B-4)** | Hook entries gain `"block_on_failure": true` to abort the triggering operation on failure. Override: `$env:GALD3R_HOOK_BYPASS=1`. | Design doc §3 |
+| **Shell-safe arg substitution (B-6)** | `Convert-HookArgSafe -Value $x -Shell powershell\|bash` in `scripts/gald3r_hook_helpers.ps1` produces single-quoted literals safe for command substitution. | Design doc §4 |
+
+### 6-event worktree lifecycle (D-6)
+
+`scripts/gald3r_worktree.ps1 -Action Event -Event <name>` fires per-worktree hooks at the canonical 6 lifecycle points: `claim`, `pre-impl`, `post-impl`, `pre-review`, `post-review`, `cleanup`. Hook scripts live at `<worktree>/.gald3r-worktree-hooks/<event>.ps1` (worktree-local) and/or `.gald3r/hooks/worktree/<event>.ps1` (repo-wide). Both fire if both exist; failure honors `-BlockOnFailure`.
+
+Lifecycle stamps are written to each worktree's `.gald3r-worktree.json` under a new `lifecycle:` map keyed by event name (and `<event>_<bucket>` in swarm flows).
+
+### Reference helpers
+
+- `scripts/gald3r_hook_helpers.ps1` — `Test-HookToolMatch`, `Convert-HookArgSafe`, `Read-HookEventEnvelope`. Run with `-RunSelfTest` to verify behavior.
+- `.claude/hooks/g-hk-http-event.ps1` — drop-in HTTP hook caller (host allow-list, HTTPS-for-non-loopback, timeout cap, bearer auth via env var). Cursor parity copy is a deferred follow-up.
+- `.cursor/hooks/g-hk-pre-commit.ps1` — already speaks BLOCK/WARN via exit codes; will honor `$env:GALD3R_HOOK_BYPASS=1` once the T600 patch is propagated from `.claude/hooks/`.
+
+---
+
+## 4. gald3r Parity Tier
+
+Cursor is the **canonical source** for gald3r. All content originates here.
+
+| Content | Slim | Full | Adv |
+|---|---|---|---|
+| rules/ (8 always-apply) | ✅ | ✅ | ✅ |
+| skills/ (core gald3r) | ✅ | ✅ | ✅ |
+| agents/ | ✅ | ✅ | ✅ |
+| commands/ | ✅ | ✅ | ✅ |
+| hooks/ | ✅ | ✅ | ✅ |
+
+Run `.\scripts\platform_parity_sync.ps1` to propagate changes to all 11 other targets.
+
+---
+
+## 5. Vault Doc Location
+
+```
+{vault_location}/research/platforms/cursor/
+```
+
+Crawl entry point: `https://docs.cursor.com`
+
+---
+
+## 6. Crawl Freshness Gate (Detail)
+
+`.crawl_schedule.json` entry:
+```json
+{
+  "https://docs.cursor.com": {
+    "last_crawl": "YYYY-MM-DD",
+    "vault_path": "research/platforms/cursor/",
+    "max_age_days": 7
+  }
+}
+```
+
+---
+
+## 7. Self-Update Procedure
+
+After each fresh crawl: read `research/platforms/cursor/*.md`, update sections 1, 3, and 9 with any changed capabilities or file paths.
+
+---
+
+## 8. Key URLs
+
+| Purpose | URL |
+|---|---|
+| Cursor docs (primary) | https://docs.cursor.com |
+| Rules documentation | https://docs.cursor.com/context/rules |
+| MCP documentation | https://docs.cursor.com/context/model-context-protocol |
+| Agent mode | https://docs.cursor.com/agent |
+
+---
+
+## 9. Common Pitfalls
+
+1. **Rules must use `.mdc` extension** — Cursor only auto-loads rules with `.mdc`. Other platforms use `.md`. The parity sync handles extension mapping automatically.
+2. **Skills folder structure** — Each skill must be in its own subfolder: `.cursor/skills/my-skill/SKILL.md`. A loose `.md` file in `skills/` root is NOT picked up.
+3. **`.cursor/` is the canonical source** — When editing gald3r framework files, always edit `.cursor/` first, then run `platform_parity_sync.ps1 -Sync` to propagate. Never edit gald3r_template_full files directly.
+4. **MCP timeout** — Default Cursor MCP timeout is 60s. For long-running tools, set `mcp.server.timeout: 600000` in Cursor settings.json.
+5. **Proprietary skills stay in `.cursor/` only** — Never propagate business-specific or proprietary skills to `G:/gald3r_ecosystem/gald3r_template_full`. C-009 exemption applies.
+
+---
+
+## 11. Hook Authoring — Idempotency Guard Pattern (T839)
+
+Any hook that should only fire once per session (session-start, vault-reindex, vault-migrate, wrkspc-manifest-check) MUST include an idempotency guard at the top:
+
+```powershell
+# ── Idempotency guard ─────────────────────────────────────────────────────────
+if (-not $ForceRun -and $env:GALD3R_HK_{HOOKNAME}_APPLIED -eq "1") {
+    Write-Host "[SKIP] g-hk-{hookname} already applied this session. Pass -ForceRun to override."
+    exit 0
+}
+$env:GALD3R_HK_{HOOKNAME}_APPLIED = "1"
+```
+
+**Naming**: replace `{HOOKNAME}` with the script name uppercased with underscores:
+- `g-hk-session-start.ps1` → `GALD3R_HK_SESSION_START_APPLIED`
+- `g-hk-vault-reindex.ps1` → `GALD3R_HK_VAULT_REINDEX_APPLIED`
+- `g-hk-vault-migrate.ps1` → `GALD3R_HK_VAULT_MIGRATE_APPLIED`
+- `g-hk-wrkspc-manifest-check.ps1` → `GALD3R_HK_WRKSPC_MANIFEST_CHECK_APPLIED`
+
+**Exclusions** — hooks that MUST run every time are excluded from this guard:
+- `g-hk-pcac-inbox-check.ps1` — explicitly re-callable for conflict resolution
+- `g-hk-pre-commit.ps1` — must validate every commit
+- `g-hk-validate-shell.ps1` — must validate every shell command
+- `g-hk-pre-push.ps1` — must validate every push
+
+**Always add `-ForceRun` param** so callers can bypass the guard when they explicitly need a re-run.
+
+---
+
+## 11a. Hook Companion `hook.md` Pattern (T1171)
+
+Every gald3r hook script (`.cursor/hooks/g-hk-*.ps1`) MUST have a companion `hook.md` self-description file at the same path. Pattern harvested from OpenClaw Hooks Crash Course (V18 — Bdr7afGhh4I, 2026-05-13).
+
+### Why
+
+A `hook.md` companion is both **human documentation** AND a **runtime context payload**. When a hook fires under `preToolUse` (or another event), the harness SHOULD inject the matching `hook.md` content as `additional_context` so the agent knows what the hook just did and why a tool call was blocked / allowed / rewritten. Without this, agents see a deny verdict with no explanation and waste turns re-trying the same call.
+
+### Canonical 5-section template
+
+```markdown
+# Hook: <hook-name>
+
+## Fires On
+<event description: trigger, matcher, idempotency story>
+
+## What It Does
+<2-3 sentence description of the hook's job>
+
+## Side Effects
+<files written, processes run, state changed, allow / deny verdicts>
+
+## Related Tasks
+<T### IDs that introduced or modify this hook>
+```
+
+Target length: ~30-60 lines per `hook.md`. Lean by design — full design docs live in `docs/<timestamp>_*_HOOK_*.md`. The companion is for runtime context, not encyclopedic reference.
+
+### Authoring
+
+- **Scaffolding**: use `@g-hook-create <hook-name> <event>` to create the `.ps1` + `hook.md` pair atomically.
+- **Source of truth**: hook description lives in `hook.md`. `hooks.json` is for wiring only — do not duplicate the description.
+- **Mirror policy**: same parity rules as the `.ps1`. The canonical copy lives in `.cursor/hooks/`; mirror to `.claude/hooks/`, `.agent/hooks/`, `.codex/hooks/`, `.opencode/hooks/` for every IDE that ships the corresponding `.ps1`. md5-verify after each propagation.
+
+### Wiring in `hooks.json`
+
+Each hook entry SHOULD reference its companion via a `"_hook_md"` field (informational, ignored by current Cursor parsers but documents the contract for the harness):
+
+```json
+{
+  "command": "...powershell.exe ... -File .cursor/hooks/g-hk-session-start.ps1",
+  "_hook_md": ".cursor/hooks/g-hk-session-start.md"
+}
+```
+
+Top-level `_doc` in `hooks.json` documents the contract for new contributors.
+
+---
+
+## 10. Install Verification Checklist
+
+```
+✅ .cursor/rules/ has 8+ g-rl-*.mdc always-apply files
+✅ .cursor/skills/ has gald3r core skills (g-skl-tasks, g-skl-bugs, g-skl-plan, etc.)
+✅ .cursor/agents/ has gald3r agent files
+✅ .cursor/commands/ has g-* command files
+✅ .cursor/hooks/ has session-start and other PS1 hooks
+✅ platform_parity_sync.ps1 reports 0 gaps
+✅ Cursor > Settings > MCP shows configured servers (if using MCP)
+```
+
+---
+
+## 11. Skill-as-Installer Pattern
+
+Skills that wrap paid or OAuth-gated MCP services MUST include a `## Installation` section the agent executes automatically on first use — replacing the README that nobody reads.
+
+### Three-state algorithm
+
+```
+1. ALREADY CONFIGURED — check .cursor/mcp.json for the server key → if present, skip
+2. TOKEN / KEY FOUND  — check env vars / .env for SERVICE_API_KEY → write MCP entry, proceed
+3. NOT SET UP        — open browser for OAuth or key retrieval, write entry on return
+```
+
+**Browser open (Windows / macOS):**
+```powershell
+# Windows (Shell tool)
+Start-Process "https://service.com/api-keys"
+# macOS / Linux
+# open "https://service.com/api-keys"
+```
+
+### Cost Confirmation gate (credit-billed services)
+
+Before any generation / consumption call, the agent MUST:
+1. Quote: model + settings, estimated cost, current balance, projected balance after
+2. Wait for explicit "go" / "yes" / "do it"
+3. Never auto-proceed — even in background/auto mode
+
+### `## Installation` template for new skills
+
+```markdown
+## Installation
+
+Requires [ServiceName] [account / subscription tier].
+
+**Agent-guided setup (runs automatically on first use):**
+
+1. **Configured?** — check `.cursor/mcp.json` for `"service-name"` → skip if present
+2. **Key found?** — check env `SERVICE_API_KEY` → write MCP entry, continue
+3. **Not set up?** — `Start-Process "https://service.com/api-keys"` → paste key → write entry
+
+> **Cost gate (if credit-billed):** quote cost + balance before every billable call; wait for "go".
+```
+
+See `higgsfield` skill for the reference implementation.
+
+---
+
+## 12. Skill Cost-Guard Pattern (T844)
+
+Skills that call paid external APIs MUST surface a cost estimate and ask for explicit user confirmation before executing any billable operation.
+
+### Template
+
+```markdown
+> "About to [describe operation] using [Service/Model] — estimated cost: [~N credits / $X].
+> Continue? (**y** = proceed · **n** = cancel · **options** = see cheaper alternatives)"
+```
+
+Wait for explicit confirmation. If the user hesitates → offer cheaper alternatives (lower resolution, faster model, shorter duration, smaller batch).
+
+### Rules
+
+- Show the estimate BEFORE the API call — never after
+- If the API supports balance queries, include projected remaining balance
+- On cancel: confirm "Cancelled — no credits used"
+- The negotiate-down flow MUST offer at least one cheaper alternative
+
+See `skill-create` SKILL.md `## Cost-Guard Pattern` for the full authoring template.
+
+---
+
+## Zero-Cost Provider Options
+
+### Nvidia NIM Free Tier
+
+[Nvidia NIM](https://build.nvidia.com) offers a **1000 free API credits/month** with no credit card required — the best free option for gald3r users who want real cloud inference beyond Ollama.
+
+| Detail | Value |
+|--------|-------|
+| Signup | https://build.nvidia.com |
+| Free credits | 1000/month (no CC required) |
+| Best for | reviewer, qa_engineer, task_manager roles |
+| Not recommended for | primary orchestrator on heavy workloads |
+| OpenRouter access | Use `provider: openrouter, model: nvidia/...` |
+
+**Compatible models for gald3r roles**:
+- `nimitron` — good for code review, structured output
+- `glm4` — strong reasoning, suited for task management and QA
+
+**Provider fallback config** (reference for AGENT_CONFIG.md `provider_fallback_chain`):
+```yaml
+reviewer:
+  - provider: nvidia-nim
+    model: nimitron
+    tier: free
+  - provider: ollama
+    model: qwen2.5
+    tier: offline
+```
+
+> Credit note: 1000 credits/month is sufficient for ~200-400 reviewer calls. Budget-conscious teams should reserve NIM for the reviewer/QA roles and use Ollama for task_manager.
+
+---
+
+## Local Model Inference Setup
+
+For agents running on local hardware. Covers the two best local inference stacks.
+
+### Mac (Apple Silicon) — OMLX by June Kim
+
+[OMLX](https://github.com/junkim100/omlx) (13,000+ stars, Apache 2.0) provides tiered KV cache:
+- **Hot cache**: RAM (instant)
+- **Cold cache**: SSD disk (1-2s restore vs 30-90s cold)
+
+Context restore 15-45× faster than standard llama.cpp. OpenAI/Anthropic API compatible.
+
+```bash
+# Install via Homebrew
+brew install omlx
+
+# Start server (OpenAI-compatible on localhost:11434)
+omlx serve --model Qwen3-27B-Q4KM
+
+# Configure in AGENT_CONFIG.md
+provider_fallback_chain:
+  code_generation:
+    - provider: omlx
+      model: Qwen3-27B-Q4KM
+      tier: offline
+```
+
+### Windows/Linux — ik_llama.cpp (MTP fork)
+
+[ik_llama.cpp](https://github.com/ikawrakow/ik_llama.cpp) is a performance-focused llama.cpp fork with **Multi-Token Prediction (MTP)** support. 3 CLI flags unlock ~20% speed boost.
+
+```bash
+# Build (same as llama.cpp)
+git clone https://github.com/ikawrakow/ik_llama.cpp && cd ik_llama.cpp
+cmake -B build -DGGML_CUDA=ON && cmake --build build -j$(nproc)
+
+# Serve with MTP flags (20% speed boost on Qwen3)
+./build/bin/llama-server \
+  --model Qwen3-27B-Q4KM.gguf \
+  --mtp \
+  --draft-max 1 \
+  --draft-p-min 0 \
+  --port 11434
+```
+
+> **Note**: ik_llama.cpp is a fork; main features are pending upstream PR to mainline llama.cpp. Check [llama.cpp releases](https://github.com/ggml-org/llama.cpp/releases) first — MTP may have shipped in mainline since this was documented.
+
+### Recommended Model
+
+**Qwen3-27B Q4KM** — best balance for 16GB+ VRAM systems:
+- Strong code generation and review quality
+- 4-bit quantization fits in 16GB VRAM with overhead
+- Fast enough for interactive use with MTP
+
+### Ollama (Quick Start)
+
+```bash
+# Fastest setup path for both Mac and Windows/Linux
+ollama pull qwen2.5:14b  # 14B model for 8GB VRAM
+ollama pull qwen2.5:32b  # 32B model for 20GB+ VRAM
+# Serves OpenAI-compatible API on localhost:11434 by default
+```

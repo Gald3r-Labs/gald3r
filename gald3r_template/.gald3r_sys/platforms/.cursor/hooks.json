@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "_doc": {
+    "hook_md_contract": "T1171: Each hook script ('.ps1') has a companion '.md' self-description file at the same path (e.g. '.cursor/hooks/g-hk-session-start.md' for '.cursor/hooks/g-hk-session-start.ps1'). The hook.md uses the 5-section template (# Hook / ## Fires On / ## What It Does / ## Side Effects / ## Related Tasks) defined by '@g-hook-create'. The runtime contract is: when a hook fires under 'preToolUse' (or any other event), the harness SHOULD read the matching hook.md and inject its content as 'additional_context' so the agent knows what the hook just did or why a tool call was blocked. See 'skills/g-skl-platform-cursor/SKILL.md' §3a and §11.",
+    "hook_md_authoring": "Use '@g-hook-create <hook-name> <event>' to scaffold a new pair atomically. See 'commands/g-hook-create.md'.",
+    "hook_md_source_of_truth": "Source the human-facing hook description from the 'hook.md' file; this 'hooks.json' is for wiring only. Do not duplicate the description here."
+  },
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-session-start.ps1",
+        "_hook_md": ".cursor/hooks/g-hk-session-start.md"
+      }
+    ],
+    "stop": [
+      {
+        "command": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-agent-complete.ps1",
+        "_hook_md": ".cursor/hooks/g-hk-agent-complete.md"
+      }
+    ],
+    "beforeShellExecution": [
+      {
+        "command": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-validate-shell.ps1",
+        "_hook_md": ".cursor/hooks/g-hk-validate-shell.md"
+      }
+    ],
+    "preToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Patch|ApplyPatch|str_replace_editor",
+        "command": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-pre-tool-call-gald3r-guard.ps1",
+        "_hook_md": ".cursor/hooks/g-hk-pre-tool-call-gald3r-guard.md"
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Patch|ApplyPatch|str_replace_editor",
+        "command": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-pre-tool-call-prd-freeze.ps1",
+        "_hook_md": ".cursor/hooks/g-hk-pre-tool-call-prd-freeze.md"
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Patch|ApplyPatch|str_replace_editor",
+        "command": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-pre-tool-call-member-gald3r-guard.ps1",
+        "_hook_md": ".cursor/hooks/g-hk-pre-tool-call-member-gald3r-guard.md"
+      }
+    ]
+  }
+}
