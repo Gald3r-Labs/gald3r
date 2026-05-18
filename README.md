@@ -235,35 +235,101 @@ your-project/
 
 ## Quick Start
 
-```bash
-# Clone the gald3r template
-git clone https://github.com/wrm3/gald3r.git
+### New Installation
 
-# Copy framework into your project
-cd your-project
-cp -r ../gald3r/.cursor    .cursor
-cp -r ../gald3r/.claude    .claude
-cp -r ../gald3r/.agent     .agent
-cp -r ../gald3r/.codex     .codex
-cp -r ../gald3r/.opencode  .opencode
-cp -r ../gald3r/.gald3r     .gald3r
-cp ../gald3r/AGENTS.md     AGENTS.md
-cp ../gald3r/CLAUDE.md     CLAUDE.md
-cp ../gald3r/GEMINI.md     GEMINI.md
+**Step 1 — Clone the template for your tier:**
+
+```powershell
+# Advanced (full framework + skill & personality packs, always up-to-date)
+git clone https://github.com/wrm3/gald3r_template_adv.git
+
+# Full (core framework + installable skill & personality packs)
+git clone https://github.com/wrm3/gald3r_template_full.git
+
+# Slim (just the core gald3r system — no optional packs)
+git clone https://github.com/wrm3/gald3r_template_slim.git
+# or: git clone https://github.com/wrm3/gald3r.git
 ```
 
-On Windows: use `robocopy` or File Explorer. Each project gets its own `.gald3r/` — never share task data between projects.
+**Step 2 — Run the installer:**
 
-Open your project in Cursor (or any supported IDE) and run:
+```powershell
+cd gald3r_template_adv   # (or whichever template you cloned)
+.\setup_gald3r_project.ps1
+```
+
+The interactive installer will:
+- Ask for your target project path
+- Detect if this is a new project or an existing gald3r install (v1 / v2 / v3 — auto-migrates)
+- Let you pick which AI platforms to enable (see supported platforms below)
+- Deploy `.gald3r_sys/` — the canonical read-only framework payload
+- Initialize `.gald3r/` project state (`TASKS.md`, `PROJECT.md`, `PLAN.md`, etc.)
+- Merge `CLAUDE.md`, `AGENTS.md`, `.gitignore` using section markers (never overwrites your content)
+- Deploy platform dirs (`.cursor/`, `.claude/`, `.agent/`, etc.) with skills, agents, commands, and rules
+- Copy `setup_gald3r_project.ps1` into your project for future updates and session-start hooks
+
+**Non-interactive install:**
+```powershell
+# Install specific platforms
+.\setup_gald3r_project.ps1 -TargetPath "C:\MyProject" -Platforms cursor,claude
+
+# Preview without writing anything
+.\setup_gald3r_project.ps1 -TargetPath "C:\MyProject" -Platforms all -DryRun
+```
+
+**Step 3 — Initialize your project:**
+
+Open your project in your preferred IDE, start a new session, and run:
 
 ```
-@g-setup
+@g-setup     # Cursor
+/g-setup     # Claude Code
 ```
 
-That creates your `.gald3r/.identity`, seeds the structural files, and registers the project. You're ready.
+This creates your `.gald3r/.identity`, seeds structural files, and registers the project. You're ready.
 
 ---
 
+### Updating an Existing Install
+
+If you already have gald3r installed (any version), the installer handles migration automatically:
+
+```powershell
+# From the template folder — run against your existing project
+.\setup_gald3r_project.ps1 -TargetPath "C:\YourExistingProject" -Platforms cursor,claude
+
+# Or from inside your already-installed project (regenerate platform dirs only)
+.\setup_gald3r_project.ps1 -Platform auto    # auto-detect the running IDE
+.\setup_gald3r_project.ps1 -Platform all     # regenerate all installed platforms
+.\setup_gald3r_project.ps1 -Platform all -Clean  # wipe and regenerate
+```
+
+The update mode **never touches** your `README.md`, `LICENSE`, or `CHANGELOG.md`, **never overwrites** your non-gald3r skills and agents, and **safely updates** all `g-` prefixed framework files.
+
+---
+
+### Supported AI Platforms (16)
+
+| Platform | Prefix | Capabilities |
+|---|---|---|
+| Cursor IDE | `.cursor/` | Rules (`.mdc`), skills, agents, commands |
+| Claude Code | `.claude/` | Rules (`.md`), skills, agents, commands, hooks |
+| Gemini / Antigravity | `.agent/` | Skills, agents, commands |
+| OpenAI Codex CLI | `.codex/` | Skills, agents, commands |
+| OpenCode (sst.dev) | `.opencode/` | Skills, agents, commands |
+| GitHub Copilot | `.copilot/` | Commands (Phase 1) |
+| Windsurf | `.windsurf/` | Skills, agents, commands |
+| Cline | `.cline/` | Skills, agents, commands |
+| Roo Code | `.roo-code/` | Skills, agents, commands |
+| Kiro | `.kiro/` | Skills, agents, commands |
+| Augment Code | `.augment/` | Skills, agents, commands |
+| Aider | `.aider/` | Skills, agents, commands |
+| Goose (Block) | `.goose/` | Skills, agents, commands |
+| Warp Terminal | `.warp/` | Skills, agents, commands |
+| OpenHands | `.openhands/` | Skills, agents, commands |
+| Replit Agent | `.replit/` | Skills, agents, commands |
+
+---
 ## Key Features
 
 ### Multi-Project Orchestration (PCAC)
