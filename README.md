@@ -248,20 +248,25 @@ git clone https://github.com/wrm3/gald3r_template_full.git
 
 # Slim (just the core gald3r system — no optional packs)
 git clone https://github.com/wrm3/gald3r_template_slim.git
-# or: git clone https://github.com/wrm3/gald3r.git
 ```
 
 **Step 2 — Run the installer:**
 
+> **Windows users:** Do not double-click the `.ps1` file — Windows will ask "Open with what?". Instead, open PowerShell and run:
+
 ```powershell
-cd gald3r_template_adv   # (or whichever template you cloned)
+# Interactive — prompts for project path and platform selection
+powershell -ExecutionPolicy Bypass -File setup_gald3r_project.ps1
+
+# Or if you are already in the cloned template folder in PowerShell:
+Set-ExecutionPolicy -Scope Process Bypass
 .\setup_gald3r_project.ps1
 ```
 
 The interactive installer will:
 - Ask for your target project path
 - Detect if this is a new project or an existing gald3r install (v1 / v2 / v3 — auto-migrates)
-- Let you pick which AI platforms to enable (see supported platforms below)
+- Let you pick which AI platforms to enable (see the full platform list below)
 - Deploy `.gald3r_sys/` — the canonical read-only framework payload
 - Initialize `.gald3r/` project state (`TASKS.md`, `PROJECT.md`, `PLAN.md`, etc.)
 - Merge `CLAUDE.md`, `AGENTS.md`, `.gitignore` using section markers (never overwrites your content)
@@ -269,12 +274,13 @@ The interactive installer will:
 - Copy `setup_gald3r_project.ps1` into your project for future updates and session-start hooks
 
 **Non-interactive install:**
+
 ```powershell
-# Install specific platforms
-.\setup_gald3r_project.ps1 -TargetPath "C:\MyProject" -Platforms cursor,claude
+# Install specific platforms into a target project
+powershell -ExecutionPolicy Bypass -File setup_gald3r_project.ps1 -TargetPath "C:\MyProject" -Platforms cursor,claude
 
 # Preview without writing anything
-.\setup_gald3r_project.ps1 -TargetPath "C:\MyProject" -Platforms all -DryRun
+powershell -ExecutionPolicy Bypass -File setup_gald3r_project.ps1 -TargetPath "C:\MyProject" -Platforms all -DryRun
 ```
 
 **Step 3 — Initialize your project:**
@@ -286,7 +292,7 @@ Open your project in your preferred IDE, start a new session, and run:
 /g-setup     # Claude Code
 ```
 
-This creates your `.gald3r/.identity`, seeds structural files, and registers the project. You're ready.
+This creates your `.gald3r/.identity`, seeds structural files, and registers the project. You are ready.
 
 ---
 
@@ -296,38 +302,46 @@ If you already have gald3r installed (any version), the installer handles migrat
 
 ```powershell
 # From the template folder — run against your existing project
-.\setup_gald3r_project.ps1 -TargetPath "C:\YourExistingProject" -Platforms cursor,claude
+powershell -ExecutionPolicy Bypass -File setup_gald3r_project.ps1 -TargetPath "C:\YourExistingProject" -Platforms cursor,claude
 
-# Or from inside your already-installed project (regenerate platform dirs only)
-.\setup_gald3r_project.ps1 -Platform auto    # auto-detect the running IDE
-.\setup_gald3r_project.ps1 -Platform all     # regenerate all installed platforms
-.\setup_gald3r_project.ps1 -Platform all -Clean  # wipe and regenerate
+# Or from inside your already-installed project (regenerate platform dirs only):
+powershell -ExecutionPolicy Bypass -File setup_gald3r_project.ps1 -Platform auto    # auto-detect running IDE
+powershell -ExecutionPolicy Bypass -File setup_gald3r_project.ps1 -Platform all     # regenerate all installed platforms
+powershell -ExecutionPolicy Bypass -File setup_gald3r_project.ps1 -Platform all -Clean  # wipe and regenerate
 ```
 
 The update mode **never touches** your `README.md`, `LICENSE`, or `CHANGELOG.md`, **never overwrites** your non-gald3r skills and agents, and **safely updates** all `g-` prefixed framework files.
 
 ---
 
-### Supported AI Platforms (16)
+### Supported AI Platforms (21)
 
-| Platform | Prefix | Capabilities |
-|---|---|---|
-| Cursor IDE | `.cursor/` | Rules (`.mdc`), skills, agents, commands |
-| Claude Code | `.claude/` | Rules (`.md`), skills, agents, commands, hooks |
-| Gemini / Antigravity | `.agent/` | Skills, agents, commands |
-| OpenAI Codex CLI | `.codex/` | Skills, agents, commands |
-| OpenCode (sst.dev) | `.opencode/` | Skills, agents, commands |
-| GitHub Copilot | `.copilot/` | Commands (Phase 1) |
-| Windsurf | `.windsurf/` | Skills, agents, commands |
-| Cline | `.cline/` | Skills, agents, commands |
-| Roo Code | `.roo-code/` | Skills, agents, commands |
-| Kiro | `.kiro/` | Skills, agents, commands |
-| Augment Code | `.augment/` | Skills, agents, commands |
-| Aider | `.aider/` | Skills, agents, commands |
-| Goose (Block) | `.goose/` | Skills, agents, commands |
-| Warp Terminal | `.warp/` | Skills, agents, commands |
-| OpenHands | `.openhands/` | Skills, agents, commands |
-| Replit Agent | `.replit/` | Skills, agents, commands |
+Platforms marked **[installer]** are fully automated by `setup_gald3r_project.ps1`.
+Platforms marked **[skill]** have a `g-skl-platform-*` reference skill for manual setup guidance.
+
+| Platform | Prefix | Capabilities | Notes |
+|---|---|---|---|
+| Cursor IDE | `.cursor/` | Rules (`.mdc`), skills, agents, commands | [installer] |
+| Claude Code | `.claude/` | Rules (`.md`), skills, agents, commands, hooks | [installer] |
+| Gemini / Antigravity | `.agent/` | Skills, agents, commands | [installer] |
+| OpenAI Codex CLI | `.codex/` | Skills, agents, commands | [installer] |
+| OpenCode (sst.dev) | `.opencode/` | Skills, agents, commands | [installer] |
+| GitHub Copilot | `.copilot/` | Commands (Phase 1) | [installer] |
+| Windsurf | `.windsurf/` | Skills, agents, commands | [installer] |
+| Cline | `.cline/` | Skills, agents, commands | [installer] |
+| Roo Code | `.roo-code/` | Skills, agents, commands | [installer] |
+| Kiro (Amazon) | `.kiro/` | Skills, agents, commands | [installer] |
+| Augment Code | `.augment/` | Skills, agents, commands | [installer] |
+| Aider | `.aider/` | Skills, agents, commands | [installer] |
+| Goose (Block) | `.goose/` | Skills, agents, commands | [installer] |
+| Warp Terminal | `.warp/` | Skills, agents, commands | [installer] |
+| OpenHands | `.openhands/` | Skills, agents, commands | [installer] |
+| Replit Agent | `.replit/` | Skills, agents, commands | [installer] |
+| Mistral Vibe | `.mistral/` | Skills, agents, commands | [skill] |
+| Qwen Code (Alibaba) | `.qwen/` | Skills, agents, commands | [skill] |
+| JetBrains Junie | `.junie/` | Skills, agents, commands | [skill] |
+| Kiro CLI (Amazon) | `.kiro/` | CLI variant of Kiro IDE | [skill] |
+| OpenClaw | — | SOUL.md pattern, workspace skills | [skill] |
 
 ---
 ## Key Features
