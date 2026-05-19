@@ -1,5 +1,25 @@
 Generate project status overview: $ARGUMENTS
 
+### Waiting Task Specable Check
+
+Before completing the status report, scan `.gald3r/tasks/**/*.md` for any task with `status: waiting`. For each:
+
+1. **Read `spec_task_reqs:`** — check whether all listed task IDs are `status: completed` in their task files.
+2. **Report specable tasks** (all spec_task_reqs satisfied):
+   ```
+   ⌛ Specable now: T1239 (all spec_task_reqs satisfied — string reqs remain for human review)
+   ```
+3. **Report orphaned waiters** (a dep task is `[❌]` cancelled or `[⏸️]` paused AND `waiting_since` > 24h):
+   ```
+   ⚠️ Orphaned waiter: T1239 — dep T1238 was cancelled 2d ago. Use @g-task-upd --demote with a new plan or @g-task-upd --promote if requirements changed.
+   ```
+4. **Report specable soon** (some but not all spec_task_reqs satisfied):
+   ```
+   ⌛ Specable soon: T1240 (T1239 ✅, T1238 still in-progress)
+   ```
+
+This check runs on every `@g-status` call. Results appear in the **Blockers & Risks** section.
+
 
 ### PCAC Inbox Gate (Only When PCAC Is Configured)
 

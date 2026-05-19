@@ -4,6 +4,7 @@ description: >-
   Automated SWOT analysis for the current project phase. Reviews progress,
   architectural compliance, code quality, goal alignment, and technical debt.
   Runs weekly via heartbeat or on-demand.
+token_budget: medium
 ---
 
 # g-swot-review

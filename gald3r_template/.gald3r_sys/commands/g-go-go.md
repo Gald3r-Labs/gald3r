@@ -282,6 +282,16 @@ Never crash on optional backend failure; deferring affected work and continuing 
 @g-go-go --budget 5    # if you want another short run
 @g-go tasks {failed_ids}    # to retry specific failures
 @g-pcac-read    # if a PCAC conflict halted the run
+
+### Push offer (final summary only)
+This summary is the ONE place to offer a push. Do NOT offer push between iterations, between task commits, or at partial-run checkpoints — it interrupts the loop. The single end-of-run offer:
+
+```
+{N} commits are ready on {branch}. Review changes and push when satisfied:
+  git log origin/{branch}..HEAD --oneline
+  git push origin {branch}
+Want me to push now?
+```
 ```
 
 ---

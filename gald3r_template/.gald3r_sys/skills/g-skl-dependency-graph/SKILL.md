@@ -1,6 +1,7 @@
 ---
 name: g-skl-dependency-graph
 description: Generate and update .gald3r/DEPENDENCY_GRAPH.md from task file dependencies. Auto-triggered when tasks are created or updated with dependency changes. Also callable via @g-dependency-graph.
+token_budget: medium
 ---
 # gald3r-dependency-graph
 

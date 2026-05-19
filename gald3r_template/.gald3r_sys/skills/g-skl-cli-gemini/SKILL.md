@@ -1,6 +1,7 @@
 ---
 name: g-skl-cli-gemini
 description: Gemini CLI (gemini command) — authentication, checkpointing, config file, extensions/tools, memory patterns, and cross-use with other agents.
+token_budget: low
 ---
 
 # g-skl-cli-gemini — Gemini CLI

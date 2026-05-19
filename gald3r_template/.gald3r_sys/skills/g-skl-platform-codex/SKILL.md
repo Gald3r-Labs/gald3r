@@ -4,6 +4,7 @@ description: Authoritative reference for OpenAI Codex CLI customization in gald3
 crawl_max_age_days: 7
 vault_doc_path: research/platforms/openai/
 vault_docs_url: https://github.com/openai/codex
+token_budget: low
 ---
 
 # g-skl-platform-codex

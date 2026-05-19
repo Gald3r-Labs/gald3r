@@ -4,6 +4,7 @@ description: Authoritative reference for Gemini CLI (Google DeepMind) customizat
 crawl_max_age_days: 7
 vault_doc_path: research/platforms/gemini/
 vault_docs_url: https://github.com/google-gemini/gemini-cli
+token_budget: low
 ---
 
 # g-skl-platform-gemini

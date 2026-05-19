@@ -1,6 +1,7 @@
 ---
 name: g-skl-knowledge-refresh
 description: Audit vault freshness and structure. Check stale notes, rebuild compiled pages, detect broken links, missing pages, and contradictions worth review.
+token_budget: medium
 ---
 # g-knowledge-refresh
 

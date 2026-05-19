@@ -1,6 +1,7 @@
 ---
 skill_group: workflow:ide
 skill_category: user-skills
+token_budget: low
 ---
 # Updating Cursor Settings
 

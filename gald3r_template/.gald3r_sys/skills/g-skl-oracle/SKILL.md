@@ -19,6 +19,7 @@ requires:
   - gald3r_valhalla MCP server (Docker backend)
   - oracle_query MCP tool
   - oracle_execute MCP tool
+token_budget: medium
 ---
 
 # g-skl-oracle

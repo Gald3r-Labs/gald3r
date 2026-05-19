@@ -4,6 +4,7 @@ description: Authoritative reference for Claude Code customization in gald3r pro
 crawl_max_age_days: 7
 vault_doc_path: research/platforms/claude-code/
 vault_docs_url: https://docs.anthropic.com/en/docs/claude-code/overview
+token_budget: low
 ---
 
 # g-skl-platform-claude
@@ -84,13 +85,24 @@ Activate for: setting up Claude Code in a gald3r project, authoring `.claude/` c
   "version": 1,
   "hooks": {
     "sessionStart": [{ "command": "powershell.exe -File .claude/hooks/g-hk-session-start.ps1" }],
-    "stop": [{ "command": "powershell.exe -File .claude/hooks/g-hk-agent-complete.ps1" }],
+    "stop": [
+      { "command": "powershell.exe -File .claude/hooks/g-hk-agent-complete.ps1" },
+      { "command": "powershell.exe -File .claude/hooks/g-hk-nightly-learn.ps1" },
+      { "command": "powershell.exe -File .claude/hooks/g-hk-session-end.ps1" }
+    ],
     "beforeShellExecution": [{ "command": "powershell.exe -File .claude/hooks/g-hk-validate-shell.ps1" }]
   }
 }
 ```
 
 Note: Claude's `hooks.json` uses `"command"` (a full shell string), NOT Copilot's `"type"/"bash"/"powershell"` object format.
+
+**Session lifecycle hooks (gald3r ships three on `stop`)**:
+- `g-hk-agent-complete.ps1` — persists chat log, writes next-session reflection hint
+- `g-hk-nightly-learn.ps1` — every N sessions, spawns LLM extraction into `.gald3r/learned-facts.md` (configurable in `AGENT_CONFIG.md`)
+- `g-hk-session-end.ps1` (T1057) — appends a structured record to `.gald3r/logs/session_end.log` and overwrites `.gald3r/logs/session_end_pending.json` for a future `memory_capture_session` MCP consumer (T1263 wires that consumer)
+
+All three are non-blocking. PS hooks cannot call MCP tools directly, so the actual session-summary capture is staged by `g-hk-session-end` and actioned later — either by the next session-start hook, the `g-learn` skill, or a scheduled drainer.
 
 ### Hook Companion `hook.md` Pattern (T1171)
 
@@ -193,6 +205,58 @@ See gate template in header. Update sections 1, 3, 9 after fresh crawl.
 ✅ .claude/hooks.json is valid JSON with sessionStart hook
 ✅ .mcp.json exists (if using MCP tools)
 ```
+
+---
+
+## Portable Deployment (OpenClaude Portable)
+
+[OpenClaude Portable](https://github.com/techjarves/OpenClaude-Portable) is an MIT-licensed bundle that packages an OpenClaw engine (a Claude-Code-compatible CLI wrapper) into a single folder runnable from a USB drive. It is the recommended pattern for using gald3r at university labs, client sites, locked-down corporate machines, demo laptops, and other environments where Claude Code itself cannot be installed.
+
+Vault reference: `{vault_location}/research/repos/openclaude_portable.md` (full evaluation, license, and risk notes).
+
+### When to use portable vs. full Claude Code install
+
+| Situation | Recommended path |
+|---|---|
+| Personal dev machine with admin rights | Full Claude Code install (this skill's default) |
+| Locked-down corporate / client / shared lab machine | OpenClaude Portable on a USB drive |
+| Travel / demo with no install rights and no reliable network | OpenClaude Portable + bundled Ollama (offline mode) |
+| Restricted region or no Anthropic subscription | OpenClaude Portable + Nvidia NIM / OpenRouter free tier |
+| Hot-handing a gald3r project between machines without per-host setup | OpenClaude Portable (zero host traces after unplug) |
+
+### Setup steps (portable mode)
+
+1. Download the OpenClaude Portable release ZIP (~150 MB base) onto a USB drive (FAT32 / exFAT both work).
+2. Extract in place. The bundle is self-contained: engine, providers, optional Ollama, optional model cache.
+3. Inside the extracted folder, configure providers in `config/providers.yaml`. At minimum one provider is required; six are supported out of the box including free tiers (Nvidia NIM 1000 credits/month, OpenRouter, local Ollama).
+4. Clone or mount the gald3r project under the bundle's project workspace.
+5. Launch the portable engine from the bundle's launcher script (`run.bat` / `run.sh`). The engine reads gald3r primitives from the project's `.claude/` directory the same way Claude Code itself does.
+
+### What gald3r primitives work in portable context
+
+| Primitive | Works portable? | Notes |
+|---|---|---|
+| `.claude/CLAUDE.md` identity overlay | ✅ Full | Read identically to native Claude Code. |
+| `.claude/rules/` always-apply rules | ✅ Full | Loaded at every conversation start. |
+| `.claude/skills/` and `.claude/commands/` | ✅ Full | Skill discovery, command dispatch, and `/g-*` aliases all work. |
+| `.claude/agents/` | ✅ Full | Subagent dispatch via `@g-agnt-*` is engine-level and unaffected. |
+| `.claude/hooks.json` + `.ps1` hook scripts | ⚠️ Partial | Hooks fire when the portable engine supports the same lifecycle events. Confirm the running OpenClaw engine version's hook contract before relying on hook side effects (e.g. `g-hk-session-start.ps1` context injection). |
+| MCP tools (gald3r_valhalla, gald3r_muninn) | ⚠️ Degraded | Local MCP requires Docker; on locked-down machines Docker is usually unavailable. Use a remote MCP URL in `.mcp.json` (point at a hosted gald3r_valhalla) or fall back to the file-first paths that every gald3r skill ships with. |
+| File-first vault / `g-skl-memory` / `g-skl-vault` | ✅ Full | All vault features have explicit file-first fallbacks — semantic search degrades to local grep, vault writes go straight to disk. No Docker required. |
+| `gald3r_install` (server-side install) | ⚠️ Degraded | Requires reaching the install MCP. Locally on the USB drive, prefer `node bin/install.js` (zero-deps) or the `.gald3r_sys/_install_helper.ps1` path. |
+
+### Limitations vs. full Claude Code
+
+- No native Anthropic billing — the user supplies API keys per provider, OR uses the bundled offline path (Ollama).
+- Hook compatibility is OpenClaw-engine-version dependent. Always-apply rules and skills are the safe bet; bet less on hooks for critical safety gates.
+- Performance depends on the chosen provider and the USB drive's read/write speed. SSD-class USB is strongly recommended for non-trivial sessions.
+- Zero host traces after unplug is a feature, but it also means no per-host config or cached state — every machine starts cold from the bundle.
+
+### Cross-references
+
+- T1082 — Portable mode architecture spec / launcher (parallel native-gald3r portable initiative).
+- T1083 — gald3r_agent portable executable (zero-install). The OpenClaude path-resolution lessons from this section feed into T1083's path-resolution work.
+- T1085 — Portable path resolution audit (shares the same problem space).
 
 ---
 

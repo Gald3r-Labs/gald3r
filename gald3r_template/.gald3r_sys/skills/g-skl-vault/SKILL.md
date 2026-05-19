@@ -1,6 +1,7 @@
 ---
 name: g-skl-vault
 description: Own and manage the file-first vault plus repo mirror metadata. Obsidian-compatible notes, wiki compilation, path resolution, reindexing, linting, and GitHub repo summaries.
+token_budget: low
 ---
 # g-vault
 
@@ -357,3 +358,27 @@ Curated vault output must follow **`VAULT_OBSIDIAN_STANDARD.md`** (shipped next 
 - Prefer quick ingest unless full compilation adds real value
 - Keep wikilinks relative and stable
 - Preserve human readability first, agent convenience second
+
+
+---
+
+## Pre-Process-Once / Query-Many Pattern (canonical example, T1169)
+
+`g-skl-vault` is the **canonical implementation** of the
+Pre-Process-Once / Query-Many skill design pattern documented in
+`.gald3r_sys/skill_packs/user-skills/skl-skill-create/SKILL.md`. Each
+phase maps cleanly:
+
+| Phase | Vault primitive |
+|---|---|
+| **INGEST** | `vault_sync` (parse + chunk + embed a vault note into the `vault_notes` index) |
+| **QUERY** | `vault_search` / `vault_search_all` / `vault_read` (cheap repeated lookups, no re-ingest) |
+| **REINDEX** | `vault_sync` against a specific note when source changes (mtime diff, manual trigger) |
+
+The vault `_index.yaml` master catalog and the `vault_notes` PostgreSQL
+index together form the cache; the source markdown files in the vault
+filesystem are the source of truth. Cache lookups never trigger
+re-ingestion — REINDEX is always an explicit operation.
+
+See `g-skl-skill-create` "Skill Pattern: Pre-Process-Once /
+Query-Many (T1169)" for the full pattern definition.

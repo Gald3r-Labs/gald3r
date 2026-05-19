@@ -4,6 +4,7 @@ description: Authoritative reference for JetBrains Junie (AI coding plugin) cust
 crawl_max_age_days: 14
 vault_doc_path: research/platforms/junie/
 vault_docs_url: https://www.jetbrains.com/junie/docs
+token_budget: low
 ---
 
 # g-skl-platform-junie

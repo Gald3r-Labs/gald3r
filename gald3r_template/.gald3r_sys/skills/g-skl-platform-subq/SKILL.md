@@ -6,6 +6,7 @@ tier: adv
 platform: subq
 task: T868
 created: 2026-05-09
+token_budget: low
 ---
 
 # g-skl-platform-subq — SubQ Code CLI (Subquadratic)

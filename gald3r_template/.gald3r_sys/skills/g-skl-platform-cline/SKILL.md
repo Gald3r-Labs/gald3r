@@ -4,6 +4,7 @@ description: Authoritative reference for Cline (VS Code extension) customization
 crawl_max_age_days: 14
 vault_doc_path: research/platforms/cline/
 vault_docs_url: https://github.com/clinebot/cline
+token_budget: low
 ---
 
 # g-skl-platform-cline

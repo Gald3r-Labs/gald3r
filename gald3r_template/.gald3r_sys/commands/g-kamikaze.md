@@ -11,6 +11,7 @@ See `@g-mission` for full documentation.
 @g-kamikaze <condition> --budget <N>
 @g-kamikaze status
 @g-kamikaze clear
+@g-kamikaze <condition> --until-empty
 @g-kamikaze --from-task T{id}
 ```
 

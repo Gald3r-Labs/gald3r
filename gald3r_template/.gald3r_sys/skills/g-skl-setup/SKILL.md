@@ -1,6 +1,7 @@
-﻿---
+---
 name: g-skl-setup
 description: Initialize gald3r in a project — folder structure and template files for task management.
+token_budget: medium
 ---
 # gald3r-setup
 

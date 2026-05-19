@@ -1,6 +1,7 @@
 ---
 name: g-skl-status
 description: Show project status — session context, active tasks, phase progress, goals, ideas.
+token_budget: low
 ---
 # gald3r-status
 

@@ -2,6 +2,7 @@
 name: g-skl-tasks
 maturity: production
 description: Own and manage all task data — TASKS.md index, tasks/ individual files, status transitions, sync validation, complexity scoring, and sprint planning. Single source of truth for everything task-related.
+token_budget: low
 ---
 # g-tasks
 
@@ -407,11 +408,37 @@ If speccing fails or the task is cancelled, move `[📝] -> [❌]` and append a 
      | YYYY-MM-DD | {previous_status} | awaiting-verification | Implementation complete; {brief summary of what was done} |
      ```
 
-2b. **Before → `[✅]` (docs check)**: After all ACs verified, check user-facing impact:
-   - Does this task add/remove/change user-facing behavior? (skills, commands, agents, hooks, rules, conventions)
-   - **YES** → append entry to `CHANGELOG.md` under `[Unreleased]`; update `README.md` if a relevant section exists
-   - **NO** (internal refactor, task housekeeping, bug fix with no interface change) → skip
-   - See `g-rl-26-readme-changelog.mdc` for qualifying criteria and format
+2b. **Before → `[✅]` (docs + CHANGELOG check)**: After all ACs verified, write a CHANGELOG entry:
+
+   **Step 1 — Determine category:**
+   | Category | When |
+   |---|---|
+   | `### Added` | New skill, command, agent, hook, rule, subsystem, feature |
+   | `### Changed` | Existing behavior changed, renamed, restructured |
+   | `### Fixed` | Bug fix (use g-skl-bugs FIX instead for formal bugs) |
+   | `### Removed` | Deprecated or deleted capability |
+
+   **Step 2 — Decide if entry is needed:**
+   - **YES** (needs entry): task adds/removes/changes user-facing behavior — skills, commands, agents, hooks, rules, conventions visible to developers using gald3r
+   - **NO** (skip): purely internal refactor, `.gald3r/` housekeeping, task file updates only, private implementation changes with no developer-visible surface change
+
+   **Step 3 — Write the entry (if YES):**
+   Ask the user: *"CHANGELOG entry for this task? Suggest: '- {one-line user-facing description}' under ### {category}. Confirm or edit:"*
+   Then append the confirmed entry to `CHANGELOG.md` under `## [Unreleased]` → `### {category}`:
+   ```markdown
+   ### Added
+   - Brief past-tense description of what developers now have access to
+   ```
+   Rules:
+   - One line. Past tense. User-facing language (not implementation details).
+   - No internal task IDs in the entry text.
+   - Append under the correct `###` subsection; create the subsection if missing.
+
+   **Step 4 — README update:**
+   - If the task adds/renames something documented in `README.md` (command table, skills list, feature count), update the relevant section.
+   - See `g-rl-26-readme-changelog.mdc` for full qualifying criteria.
+
+   **Reference**: `g-skl-ship` CHANGELOG-ENTRY operation for the full entry format and file-write steps.
 
 2c. **When returning to `[📋]` / `pending` after a FAIL (g-go-review or agent rejection)**:
    - **Status History append is REQUIRED** — message must name the specific failing ACs:
@@ -914,6 +941,7 @@ When complexity score ≥7:
 | Indicator | File YAML | Meaning |
 |---|---|---|
 | `[ ]` | (no file) | Pending — file not yet created |
+| `[⌛]` | `waiting` | Concept recorded; prerequisites not met — skip in g-go/g-mission; stored in `tasks/open/` |
 | `[📝]` | `speccing` | Claimed for spec authoring; skip unless claim is expired |
 | `[📋]` | `pending` | File created, ready to start |
 | `[🔄]` | `in-progress` | Being worked on |
@@ -924,6 +952,38 @@ When complexity score ≥7:
 | `[⏸️]` | `paused` | Paused — resumes from `tasks/paused/`; run Alignment Check on unpause |
 | `[🚫]` | `cancelled` | Cancelled — terminal; stored in `tasks/cancelled/`; archivable |
 | `[🚨]` | `requires-user-attention` | Stuck ≥3 FAIL cycles — **agents must not retry; human-only resolution** |
+
+### [⌛] Waiting Status — spec prerequisites not met
+
+`[⌛] waiting` is for tasks where the **concept is recorded but cannot be specced or coded yet**. It sits BEFORE `[ ] pending` in the lifecycle:
+
+```
+[⌛] waiting → [ ] pending → [📝] speccing → [📋] ready → [🔄] active → [🔍] awaiting-verification → [✅] done
+```
+
+**New frontmatter fields** (all optional, only used with `status: waiting`):
+
+```yaml
+spec_task_reqs:           # Machine-checkable: list of task IDs that must be [✅] before speccing
+  - 1238                  # T1238 must be completed
+  - 1239
+spec_reqs:                # Human-checked: string conditions that cannot be auto-evaluated
+  - "Decision: cloud provider chosen"
+  - "Business: free/paid tier boundaries defined"
+waiting_since: '2026-05-18T22:00:00Z'  # ISO-8601; used for TTL stale detection
+```
+
+**Specable check** (`can_spec` logic):
+- `spec_task_reqs` is empty OR all listed task IDs are `[✅]`
+- AND `spec_reqs` is empty OR human has acknowledged them
+
+**TTL stale detection** (fires in `g-status`, `g-go-go` startup, end of `g-go*` runs):
+- If a `waiting` task's `spec_task_reqs` dependency is `[❌]` or `[⏸️]` AND `waiting_since` is >24h ago → surface: `⚠️ T1239 has been waiting Xh — dep T1238 is [⏸️] paused. Review required.`
+
+**Promotion**: `g-task-upd --promote <id>` → `waiting` → `pending`; clears TTL; writes Status History row.
+**Demotion**: `g-task-upd --demote <id> --reason "..."` → any status → `waiting`; optionally adds `spec_reqs` entries.
+
+**g-go / g-mission skip rule**: `waiting` tasks are NEVER claimed for speccing or implementation. Treat as read-only background context.
 
 ### [📝] Speccing Claim Rules
 
@@ -1036,6 +1096,43 @@ This item has failed verification **{N} times**. Automated agents will not retry
 - Cancel → mark `[❌]` with reason
 - Override as complete → mark `[✅]` with manual sign-off note
 ```
+
+---
+
+## Workflow Profiles (T1238)
+
+Task lifecycle vocabulary is configurable. The hardcoded software-development
+flow (`[ ] → [📋] → [🔄] → [🔍] → [✅]`) is one of three built-in profiles;
+content-creation and research profiles ship alongside it for non-code projects.
+
+**Profile selection precedence (highest wins):**
+
+1. Per-task: `workflow_profile: <id>` in the task's YAML frontmatter.
+2. Per-project: `workflow_profile: <id>` in `.gald3r/PROJECT.md` frontmatter.
+3. Default: `software_dev` (the legacy gald3r behavior — no migration needed).
+
+**Built-in profiles** (stored at `.gald3r/config/workflow_profiles/`):
+
+| id | Use case | Status flow |
+|---|---|---|
+| `software_dev` | Code repos (default) | `waiting → pending → in-progress → awaiting-verification → done` |
+| `content_creation` | Podcasts / video / marketing | `waiting → concept → scripting → in_production → in_review → rendering → published` |
+| `research` | Science / academic | `waiting → hypothesis → data_collection → analysis → writing → peer_review → published` |
+
+**Adding a custom profile**: drop a new `<id>.yaml` into
+`.gald3r/config/workflow_profiles/`. The schema requires `id`, `name`,
+`description`, `task_statuses[]`, `review_gate`, and `task_types[]`. Each
+`task_statuses[]` entry has `id`, `symbol`, `description`, and a
+`skip_in_pipeline: bool` (controls whether `g-go` / `g-mission` claim it).
+
+**Validation behavior**: unknown status IDs in a task's frontmatter produce a
+warning at session start (not a crash). `g-status` reads the active profile and
+displays it in the session-context header so operators always see which
+vocabulary is in effect.
+
+**Schema version**: 1.0 (T1238). Future versions may add per-status
+`requires_review_gate: bool`, `transition_rules`, and `claim_constraints` —
+all backwards-compatible additions.
 
 ---
 

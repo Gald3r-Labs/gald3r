@@ -1,6 +1,7 @@
 ---
 name: g-skl-pcac-sync
 description: Initiate or respond to sibling contract sync — advisory only, non-blocking. Both sides update local peer topology copies.
+token_budget: medium
 ---
 # g-skl-pcac-sync
 

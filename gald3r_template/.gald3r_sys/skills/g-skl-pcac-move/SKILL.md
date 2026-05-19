@@ -6,6 +6,7 @@ description: >
   vault log entries in both projects. Use when migrating subsystems between
   repos, promoting assets to the canonical template, or extracting code that
   grew in one project but belongs in another.
+token_budget: medium
 ---
 
 # g-skl-pcac-move

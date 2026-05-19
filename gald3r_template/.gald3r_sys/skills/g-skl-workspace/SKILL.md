@@ -3,6 +3,7 @@ name: g-skl-workspace
 description: Workspace-Control Mode skill. Reads .gald3r/linking/workspace_manifest.yaml as the canonical registry and provides STATUS, VALIDATE, MEMBER LIST, SPAWN, ADOPT, EXPORT/SYNC dry-run planning, and member `.gald3r/` marker bootstrap/remediate/validate operations for manifest-declared repositories.
 operations: [STATUS, VALIDATE, MEMBER_LIST, INIT_PLAN, INIT_APPLY, MEMBER_ADD_PLAN, MEMBER_ADD_APPLY, MEMBER_REMOVE_PLAN, MEMBER_REMOVE_APPLY, SPAWN_PLAN, SPAWN_APPLY, EXPORT_PLAN, SYNC_PLAN, PARSE_MANIFEST, ENFORCE_SCOPE, ADOPT_DISCOVER, ADOPT_DRY_RUN, ADOPT_APPLY, MEMBER_MARKER_BOOTSTRAP, MEMBER_MARKER_REMEDIATE, MEMBER_MARKER_VALIDATE]
 min_tier: slim
+token_budget: medium
 ---
 # g-skl-workspace
 
@@ -329,6 +330,7 @@ STATUS gives a compact read-only summary of the configured workspace.
    - `workspace.feature_id`
    - `workspace.owner_repository_id`
    - manifest path
+   - schema version (report `1.1.0+` features if present)
 4. Display member repositories:
    - `id`
    - `display_name`
@@ -336,14 +338,11 @@ STATUS gives a compact read-only summary of the configured workspace.
    - `repo_role`
    - `lifecycle_status`
    - `canonical_source_status`
-   - `local_path`
+   - `node_type` (defaults to `git_repo` when absent)
+   - `local_path` — check reachability; if `os_paths` is present, prefer the current-OS key over `local_path`
    - path reachability (`present` or `missing`)
-   - independent git root status (`git rev-parse --show-toplevel`)
-   - branch or detached state
-   - dirty entry count from `git status --short`
-   - remote count or names
-   - worktree context from `git worktree list --porcelain` when reachable
-   - rollback boundary (this repo only; no shared commit assumption)
+   - For `git_repo` nodes: independent git root status, branch, dirty count, remotes, worktree context, rollback boundary
+   - `remote_access` entries — show each as `[remote:{label} via {method}:{host}]`; mark `[unreachable]` (not an error) if the host is not pingable; never fail STATUS because a remote member is temporarily unreachable
    - `allowed_write_policy.default_policy`
    - `allowed_write_policy.write_allowed`
 5. Display clean-repo expectations from each repository.
@@ -353,18 +352,35 @@ STATUS gives a compact read-only summary of the configured workspace.
 Write boundary: this skill is report-only. Member writes require a later task with explicit workspace_repos, workspace_touch_policy, apply-mode authorization, and independently reviewed git status for each member repo.
 ```
 
+### Remote Member Display Rules (schema v1.1.0+)
+
+- **Local + remote present**: show local path status first, then list `remote_access` entries as annotations
+- **Local missing, remote present**: show `[local path missing]` + `[remote:{label} via {method}:{host} path:{path}]`
+- **Unreachable remote**: show `[remote:{label} unreachable]` — this is informational, not an error
+- **Non-git node types** (`file_store`, `service_http`, `database`, `task_flow`): skip git status fields; show endpoint or path from `remote_access`
+
+### OS Path Resolution (schema v1.1.0+)
+
+When a repository has `os_paths`:
+- On Windows: prefer `os_paths.windows` over `local_path`
+- On Linux: prefer `os_paths.linux` over `local_path`
+- On macOS: prefer `os_paths.mac` over `local_path`
+- Fall back to `local_path` when the OS-specific key is absent
+
 ### Suggested Output
 
 ```text
-Workspace: gald3r_dev Workspace-Control Bootstrap (active_bootstrap)
+Workspace: gald3r_dev Workspace-Control Bootstrap (active_bootstrap)  [schema v1.1.0]
 Manifest: .gald3r/linking/workspace_manifest.yaml
 Owner: gald3r_dev
 
 Repositories:
-- gald3r_dev: active, control_project, path present, git root present, branch main, dirty N, remotes N, writes allowed by source_only_control_project
-- gald3r_template_slim: planned_clean_member, controlled_member, path missing, git root missing (planned gap), writes blocked by no_direct_writes_during_bootstrap
-- gald3r_template_full: planned_clean_member, controlled_member, path missing, git root missing (planned gap), writes blocked by no_direct_writes_during_bootstrap
-- gald3r_template_adv: planned_clean_member, controlled_member, path missing, git root missing (planned gap), writes blocked by no_direct_writes_during_bootstrap
+- gald3r_dev: active, control_project, path present, git root present, branch main, dirty N, remotes N, writes allowed
+- gald3r_world_tree (git_repo): active_member, controlled_member, path present G:/gald3r_ecosystem/gald3r_world_tree, git root OK, branch main
+    ✈️ [remote:wrm3-kubuntu via ssh:10.0.0.185 path:/data/repos/gald3r_world_tree]
+- gald3r_template_slim: planned_clean_member, controlled_member, path missing (planned gap), writes blocked
+- some_api_service (service_http): active_member, path N/A
+    ✈️ [remote:prod via https:api.example.com/v1]
 ```
 
 Keep STATUS concise. Do not print full manifest contents unless the user asks for detail.
@@ -427,7 +443,7 @@ Run all PARSE_MANIFEST checks, plus:
 
 1. Repository IDs match `schema.parse_contract.repository_id_pattern` or `^[a-z][a-z0-9_]*$`.
 2. No duplicate repository IDs.
-3. Every `repositories[].local_path` is non-empty.
+3. Every `repositories[].local_path` is non-empty (except `node_type` non-git nodes where `local_path` may be absent).
 4. Every `repositories[].lifecycle_status` is one of:
    - `active`
    - `active_bootstrap`
@@ -445,6 +461,12 @@ Run all PARSE_MANIFEST checks, plus:
 10. `workspace.bootstrap_member_ids` contains the owner repository and every controlled member.
 11. `workspace.source_of_truth.canonical_machine_registry` equals `.gald3r/linking/workspace_manifest.yaml`.
 12. `workspace.source_of_truth.seed_manifest_artifact` may point to docs, but must not be treated as canonical.
+
+### Schema v1.1.0 Checks (when `schema.version` ≥ `1.1.0`)
+
+13. `node_type` when present must be one of: `git_repo`, `file_store`, `service_http`, `database`, `task_flow`.
+14. Each `remote_access[]` entry must have `label` and `method`; SSH entries must also have `host`, `user`, `path`; HTTP entries must have `host` or `endpoint`.
+15. `os_paths` when present must have at least one key from `[windows, linux, mac]` with a non-empty string value.
 
 ### Local Path Checks
 

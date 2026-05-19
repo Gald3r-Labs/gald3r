@@ -41,6 +41,40 @@ try {
     $transcriptPath = $null
 }
 
+# ── T1232: Fallback transcript discovery via agent-transcripts/ folder ────────
+# Cursor stopped sending conversation_id/transcript_path in the stop event
+# payload around April 2026. When those are missing, scan the agent-transcripts
+# folder directly and use the most recently modified non-subagent JSONL file.
+if (-not $transcriptPath -or -not (Test-Path $transcriptPath)) {
+    try {
+        $projectPath = (Get-Location).Path
+        $rawSlug     = $projectPath -replace ':', '' -replace '[^A-Za-z0-9]', '-'
+        $rawSlug     = $rawSlug.ToLower().Trim('-')
+        $transcriptRoot = Join-Path $env:USERPROFILE ".cursor\projects\$rawSlug\agent-transcripts"
+        if (-not (Test-Path $transcriptRoot)) {
+            # Alternative: try appdata cursor projects
+            $appDataRoot = Join-Path $env:APPDATA "Cursor\User\workspaceStorage"
+            # Fall through — keep transcriptPath null
+        } else {
+            $latestJsonl = Get-ChildItem -Path $transcriptRoot -Recurse -Filter "*.jsonl" |
+                Where-Object { $_.FullName -notmatch '\\subagents\\' -and $_.Name -notmatch 'subagent' } |
+                Sort-Object LastWriteTime -Descending |
+                Select-Object -First 1
+            if ($latestJsonl) {
+                $transcriptPath = $latestJsonl.FullName
+                if ($conversationId -eq "unknown") {
+                    $conversationId = $latestJsonl.BaseName
+                }
+                "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') T1232 fallback transcript: $($latestJsonl.Name)" |
+                    Add-Content -Path ".gald3r/logs/hook_diag.log" -Encoding UTF8 -ErrorAction SilentlyContinue
+            }
+        }
+    } catch {
+        "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') T1232 transcript discovery error: $_" |
+            Add-Content -Path ".gald3r/logs/hook_diag.log" -Encoding UTF8 -ErrorAction SilentlyContinue
+    }
+}
+
 # Log resolved values to diagnostic (second entry with context)
 try {
     $diagLog = ".gald3r/logs/hook_diag.log"
@@ -101,7 +135,10 @@ try {
                 param($exe, $cliArgs, $diagPath)
                 $out = & $exe @cliArgs 2>&1
                 if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) {
-                    "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') logger exited $LASTEXITCODE : $out" |
+                    "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') logger FAILED exit=$LASTEXITCODE : $out" |
+                        Add-Content -Path $diagPath -Encoding UTF8 -ErrorAction SilentlyContinue
+                } else {
+                    "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') logger OK: chat log written" |
                         Add-Content -Path $diagPath -Encoding UTF8 -ErrorAction SilentlyContinue
                 }
             } -ArgumentList $pythonCmd, $pythonArgs, (Join-Path (Get-Location).Path ".gald3r/logs/hook_diag.log")

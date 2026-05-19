@@ -17,6 +17,7 @@ triggers:
   - missing files
   - version mismatch
   - "medic"
+token_budget: high
 ---
 
 # g-medic

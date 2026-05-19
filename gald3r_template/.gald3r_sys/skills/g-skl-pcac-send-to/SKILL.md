@@ -6,6 +6,7 @@ description: >
   INBOX notification, vault provenance logging, and optional source cleanup.
   Lighter-weight than g-skl-pcac-move (which requires topology pre-registration);
   this skill also works when the destination is a recently-spawned project.
+token_budget: medium
 ---
 
 # g-skl-pcac-send-to

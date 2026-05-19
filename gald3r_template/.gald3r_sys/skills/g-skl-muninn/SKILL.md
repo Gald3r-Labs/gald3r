@@ -11,6 +11,7 @@ platforms: [cursor, claude, gemini, codex, opencode]
 mcp_server: gald3r_valhalla
 mcp_entry: ".mcp.json → gald3r_muninn entry (auto-loaded into gald3r_valhalla)"
 related_tasks: [T1147, T1153, T1154, T1155, T1156, T1157, T1158, T921]
+token_budget: medium
 ---
 
 # g-skl-muninn — Codebase Knowledge Graph via gald3r_muninn

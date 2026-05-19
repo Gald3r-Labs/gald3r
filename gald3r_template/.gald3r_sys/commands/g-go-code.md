@@ -263,6 +263,7 @@ Read in this order:
 - **Skip non-expired `[📝]` speccing claims** — log owner/expiry in Skipped section as "Speccing-In-Progress"
 - For stale `[📝]` claims, append a Status History takeover row naming the prior `spec_owner` before proceeding
 - **NOT** `[🚨]` (requires-user-attention) — **skip entirely**, log in Skipped section as "Requires-User-Attention — human review needed"
+- **Skip `[⌛]` (waiting) tasks** — prerequisites (`spec_task_reqs` or `spec_reqs`) not yet met; use `@g-task-upd --promote` when ready
 - **Skip `[⏸️]` (paused) tasks** — stored in `tasks/paused/`; must be manually unpaused before g-go-code picks them up
 - **Skip `[🚫]` (cancelled) tasks** — stored in `tasks/cancelled/`; terminal state, never eligible for implementation
 - No unmet dependencies, with the rolling-pipeline exception below: a dependency at `[🔍]` counts as **implementation-satisfied** for follow-on coding unless the downstream task declares `requires_verified_dependencies: true`
@@ -895,3 +896,16 @@ in-flight item finishes and the session writes its summary. See "Iteration and T
 Limits" above for full semantics.
 
 Let's implement.
+
+## Push offer (final session summary only)
+
+After all items are marked `[🔍]` and the session summary is written, include a single push offer:
+
+```
+{N} commits are ready on {branch}. Review and push when satisfied:
+  git log origin/{branch}..HEAD --oneline
+  git push origin {branch}
+Want me to push now?
+```
+
+**Rules:** Offer push **once**, at the end of the session summary only. Do NOT offer push after each individual task commit — the session is still running. If the user replies "yes": push immediately.

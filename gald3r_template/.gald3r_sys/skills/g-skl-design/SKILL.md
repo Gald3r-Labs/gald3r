@@ -23,6 +23,7 @@ sources:
   - https://github.com/abin-2008/web-design-skill (MIT)
   - https://github.com/nexu-io/open-design (Apache-2.0)
   - https://github.com/alchaincyf/huashu-design (via open-design attribution)
+token_budget: medium
 ---
 
 # g-skl-design — Design Engineering Skill

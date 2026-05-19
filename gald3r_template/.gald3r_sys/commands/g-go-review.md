@@ -483,3 +483,17 @@ Coordinator-owned writes also keep snapshot reviews read-only and prevent review
 ```
 
 Ready to review.
+
+## Push offer (final review summary only)
+
+After all verdicts are written and the review result commit is made, include a single push offer in the final summary:
+
+```
+Review complete. {N} commits on {branch} — {PASS_count} passed, {FAIL_count} failed.
+Review the full diff and push when satisfied:
+  git log origin/{branch}..HEAD --oneline
+  git push origin {branch}
+Want me to push now?
+```
+
+**Rules:** Offer push **once**, in the final review summary only. Do NOT offer push between individual task reviews. If the user replies "yes": push immediately.

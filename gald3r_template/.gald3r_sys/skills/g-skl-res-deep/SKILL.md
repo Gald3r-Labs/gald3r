@@ -1,6 +1,7 @@
 ---
 name: g-skl-res-deep
 description: Analyze any external repository and produce a structured FEATURES.md harvest report. Writes to {vault}/research/recon/{slug}/ when a shared vault is configured, else falls back to local research/harvests/{slug}/. Performs cross-project dedup via _recon_index.yaml. Agents are reporters — humans are editors. No .gald3r/ writes until human approves APPLY.
+token_budget: very_high
 ---
 # g-skl-res-deep (reverse-spec)
 
@@ -376,3 +377,22 @@ Idempotent: re-running the script updates existing entries without duplicating t
 
 **Reporter Rule — always enforced**:
 > "We are documenting what this project does, not copying how it is written. A feature being already present in gald3r is NOT a reason to skip it — it is a reason to note the behavioral overlap and learn from the alternative approach in original wording."
+
+
+---
+
+## Pre-Process-Once / Query-Many Pattern (T1169)
+
+`g-skl-res-deep` implements the **Pre-Process-Once / Query-Many** skill
+design pattern (see `g-skl-skill-create` "Skill Pattern: Pre-Process-
+Once / Query-Many"). Each phase maps as follows:
+
+| Phase | res-deep operation |
+|---|---|
+| **INGEST** | Initial deep-recon pass: clone (or use a fresh checkout), enumerate structure, run the 4-phase harvest, write `FEATURES.md` + supporting notes to the vault-aware output path |
+| **QUERY** | Follow-up questions read the existing harvest report directly; no re-clone, no re-analysis |
+| **REINDEX** | Explicit re-run against a newer upstream tag, fresh `git pull`, or after the source has materially changed |
+
+Cache identity is the source repo URL + tag (or commit SHA); harvests
+of the same source at different points in time get distinct entries
+in `_recon_index.yaml`.

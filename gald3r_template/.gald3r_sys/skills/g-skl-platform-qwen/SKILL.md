@@ -4,6 +4,7 @@ description: Authoritative reference for Qwen Code (Alibaba CLI coding agent) cu
 crawl_max_age_days: 14
 vault_doc_path: research/platforms/qwen/
 vault_docs_url: https://github.com/QwenLM/qwen-code
+token_budget: low
 ---
 
 # g-skl-platform-qwen

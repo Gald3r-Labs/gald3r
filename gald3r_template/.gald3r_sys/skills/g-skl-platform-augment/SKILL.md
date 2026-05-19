@@ -4,6 +4,7 @@ description: Authoritative reference for Augment Code (VS Code + JetBrains) cust
 crawl_max_age_days: 14
 vault_doc_path: research/platforms/augment/
 vault_docs_url: https://docs.augmentcode.com
+token_budget: low
 ---
 
 # g-skl-platform-augment

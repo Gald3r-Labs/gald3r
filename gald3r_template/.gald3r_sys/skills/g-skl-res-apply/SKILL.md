@@ -24,6 +24,7 @@ outputs:
   - .gald3r/subsystems/{name}.md (new spec files)
   - .gald3r/TASKS.md (new task rows)
   - .gald3r/tasks/taskNNN_*.md (one per feature group)
+token_budget: very_high
 ---
 
 # g-skl-res-apply (harvest-intake)

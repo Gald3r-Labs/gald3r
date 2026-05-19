@@ -1,6 +1,7 @@
 ---
 name: g-skl-pcac-adopt
 description: Register another project as a child of the current project. Creates or updates linking/link_topology.md on both sides when the target is locally accessible.
+token_budget: low
 ---
 # g-skl-pcac-adopt
 

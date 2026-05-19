@@ -4,6 +4,7 @@ description: Authoritative reference for Aider (terminal AI coding tool) customi
 crawl_max_age_days: 14
 vault_doc_path: research/platforms/aider/
 vault_docs_url: https://aider.chat/docs
+token_budget: low
 ---
 
 # g-skl-platform-aider

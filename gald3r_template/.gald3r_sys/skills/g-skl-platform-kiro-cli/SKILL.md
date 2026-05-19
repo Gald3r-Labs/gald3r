@@ -4,6 +4,7 @@ description: Authoritative reference for Kiro CLI (Amazon's terminal agent varia
 crawl_max_age_days: 14
 vault_doc_path: research/platforms/kiro-cli/
 vault_docs_url: https://kiro.dev/docs/cli
+token_budget: low
 ---
 
 # g-skl-platform-kiro-cli

@@ -4,6 +4,7 @@ description: Authoritative reference for Replit Agent (cloud IDE) customization 
 crawl_max_age_days: 14
 vault_doc_path: research/platforms/replit/
 vault_docs_url: https://docs.replit.com/replit-ai/agent
+token_budget: low
 ---
 
 # g-skl-platform-replit

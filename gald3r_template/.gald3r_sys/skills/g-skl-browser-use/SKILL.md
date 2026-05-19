@@ -17,6 +17,7 @@ triggers:
   - competitive intel
   - cloud browser
   - BUX
+token_budget: medium
 ---
 
 # g-skl-browser-use — Production Browser Harness

@@ -1,6 +1,7 @@
 ---
 name: g-skl-prds
 description: Own and manage all PRD data — PRDS.md index, prds/ individual files, governance lifecycle (draft→review→approved→in-implementation→released→archived), revision chain, and freeze enforcement. Parallel artifact to Features for compliance, audit, and external sign-off.
+token_budget: medium
 ---
 # g-skl-prds
 

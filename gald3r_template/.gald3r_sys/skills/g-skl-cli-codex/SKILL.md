@@ -1,6 +1,7 @@
 ---
 name: g-skl-cli-codex
 description: OpenAI Codex CLI (codex command) — approval modes, sandbox config, provider/model flags, session continuation, MCP tool integration, multi-agent coordination, and overnight/CI best practices.
+token_budget: low
 ---
 
 # g-skl-cli-codex — OpenAI Codex CLI

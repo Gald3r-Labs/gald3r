@@ -23,6 +23,7 @@ requires:
   - monitor_list MCP tool
   - monitor_check MCP tool
   - monitor_remove MCP tool
+token_budget: medium
 ---
 
 # g-skl-monitor

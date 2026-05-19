@@ -6,6 +6,7 @@ description: >
   type — symlinks or fresh template), seeds it with any passed description/features/code,
   runs gald3r-setup, and immediately links both projects via PCAC topology
   (--parent | --sibling | --child).
+token_budget: medium
 ---
 
 # g-skl-pcac-spawn

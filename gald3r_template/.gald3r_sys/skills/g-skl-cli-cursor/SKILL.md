@@ -1,6 +1,7 @@
 ---
 name: g-skl-cli-cursor
 description: Cursor CLI (agent command) — modes, Cloud Agent handoff, API mode, session management, and multi-agent coordination from the terminal.
+token_budget: low
 ---
 
 # g-skl-cli-cursor — Cursor CLI

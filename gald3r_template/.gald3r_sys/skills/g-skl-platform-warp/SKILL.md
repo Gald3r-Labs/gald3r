@@ -4,6 +4,7 @@ description: Authoritative reference for Warp AI terminal customization in gald3
 crawl_max_age_days: 14
 vault_doc_path: research/platforms/warp/
 vault_docs_url: https://docs.warp.dev
+token_budget: low
 ---
 
 # g-skl-platform-warp

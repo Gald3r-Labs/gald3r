@@ -24,6 +24,7 @@ requires:
   - memory_search_combined MCP tool
 fallback:
   - g-skl-learn (file-based insight capture when backend unavailable)
+token_budget: very_high
 ---
 
 # g-skl-memory

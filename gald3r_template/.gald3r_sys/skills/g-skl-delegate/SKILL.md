@@ -1,6 +1,7 @@
 ---
 name: g-skl-delegate
 description: Engineering team delegation workflow skill — REDACTED-AUTHOR (YC president) delegation patterns adapted for AI agent orchestration. Task briefs, code review request templates, quality gates, and handoff protocols.
+token_budget: medium
 ---
 
 # g-skl-delegate — Engineering Team Delegation Workflow

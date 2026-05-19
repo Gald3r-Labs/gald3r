@@ -1,6 +1,7 @@
 ---
 name: g-skl-learn
 description: File-only continual learning — agents self-report insights to project and vault memory notes. No JSONL scanning, no schedulers, no SentinelOne risk.
+token_budget: high
 ---
 
 # g-skl-learn — Continual Learning (File-Only)

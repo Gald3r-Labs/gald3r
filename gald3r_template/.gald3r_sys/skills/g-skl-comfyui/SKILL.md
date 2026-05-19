@@ -1,6 +1,7 @@
 ---
 name: g-skl-comfyui
 description: ComfyUI V5 agent integration for local GPU image/video generation. Install, launch, manage workflows, and run AnimateDiff/SDXL pipelines via the ComfyUI REST API. Local GPU path — zero cloud costs. Use for gald3r_throne theme pack animation or any offline image/video generation.
+token_budget: medium
 ---
 
 # g-skl-comfyui — ComfyUI V5 Agent Integration

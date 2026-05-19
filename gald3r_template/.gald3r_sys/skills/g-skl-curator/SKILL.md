@@ -17,6 +17,7 @@ triggers:
   - "skill rubric"
   - "consolidate skills"
   - "prune skills"
+token_budget: high
 ---
 
 # g-skl-curator

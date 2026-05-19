@@ -4,6 +4,7 @@ description: Authoritative reference for OpenHands (OpenDevin) AI agent customiz
 crawl_max_age_days: 7
 vault_doc_path: research/platforms/openhands/
 vault_docs_url: https://docs.all-hands.dev
+token_budget: low
 ---
 
 # g-skl-platform-openhands

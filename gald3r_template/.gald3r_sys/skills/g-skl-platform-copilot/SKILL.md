@@ -4,6 +4,7 @@ description: Authoritative reference for GitHub Copilot customization in gald3r 
 crawl_max_age_days: 7
 vault_doc_path: research/platforms/github_copilot/
 vault_docs_url: https://docs.github.com/en/copilot
+token_budget: low
 ---
 
 # g-skl-platform-copilot

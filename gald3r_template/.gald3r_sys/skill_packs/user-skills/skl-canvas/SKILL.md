@@ -1,6 +1,7 @@
 ---
 skill_group: workflow:ide
 skill_category: user-skills
+token_budget: low
 ---
 A canvas is a single `.canvas.tsx` file the IDE compiles so the user can open it beside the chat. Follow the workflow below in order.
 

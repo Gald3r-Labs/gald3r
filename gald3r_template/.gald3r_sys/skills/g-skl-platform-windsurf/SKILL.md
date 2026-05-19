@@ -4,6 +4,7 @@ description: Authoritative reference for Windsurf IDE customization in gald3r pr
 crawl_max_age_days: 14
 vault_doc_path: research/platforms/windsurf/
 vault_docs_url: https://docs.windsurf.com
+token_budget: low
 ---
 
 # g-skl-platform-windsurf

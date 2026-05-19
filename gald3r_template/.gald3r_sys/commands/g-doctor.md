@@ -142,6 +142,44 @@ Missing platforms → `⚠️ WARN` with fix suggestion (not `❌ FAIL`).
 
 ---
 
+### 6. Skills Quality (T1172 / T1259)
+
+**Missing `token_budget:` declaration**
+
+Scan all canonical SKILL.md files under `.gald3r_sys/skills/` and `.gald3r_sys/skill_packs/`,
+plus the IDE mirrors `.cursor/skills/`, `.claude/skills/`, `.codex/skills/`,
+`.opencode/skills/`, `.agent/skills/`. For each SKILL.md, read the YAML frontmatter
+and check for the `token_budget:` field.
+
+```
+⚠️ WARN  skills/token_budget  — N skill(s) missing token_budget: declaration
+         💡 Add `token_budget: low|medium|high|very_high` to each skill's frontmatter.
+            See .gald3r_sys/skill_packs/user-skills/skl-skill-create/SKILL.md
+            §"token_budget: declaration (T1172)" for the band guide.
+```
+
+This is a **low-severity finding** (`⚠️ WARN`, never `❌ FAIL`). Skills without
+`token_budget:` still work — the field is advisory metadata for `g-go`
+coordinators and budget-aware swarm dispatch. The finding surfaces the gap so
+authors can declare it during their next pass.
+
+**Missing `skill_trust_level:` declaration** (parallel finding, T1056)
+
+Same scan; check for the `skill_trust_level:` field. Same severity (`⚠️ WARN`).
+
+```
+⚠️ WARN  skills/skill_trust_level  — N skill(s) missing skill_trust_level: declaration
+         💡 Add `skill_trust_level: core|community|local` to each skill's frontmatter.
+            See .gald3r_sys/skill_packs/user-skills/skl-skill-create/SKILL.md
+            §"skill_trust_level: declaration (T1056)" for the values.
+```
+
+**Reporting**: list the first 10 offending skill names; if more, append `... and N more`.
+Group the two findings under a `## Skills Quality` heading in the report body when any
+skill is missing either field.
+
+---
+
 ## Output Format
 
 **AC8 — Structured report**

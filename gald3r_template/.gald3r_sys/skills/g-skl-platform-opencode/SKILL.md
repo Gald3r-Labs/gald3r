@@ -4,6 +4,7 @@ description: Authoritative reference for OpenCode (sst.dev) customization in gal
 crawl_max_age_days: 7
 vault_doc_path: research/platforms/opencode/
 vault_docs_url: https://opencode.ai/docs
+token_budget: low
 ---
 
 # g-skl-platform-opencode

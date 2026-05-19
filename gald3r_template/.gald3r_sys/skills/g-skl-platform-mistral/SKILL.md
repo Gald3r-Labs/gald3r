@@ -4,6 +4,7 @@ description: Authoritative reference for Mistral Vibe coding agent customization
 crawl_max_age_days: 14
 vault_doc_path: research/platforms/mistral/
 vault_docs_url: https://docs.mistral.ai/capabilities/code_generation
+token_budget: low
 ---
 
 # g-skl-platform-mistral

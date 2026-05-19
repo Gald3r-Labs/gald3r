@@ -1,6 +1,7 @@
 ---
 skill_group: workflow:ide
 skill_category: user-skills
+token_budget: low
 ---
 # Creating Skills in Cursor
 
@@ -126,6 +127,8 @@ Default `disable-model-invocation: true` so the skill only loads when named expl
 | `maturity` | `production` \| `beta` \| `experimental` | `beta` | Stability signal for users; `experimental` means API may change |
 | `allowed-tools` | list: `shell`, `file_read`, `file_write`, `browser`, `mcp`, `git`, `network`, `editor`, `any` | `any` | Capability boundary — tools this skill is permitted to call |
 | `requires` | list: `docker`, `mcp`, `internet`, `browser`, `git`, `uv`, `node` | `[]` | Capabilities that must be available for full function; absent = degrade gracefully with warning |
+| `token_budget` (T1172) | `low` \| `medium` \| `high` \| `very_high` | unset | Declared expected context contribution; lets `g-go` coordinators and `g-doctor` reason about cost before dispatching this skill |
+| `skill_trust_level` (T1056) | `core` \| `community` \| `local` | unset | Provenance signal — `core` = gald3r-shipped, `community` = third-party/marketplace, `local` = user-authored in this project |
 
 **Maturity guide**:
 - `production` — core gald3r primitives (`g-skl-tasks`, `g-skl-bugs`, `g-go*`, `g-skl-git-commit`). Breaking changes go through migration path.
@@ -135,6 +138,84 @@ Default `disable-model-invocation: true` so the skill only loads when named expl
 **`requires:` degradation contract**: When a required capability is absent, the skill MUST either:
 1. Degrade to a file-first fallback and note it in output, OR
 2. Surface a clear "Capability absent — enable X to use this skill" message and stop.
+
+### `token_budget:` declaration (T1172)
+
+The optional `token_budget:` frontmatter field declares the skill's expected
+context contribution as a coarse ordinal — NOT an exact token count. Use it
+so `g-go` coordinators, `g-doctor`, and future swarm dispatchers can make
+cost-aware decisions about which skills to invoke before they consume
+context.
+
+| Value | Approximate context contribution | Example skills |
+|---|---|---|
+| `low` | < 5,000 tokens | `g-skl-status`, `g-skl-tasks` CREATE TASK, `g-skl-keep-it-simple`, most one-shot commands |
+| `medium` | 5,000 – 20,000 tokens | `g-skl-code-review`, `g-skl-bugs` FIX BUG, `g-skl-git-commit` (with diff), `g-skl-medic` L1 |
+| `high` | 20,000 – 50,000 tokens | `g-go` full pipeline, `g-skl-subsystems` full scan, `g-skl-recon-docs` FETCH |
+| `very_high` | > 50,000 tokens | `g-skl-res-deep` full harvest, `g-skl-memory` cross-session ingest, multi-repo `g-go --swarm` |
+
+**Why ordinal, not exact**: actual token usage varies per invocation (tools called,
+context already loaded, model selected). The declaration is a planning hint,
+not a hard contract. Future tooling MAY use it to pre-emptively warn when
+the remaining context budget is insufficient for the requested skill, but
+the skill is NOT obligated to abort if it exceeds the declared band.
+
+**Authoring guidance**:
+- Skills that mostly compose other skills inherit the maximum of their
+  invokees — declare the maximum.
+- Skills with an INGEST / QUERY split (see "Skill Pattern: Pre-Process-Once
+  / Query-Many" below) typically have separate budgets per phase; in that
+  case declare the higher one (INGEST) and note the QUERY budget in the
+  skill body.
+- When unsure, prefer the higher band. Over-declaring causes mild
+  conservatism in dispatch; under-declaring causes context exhaustion.
+
+`g-doctor` L1 triage SHOULD flag skills missing `token_budget:` as a low-
+severity quality finding (`T1172` follow-up).
+
+`g-go --swarm` skill selection SHOULD prefer `low` / `medium` skills when
+available budget is constrained; this is advisory, not enforcing — the
+coordinator may still pick a `high` skill if it is genuinely the right
+tool, but it MUST note the budget tradeoff in its dispatch log.
+
+### `skill_trust_level:` declaration (T1056)
+
+The optional `skill_trust_level:` frontmatter field declares the skill's
+provenance so install flows, `g-skl-setup`, and `g-doctor` can apply
+appropriate vetting before the skill is loaded into context or allowed to
+fire its tools.
+
+| Value | Meaning | Authoring rule |
+|---|---|---|
+| `core` | Skill is shipped in `gald3r_template_*` repos or the controller's `.gald3r_sys/`. Maintained by gald3r upstream. | Only set on skills that genuinely live in the canonical template / controller. Never set on user-authored or imported skills. |
+| `community` | Skill came from an external pack (marketplace, contributed pack, third-party skill repo). Treat with suspicion until vetted. | Required on any skill added via `g-skill-pack-add` from an external source. |
+| `local` | Skill was authored or modified in this project's `.cursor/skills/`, `.claude/skills/`, etc., and is not synced from upstream. | Implicit default for new skills authored in-place; set explicitly when authoring guidance documents need it. |
+
+**Phase 1 enforcement (advisory)**: `g-skl-setup` and `g-skill-pack-add`
+SHOULD warn (not block) when installing a skill whose
+`skill_trust_level:` is unset or `community`. The warning surfaces:
+
+- The trust level (or `unset`)
+- The source the skill came from
+- A reminder that the skill's `allowed-tools:` boundary still applies
+- The recommendation to inspect the skill's body before its first invocation
+
+**Phase 2 (separate task)**: a future constraint MAY add hard-blocking for
+`community` skills until the user explicitly marks them as trusted. That
+is out of scope for the initial declaration.
+
+**Authoring guidance**:
+- `core` is reserved for skills that ship via the gald3r_template_* repos
+  or the controller's `.gald3r_sys/skill_packs/`. Do NOT mark a skill `core`
+  just because it works well — the field signals *provenance*, not quality.
+- When publishing a skill to a community pack, set
+  `skill_trust_level: community` in the upstream copy so downstream
+  installers inherit the correct signal.
+- `local` is the safe default for one-off project skills.
+
+`g-doctor` L1 triage SHOULD flag skills missing `skill_trust_level:` as a
+low-severity quality finding alongside missing `token_budget:` (`T1056`
+follow-up, parallel to T1172).
 
 ---
 
@@ -413,6 +494,75 @@ Make clear whether the agent should **execute** the script (most common) or **re
 
 ---
 
+## Skill Pattern: Pre-Process-Once / Query-Many (T1169)
+
+When a skill consumes a **large input** (a repository clone, a PDF, a video,
+a long document, a vault snapshot, or any source that takes meaningful time
+or tokens to ingest), it SHOULD split itself into two phases:
+
+| Phase | What it does | Cost shape |
+|---|---|---|
+| **INGEST** | Parse, chunk, embed, index the source once. Write the result to a cache file (vault note, `.cache/` JSON, sqlite, etc.) | Expensive but one-time |
+| **QUERY** | Read the cache and answer the user's question. Re-ingestion is NOT triggered. | Cheap; can be repeated dozens of times |
+| **REINDEX** | Optional explicit refresh. Force re-ingest when the source has changed. | Same cost as INGEST |
+
+### When to apply
+
+Apply this pattern when any of the following is true:
+
+- The source is > ~10k tokens of raw content
+- The user is likely to ask multiple follow-up questions from the same source
+- Ingestion involves embedding, OCR, transcription, or external API calls
+- The same source is consumed across multiple sessions
+
+If a skill only reads a small file once per invocation, the pattern is
+unnecessary overhead — apply common sense.
+
+### Cache contract
+
+- **Cache location**: `.gald3r/reports/cache/{skill_slug}/{source_hash}.md`
+  (or `.json` if structured). The skill SHOULD declare its cache path in
+  its SKILL.md "Files Owned" section.
+- **Source hash**: `sha256(source_url_or_path)[:8]` is the canonical
+  cache key. Two sources with the same content but different paths get
+  separate caches — that is intentional; the path is part of the source
+  identity.
+- **No MCP dependency**: caches are file-first. A skill that requires
+  the MCP backend to be online to read its cache violates the file-
+  first fallback principle (`.gald3r/` learned fact #5).
+- **REINDEX trigger**: an explicit user invocation (e.g. `@skill-name
+  reindex <source>`), a source-changed signal (mtime diff, etag diff,
+  git SHA diff), or a maintenance command. INGEST MUST NOT run silently
+  during a QUERY.
+
+### Canonical examples in gald3r
+
+- **`g-skl-vault`** — INGEST = parse + chunk + embed a vault note into
+  `vault_notes` index. QUERY = `vault_search` / `vault_read`. REINDEX =
+  `vault_sync` against a specific note.
+- **`g-skl-res-deep`** — INGEST = clone + structural analysis of an
+  external repo into a recon report. QUERY = answer follow-up questions
+  from the recon report. REINDEX = re-run on a fresh git pull or a
+  newer upstream tag.
+- **`g-skl-recon-docs`** — INGEST = FETCH + crawl + cache a docs URL
+  into `research/platforms/`. QUERY = the revisit-check / staleness
+  scan that runs at session start. REINDEX = `REFRESH_STALE` on a
+  per-platform basis.
+
+### Anti-pattern
+
+Skills that re-read or re-parse a large source on every invocation
+(e.g., re-cloning a repo on every question, re-OCR-ing a PDF on every
+follow-up) are violating this pattern. They waste tokens and time and
+make every QUERY feel like a fresh ingestion. Refactor them into the
+INGEST / QUERY split before shipping.
+
+### Source
+
+T1169 / V31 harvest (Construction Drawings AI workflow `_k1jQBS4Nk8`).
+
+---
+
 ## Anti-Patterns to Avoid
 
 ### 1. Windows-Style Paths
@@ -612,6 +762,7 @@ Before finalizing a skill, verify:
 - [ ] SKILL.md body is under 500 lines
 - [ ] Consistent terminology throughout
 - [ ] Examples are concrete, not abstract
+- [ ] If this skill processes large inputs (repos, PDFs, docs, videos, vault snapshots), does it implement INGEST / QUERY separation per the **Pre-Process-Once / Query-Many** pattern (T1169)?
 
 ### Structure
 - [ ] File references are one level deep

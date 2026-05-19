@@ -2,6 +2,7 @@
 name: g-skl-medic
 deprecated: true
 replaced_by: g-skl-medic
+token_budget: medium
 ---
 # g-medic (DEPRECATED)
 

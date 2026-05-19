@@ -1,6 +1,7 @@
 ---
 name: g-skl-dependency-audit
 description: Scan package files for outdated or vulnerable dependencies. Generates a severity-ranked report with CVE references and upgrade commands. Supports Python (requirements.txt/pyproject.toml), JavaScript/Node (package.json/package-lock.json), and Rust (Cargo.toml/Cargo.lock).
+token_budget: medium
 ---
 # g-skl-dependency-audit
 

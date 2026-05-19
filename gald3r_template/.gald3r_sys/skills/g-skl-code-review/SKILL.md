@@ -1,6 +1,7 @@
 ---
 name: g-skl-code-review
 description: Code review — security, quality, performance, reusability. Structured report with severity ratings and action items. Scales from quick scan to comprehensive architecture review.
+token_budget: medium
 ---
 # g-skl-code-review
 

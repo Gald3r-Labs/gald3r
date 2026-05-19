@@ -1,6 +1,7 @@
 ---
 name: g-skl-pcac-ask
 description: Child project requests parent action — writes parent INBOX.md and marks local task as blocked with cross-project metadata.
+token_budget: low
 ---
 # g-skl-pcac-ask
 

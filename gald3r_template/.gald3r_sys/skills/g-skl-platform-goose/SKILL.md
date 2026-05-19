@@ -4,6 +4,7 @@ description: Authoritative reference for Goose (Block) AI agent customization in
 crawl_max_age_days: 14
 vault_doc_path: research/platforms/goose/
 vault_docs_url: https://block.github.io/goose/docs
+token_budget: low
 ---
 
 # g-skl-platform-goose

@@ -11,6 +11,7 @@ See `@g-mission` for full documentation.
 @g-juggernaut <condition> --budget <N>
 @g-juggernaut status
 @g-juggernaut clear
+@g-juggernaut <condition> --until-empty
 @g-juggernaut --from-task T{id}
 ```
 

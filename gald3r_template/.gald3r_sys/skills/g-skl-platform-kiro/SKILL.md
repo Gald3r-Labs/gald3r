@@ -4,6 +4,7 @@ description: Authoritative reference for Kiro IDE (Amazon) customization in gald
 crawl_max_age_days: 7
 vault_doc_path: research/platforms/kiro/
 vault_docs_url: https://kiro.dev/docs
+token_budget: low
 ---
 
 # g-skl-platform-kiro

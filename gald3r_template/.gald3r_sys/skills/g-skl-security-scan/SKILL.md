@@ -1,6 +1,7 @@
 ---
 name: g-skl-security-scan
 description: SAST-style static analysis for hardcoded secrets, injection patterns, insecure deserialization, path traversal, and other critical vulnerabilities. Severity-ranked findings with line references and remediation guidance. Includes two-phase threat-model + diff-revalidation mode (T1167) for use as the post-implementation gate in g-go-review.
+token_budget: medium
 ---
 # g-skl-security-scan
 

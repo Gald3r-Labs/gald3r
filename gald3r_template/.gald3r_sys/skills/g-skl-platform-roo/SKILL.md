@@ -4,6 +4,7 @@ description: Authoritative reference for Roo Code (VS Code extension) customizat
 crawl_max_age_days: 14
 vault_doc_path: research/platforms/roo/
 vault_docs_url: https://github.com/RooVetGit/Roo-Code
+token_budget: low
 ---
 
 # g-skl-platform-roo

@@ -1,6 +1,7 @@
 ---
 name: g-skl-pcac-claim
 description: Register another project as the parent of the current project. Creates or updates linking/link_topology.md on both sides when the parent is locally accessible.
+token_budget: low
 ---
 # g-skl-pcac-claim
 

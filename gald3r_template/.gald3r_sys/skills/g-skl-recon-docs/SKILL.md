@@ -1,6 +1,7 @@
 ---
 name: g-skl-recon-docs
 description: Documentation URL ingestion with periodic revisit. Crawls URLs into research/platforms/, tracks staleness per _index.yaml, surfaces stale count at session start. Depends on g-skl-crawl (crawl4ai).
+token_budget: high
 ---
 # g-recon-docs
 
@@ -124,3 +125,22 @@ All notes written by this skill must conform to **`.gald3r/vault/VAULT_OBSIDIAN_
 
 Bulk / scheduled workflows: use **`g-skl-platform-crawl`** for crawl4ai-backed batch documentation crawls; after large crawls run `scripts/gen_vault_moc.py` as documented there.
 
+
+
+---
+
+## Pre-Process-Once / Query-Many Pattern (T1169)
+
+`g-skl-recon-docs` implements the **Pre-Process-Once / Query-Many**
+skill design pattern (see `g-skl-skill-create` "Skill Pattern: Pre-
+Process-Once / Query-Many"). Each phase maps as follows:
+
+| Phase | recon-docs operation |
+|---|---|
+| **INGEST** | `FETCH` — crawl4ai-backed crawl of a docs URL into the vault `research/platforms/` tree with frontmatter and `_index.yaml` registration |
+| **QUERY** | Revisit / staleness scan at session start (no re-crawl unless threshold hit); semantic search via `vault_search` over the indexed notes |
+| **REINDEX** | `REFRESH_STALE` per platform when `next_refresh` date is past, or an explicit user-driven refresh of a specific docs domain |
+
+Cache identity is the docs URL (canonicalized) plus the platform slug.
+Staleness is metadata-driven (the `next_refresh` field of each note);
+no re-crawl runs silently during a QUERY.

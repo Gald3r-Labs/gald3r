@@ -3,6 +3,7 @@ name: g-skl-gald3r-export
 description: >
   Export G:/gald3r_ecosystem/gald3r_template_full to a clonable slim gald3r template repo.
   MAINTAINER-ONLY — gald3r_dev root IDE trees only; never propagated to G:/gald3r_ecosystem/gald3r_template_full.
+token_budget: medium
 ---
 
 # g-skl-gald3r-export

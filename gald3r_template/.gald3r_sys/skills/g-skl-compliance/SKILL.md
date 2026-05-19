@@ -17,6 +17,7 @@ operations:
   - REPORT
   - GATE
   - STATUS
+token_budget: medium
 ---
 
 # g-skl-compliance

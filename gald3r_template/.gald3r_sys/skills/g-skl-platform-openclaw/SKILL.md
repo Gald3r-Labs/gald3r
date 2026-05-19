@@ -4,6 +4,7 @@ description: Authoritative reference for OpenClaw AI agent customization in gald
 crawl_max_age_days: 14
 vault_doc_path: research/platforms/openclaw/
 vault_docs_url: https://github.com/openclaw/openclaw
+token_budget: low
 ---
 
 # g-skl-platform-openclaw

@@ -1,6 +1,7 @@
 ---
 name: g-skl-template-export
 description: gald3r_dev maintainer-only — verify 10-target parity then export G:/gald3r_ecosystem/gald3r_template_full to a clonable slim repo folder (PowerShell).
+token_budget: medium
 ---
 
 # g-skl-template-export

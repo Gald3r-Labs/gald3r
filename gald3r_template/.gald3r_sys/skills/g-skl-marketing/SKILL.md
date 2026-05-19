@@ -21,6 +21,7 @@ triggers:
   - "SEO"
   - "GEO"
   - "growth"
+token_budget: medium
 ---
 
 # g-skl-marketing — AI Growth & Distribution System

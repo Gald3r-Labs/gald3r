@@ -8,6 +8,7 @@ description: >
 version: "1.0"
 platforms: [cursor, claude, gemini, codex, opencode]
 requires: [graphify-cli OR gitNexus]
+token_budget: medium
 ---
 
 # g-skl-graphify — Code Graph Skill

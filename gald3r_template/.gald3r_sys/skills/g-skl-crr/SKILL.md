@@ -7,6 +7,7 @@ triggers:
   - "clean-room rewrite"
   - "crr"
   - "harvest and spec"
+token_budget: high
 ---
 
 # SKILL: g-skl-crr — Clean-Room Rewrite Pipeline

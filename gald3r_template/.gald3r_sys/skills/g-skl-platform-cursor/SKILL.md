@@ -4,6 +4,7 @@ description: Authoritative reference for Cursor IDE customization in gald3r proj
 crawl_max_age_days: 7
 vault_doc_path: research/platforms/cursor/
 vault_docs_url: https://docs.cursor.com
+token_budget: low
 ---
 
 # g-skl-platform-cursor
@@ -246,6 +247,16 @@ Each hook entry SHOULD reference its companion via a `"_hook_md"` field (informa
 ```
 
 Top-level `_doc` in `hooks.json` documents the contract for new contributors.
+
+### Session Lifecycle Hooks (T1057)
+
+gald3r ships three hooks on the `stop` event for full session-end coverage:
+
+1. `g-hk-agent-complete.ps1` — persists chat log, writes a reflection hint for the next session
+2. `g-hk-nightly-learn.ps1` — every N sessions, dispatches LLM extraction into `.gald3r/learned-facts.md` (detached spawn pattern; configurable in `AGENT_CONFIG.md`)
+3. `g-hk-session-end.ps1` (T1057) — appends a structured record to `.gald3r/logs/session_end.log` and overwrites `.gald3r/logs/session_end_pending.json` with a memory-capture pending marker for a future `memory_capture_session` MCP consumer
+
+All three return `continue: true` immediately and never delay session close. PowerShell hooks cannot invoke MCP tools directly (the MCP client is the chat agent, not the shell), so `g-hk-session-end` stages the data and T1263 will wire the actual consumer.
 
 ---
 
