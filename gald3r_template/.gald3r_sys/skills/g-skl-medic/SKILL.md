@@ -54,7 +54,7 @@ token_budget: high
 
 ### Curation mode (`--curate`, Task 517)
 
-**Default (dry-run)**: runs `scripts/gald3r_medic_curate.ps1` — counts feature/subsystem sprawl (recursive subsystem count), runs hierarchy sync helpers with `-WarnOnly`, adds a **fragmentation** section (duplicate `feat-NNN` hits in `FEATURES.md`, subsystem specs on disk not indexed in `SUBSYSTEMS.md` via sync JSON), and writes a human report plus `medic_curate_proposal_<stamp>.json` under `.gald3r/reports/` (gitignored). The proposal keeps top-level `moves` empty for safety, but now includes non-binding `suggested_moves` and `index_candidates` with source, target, risk/confidence, and rationale so the reviewer has concrete candidates to approve/edit/reject.
+**Default (dry-run)**: runs `.gald3r_sys/skills/g-skl-medic/scripts/gald3r_medic_curate.ps1` — counts feature/subsystem sprawl (recursive subsystem count), runs hierarchy sync helpers with `-WarnOnly`, adds a **fragmentation** section (duplicate `feat-NNN` hits in `FEATURES.md`, subsystem specs on disk not indexed in `SUBSYSTEMS.md` via sync JSON), and writes a human report plus `medic_curate_proposal_<stamp>.json` under `.gald3r/reports/` (gitignored). The proposal keeps top-level `moves` empty for safety, but now includes non-binding `suggested_moves` and `index_candidates` with source, target, risk/confidence, and rationale so the reviewer has concrete candidates to approve/edit/reject.
 
 **No report files (CI / no disk side effects)**: pass `-NoReportFiles` to `gald3r_medic_curate.ps1` — prints the same report + proposal JSON to stdout only (no `medic_curate_*.md` / proposal files / `medic_curate_latest.json`).
 

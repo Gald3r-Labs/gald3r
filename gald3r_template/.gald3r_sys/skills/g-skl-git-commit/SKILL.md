@@ -185,7 +185,7 @@ git config --unset core.hooksPath
 
 ## Pre-Push gate (regular | release)
 
-Before `git push`, run **`scripts/gald3r_push_gate.ps1`** (or `@g-git-push`) so **routine** work is not blocked by release documentation rules, while **release** pushes enforce CHANGELOG/version discipline (`g-rl-26`, `g-rl-02`).
+Before `git push`, run **`.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1`** (or `@g-git-push`) so **routine** work is not blocked by release documentation rules, while **release** pushes enforce CHANGELOG/version discipline (`g-rl-26`, `g-rl-02`).
 
 ### Modes
 
@@ -197,10 +197,10 @@ Before `git push`, run **`scripts/gald3r_push_gate.ps1`** (or `@g-git-push`) so 
 ### Commands
 
 ```powershell
-./scripts/gald3r_push_gate.ps1                    # interactive mode select
-./scripts/gald3r_push_gate.ps1 -Release          # release checks
-$env:GALD3R_RELEASE_PUSH='1'; ./scripts/gald3r_push_gate.ps1 -NonInteractive
-./scripts/gald3r_push_gate.ps1 -DryRun           # verify wiring; always exit 0
+./.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1                    # interactive mode select
+./.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1 -Release          # release checks
+$env:GALD3R_RELEASE_PUSH='1'; ./.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1 -NonInteractive
+./.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1 -DryRun           # verify wiring; always exit 0
 ```
 
 ### Optional pre-push hook
@@ -209,7 +209,7 @@ $env:GALD3R_RELEASE_PUSH='1'; ./scripts/gald3r_push_gate.ps1 -NonInteractive
 
 ### Shared script (DRY)
 
-`scripts/gald3r_git_sanity_common.ps1` supplies secret patterns for **`g-hk-pre-commit.ps1`**; push gate lives in **`scripts/gald3r_push_gate.ps1`**.
+`.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_git_sanity_common.ps1` supplies secret patterns for **`g-hk-pre-commit.ps1`**; push gate lives in **`.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1`**.
 ---
 
 ## Push Modes

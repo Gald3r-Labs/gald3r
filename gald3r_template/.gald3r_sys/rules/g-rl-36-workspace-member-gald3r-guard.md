@@ -25,10 +25,10 @@ This invariant fires for every workflow that may write `.gald3r/` to an arbitrar
 - **Task**: `Task 213` (spec v1.1) — defines the marker-only policy and its enforcement layers.
 - **Manifest**: `.gald3r/linking/workspace_manifest.yaml` → `routing_policy.member_gald3r_invariant`.
 - **Helper scripts** (gald3r_dev root + `G:/gald3r_ecosystem/gald3r_template_full/scripts/` for installed projects):
-  - `scripts/check_member_repo_gald3r_guard.ps1` — marker-aware preflight
-  - `scripts/bootstrap_member_gald3r_marker.ps1` — only sanctioned writer of member `.gald3r/`
-  - `scripts/remediate_member_gald3r_marker.ps1` — non-destructive cleanup of forbidden member content
-  - `scripts/validate_workspace_members_gald3r.ps1` — workspace-wide marker compliance audit
+  - `.gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1` — marker-aware preflight
+  - `.gald3r_sys/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1` — only sanctioned writer of member `.gald3r/`
+  - `.gald3r_sys/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1` — non-destructive cleanup of forbidden member content
+  - `.gald3r_sys/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1` — workspace-wide marker compliance audit
 
 ## Guard call contract
 
@@ -36,7 +36,7 @@ Before any code path writes a `.gald3r/` file inside a member repository, call t
 
 ```powershell
 # Per-path check (preferred — most precise)
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_member_repo_gald3r_guard.ps1 `
+powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 `
     -TargetPath "<absolute_member_repo_path>" `
     -DotGald3rPath "<relative_path_inside_dot_gald3r>"
 $exit = $LASTEXITCODE
@@ -56,7 +56,7 @@ Exit codes: `0` ALLOW, `1` BLOCK, `2` ERROR. Optional flags: `-WarnOnly`, `-Json
 When a member is added, adopted, or spawned, create the marker via:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/bootstrap_member_gald3r_marker.ps1 `
+powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1 `
     -MemberPath "<absolute_member_repo_path>" `
     -MemberId "<manifest_repo_id>" `
     -ControllerPath "<absolute_controller_path>" `   # optional: defaults to upward manifest discovery
@@ -78,11 +78,11 @@ When a member already contains live control-plane content, remediate it:
 
 ```powershell
 # Dry-run first
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/remediate_member_gald3r_marker.ps1 `
+powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1 `
     -MemberPath "<absolute_member_repo_path>"
 
 # Apply (quarantines forbidden entries to `.gald3r-quarantine/<timestamp>/`)
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/remediate_member_gald3r_marker.ps1 `
+powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1 `
     -MemberPath "<absolute_member_repo_path>" `
     -Apply
 ```
@@ -94,7 +94,7 @@ Remediation **never deletes**; it quarantines forbidden entries to `<member>/.ga
 Audit all manifest members at any time:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/validate_workspace_members_gald3r.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1
 ```
 
 Reports per-member compliance: `clean` / `marker_missing` / `has_violations` / `not_yet_created`. Exit `0` if all clean, `1` if any have violations (use `-WarnOnly` for advisory mode). Required as part of pre-adoption preflight before any new member (e.g. `gald3r_valhalla`) is added.
@@ -118,8 +118,8 @@ The following surfaces MUST call the guard before writing live `.gald3r/` conten
 
 Before adopting an existing populated gald3r project (e.g. `gald3r_valhalla`) as a Workspace-Control member, the operator MUST:
 
-1. Run `scripts/validate_workspace_members_gald3r.ps1` to baseline current workspace marker compliance.
-2. Run `scripts/check_member_repo_gald3r_guard.ps1 -TargetPath <candidate>` to confirm the candidate would be classified as a member after adoption.
+1. Run `.gald3r_sys/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1` to baseline current workspace marker compliance.
+2. Run `.gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath <candidate>` to confirm the candidate would be classified as a member after adoption.
 3. Inspect the candidate's existing `.gald3r/` for live control plane.
 4. If live control plane is present, do NOT silently overwrite. Either:
    - **Adopt the project's history** via the upcoming Workspace-Control populated-gald3r adoption flow (Tasks 214–217). The flow imports active items into the controller with provenance, archives terminal items, and reduces the candidate's `.gald3r/` to the marker pair via remediation.

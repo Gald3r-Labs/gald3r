@@ -1,4 +1,4 @@
-# scripts/check_member_repo_gald3r_guard.ps1
+# .gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1
 #
 # Workspace-Control member-repo .gald3r/ guard.
 #
@@ -40,11 +40,11 @@
 #       the actual filesystem boundary.
 #
 # Usage:
-#   ./scripts/check_member_repo_gald3r_guard.ps1 -TargetPath <path>
-#   ./scripts/check_member_repo_gald3r_guard.ps1 -TargetPath <path> -DotGald3rPath ".identity"
-#   ./scripts/check_member_repo_gald3r_guard.ps1 -TargetPath <path> -DotGald3rPath "TASKS.md"
-#   ./scripts/check_member_repo_gald3r_guard.ps1 -TargetPath <path> -AllowMarkerInit
-#   ./scripts/check_member_repo_gald3r_guard.ps1 -TargetPath <path> -WarnOnly -Json
+#   ./.gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath <path>
+#   ./.gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath <path> -DotGald3rPath ".identity"
+#   ./.gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath <path> -DotGald3rPath "TASKS.md"
+#   ./.gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath <path> -AllowMarkerInit
+#   ./.gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath <path> -WarnOnly -Json
 
 [CmdletBinding()]
 param(

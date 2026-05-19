@@ -1,4 +1,4 @@
-﻿<!--
+<!--
   .github/copilot-instructions.md â€” AUTO-GENERATED, DO NOT EDIT MANUALLY
   
   Generated from: .cursor/rules/g-rl-*.mdc
@@ -226,7 +226,7 @@ Hook file: `.cursor/hooks/g-hk-pre-commit.ps1`
 
 ## Pre-Push Gate (regular vs release)
 
-Before `git push`, run **`scripts/gald3r_push_gate.ps1`** or `@g-git-push`:
+Before `git push`, run **`.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1`** or `@g-git-push`:
 
 | Mode | Trigger | CHANGELOG / docs |
 |------|---------|------------------|
@@ -235,7 +235,7 @@ Before `git push`, run **`scripts/gald3r_push_gate.ps1`** or `@g-git-push`:
 
 Release mode also reminds you to re-read **README.md** and prints **version** lines from `pyproject.toml` / `package.json` if present (`g-rl-26`).
 
-Shared scripts: `scripts/gald3r_push_gate.ps1`; `scripts/gald3r_git_sanity_common.ps1` (secret patterns for `g-hk-pre-commit.ps1`).
+Shared scripts: `.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1`; `.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_git_sanity_common.ps1` (secret patterns for `g-hk-pre-commit.ps1`).
 
 ### Optional pre-push hook
 

@@ -1,4 +1,4 @@
-# scripts/validate_workspace_members_gald3r.ps1
+# .gald3r_sys/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1
 #
 # Workspace-Control member-marker validator (BUG-021 / Task 213 / g-rl-36).
 #

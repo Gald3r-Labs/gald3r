@@ -86,9 +86,9 @@ T600 / `feat-106` extends gald3r's hook layer with four contract-level features 
 | Feature | What it adds | Reference |
 |---|---|---|
 | **HTTP hook type (B-2)** | `hooks.json` entries with `"type": "http"`, `"url"`, `"allow_hosts"`, `"timeout_ms"`, `"auth_header_env"`. Reference caller: `.claude/hooks/g-hk-http-event.ps1` (parity-propagation to `.cursor/hooks/` is a follow-up). | Design doc §1 |
-| **Glob tool matcher (B-3)** | `pre_tool_use` / `post_tool_use` entries gain `"tool_match": ["bash_*", "file_*"]`. Helper: `Test-HookToolMatch` in `scripts/gald3r_hook_helpers.ps1`. | Design doc §2 |
+| **Glob tool matcher (B-3)** | `pre_tool_use` / `post_tool_use` entries gain `"tool_match": ["bash_*", "file_*"]`. Helper: `Test-HookToolMatch` in `.gald3r_sys/scripts/gald3r_hook_helpers.ps1`. | Design doc §2 |
 | **`block_on_failure` (B-4)** | Hook entries gain `"block_on_failure": true` to abort the triggering operation on failure. Override: `$env:GALD3R_HOOK_BYPASS=1`. | Design doc §3 |
-| **Shell-safe arg substitution (B-6)** | `Convert-HookArgSafe -Value $x -Shell powershell\|bash` in `scripts/gald3r_hook_helpers.ps1` produces single-quoted literals safe for command substitution. | Design doc §4 |
+| **Shell-safe arg substitution (B-6)** | `Convert-HookArgSafe -Value $x -Shell powershell\|bash` in `.gald3r_sys/scripts/gald3r_hook_helpers.ps1` produces single-quoted literals safe for command substitution. | Design doc §4 |
 
 ### 6-event worktree lifecycle (D-6)
 
@@ -98,7 +98,7 @@ Lifecycle stamps are written to each worktree's `.gald3r-worktree.json` under a 
 
 ### Reference helpers
 
-- `scripts/gald3r_hook_helpers.ps1` — `Test-HookToolMatch`, `Convert-HookArgSafe`, `Read-HookEventEnvelope`. Run with `-RunSelfTest` to verify behavior.
+- `.gald3r_sys/scripts/gald3r_hook_helpers.ps1` — `Test-HookToolMatch`, `Convert-HookArgSafe`, `Read-HookEventEnvelope`. Run with `-RunSelfTest` to verify behavior.
 - `.claude/hooks/g-hk-http-event.ps1` — drop-in HTTP hook caller (host allow-list, HTTPS-for-non-loopback, timeout cap, bearer auth via env var). Cursor parity copy is a deferred follow-up.
 - `.cursor/hooks/g-hk-pre-commit.ps1` — already speaks BLOCK/WARN via exit codes; will honor `$env:GALD3R_HOOK_BYPASS=1` once the T600 patch is propagated from `.claude/hooks/`.
 

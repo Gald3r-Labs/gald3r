@@ -11,7 +11,7 @@ param(
     [switch]$Json
 )
 
-# scripts/remediate_member_gald3r_marker.ps1
+# .gald3r_sys/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1
 #
 # Remediate an existing Workspace-Control member repository's `.gald3r/`
 # folder so it conforms to the marker-only invariant

@@ -1311,7 +1311,7 @@ The summary makes it explicit which repos were considered, which were skipped, w
 
 ### Marker-only protection (recap)
 
-Member `.gald3r/` may contain ONLY `.identity` and `PROJECT.md`. `g-skl-workspace`, `g-skl-pcac-spawn`, `g-skl-pcac-adopt`, `g-skl-setup`, and `gald3r_install` all consult `scripts/check_member_repo_gald3r_guard.ps1` before any member `.gald3r/` write. `--workspace` runs do NOT add a bypass; the guard is non-negotiable. Any attempted write to a forbidden member `.gald3r/` path is logged as a blocker and excluded from the run.
+Member `.gald3r/` may contain ONLY `.identity` and `PROJECT.md`. `g-skl-workspace`, `g-skl-pcac-spawn`, `g-skl-pcac-adopt`, `g-skl-setup`, and `gald3r_install` all consult `.gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1` before any member `.gald3r/` write. `--workspace` runs do NOT add a bypass; the guard is non-negotiable. Any attempted write to a forbidden member `.gald3r/` path is logged as a blocker and excluded from the run.
 
 ---
 

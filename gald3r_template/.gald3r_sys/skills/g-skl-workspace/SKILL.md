@@ -178,12 +178,12 @@ SPAWN_APPLY may run only when all gates pass:
 
    ```powershell
    # Confirm member-init is allowed
-   powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_member_repo_gald3r_guard.ps1 -TargetPath "<absolute_target_path>" -AllowMarkerInit
+   powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath "<absolute_target_path>" -AllowMarkerInit
    # Bootstrap .gald3r/.identity and .gald3r/PROJECT.md
-   powershell -NoProfile -ExecutionPolicy Bypass -File scripts/bootstrap_member_gald3r_marker.ps1 -MemberPath "<absolute_target_path>" -MemberId "<repo_id>" -Apply
+   powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1 -MemberPath "<absolute_target_path>" -MemberId "<repo_id>" -Apply
    ```
 
-   The guard at exit `1` (BLOCK) refuses apply with `BLOCK spawn_member_repo_gald3r_guard_block`. Exit `2` (ERROR) refuses with `BLOCK spawn_member_repo_gald3r_guard_error`. Bootstrap may itself BLOCK with `BLOCK spawn_member_gald3r_has_control_plane` when the existing `.gald3r/` already contains forbidden content — in that case point the user to `scripts/remediate_member_gald3r_marker.ps1` first. Only the combination of guard ALLOW + bootstrap success completes SPAWN_APPLY.
+   The guard at exit `1` (BLOCK) refuses apply with `BLOCK spawn_member_repo_gald3r_guard_block`. Exit `2` (ERROR) refuses with `BLOCK spawn_member_repo_gald3r_guard_error`. Bootstrap may itself BLOCK with `BLOCK spawn_member_gald3r_has_control_plane` when the existing `.gald3r/` already contains forbidden content — in that case point the user to `.gald3r_sys/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1` first. Only the combination of guard ALLOW + bootstrap success completes SPAWN_APPLY.
 
 Allowed apply writes:
 
@@ -225,9 +225,9 @@ SPAWN raises any of the following BLOCK findings with a single-line remediation:
 - `BLOCK spawn_apply_without_explicit_flag`
 - `BLOCK spawn_active_task_not_authorized`
 - `BLOCK spawn_manifest_write_policy_refused`
-- `BLOCK spawn_member_repo_gald3r_guard_block` — `scripts/check_member_repo_gald3r_guard.ps1` returned exit 1 for the target path (member repos cannot receive live control plane; only `.identity` + `PROJECT.md` are allowed)
+- `BLOCK spawn_member_repo_gald3r_guard_block` — `.gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1` returned exit 1 for the target path (member repos cannot receive live control plane; only `.identity` + `PROJECT.md` are allowed)
 - `BLOCK spawn_member_repo_gald3r_guard_error` — guard helper returned exit 2 (manifest unparseable or other error); resolve before retrying
-- `BLOCK spawn_member_gald3r_has_control_plane` — bootstrap helper refused because the existing `.gald3r/` already contains forbidden content; run `scripts/remediate_member_gald3r_marker.ps1` (dry-run, then `-Apply`) first
+- `BLOCK spawn_member_gald3r_has_control_plane` — bootstrap helper refused because the existing `.gald3r/` already contains forbidden content; run `.gald3r_sys/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1` (dry-run, then `-Apply`) first
 
 ## Operation: MEMBER REMOVE PLAN / MEMBER REMOVE APPLY
 
@@ -1071,9 +1071,9 @@ Apply runs only when all gates pass; any failure aborts with no partial writes:
 7. Manifest `allowed_write_policy` permits the manifest update for the active task (re-checked via ENFORCE_SCOPE).
 8. **Member `.gald3r/` marker-only guard (BUG-021 / Task 213 v1.1 / g-rl-36)**: ADOPT writes go to the control project, never to the member's live control plane. Apply must:
 
-   a. Run the validate helper against the source/member path: `scripts/validate_workspace_members_gald3r.ps1`. If the member entry shows `has_violations`, refuse with `BLOCK adoption_member_repo_live_control_plane` and direct the user to `scripts/remediate_member_gald3r_marker.ps1` followed by re-adoption.
+   a. Run the validate helper against the source/member path: `.gald3r_sys/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1`. If the member entry shows `has_violations`, refuse with `BLOCK adoption_member_repo_live_control_plane` and direct the user to `.gald3r_sys/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1` followed by re-adoption.
 
-   b. After the controller's `.gald3r/` is updated and the member's history has been imported into the controller (per the populated-gald3r adoption flow), call `scripts/bootstrap_member_gald3r_marker.ps1 -MemberPath {source_path} -MemberId {member_id} -Apply` to ensure the member ends in the marker-only shape (`.identity` + `PROJECT.md` present, control plane absent).
+   b. After the controller's `.gald3r/` is updated and the member's history has been imported into the controller (per the populated-gald3r adoption flow), call `.gald3r_sys/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1 -MemberPath {source_path} -MemberId {member_id} -Apply` to ensure the member ends in the marker-only shape (`.identity` + `PROJECT.md` present, control plane absent).
 
    c. Refuse with `BLOCK adoption_member_repo_gald3r_guard_error` if either helper returns exit `2`.
 
@@ -1163,7 +1163,7 @@ Three companion helpers ship in `scripts/` (and `G:/gald3r_ecosystem/gald3r_temp
 ### MEMBER_MARKER_BOOTSTRAP — only sanctioned writer of member `.gald3r/`
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/bootstrap_member_gald3r_marker.ps1 `
+powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1 `
     -MemberPath "<absolute_member_path>" `
     -MemberId "<manifest_repo_id>" `
     [-ControllerPath "<absolute_controller_path>"] `   # optional; defaults to upward manifest discovery
@@ -1184,11 +1184,11 @@ Called by: SPAWN_APPLY (after git init + minimal `.gitignore`/`README.md`), MEMB
 
 ```powershell
 # Dry-run
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/remediate_member_gald3r_marker.ps1 `
+powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1 `
     -MemberPath "<absolute_member_path>"
 
 # Apply (quarantines forbidden entries; never deletes)
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/remediate_member_gald3r_marker.ps1 `
+powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1 `
     -MemberPath "<absolute_member_path>" `
     -Apply
 ```
@@ -1200,7 +1200,7 @@ Used for: cleaning up historical violations (e.g. `gald3r_throne` / Task 197), p
 ### MEMBER_MARKER_VALIDATE — workspace-wide audit
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/validate_workspace_members_gald3r.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1
 ```
 
 Scans every controlled_member and migration_source from the manifest and reports per-member compliance: `clean` / `marker_missing` / `marker_incomplete` / `has_violations` / `not_yet_created`. Exit `0` if all clean, `1` if any has_violations (use `-WarnOnly` for advisory mode, `-Json` for machine-readable output). Required as part of pre-adoption preflight before any new member is added.
@@ -1424,12 +1424,12 @@ Before claiming Workspace-Control work is ready for review:
 
 | Value | Use |
 |-------|-----|
-| `FSL-1.1-Apache` | Public repos under Fair Source License 1.1 + Apache 2.0 future grant. Canonical template: `scripts/license_templates/LICENSE_FSL_TEMPLATE.txt` (controller repo). |
-| `Proprietary` | Private repos under all-rights-reserved proprietary terms. Canonical template: `scripts/license_templates/LICENSE_PROPRIETARY_TEMPLATE.txt`. |
+| `FSL-1.1-Apache` | Public repos under Fair Source License 1.1 + Apache 2.0 future grant. Canonical template: `.gald3r_sys/licenses/LICENSE_FSL_TEMPLATE.txt` (controller repo). |
+| `Proprietary` | Private repos under all-rights-reserved proprietary terms. Canonical template: `.gald3r_sys/licenses/LICENSE_PROPRIETARY_TEMPLATE.txt`. |
 
 `STATUS`, `VALIDATE`, and `MEMBER LIST` operations surface each member's posture and any drift (LICENSE missing, content does not match canonical template, manifest entry missing the `license:` key). License drift is a hard `g-wrkspc-validate` failure unless `-WarnOnly` is passed.
 
 The authoritative posture map is `g:\gald3r_ecosystem\LICENSING_STRATEGY.md` and `.gald3r/CONSTRAINTS.md` C-020. License posture changes require updating all three: strategy doc, manifest entries, and per-repo `LICENSE`/`NOTICE` files in a single coordinated task. Bare LICENSE edits without a manifest update violate C-020.
 
-The license check is implemented inside `scripts/validate_workspace_members_gald3r.ps1` (alongside the existing T213 marker check). Pass `-SkipLicenseCheck` to suppress the license sweep when only marker diagnostics are wanted.
+The license check is implemented inside `.gald3r_sys/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1` (alongside the existing T213 marker check). Pass `-SkipLicenseCheck` to suppress the license sweep when only marker diagnostics are wanted.
 

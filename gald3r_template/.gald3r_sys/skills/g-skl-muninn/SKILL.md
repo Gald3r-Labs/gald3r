@@ -86,7 +86,7 @@ envelope shape: `{error, message}` for `invalid_argument` /
 
 ## IMPACT SCAN: g-go-code Step b0
 
-Before implementing any task, run this sequence (via `scripts/graph_impact.ps1`
+Before implementing any task, run this sequence (via `.gald3r_sys/skills/g-skl-muninn/scripts/graph_impact.ps1`
 or a direct MCP call):
 
 ```
@@ -121,7 +121,7 @@ or a direct MCP call):
 
 ## PowerShell Wrapper
 
-`scripts/graph_impact.ps1` is the PowerShell entry point used by Step b0 and
+`.gald3r_sys/skills/g-skl-muninn/scripts/graph_impact.ps1` is the PowerShell entry point used by Step b0 and
 the post-commit hook. It:
 
 1. Loads `docker/gald3r/tools/plugins/muninn/plugin.py` in-process via Python

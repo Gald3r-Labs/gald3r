@@ -407,7 +407,7 @@ Direct MCP equivalent (when calling tools by name):
 
 Review the returned `files` list (each entry `{path, relation}` with `relation` ∈ `imports | calls | imports+calls`). If the impact scan reveals > 3 transitively dependent files, add them to the implementation context window before writing. This prevents cross-file breakage ("agent edits one file and breaks another"). Non-blocking: proceed even if the script returns `warning: not_indexed` or falls back to the ripgrep backend.
 
-Migration note (T1158): the prior `scripts/gitnexus_impact.ps1` is deprecated; it now forwards to `graph_impact.ps1` automatically so legacy callers keep working. Update any custom automation to call the new script directly.
+Migration note (T1158): the prior `.gald3r_sys/skills/g-skl-muninn/scripts/gitnexus_impact.ps1` is deprecated; it now forwards to `graph_impact.ps1` automatically so legacy callers keep working. Update any custom automation to call the new script directly.
 
 **b0.2 Graphify Code-Graph Query (T874b, opt-in)**
 

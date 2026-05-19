@@ -1,6 +1,6 @@
 # @g-git-push — Pre-push gate (regular vs release)
 
-Run **`scripts/gald3r_push_gate.ps1`** before `git push` to distinguish **routine** pushes from **release** pushes. Complements `@g-git-sanity` / `g-hk-pre-commit.ps1` and shared `scripts/gald3r_git_sanity_common.ps1`.
+Run **`.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1`** before `git push` to distinguish **routine** pushes from **release** pushes. Complements `@g-git-sanity` / `g-hk-pre-commit.ps1` and shared `.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_git_sanity_common.ps1`.
 
 ---
 
@@ -17,25 +17,25 @@ Run **`scripts/gald3r_push_gate.ps1`** before `git push` to distinguish **routin
 
 ```powershell
 # Interactive — prompts "Is this a release push?"
-./scripts/gald3r_push_gate.ps1
+./.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1
 
 # Explicit release checks
-./scripts/gald3r_push_gate.ps1 -Release
+./.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1 -Release
 
 # CI / non-interactive release
 $env:GALD3R_RELEASE_PUSH = "1"
-./scripts/gald3r_push_gate.ps1 -NonInteractive
+./.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1 -NonInteractive
 
 # Agent wiring check (always exit 0)
-./scripts/gald3r_push_gate.ps1 -DryRun
-./scripts/gald3r_push_gate.ps1 -Release -DryRun
+./.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1 -DryRun
+./.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1 -Release -DryRun
 ```
 
 **Override** when release gate fails but you intend to push anyway:
 
 ```powershell
 $env:GALD3R_PUSH_GATE_OVERRIDE = "1"
-./scripts/gald3r_push_gate.ps1 -Release -NonInteractive
+./.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1 -Release -NonInteractive
 ```
 
 ---
@@ -64,7 +64,7 @@ Before `git push`, an optional SCA (Software Composition Analysis) compliance ch
 
 ### Enabling the Gate
 
-Set `enabled: true` in `.gald3r/config/COMPLIANCE_GATE.md`. When enabled, `scripts/gald3r_push_gate.ps1` automatically adds `-ComplianceCheck` before the push proceeds.
+Set `enabled: true` in `.gald3r/config/COMPLIANCE_GATE.md`. When enabled, `.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1` automatically adds `-ComplianceCheck` before the push proceeds.
 
 ### Gate Behavior
 

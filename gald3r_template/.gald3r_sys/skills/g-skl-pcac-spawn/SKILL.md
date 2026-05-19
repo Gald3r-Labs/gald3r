@@ -80,16 +80,16 @@ Run the guard helper against the planned new-project path **before Step 2** mate
 
 ```powershell
 $newProjectPath = Join-Path $ecosystemRoot $new_project_name
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_member_repo_gald3r_guard.ps1 -TargetPath $newProjectPath
+powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath $newProjectPath
 ```
 
 - exit `0` — proceed (target is not a workspace member).
 - exit `1` — **stop with `BLOCK pcac_spawn_member_repo_gald3r_guard_block`**. The target is a Workspace-Control member; PCAC spawn would seed the full control plane and violate the marker-only invariant. Direct the user to either:
   1. Spawn under a non-member parent path, OR
-  2. Use `@g-wrkspc-spawn` for new empty workspace members (which uses `scripts/bootstrap_member_gald3r_marker.ps1` to create only `.identity` + `PROJECT.md`).
+  2. Use `@g-wrkspc-spawn` for new empty workspace members (which uses `.gald3r_sys/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1` to create only `.identity` + `PROJECT.md`).
 - exit `2` — stop with `BLOCK pcac_spawn_member_repo_gald3r_guard_error`. Resolve the manifest before retrying.
 
-Installed projects ship the helper at `scripts/check_member_repo_gald3r_guard.ps1`.
+Installed projects ship the helper at `.gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1`.
 
 If `--dry-run`: print a full preview and stop. Do not create anything. The guard is reported in dry-run preview but does not block dry-run output (only blocks apply).
 

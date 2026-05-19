@@ -17,7 +17,7 @@
 # bootstrap_member_gald3r_marker.ps1; allows writing the marker pair itself).
 #
 # Rule reference: .claude/rules/g-rl-36-workspace-member-gald3r-guard.md
-# Guard helper: scripts/check_member_repo_gald3r_guard.ps1
+# Guard helper: .gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1
 
 $ErrorActionPreference = "SilentlyContinue"
 

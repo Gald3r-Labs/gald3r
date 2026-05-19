@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env pwsh
+#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
     gald3r pre-commit sanity hook (opt-in).
@@ -54,7 +54,7 @@ $repoRoot = git rev-parse --show-toplevel 2>$null
 if (-not $repoRoot) {
     $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "../../")).Path
 }
-$commonPath = Join-Path $repoRoot "scripts/gald3r_git_sanity_common.ps1"
+$commonPath = Join-Path $repoRoot ".gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_git_sanity_common.ps1"
 if (Test-Path $commonPath) {
     . $commonPath
 }

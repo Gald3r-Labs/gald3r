@@ -110,7 +110,7 @@ Sits between the **PCAC INBOX Gate** and the **Clean Controller Gate** on the `g
 
 Behavior at each invocation:
 
-1. Run `scripts/gald3r_housekeeping_commit.ps1` against the orchestration git root. The helper reads `git status --porcelain=v1 -uall`, classifies every dirty path against an explicit allowlist of safe controller `.gald3r/` coordination paths and a deny list of sensitive/identity/config paths, and returns one of: `clean`, `safe-gald3r-housekeeping`, `safe-gald3r-coordination`, `unsafe-gald3r`, `mixed-dirty`, `conflict`, `drift-detected`, or `committed-*` (when `-Apply`).
+1. Run `.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_housekeeping_commit.ps1` against the orchestration git root. The helper reads `git status --porcelain=v1 -uall`, classifies every dirty path against an explicit allowlist of safe controller `.gald3r/` coordination paths and a deny list of sensitive/identity/config paths, and returns one of: `clean`, `safe-gald3r-housekeeping`, `safe-gald3r-coordination`, `unsafe-gald3r`, `mixed-dirty`, `conflict`, `drift-detected`, or `committed-*` (when `-Apply`).
 2. If `clean` → continue without writing.
 3. If `safe-gald3r-housekeeping` (preflight) or `safe-gald3r-coordination` (post-write) → invoke the helper with `-Apply`. The helper stages **only** the classified-safe paths via explicit `git add -- <paths>`, re-checks for drift, then commits with one of:
    - `chore(gald3r): preflight gald3r housekeeping`

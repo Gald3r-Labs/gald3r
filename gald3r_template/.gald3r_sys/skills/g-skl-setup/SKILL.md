@@ -28,7 +28,7 @@ First-time setup of gald3r in a project. @g-setup command.
 **Before any folder or file creation**, verify the target install path is not a Workspace-Control controlled_member or migration_source repository. `g-skl-setup` is for installing a full standalone gald3r project; member repositories use a marker-only `.gald3r/` shape that is owned by `g-wrkspc-spawn` / `g-wrkspc-adopt` plus the bootstrap helper, NOT full setup.
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_member_repo_gald3r_guard.ps1 -TargetPath "<absolute_install_target>"
+powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath "<absolute_install_target>"
 ```
 
 Outcomes:
@@ -36,10 +36,10 @@ Outcomes:
 - exit `0` (ALLOW) — target is the workspace control project, outside any workspace, or a template directory; proceed with full setup.
 - exit `1` (BLOCK) — target is a Workspace-Control controlled_member or migration_source. **Stop**. Direct the user to either:
   1. Run setup against the workspace control project instead, OR
-  2. Run `@g-wrkspc-spawn` (new empty member) or `@g-wrkspc-adopt` (existing standalone gald3r project) if the target should be a workspace member. Both paths use `scripts/bootstrap_member_gald3r_marker.ps1` to create the marker pair (`.identity` + `PROJECT.md`) — they do NOT install the full gald3r control plane in members.
+  2. Run `@g-wrkspc-spawn` (new empty member) or `@g-wrkspc-adopt` (existing standalone gald3r project) if the target should be a workspace member. Both paths use `.gald3r_sys/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1` to create the marker pair (`.identity` + `PROJECT.md`) — they do NOT install the full gald3r control plane in members.
 - exit `2` (ERROR) — manifest unparseable. Resolve before continuing. If the project is genuinely standalone (no `.gald3r/linking/workspace_manifest.yaml` in any ancestor), the helper returns ALLOW; an actual exit `2` indicates a broken manifest.
 
-Installed projects ship the same helper at `scripts/check_member_repo_gald3r_guard.ps1`. External template repos (`G:/gald3r_ecosystem/gald3r_template_slim`, `G:/gald3r_ecosystem/gald3r_template_full`, `G:/gald3r_ecosystem/gald3r_template_adv`) are the only legitimate exception for live `.gald3r/` writes outside the control project.
+Installed projects ship the same helper at `.gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1`. External template repos (`G:/gald3r_ecosystem/gald3r_template_slim`, `G:/gald3r_ecosystem/gald3r_template_full`, `G:/gald3r_ecosystem/gald3r_template_adv`) are the only legitimate exception for live `.gald3r/` writes outside the control project.
 
 ### Step 0.5 — Git Readiness Check
 
