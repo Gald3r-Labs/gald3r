@@ -142,20 +142,6 @@ git remote -v
      and Command Set are active (e.g. GitHub integration activates only for
      `software_development`).
 
-4c. **Optional Git LFS** (T1311 — all project types, **off by default**):
-   Prompt:
-   ```
-   Enable Git LFS for binary files? (recommended for: 3d_modeling, content_creation)  [y/N]
-   ```
-   - Default **No** (enter declines) — existing repos are unaffected unless the user opts in.
-   - On **yes**: run `git lfs install`, then copy
-     `.gald3r_sys/templates/gitattributes-lfs.template` into the project's `.gitattributes`
-     (merge/append if one already exists — never clobber existing attributes).
-   - Mention the storage/bandwidth consideration: "GitHub LFS quota is limited and may incur
-     cost on large repos — review your plan before committing many large assets."
-   - Verify with `git check-attr filter -- some.psd` → should report `filter: lfs`.
-   - Honor a `--lfs` CLI flag to skip the prompt and enable directly.
-
 5. **Verify structure** (slim v3 layout — ground truth from G:\gald3r\.gald3r):
    ```
    .gald3r/ ✅

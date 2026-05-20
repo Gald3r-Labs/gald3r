@@ -173,13 +173,6 @@ Structural lint checks for:
 - missing concept pages
 - duplicated or weak cards
 - contradictions worth human review
-- **missing frontmatter (T1334)** — any long-lived note (`projects/*/memory.md`,
-  `sessions/*.md`, `decisions/*.md`, `knowledge/*.md`) that does not start with a `---`
-  YAML frontmatter block per `VAULT_OBSIDIAN_STANDARD.md`. Flag each: `⚠️ missing
-  frontmatter: <relpath> — run @g-vault-frontmatter-fix`. The scan is exactly the one
-  performed by `.gald3r_sys/skills/g-skl-vault/scripts/frontmatter_fix.ps1` (dry-run).
-  Optional `--auto-fix <file>` invokes `frontmatter_fix.ps1 -File <file> -Apply` (backup-first)
-  on a single file.
 
 Log lint passes in `log.md`.
 

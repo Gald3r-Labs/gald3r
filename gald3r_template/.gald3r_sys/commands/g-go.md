@@ -71,14 +71,6 @@ When `$ARGUMENTS` is empty or contains no task/bug IDs, the coordinator selects 
 
 When `$ARGUMENTS` provides explicit task/bug IDs, use those IDs exactly — skip scope filtering. The user's explicit selection is the plan. The `--workspace` flag still affects per-repo clean-check and authorization behavior even with explicit IDs: every repo touched by the explicit task list is gated per-root.
 
-### Optional GitHub PR hooks (T1291 / T1292)
-
-The pipeline inherits the GitHub PR hooks from its phase commands — **off by default**, byte-identical behavior unless explicitly enabled:
-- **Phase 1** (`g-go-code`) runs the PR-open hook (step 7b-pr) after the code-complete checkpoint commit.
-- **Phase 2** (`g-go-review`) runs the PR-close hook after the review-result commit.
-
-Both are **triple-gated**: `project_type=software_development` **and** `github_integration: enabled` **and** `github_pr_hooks: enabled` in `AGENT_CONFIG.md`. Any miss → skip silently. A GitHub failure never rolls back implementation `[🔍]` status or a review verdict. See `g-go-code` § 7b-pr and `g-go-review` § "Optional GitHub PR-Close Hook".
-
 ---
 
 ## Prompt Template Variables (T1175 — Sandcastle promptArgs pattern)
@@ -1047,10 +1039,23 @@ Print the handoff notice:
 [PIPELINE] Reviewer is a fresh agent — no Phase 1 context. Adversarial independence: ✓
 ```
 
+**Before spawning**, collect branch context from the Phase 1 checkpoint and task files (BUG-095 fix, T1375):
+```
+implementation_branch = read implementation_branch from [🔍] task files (should all match the checkpoint branch)
+implementation_sha    = checkpoint commit SHA from Phase 1 completion block above
+```
+
 Spawn a Task subagent with:
 - The full `g-go-review` prompt
 - Filter: `tasks {phase1_task_result_ids} bugs {phase1_bug_result_ids}` (omit either clause when empty)
 - Coordinator-managed override: "Return PASS/FAIL payloads and Status History rows only. Do not write task/bug files, `TASKS.md`, or `BUGS.md`; the `g-go` coordinator owns final writes."
+- **Branch handoff context** (append to the reviewer's initial prompt — enables Branch Pre-Flight Step 0):
+  ```
+  Review context (from Phase 1 coordinator):
+    Implementation branch: {implementation_branch}
+    Implementation checkpoint SHA: {implementation_sha}
+  The reviewer should use Branch Pre-Flight (Step 0 of g-go-review) to confirm it is on branch {implementation_branch} before scanning the review queue.
+  ```
 - No other context from Phase 1
 
 ### Reviewer Protocol

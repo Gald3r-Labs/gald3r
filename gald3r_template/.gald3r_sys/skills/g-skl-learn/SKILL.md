@@ -47,11 +47,6 @@ Triggered by `/g-learn` (no args). Write a 3–5 item summary of the current ses
    UPDATE the existing entry (update the date, refine the wording) rather than duplicating
 5. Append new facts under the appropriate section heading
 6. Optionally write to `{vault_location}/projects/{project_name}/memory.md` (ask user)
-   - **Frontmatter check (T1334)**: before appending, check whether `memory.md` starts with a
-     `---` YAML frontmatter block (per `VAULT_OBSIDIAN_STANDARD.md`). If it does **not**, surface
-     a one-line warning — `⚠️ {project}/memory.md has no Obsidian frontmatter — run @g-vault-frontmatter-fix`
-     — then proceed to append (a quick capture should not be blocked by the structural retrofit,
-     which is its own backup-first operation). Do not rewrite the header inline here.
 
 **Format**:
 ```

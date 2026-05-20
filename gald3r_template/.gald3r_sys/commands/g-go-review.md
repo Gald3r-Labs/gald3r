@@ -65,6 +65,42 @@ Immediately before the coordinator merges bucket results into the primary checko
 
 ## Execution Protocol
 
+### 0. Branch Pre-Flight (BUG-095 fix, T1374)
+
+**Run before any task scanning or review work.**
+
+1. Read `implementation_branch` from all `[🔍]` task files in `tasks/verification/` (or wherever TASKS.md points).
+2. Collect unique non-empty `implementation_branch` values.
+
+**Case A — all tasks share one branch, it differs from current branch:**
+```powershell
+# Preferred: create a review worktree from the implementation branch (T207 policy)
+gald3r_worktree.ps1 -Action Create -Branch <implementation_branch> -Role review
+# Fallback if worktree helper unavailable:
+git checkout <implementation_branch>
+```
+Log: `🔀 Branch pre-flight: switched to implementation branch (<branch> / <sha[:8]>)`
+
+**Case B — already on the correct branch:**
+Log: `✅ Branch pre-flight: already on implementation branch (<branch>)` — continue.
+
+**Case C — `implementation_branch` absent on ALL tasks (legacy, no field):**
+Log: `⚠️ Branch pre-flight: no implementation_branch field on tasks — legacy fallback, reviewing on current branch (<branch>)`  — continue.
+
+**Case D — tasks have MIXED `implementation_branch` values:**
+```
+⛔ Branch pre-flight: multiple implementation branches in review queue:
+   - T-NNN: <branch1>
+   - T-MMM: <branch2>
+Scope your g-go-review to one branch at a time. Run:
+  git checkout <branch> && g-go-review --tasks T-NNN,...
+```
+**STOP — do not proceed.**
+
+**Swarm mode:** The coordinator runs this pre-flight before partitioning buckets. All buckets inherit the resolved `implementation_branch`.
+
+---
+
 ### 1. Load Context
 
 Read in this order:
@@ -357,23 +393,6 @@ Required flow:
 4. Include the commit SHA in the final review summary.
 
 Allowed reasons not to create the review-result commit are limited to: unresolved conflicts, failed commit hooks, staged or untracked unrelated changes, detected secrets, dirty generated outputs not owned by review, missing user permission for destructive or out-of-scope changes, or repository state that prevents a safe commit. If one of these blockers applies, state the blocker explicitly and leave the review status writes uncommitted for human resolution.
-
-### Optional GitHub PR-Close Hook (T1292)
-
-After the review verdict is written and the review-result commit is created (above), optionally finalize the PR. **Triple-gated** and **off by default** — with the gates at their defaults, `g-go-review` / `g-go` Phase 2 behavior is byte-identical to pre-T1292.
-
-Evaluate in order; skip **silently** at the first miss (identical gate to T1291):
-1. `.gald3r/.identity` `project_type` == `software_development`.
-2. `AGENT_CONFIG.md` `github_integration` == `enabled`.
-3. `AGENT_CONFIG.md` `github_pr_hooks` == `enabled`.
-4. Otherwise invoke `g-pr-close --task <id>`.
-
-Rules:
-- Runs **after** the verdict status writes and the review-result commit — never before.
-- **On PASS**: the PR is flipped Ready, the review summary is posted as a comment, and the PR is merged using the configured `merge_strategy`; task `pr_status: merged`.
-- **On FAIL**: a FAIL comment is posted, the PR stays Draft (no merge), and the task moves to `[📋]` as usual; `pr_status` stays `draft`.
-- **Failure to merge/comment does NOT roll back the recorded verdict.** Append a Status History row noting whether the close hook ran (`pr_close: merged|kept-draft|skipped|failed`) and surface any failure in the session summary.
-- Honors the Autonomous Push Gate (g-rl-33): a merge is outward-facing — confirm per pipeline policy; never merge silently.
 
 ## Swarm Mode (`--swarm`)
 

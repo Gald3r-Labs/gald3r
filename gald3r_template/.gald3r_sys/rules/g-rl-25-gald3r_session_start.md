@@ -39,7 +39,6 @@ alwaysApply: true
 ```
 📌 SESSION CONTEXT
 Mission: [from PROJECT.md, 1 line]
-Project type: [project_type from .identity] | github_integration: [enabled if project_type=software_development, else disabled]
 Goals: G-01: [name] | G-02: [name] (from PROJECT.md)
 Plan focus: [current milestone or theme from PLAN.md]
 Ideas: [N] active (from IDEA_BOARD.md)
@@ -56,14 +55,6 @@ Experiments: [summary from experiments/EXPERIMENTS.md if it has active entries]
 
 Learned fact counts: count `-` bullet points in `.gald3r/learned-facts.md` (skip headers and empties).
 Global fact count: count bullets in `{vault_location}/projects/{project_name}/memory.md` if it exists.
-
-Project type (T1283): read `project_type=` from `.gald3r/.identity` (fall back to the
-`.gald3r/.project_type` dotfile). If absent, log silently and assume `software_development`.
-`github_integration` is `enabled` only when `project_type=software_development` (the GitHub
-Integration Bundle is gated on that type per T1285+); all other types show `disabled`. The
-active Workflow Profile is `<project_type>.yaml` under `.gald3r/config/workflow_profiles/`
-(see AGENTS.md "Workflow Profiles & Project Types"; resolved via `g-skl-project-types`
-`load_profile.ps1`).
 
 ## Agent Journal Read (T1010 — REDACTED-PATTERN pattern)
 
@@ -112,6 +103,16 @@ This prevents architectural drift and ensures changes respect subsystem boundari
   ⚠️ Re-work: Task {id} previously failed verification on {Timestamp}: {Message}
   ```
   This alerts the implementing agent that prior attempts failed and what to watch for.
+
+**Step 2a: Review Branch Mismatch Warning** (BUG-095 fix, T1374)
+- Check if `tasks/verification/` (or any subfolder containing `[🔍]` tasks) has task files with `implementation_branch:` set
+- If any `[🔍]` tasks have `implementation_branch: <X>` where `<X>` differs from the current branch:
+  ```
+  ⚠️ Review branch mismatch: N task(s) awaiting review were implemented on branch '<X>'.
+     You are currently on '<current_branch>'. Run `git checkout <X>` before starting g-go-review.
+  ```
+- Suppress when current branch already matches `implementation_branch`
+- Suppress when `implementation_branch` field is absent on all `[🔍]` tasks (legacy tasks — no signal)
 
 **Step 2b: Release Sync Check** (C-023)
 - Read `CHANGELOG.md`, count all `## [x.x.x]` version headers (skip `## [Unreleased]`)

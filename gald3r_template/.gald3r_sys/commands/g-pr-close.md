@@ -22,8 +22,7 @@ or `gh` missing → **no-op** with a friendly message.
 4. **On FAIL:**
    - `g-skl-github-pr COMMENT` — post the FAIL summary explaining the unmet criteria.
    - Leave the PR open as Draft (do **not** merge); keep `pr_status: draft`.
-5. **Fork-originated PRs (T1309)**: skip head-branch writes (no `gh pr ready` write-back, no `--delete-branch` on a fork); merge + comment from the base side normally.
-6. **Merge queue (T1312)**: when `github_config.md` `merge_queue: enabled`, use `gh pr merge --auto` (queued — GitHub merges with the configured `merge_strategy` when checks pass and position is reached) instead of an immediate merge.
+5. Fork-originated PRs: defer merge handling to T1309 (forking workflow); comment + flag.
 
 ## Flags
 

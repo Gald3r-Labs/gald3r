@@ -567,8 +567,20 @@ Where `{summary_line}` is one of:
 **c)** Validate — lint, test, check files exist
 **d)** Record decisions — if you chose approach A over B, append to `.gald3r/DECISIONS.md`
 **e)** Update subsystem Activity Log — for each subsystem in the task's `subsystems:` field, append to `.gald3r/subsystems/{name}.md` Activity Log: `| {date} | TASK | {id} | {title} | — |`. Create a stub spec if the file doesn't exist.
-**f)** Queue status update → mark `[🔍]` (NOT `[✅]`) in both task file and TASKS.md during the final batch write
-**g)** Move to next item
+**f)** Stamp implementation branch + SHA on task file frontmatter (BUG-095 fix, T1373):
+  Before writing the `[🔍]` status, capture and write to the task file's YAML frontmatter:
+  ```powershell
+  $branch = git branch --show-current 2>$null
+  $sha    = git rev-parse HEAD 2>$null
+  ```
+  Write both into the task file immediately after `completed_date:`:
+  ```yaml
+  implementation_branch: <branch>   # e.g. dev
+  implementation_sha: <full-40-char-sha>
+  ```
+  If `git` is unavailable or returns an error, leave both fields as empty string `''` — a stamping failure must NEVER prevent the `[🔍]` transition. In `--swarm` mode, each bucket agent stamps its own tasks; the coordinator does NOT re-stamp.
+**g)** Queue status update → mark `[🔍]` (NOT `[✅]`) in both task file and TASKS.md during the final batch write
+**h)** Move to next item
 
 > **IMPORTANT**: Mark every completed item `[🔍]`, never `[✅]`.
 > `[✅]` requires a separate agent session running `@g-go-review`.
@@ -688,22 +700,6 @@ Default review handoff is branch-addressable. After successful implementation re
 4. Record the checkpoint branch and commit SHA in the handoff summary.
 
 Snapshot review mode is fallback-only. Use it when the user explicitly requests uncommitted review, when a source cannot be made branch-addressable, or when a failed reconciliation must be inspected read-only. Do not make dirty snapshot mode the default.
-
-### 7b-pr. Optional GitHub PR-Open Hook (T1291)
-
-After the code-complete checkpoint commit (7b) and **only** then, optionally open a Draft PR. This is **triple-gated** and **off by default** — with the gates at their defaults, `g-go-code` behavior is byte-identical to pre-T1291.
-
-Evaluate in order; skip **silently** at the first miss:
-1. `.gald3r/.identity` `project_type` == `software_development` (else skip).
-2. `.gald3r/config/AGENT_CONFIG.md` `github_integration` == `enabled` (else skip).
-3. `AGENT_CONFIG.md` `github_pr_hooks` == `enabled` (else skip).
-4. Otherwise invoke `g-pr-open --task <id>` (which itself re-runs the `g-skl-github-pr` gate).
-
-Rules:
-- Runs **after** coordinator-owned shared writes and the checkpoint commit — never before.
-- **Failure to push or open the PR does NOT roll back `[🔍]`.** The implementation is done; the PR is a delivery artifact. On failure, append a `## Status History` row noting the failure and surface a notice in the session summary so the user can re-run `@g-pr-open --task <id>`.
-- On success, append a Status History row: `pr_open: opened <pr_url> (draft)`.
-- Honors the Autonomous Push Gate (g-rl-33): the push/PR-create is outward-facing — confirm per pipeline policy; never push silently.
 
 ### 7c. Rolling Implementation Waves
 

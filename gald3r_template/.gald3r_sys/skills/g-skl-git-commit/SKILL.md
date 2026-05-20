@@ -72,21 +72,6 @@ Phase: {N}
    git commit -m $msg
    ```
 
-## GPG Commit Signing (T1310)
-
-Read `gpg_signing:` from `.gald3r/config/AGENT_CONFIG.md` (`## Git Signing`) before committing:
-
-- `disabled` (default) → commit normally; **no behavior change**.
-- `enabled` → add `-S` to the `git commit` invocation (`git commit -S -m …`). First verify a
-  signing key is configured (`git config user.signingkey` non-empty). If not, **stop with a
-  clear message** rather than failing cryptically:
-  *"gpg_signing: enabled but no signing key configured — run `gpg --gen-key`, then
-  `git config user.signingkey <KEYID>`, and upload the public key to GitHub. See AGENT_CONFIG.md § Git Signing."*
-
-This is independent of the C-021 Cursor-trailer workaround below; when both apply, the
-signed-commit path still uses the `cmd.exe` `commit-tree` route (pass the key via
-`-S<keyid>` to `git commit-tree`).
-
 ## Phase Completion Commit
 ```bash
 git add .gald3r/tasks/ .gald3r/TASKS.md

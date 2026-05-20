@@ -63,17 +63,6 @@ Merge or close the PR per the review verdict.
   (use `Closes #N` in the PR body) or `gh issue close <issue_ref>`.
 - **FAIL / abandon** (`--close`) → `gh pr close <pr_url>`. Write `pr_status: closed`.
 
-**Fork-originated PRs (T1309)** — detect with
-`gh pr view <pr_url> --json headRepositoryOwner,isCrossRepository`. When the PR comes
-from a fork (`isCrossRepository: true`):
-- **Skip** any operation that requires writing to the head branch (the head lives on the
-  contributor's fork; we have no push permission there) — i.e. do **not** attempt READY's
-  `gh pr ready` write-back to the fork, and do not `--delete-branch` a fork branch.
-- **Merge is allowed** from the upstream/base side (we hold base-repo permission), as is
-  **COMMENT** (base-repo permission). PASS merges normally; FAIL comments + leaves open.
-- If a label/branch write is denied, surface a clear note rather than erroring out.
-Same-repo PRs are unchanged.
-
 ### STATUS
 Read the current PR state without mutating.
 1. `gh pr view <pr_url> --json state,isDraft,mergeable,baseRefName,statusCheckRollup`.
