@@ -126,7 +126,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-sub
 
 Use `-WarnOnly` for advisory exit 0; `-Json` for automation. **Do not conflate** this with the dependency graph: `dependencies:` / `dependents:` describe runtime coupling; `parent_subsystem` / `children` / nested folders describe documentation ownership grouping.
 
-**Regenerate architecture diagrams** (Mermaid, separate tree vs dependency views; includes nested spec paths): `scripts/gald3r_subsystem_diagrams_generate.ps1` (see `SUBSYSTEMS.md` → Generated architecture diagrams).
+**Regenerate architecture diagrams** (Mermaid, separate tree vs dependency views; includes nested spec paths): `.gald3r_sys/skills/g-skl-subsystems/scripts/gald3r_subsystem_diagrams_generate.ps1` (see `SUBSYSTEMS.md` → Generated architecture diagrams).
 
 ---
 

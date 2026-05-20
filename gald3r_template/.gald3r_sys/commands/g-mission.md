@@ -16,6 +16,42 @@ Aliases: `@g-juggernaut`, `@g-kamikaze`
 @g-mission --from-task T{id}
 ```
 
+### Overnight / extended AFK runs (IMPORTANT — read before going AFK)
+
+**Do NOT type `@g-mission resume` manually for extended runs.** That requires you to be present each time. Instead, use the wrapper script from a PowerShell terminal — it handles all auto-resumes for you:
+
+```powershell
+# Run this in a PowerShell terminal before going AFK / to bed
+# It loops automatically — you do not need to return until it stops itself
+.\scripts\mission-overnight.ps1
+```
+
+The script calls `claude -p "@g-mission resume --until-empty --budget 999"` in a loop. It parses `EXIT_REASON:` from each session to decide auto-resume vs real stop. You do nothing until the script exits or you come back.
+
+For unattended runs (overnight, meetings, AFK), use the wrapper script instead of typing `@g-mission resume` between sessions:
+
+```powershell
+# Resume an existing mission — runs until QUEUE_EMPTY, CONDITION_MET, or a real blocker
+.\scripts\mission-overnight.ps1
+
+# Start a new mission and drain all ai_safe tasks overnight
+.\scripts\mission-overnight.ps1 -Condition "drain all ai_safe tasks"
+
+# Use a specific model
+.\scripts\mission-overnight.ps1 -ClaudeArgs "--model claude-opus-4-7"
+```
+
+The script loops the `claude` CLI invocation automatically:
+- `CONTEXT_GATE` and `BUDGET_EXHAUSTED` → **transparent auto-resume** (no human input, 5-second gap between sessions)
+- `QUEUE_EMPTY`, `CONDITION_MET` → loop ends (success)
+- Any blocking code (`AI_SAFE_BLOCKED`, `BLAST_RADIUS_HIGH`, `PCAC_CONFLICT`, etc.) → loop ends, human review required
+
+A 12-hour overnight run at 20-30 min per session = up to 36 sessions × 3-10 tasks = 100-360 tasks while you sleep.
+
+**Why sessions exist at all:** The agent's context window has a hard ceiling — at ~75% fill, continuing mid-task would risk memory loss and partial work. The checkpoint commits everything cleanly, then the wrapper relaunches immediately. Context resets are transparent in overnight mode.
+
+**Equivalent to Claude Code's `/goal`:** `scripts/mission-overnight.ps1` is our implementation of the same pattern Claude Code uses natively — a post-session evaluator that fires automatically without user prompts.
+
 ## What it does
 
 `g-mission` is gald3r's autonomous completion loop. You state a verifiable end condition; the agent works toward it across as many `g-go` iterations as needed. After every iteration a lightweight evaluator checks whether the condition holds. If not, the loop continues. If yes, the mission is complete.

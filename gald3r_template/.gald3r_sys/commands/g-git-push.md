@@ -60,7 +60,7 @@ Hook file: `.cursor/hooks/g-hk-pre-push.ps1`
 
 Before `git push`, an optional SCA (Software Composition Analysis) compliance check can be run to catch license violations before code reaches the remote.
 
-**This gate is disabled by default.** Enable it in `.gald3r/config/COMPLIANCE_GATE.md`.
+**This gate is enabled by default.** The scanner auto-detects installed tools and skips gracefully if none are found. Disable in `.gald3r/config/COMPLIANCE_GATE.md`.
 
 ### Enabling the Gate
 
@@ -68,7 +68,7 @@ Set `enabled: true` in `.gald3r/config/COMPLIANCE_GATE.md`. When enabled, `.gald
 
 ### Gate Behavior
 
-The compliance check runs `scripts/run_compliance_scan.ps1 --gate-mode` and interprets exit codes:
+The compliance check runs `.gald3r_sys/skills/g-skl-compliance/scripts/run_compliance_scan.ps1 --gate-mode` and interprets exit codes:
 
 | Exit Code | Meaning | Push Behavior |
 |-----------|---------|---------------|
@@ -98,7 +98,7 @@ Run @g-compliance-scan for details, or set GALD3R_PUSH_GATE_OVERRIDE=1 to overri
 
 ### Stub Detection
 
-If `scripts/run_compliance_scan.ps1` is a stub (T906 not yet complete), the gate detects it and skips gracefully:
+If `.gald3r_sys/skills/g-skl-compliance/scripts/run_compliance_scan.ps1` is a stub (T906 not yet complete), the gate detects it and skips gracefully:
 ```
 ⚠️ Compliance scanner not yet configured — skipping gate.
    See @g-compliance-scan to set up.

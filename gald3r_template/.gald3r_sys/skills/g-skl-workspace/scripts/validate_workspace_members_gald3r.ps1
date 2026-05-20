@@ -1,27 +1,39 @@
 # .gald3r_sys/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1
 #
-# Workspace-Control member-marker validator (BUG-021 / Task 213 / g-rl-36).
+# Workspace-Control member-marker AND license-posture validator
+# (BUG-021 / Task 213 / g-rl-36 + Task 804 / C-020).
 #
 # Reads `.gald3r/linking/workspace_manifest.yaml`, enumerates every
-# controlled_member and migration_source, and reports per-member marker
-# compliance:
+# repository, and reports:
 #
-#   * clean              - .gald3r/ contains only .identity and/or PROJECT.md
-#   * marker_missing     - member exists, .gald3r/ absent or marker incomplete
-#                          (.identity and/or PROJECT.md missing)
-#   * has_violations     - .gald3r/ contains forbidden control-plane content
-#   * not_yet_created    - member path does not exist on disk yet
-#                          (planned_clean_member is fine; migration_source is fine)
+#   Marker compliance (controlled_member + migration_source only):
+#     * clean              - .gald3r/ contains only .identity and/or PROJECT.md
+#     * marker_missing     - member exists, .gald3r/ absent or marker incomplete
+#                            (.identity and/or PROJECT.md missing)
+#     * has_violations     - .gald3r/ contains forbidden control-plane content
+#     * not_yet_created    - member path does not exist on disk yet
+#                            (planned_clean_member is fine; migration_source is fine)
+#
+#   License posture (every repository, including control_project):
+#     * license_match      - LICENSE file exists and matches manifest `license:` value
+#     * license_drift      - LICENSE file exists but content does not match template
+#     * license_missing    - LICENSE file absent
+#     * license_undeclared - manifest entry has no `license:` key
+#     * reference_archive  - skipped (historical archive, not a live workspace repo)
 #
 # Exit codes:
 #   0 - all members compliant or only informational findings
-#   1 - one or more members have_violations
+#   1 - one or more members have_violations OR license_drift / license_missing
 #   2 - manifest error
 #
 # Used by:
 #   * Standalone audit run before adopting new members like gald3r_valhalla.
 #   * @g-wrkspc-validate as a workspace-validation extension.
 #   * CI checks, dry-run gates, and operator review.
+#
+# License canonical templates (resolved relative to controller repo root):
+#   .gald3r_sys/licenses/LICENSE_FSL_TEMPLATE.txt        -> license: FSL-1.1-Apache
+#   .gald3r_sys/licenses/LICENSE_PROPRIETARY_TEMPLATE.txt -> license: Proprietary
 
 [CmdletBinding()]
 param(
@@ -29,11 +41,20 @@ param(
 
     [switch]$Json,
 
-    [switch]$WarnOnly
+    [switch]$WarnOnly,
+
+    [switch]$SkipLicenseCheck
 )
 
 $ErrorActionPreference = 'Stop'
 $markerAllowlist = @('.identity', 'PROJECT.md')
+
+# Map of license-posture key (manifest `license:` value) to canonical template path
+# (resolved relative to the manifest's controller repo root).
+$LicenseTemplateMap = @{
+    'FSL-1.1-Apache' = '.gald3r_sys/licenses/LICENSE_FSL_TEMPLATE.txt'
+    'Proprietary'    = '.gald3r_sys/licenses/LICENSE_PROPRIETARY_TEMPLATE.txt'
+}
 
 function Find-WorkspaceManifest {
     param([string]$StartPath)
@@ -69,20 +90,63 @@ function Read-WorkspaceManifestRepositories {
         $localPath = ''
         $workspaceRole = ''
         $lifecycleStatus = ''
+        $license = ''
         $lpMatch = [regex]::Match($body, '(?m)^  local_path:\s*[''"]?([^''"\r\n]+?)[''"]?\s*$')
         if ($lpMatch.Success) { $localPath = $lpMatch.Groups[1].Value.Trim() }
         $wrMatch = [regex]::Match($body, '(?m)^  workspace_role:\s*([A-Za-z_]+)\s*$')
         if ($wrMatch.Success) { $workspaceRole = $wrMatch.Groups[1].Value.Trim() }
         $lsMatch = [regex]::Match($body, '(?m)^  lifecycle_status:\s*([A-Za-z_]+)\s*$')
         if ($lsMatch.Success) { $lifecycleStatus = $lsMatch.Groups[1].Value.Trim() }
+        $licMatch = [regex]::Match($body, '(?m)^  license:\s*[''"]?([A-Za-z0-9.\-_]+)[''"]?\s*$')
+        if ($licMatch.Success) { $license = $licMatch.Groups[1].Value.Trim() }
         $entries += [pscustomobject]@{
             Id              = $id
             LocalPath       = $localPath
             WorkspaceRole   = $workspaceRole
             LifecycleStatus = $lifecycleStatus
+            License         = $license
         }
     }
     return $entries
+}
+
+function Test-MemberLicensePosture {
+    param(
+        [pscustomobject]$Repo,
+        [string]$ControllerRoot,
+        [hashtable]$TemplateMap
+    )
+    # Returns hashtable @{ Status='license_match|license_drift|license_missing|license_undeclared|license_path_missing'; Note='...'; Posture='<value>' }
+    $posture = $Repo.License
+    if (-not $posture) {
+        return @{ Status = 'license_undeclared'; Note = "Manifest entry missing `license:` key (C-020 violation)."; Posture = '' }
+    }
+    if (-not $TemplateMap.ContainsKey($posture)) {
+        return @{ Status = 'license_drift'; Note = "Unknown posture value `$posture` (allowed: $($TemplateMap.Keys -join ', '))."; Posture = $posture }
+    }
+    if (-not (Test-Path -LiteralPath $Repo.LocalPath)) {
+        return @{ Status = 'license_path_missing'; Note = "Repo path does not exist; cannot inspect LICENSE."; Posture = $posture }
+    }
+    $licenseFile = Join-Path -Path $Repo.LocalPath -ChildPath 'LICENSE'
+    if (-not (Test-Path -LiteralPath $licenseFile)) {
+        return @{ Status = 'license_missing'; Note = "No LICENSE file at $licenseFile (C-020: posture is $posture)."; Posture = $posture }
+    }
+    $templateFile = Join-Path -Path $ControllerRoot -ChildPath $TemplateMap[$posture]
+    if (-not (Test-Path -LiteralPath $templateFile)) {
+        return @{ Status = 'license_drift'; Note = "Canonical template not found at $templateFile (controller setup issue)."; Posture = $posture }
+    }
+    $actual = (Get-Content -LiteralPath $licenseFile -Raw).Trim()
+    $expected = (Get-Content -LiteralPath $templateFile -Raw).Trim()
+    if ($actual -eq $expected) {
+        return @{ Status = 'license_match'; Note = ''; Posture = $posture }
+    }
+    # Soft compare: first 400 normalized chars
+    $normActual = ($actual -replace '\s+', ' ').Substring(0, [Math]::Min(400, $actual.Length))
+    $normExpected = ($expected -replace '\s+', ' ').Substring(0, [Math]::Min(400, $expected.Length))
+    if ($normActual -eq $normExpected) {
+        return @{ Status = 'license_match'; Note = '(matched after whitespace normalization)'; Posture = $posture }
+    }
+    return @{ Status = 'license_drift'; Note = "LICENSE content does not match canonical $($TemplateMap[$posture])."; Posture = $posture }
 }
 
 # Resolve manifest
@@ -111,12 +175,51 @@ catch {
     exit 2
 }
 
+# Controller repo root = directory holding .gald3r/linking/workspace_manifest.yaml
+$controllerRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $manifestFile))
+
 $results = @()
 $violationsCount = 0
 $markerMissingCount = 0
 $cleanCount = 0
 $notCreatedCount = 0
 $templateSkippedCount = 0
+$licenseMatchCount = 0
+$licenseDriftCount = 0
+$licenseMissingCount = 0
+$licenseUndeclaredCount = 0
+
+# License-posture sweep (every repository — including control_project)
+$licenseResults = @()
+if (-not $SkipLicenseCheck) {
+    foreach ($r in $repos) {
+        if ($r.WorkspaceRole -eq 'reference_archive') {
+            $licenseResults += [pscustomobject]@{
+                Id        = $r.Id
+                LocalPath = $r.LocalPath
+                Posture   = $r.License
+                Status    = 'reference_archive'
+                Note      = 'Reference archive skipped by C-020 license validation.'
+            }
+            continue
+        }
+        $check = Test-MemberLicensePosture -Repo $r -ControllerRoot $controllerRoot -TemplateMap $LicenseTemplateMap
+        $licenseResults += [pscustomobject]@{
+            Id        = $r.Id
+            LocalPath = $r.LocalPath
+            Posture   = $check.Posture
+            Status    = $check.Status
+            Note      = $check.Note
+        }
+        switch ($check.Status) {
+            'license_match'        { $licenseMatchCount++ }
+            'license_drift'        { $licenseDriftCount++ }
+            'license_missing'      { $licenseMissingCount++ }
+            'license_undeclared'   { $licenseUndeclaredCount++ }
+            default                { } # license_path_missing — informational
+        }
+    }
+}
 
 foreach ($r in $repos) {
     if ($r.WorkspaceRole -ne 'controlled_member' -and $r.WorkspaceRole -ne 'migration_source') {
@@ -189,6 +292,8 @@ foreach ($r in $repos) {
     $results += $resultEntry
 }
 
+$licenseFail = ($licenseDriftCount + $licenseMissingCount + $licenseUndeclaredCount) -gt 0
+
 $summary = [pscustomobject]@{
     ManifestPath        = $manifestFile
     MemberCount         = $results.Count
@@ -197,14 +302,21 @@ $summary = [pscustomobject]@{
     MarkerMissing       = $markerMissingCount
     NotYetCreated       = $notCreatedCount
     Members             = $results
-    OverallStatus       = if ($violationsCount -gt 0) { 'fail' } else { 'pass' }
+    LicenseChecked      = (-not $SkipLicenseCheck)
+    LicenseRepoCount    = $licenseResults.Count
+    LicenseMatch        = $licenseMatchCount
+    LicenseDrift        = $licenseDriftCount
+    LicenseMissing      = $licenseMissingCount
+    LicenseUndeclared   = $licenseUndeclaredCount
+    Licenses            = $licenseResults
+    OverallStatus       = if ($violationsCount -gt 0 -or $licenseFail) { 'fail' } else { 'pass' }
 }
 
 if ($Json) {
     $summary | ConvertTo-Json -Depth 6
 }
 else {
-    Write-Output "Workspace member marker validation"
+    Write-Output "Workspace member marker + license validation"
     Write-Output ("  manifest         : {0}" -f $manifestFile)
     Write-Output ("  member count     : {0}" -f $results.Count)
     if ($templateSkippedCount -gt 0) {
@@ -225,6 +337,18 @@ else {
             Write-Output ("  forbidden       : {0}" -f ($m.Forbidden -join ', '))
         }
         foreach ($n in $m.Notes) { Write-Output ("  note            : {0}" -f $n) }
+        Write-Output ""
+    }
+    if (-not $SkipLicenseCheck) {
+        Write-Output "License posture (C-020):"
+        Write-Output ("  license_match    : {0}" -f $licenseMatchCount)
+        Write-Output ("  license_drift    : {0}" -f $licenseDriftCount)
+        Write-Output ("  license_missing  : {0}" -f $licenseMissingCount)
+        Write-Output ("  license_undeclared: {0}" -f $licenseUndeclaredCount)
+        foreach ($l in $licenseResults) {
+            Write-Output ("[{0}] {1}  posture={2}" -f $l.Status.ToUpperInvariant(), $l.Id, $l.Posture)
+            if ($l.Note) { Write-Output ("  note            : {0}" -f $l.Note) }
+        }
         Write-Output ""
     }
     Write-Output ("Overall: {0}" -f $summary.OverallStatus.ToUpperInvariant())

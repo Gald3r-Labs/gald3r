@@ -182,9 +182,9 @@ try {
         & powershell -NoProfile -ExecutionPolicy Bypass -File $gateScript -CheckOnly -ProjectRoot (Get-Location).Path 2>$null | Out-Null
         $gateExit = $LASTEXITCODE
         if ($gateExit -eq 2) {
-            $archiveGateBanner = "WARNING: TASKS.md ARCHIVE GATE: file exceeds 1200 lines. Run: scripts/gald3r_tasks_archive_gate.ps1 -Apply to archive terminal tasks.`n---`n"
+            $archiveGateBanner = "WARNING: TASKS.md ARCHIVE GATE: file exceeds 1200 lines. Run: .gald3r_sys/skills/g-skl-tasks/scripts/gald3r_tasks_archive_gate.ps1 -Apply to archive terminal tasks.`n---`n"
         } elseif ($gateExit -eq 1) {
-            $archiveGateBanner = "WARNING: TASKS.md approaching archive threshold (>=900 lines). Consider: scripts/gald3r_tasks_archive_gate.ps1 -Apply`n---`n"
+            $archiveGateBanner = "WARNING: TASKS.md approaching archive threshold (>=900 lines). Consider: .gald3r_sys/skills/g-skl-tasks/scripts/gald3r_tasks_archive_gate.ps1 -Apply`n---`n"
         }
     }
 } catch {}

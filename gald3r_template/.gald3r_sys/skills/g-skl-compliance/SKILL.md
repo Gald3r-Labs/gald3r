@@ -109,7 +109,7 @@ Report format:
 ```powershell
 # Invoke the stub helper (or full implementation when available):
 # TODO[TASK-906→TASK-<follow-up>]: Replace stub with full ORT/FOSSA/Snyk/PMD pipeline
-& scripts/run_compliance_scan.ps1 -Scanner $scanner -RepoRoot (Get-Location).Path
+& .gald3r_sys/skills/g-skl-compliance/scripts/run_compliance_scan.ps1 -Scanner $scanner -RepoRoot (Get-Location).Path
 ```
 
 ---
@@ -144,7 +144,7 @@ Reads the most recent report and returns a structured verdict:
 | `WARN` | LGPL/MPL/CDDL licenses present but no hard blockers | 1 |
 | `FAIL` | GPL/AGPL/unknown licenses in a distribution context, or scan error | 2 |
 
-When called from `.cursor/hooks/g-git-push` or `scripts/run_compliance_scan.ps1`:
+When called from `.cursor/hooks/g-git-push` or `.gald3r_sys/skills/g-skl-compliance/scripts/run_compliance_scan.ps1`:
 - Exit 0 → allow push
 - Exit 1 → warn but allow (unless `COMPLIANCE_GATE_STRICT=1` env var is set)
 - Exit 2 → block push, print blocking packages
@@ -211,7 +211,7 @@ When no external SCA tool is available, parse package manifests directly.
 
 ## PowerShell Helper Stub
 
-`scripts/run_compliance_scan.ps1` — called by SCAN operation and `@g-compliance-gate` hook.
+`.gald3r_sys/skills/g-skl-compliance/scripts/run_compliance_scan.ps1` — called by SCAN operation and `@g-compliance-gate` hook.
 
 ```powershell
 # TODO[TASK-906→TASK-<follow-up>]: Full ORT/FOSSA/Snyk/PMD pipeline implementation

@@ -57,7 +57,7 @@ cross_project_ref:
 Run from repo root:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/gald3r_feature_hierarchy_sync.ps1 -ProjectRoot .
+powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-features/scripts/gald3r_feature_hierarchy_sync.ps1 -ProjectRoot .
 ```
 
 Detects duplicate `id:` values, missing `parent_feature` targets, stale `children:` entries, and `depth:` vs folder mismatches. Use `-WarnOnly` for advisory exit code 0; `-Json` for machine-readable output.

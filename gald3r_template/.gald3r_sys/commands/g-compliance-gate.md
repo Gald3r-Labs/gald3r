@@ -25,7 +25,7 @@ This command is consumed by `@g-git-push` pre-push compliance check:
 
 ```powershell
 # In .cursor/hooks/g-pre-push.ps1
-& scripts/run_compliance_scan.ps1 -Scanner auto
+& .gald3r_sys/scripts/run_compliance_scan.ps1 -Scanner auto
 if ($LASTEXITCODE -eq 2) {
     Write-Error "COMPLIANCE FAIL — push blocked. Run @g-compliance-report for details."
     exit 1

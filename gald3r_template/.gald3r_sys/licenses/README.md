@@ -1,6 +1,6 @@
 # License Templates
 
-Canonical LICENSE and NOTICE templates used by every workspace member repository in `g:\gald3r_ecosystem\`. The license posture for each repository is recorded in `.gald3r/linking/workspace_manifest.yaml` under the per-repository `license:` key, and validated by `.gald3r_sys/skills/g-skl-workspace/.gald3r_sys/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1`.
+Canonical LICENSE and NOTICE templates used by every workspace member repository in `g:\gald3r_ecosystem\`. The license posture for each repository is recorded in `.gald3r/linking/workspace_manifest.yaml` under the per-repository `license:` key, and validated by `.gald3r_sys/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1`.
 
 ## Templates
 
