@@ -14,6 +14,14 @@ g-skill-pack-add <pack-name> <skill-name>     Install one skill from the pack
 1. Validate `<pack-name>` exists in `.gald3r_sys/skill_packs/`
 2. If `<skill-name>` given, validate it exists in `<pack-name>/source/skills/`
 3. Detect active platforms via helper: check which IDE folders exist in project root
+3b. **Trust-level provenance warning (C-032 — non-blocking)**: read each skill's `skill_trust_level:` frontmatter. For every skill whose value is `community` or unset, surface a warning **before** install proceeds:
+   ```
+   ⚠️  Skill '<skill-name>' — trust level: <community | unset>
+       Source: <pack-name>
+       Its `allowed-tools:` boundary still applies, but this skill is not gald3r-core.
+       Inspect the skill body before its first invocation.
+   ```
+   This is advisory only — installation continues after the warning. `core` and `local` skills install without a warning. (Canonical wording: `skl-skill-create/SKILL.md` → `### skill_trust_level:` declaration.)
 4. Run install:
    ```powershell
    .gald3r_sys/skill_packs/<pack-name>/install.ps1 -ProjectRoot . [-Skill <skill-name>]

@@ -72,6 +72,21 @@ Phase: {N}
    git commit -m $msg
    ```
 
+## GPG Commit Signing (T1310)
+
+Read `gpg_signing:` from `.gald3r/config/AGENT_CONFIG.md` (`## Git Signing`) before committing:
+
+- `disabled` (default) → commit normally; **no behavior change**.
+- `enabled` → add `-S` to the `git commit` invocation (`git commit -S -m …`). First verify a
+  signing key is configured (`git config user.signingkey` non-empty). If not, **stop with a
+  clear message** rather than failing cryptically:
+  *"gpg_signing: enabled but no signing key configured — run `gpg --gen-key`, then
+  `git config user.signingkey <KEYID>`, and upload the public key to GitHub. See AGENT_CONFIG.md § Git Signing."*
+
+This is independent of the C-021 Cursor-trailer workaround below; when both apply, the
+signed-commit path still uses the `cmd.exe` `commit-tree` route (pass the key via
+`-S<keyid>` to `git commit-tree`).
+
 ## Phase Completion Commit
 ```bash
 git add .gald3r/tasks/ .gald3r/TASKS.md
@@ -148,6 +163,28 @@ Use `scripts/gald3r_worktree.ps1` for agent-owned isolated checkouts in the gald
 - **Touch-set hygiene**: before creating worktrees for those flows, satisfy the Clean Controller Gate and Pre-Reconciliation Clean Gate in `g-rl-33` on **every root in the computed touch set** so checkpoint and review-result commits are not blocked by unrelated dirty state in any included repository.
 - Cleanup is report-only unless `-Apply` is provided, and removal is limited to directories with `.gald3r-worktree.json` ownership metadata.
 - When committing from a worktree, run `git status` and `git commit` from that worktree's repository root, not from the control checkout.
+
+### Session JSONL Capture & Cross-Sandbox Resume (T1124)
+
+`scripts/gald3r_session_capture.ps1` (mirrored beside `gald3r_worktree.ps1` in each IDE skill folder) preserves the full Claude Code conversation thread from a worktree/sandbox so it can be resumed natively with `claude --resume`. This complements `memory_capture_session` (semantic summaries) — JSONL capture keeps the *literal* transcript, with `cwd` paths rewritten from the worktree to the host repo so resume works from any sandbox.
+
+```powershell
+# Dry-run: locate the worktree's session JSONL and report what would be captured
+.\scripts\gald3r_session_capture.ps1 -Action Report -WorktreePath ..\.gald3r-worktrees\gald3r_dev\T1124 -TaskId 1124
+
+# Capture: copy + cwd-rewrite + record metadata (writes only with -Apply)
+.\scripts\gald3r_session_capture.ps1 -Action Capture -Apply -WorktreePath ..\.gald3r-worktrees\gald3r_dev\T1124 -TaskId 1124
+
+# List captured sessions for a project, or resolve one to its resume command
+.\scripts\gald3r_session_capture.ps1 -Action List
+.\scripts\gald3r_session_capture.ps1 -Action Resolve -SessionId <session-id>
+```
+
+- **Path encoding**: Claude Code names each project folder by replacing every non-alphanumeric char in the absolute cwd with `-` (e.g. `G:\gald3r_ecosystem\gald3r_dev` → `G--gald3r-ecosystem-gald3r-dev`). The helper reproduces this to find the worktree's session folder.
+- **Locations** (overridable): source = `$env:CLAUDE_CONFIG_DIR\projects` or `~/.claude/projects`; captures land in `$env:GALD3R_SESSIONS_ROOT` or `~/.gald3r-sessions/<project_id>/<task_id>/<session_id>.jsonl`.
+- **Metadata** is upserted to `~/.gald3r-sessions/<project_id>/sessions.json` (`session_id`, `task_id`, `timestamp`, `worktree_path`, `host_repo_path`, `host_jsonl_path`, `cwd_rewrites`).
+- **cwd rewrite** replaces both JSON-escaped (`\\`) and raw worktree path forms with the host repo path across every line, so resumed sessions reference real host files.
+- Capture is dry-run without `-Apply`; `-Json` emits a machine-readable result object for `g-go` orchestration.
 
 ### Manual Steps
 

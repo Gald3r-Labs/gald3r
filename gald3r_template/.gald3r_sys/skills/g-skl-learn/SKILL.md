@@ -30,6 +30,9 @@ This skill covers **chat-mode sessions** where hooks don't fire.
 |-------|------|---------|
 | Project | `.gald3r/learned-facts.md` | Project-specific facts, decisions, gotchas |
 | Global | `{vault_location}/projects/{project_name}/memory.md` | Cross-project user prefs, patterns, style |
+| Agent role | `{platform}/agents/{slug}/journal/YYYY-MM-DD-{task-ref}-{slug}.md` | Durable learning specific to ONE agent role (REDACTED-PATTERN pattern, T1010) |
+
+When an insight is **specific to a single agent role** (e.g. "the code reviewer should always check X first"), write it to that agent's journal **in addition to** `learned-facts.md` — see the `CAPTURE_JOURNAL` operation. Project-wide facts go to `learned-facts.md` only.
 
 ## Operations
 
@@ -44,6 +47,11 @@ Triggered by `/g-learn` (no args). Write a 3–5 item summary of the current ses
    UPDATE the existing entry (update the date, refine the wording) rather than duplicating
 5. Append new facts under the appropriate section heading
 6. Optionally write to `{vault_location}/projects/{project_name}/memory.md` (ask user)
+   - **Frontmatter check (T1334)**: before appending, check whether `memory.md` starts with a
+     `---` YAML frontmatter block (per `VAULT_OBSIDIAN_STANDARD.md`). If it does **not**, surface
+     a one-line warning — `⚠️ {project}/memory.md has no Obsidian frontmatter — run @g-vault-frontmatter-fix`
+     — then proceed to append (a quick capture should not be blocked by the structural retrofit,
+     which is its own backup-first operation). Do not rewrite the header inline here.
 
 **Format**:
 ```
@@ -61,6 +69,28 @@ Triggered by `/g-learn insight` or user saying "remember this" / "make a note".
 
 Write ONE specific fact immediately. Same dedup check. Same format.
 Do not wait for end of session — write now.
+
+If the insight is **agent-role-specific** (it changes how one role should
+work, not the project at large), ALSO run `CAPTURE_JOURNAL` for that role.
+
+### CAPTURE_JOURNAL (agent-role-specific learning, T1010)
+
+Triggered when an insight is durable but specific to ONE agent role rather
+than the whole project — e.g. a reviewer anti-pattern, a task-manager
+decision rule. Writes a per-agent journal entry **in addition to** the
+`learned-facts.md` bullet (the journal is the role-specific store; it does
+not replace project facts).
+
+1. Resolve the active agent slug (e.g. `g-agnt-code-reviewer`).
+2. Write `{platform}/agents/{slug}/journal/YYYY-MM-DD-{task-ref}-{slug}.md`
+   with the frontmatter and 3–10 line body documented in
+   `{platform}/agents/JOURNAL_FORMAT.md`
+   (`date`, `agent`, `task_ref`, `category`, `tags`).
+3. Use `category: anti-pattern` for mistakes-to-avoid — these are surfaced
+   prominently at session start by `g-rl-25`.
+4. Keep it concise — brevity is the discipline. One insight per entry.
+
+Journal entries are plain markdown: git-tracked, Obsidian-readable, no DB.
 
 ### REVIEW
 

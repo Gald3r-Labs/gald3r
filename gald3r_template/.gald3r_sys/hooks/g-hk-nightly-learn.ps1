@@ -49,7 +49,11 @@ if (-not $ProjectRoot) {
     $ProjectRoot = if ($dir) { $dir } else { (Get-Location).Path }
 }
 
-$helperScript = Join-Path (Join-Path $ProjectRoot 'scripts') 'gald3r_nightly_learn.ps1'
+$helperScript = Join-Path (Join-Path (Join-Path (Join-Path $ProjectRoot '.gald3r_sys') 'skills') 'g-skl-learn') (Join-Path 'scripts' 'gald3r_nightly_learn.ps1')
+# D015 fallback: try legacy scripts/ location if .gald3r_sys/ path is missing
+if (-not (Test-Path $helperScript)) {
+    $helperScript = Join-Path (Join-Path $ProjectRoot 'scripts') 'gald3r_nightly_learn.ps1'
+}
 $logsDir      = Join-Path (Join-Path $ProjectRoot '.gald3r') 'logs'
 $counterFile  = Join-Path $logsDir 'learn-counter'
 $lastRunLog   = Join-Path $logsDir 'nightly-learn-last-run.log'

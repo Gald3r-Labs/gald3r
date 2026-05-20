@@ -81,6 +81,25 @@ A valid completion signal consists of **all** of the following — every item is
 
 **Why this matters**: the next agent (`g-go-review` or any reviewer) reads the task file cold and uses these artifacts as the authoritative ground-truth for the work claimed complete. Missing signal pieces are the root cause of the "passed review but actually broken" failure mode.
 
+## Journal Capture on Novel Pattern (T1010 — REDACTED-PATTERN pattern)
+
+After a task reaches `[🔍]`, IF the implementation surfaced a **novel pattern,
+decision rule, or anti-pattern** worth remembering for next time, write **one**
+concise entry to the active agent's journal:
+
+```
+{platform}/agents/{slug}/journal/YYYY-MM-DD-{task-ref}-{slug}.md
+```
+
+- Frontmatter and 3–10 line body per `{platform}/agents/JOURNAL_FORMAT.md`
+  (`date`, `agent`, `task_ref`, `category`, `tags`).
+- Use `category: anti-pattern` for mistakes-to-avoid — `g-rl-25` surfaces these
+  prominently at the next session start so the same trap is not re-hit.
+- **Not every task earns an entry.** Skip routine work; brevity is the point.
+- This is durable, offline, per-agent learning (no Docker/DB) and supplements
+  `g-skl-learn`'s project-wide `learned-facts.md`. It is **not** part of the
+  mandatory completion signal — a missing journal entry never blocks `[🔍]`.
+
 ## Iteration and Timeout Limits (T1175 — Sandcastle pattern)
 
 `g-go-code` accepts dual stop-conditions in `$ARGUMENTS`. **Whichever limit hits first stops the run cleanly**; the limit is not a hard kill — it is a soft "no new claims, finish what's in flight, write the summary" boundary.
@@ -410,6 +429,19 @@ Review the returned `files` list (each entry `{path, relation}` with `relation` 
 
 Use `.gald3r_sys/skills/g-skl-muninn/scripts/graph_impact.ps1` for all impact analysis (T1158).
 
+**b0.1a Index freshness check (T1149)** — before relying on impact results, check index state (the wrapper reports it; or call `graph_status` via MCP):
+
+- **Index absent** (`index_missing` / `warning: not_indexed`) → emit this warning, then proceed on the ripgrep fallback (non-blocking):
+  ```
+  ⚠️ Codebase graph index not found.
+     Build it:  python -m docker.gald3r.tools.plugins.muninn.indexers.python_indexer --root .
+                node  docker/gald3r/tools/plugins/muninn/indexers/ts_indexer.js  --root .   (TS/JS)
+     Or run @g-setup (it offers to build the index + wire the post-commit refresh hook).
+     Impact scan falling back to ripgrep — blast-radius estimates may be incomplete.
+  ```
+- **Index stale** (`graph_status` → `stale: true`, >24h old) **AND** the post-commit hook (`g-hk-graph-update.ps1`) is not installed → surface a one-line advisory (non-blocking): `ℹ️ Graph index >24h old; install the post-commit refresh hook (see @g-setup) to keep it fresh.`
+- **Index fresh** (post-commit hook running) → run silently; no output unless the `files` list is non-empty.
+
 **b0.2 Graphify Code-Graph Query (T874b, opt-in)**
 
 Read `.gald3r/config/AGENT_CONFIG.md` → `context_reduction_mode.graphify_b0_enabled`. When `true`, the coordinator runs a single graph query before bucket spawn (or before single-agent implementation), captures the result as a small context block (typical ≤200 tokens), and passes it to implementer subagents as part of the briefing. When `false` (safe default), this step is skipped and Step b0.1 alone gates the impact context.
@@ -656,6 +688,22 @@ Default review handoff is branch-addressable. After successful implementation re
 4. Record the checkpoint branch and commit SHA in the handoff summary.
 
 Snapshot review mode is fallback-only. Use it when the user explicitly requests uncommitted review, when a source cannot be made branch-addressable, or when a failed reconciliation must be inspected read-only. Do not make dirty snapshot mode the default.
+
+### 7b-pr. Optional GitHub PR-Open Hook (T1291)
+
+After the code-complete checkpoint commit (7b) and **only** then, optionally open a Draft PR. This is **triple-gated** and **off by default** — with the gates at their defaults, `g-go-code` behavior is byte-identical to pre-T1291.
+
+Evaluate in order; skip **silently** at the first miss:
+1. `.gald3r/.identity` `project_type` == `software_development` (else skip).
+2. `.gald3r/config/AGENT_CONFIG.md` `github_integration` == `enabled` (else skip).
+3. `AGENT_CONFIG.md` `github_pr_hooks` == `enabled` (else skip).
+4. Otherwise invoke `g-pr-open --task <id>` (which itself re-runs the `g-skl-github-pr` gate).
+
+Rules:
+- Runs **after** coordinator-owned shared writes and the checkpoint commit — never before.
+- **Failure to push or open the PR does NOT roll back `[🔍]`.** The implementation is done; the PR is a delivery artifact. On failure, append a `## Status History` row noting the failure and surface a notice in the session summary so the user can re-run `@g-pr-open --task <id>`.
+- On success, append a Status History row: `pr_open: opened <pr_url> (draft)`.
+- Honors the Autonomous Push Gate (g-rl-33): the push/PR-create is outward-facing — confirm per pipeline policy; never push silently.
 
 ### 7c. Rolling Implementation Waves
 

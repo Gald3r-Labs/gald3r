@@ -62,6 +62,11 @@ layer: ''             # e.g. policy, transport, presentation
 children: []          # logical child subsystem names (explicit; not inferred only from folders)
 dependencies: [other-subsystem-names]
 dependents: [subsystem-names-that-depend-on-this]
+# Optional code ownership (T1298) — GitHub usernames or @org/team slugs.
+# Consumed by `@g-codeowners-gen` (T1299) to generate .github/CODEOWNERS from
+# each owned subsystem's `locations:` paths. Empty/absent on most specs; only
+# meaningful on project_type=software_development with GitHub integration.
+owners: []           # e.g. [octocat, "@acme/backend"]
 locations:
   code: [src/subsystem/]
   skills: [g-tasks, g-bugs]
@@ -99,6 +104,16 @@ locations:
   - `slim` — No Docker, no API keys required; pure file-based skill
   - `full` — Requires API keys or network access (e.g., LLM API, GitHub API)
   - `adv` — Requires Docker backend, MCP server, or managed cloud service
+- `owners:` (optional, T1298) — GitHub usernames or `@org/team` slugs that own this
+  subsystem's code. Leave empty (`[]`) unless GitHub integration is in use. When
+  populated, `@g-codeowners-gen` (T1299) emits a `.github/CODEOWNERS` line for each of
+  this subsystem's `locations.code` paths assigning these owners. Existing specs need
+  no migration — the field is optional and defaults to empty.
+
+  Example populated value:
+  ```yaml
+  owners: [wrm3, "@gald3r/maintainers"]
+  ```
 
 ---
 

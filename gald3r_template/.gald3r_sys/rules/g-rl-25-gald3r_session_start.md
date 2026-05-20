@@ -11,7 +11,7 @@ alwaysApply: true
 **SLIM layout** (gald3r base — what g-skl-setup creates):
 ```
 .gald3r/
-├── .identity             # project_id, project_name, user_id, user_name, gald3r_version, vault_location
+├── .identity             # project_id, project_name, project_type, user_id, user_name, gald3r_version, vault_location
 ├── .gitignore
 ├── TASKS.md, PLAN.md, PROJECT.md, CONSTRAINTS.md, BUGS.md, SUBSYSTEMS.md, IDEA_BOARD.md, FEATURES.md
 ├── features/       # Individual PRD files
@@ -39,6 +39,7 @@ alwaysApply: true
 ```
 📌 SESSION CONTEXT
 Mission: [from PROJECT.md, 1 line]
+Project type: [project_type from .identity] | github_integration: [enabled if project_type=software_development, else disabled]
 Goals: G-01: [name] | G-02: [name] (from PROJECT.md)
 Plan focus: [current milestone or theme from PLAN.md]
 Ideas: [N] active (from IDEA_BOARD.md)
@@ -46,6 +47,8 @@ Subsystems: [N] registered (from SUBSYSTEMS.md + subsystems/)
 Specs: [N] in specifications_collection/ (newest: YYYY-MM-DD) [or "none"]
 ⚠️ Unreviewed: {spec_filename}  ← only if spec mtime > date of last [✅] task
 🧠 Learned Facts: [N] project facts | [M] global facts  (run /g-learn review to see them)
+📓 Journal: [last entry date] for {active-agent-slug}  ← only when the active agent role has journal entries
+⚠️ Avoid: {one-line summary}  ← only if the active agent's most recent journal entry is `category: anti-pattern`
 Experiments: [summary from experiments/EXPERIMENTS.md if it has active entries]
 🛡️ Constraints: [N] active — run @g-constraint-check before completing any task
 ⚠️ Release sync: N CHANGELOG version(s) missing release file — run @g-release-sync  ← only show when gap count > 0
@@ -53,6 +56,29 @@ Experiments: [summary from experiments/EXPERIMENTS.md if it has active entries]
 
 Learned fact counts: count `-` bullet points in `.gald3r/learned-facts.md` (skip headers and empties).
 Global fact count: count bullets in `{vault_location}/projects/{project_name}/memory.md` if it exists.
+
+Project type (T1283): read `project_type=` from `.gald3r/.identity` (fall back to the
+`.gald3r/.project_type` dotfile). If absent, log silently and assume `software_development`.
+`github_integration` is `enabled` only when `project_type=software_development` (the GitHub
+Integration Bundle is gated on that type per T1285+); all other types show `disabled`. The
+active Workflow Profile is `<project_type>.yaml` under `.gald3r/config/workflow_profiles/`
+(see AGENTS.md "Workflow Profiles & Project Types"; resolved via `g-skl-project-types`
+`load_profile.ps1`).
+
+## Agent Journal Read (T1010 — REDACTED-PATTERN pattern)
+
+When acting as a specific gald3r agent role, read that role's recent journal **before starting work**:
+
+1. Resolve the active agent slug (e.g. `g-agnt-code-reviewer`).
+2. Read the last **5** entries (newest by filename date) from
+   `{platform}/agents/{slug}/journal/*.md` — these are durable, offline,
+   per-role learnings (format in `{platform}/agents/JOURNAL_FORMAT.md`).
+3. Surface `category: anti-pattern` entries prominently (the `⚠️ Avoid:`
+   line above) so prior mistakes are not repeated.
+4. Skip silently when the agent has no journal directory or no entries.
+
+Journals are plain git-tracked markdown — no Docker/DB required. They
+supplement `.gald3r/learned-facts.md` with per-agent-role specificity.
 
 ## Subsystem Awareness (MANDATORY)
 At session start, read `.gald3r/SUBSYSTEMS.md` for the registry and interconnection graph.

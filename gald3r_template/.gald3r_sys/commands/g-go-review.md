@@ -358,6 +358,23 @@ Required flow:
 
 Allowed reasons not to create the review-result commit are limited to: unresolved conflicts, failed commit hooks, staged or untracked unrelated changes, detected secrets, dirty generated outputs not owned by review, missing user permission for destructive or out-of-scope changes, or repository state that prevents a safe commit. If one of these blockers applies, state the blocker explicitly and leave the review status writes uncommitted for human resolution.
 
+### Optional GitHub PR-Close Hook (T1292)
+
+After the review verdict is written and the review-result commit is created (above), optionally finalize the PR. **Triple-gated** and **off by default** — with the gates at their defaults, `g-go-review` / `g-go` Phase 2 behavior is byte-identical to pre-T1292.
+
+Evaluate in order; skip **silently** at the first miss (identical gate to T1291):
+1. `.gald3r/.identity` `project_type` == `software_development`.
+2. `AGENT_CONFIG.md` `github_integration` == `enabled`.
+3. `AGENT_CONFIG.md` `github_pr_hooks` == `enabled`.
+4. Otherwise invoke `g-pr-close --task <id>`.
+
+Rules:
+- Runs **after** the verdict status writes and the review-result commit — never before.
+- **On PASS**: the PR is flipped Ready, the review summary is posted as a comment, and the PR is merged using the configured `merge_strategy`; task `pr_status: merged`.
+- **On FAIL**: a FAIL comment is posted, the PR stays Draft (no merge), and the task moves to `[📋]` as usual; `pr_status` stays `draft`.
+- **Failure to merge/comment does NOT roll back the recorded verdict.** Append a Status History row noting whether the close hook ran (`pr_close: merged|kept-draft|skipped|failed`) and surface any failure in the session summary.
+- Honors the Autonomous Push Gate (g-rl-33): a merge is outward-facing — confirm per pipeline policy; never merge silently.
+
 ## Swarm Mode (`--swarm`)
 
 When `$ARGUMENTS` includes `--swarm`, activate the **COORDINATOR PHASE** to parallelize review.

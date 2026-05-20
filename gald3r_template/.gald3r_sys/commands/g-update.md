@@ -34,6 +34,12 @@ Check the installed gald3r version and apply framework updates.
    - `install_type: gald3r_install` → update path: re-run `gald3r_install` MCP tool (preserves `.gald3r/` task data)
    - `install_type: manual` → show manual update steps: copy updated files from template repo
 3. Display the appropriate update instructions with confirmation prompt before any changes
+4. **Schema backfill (T1280)** — after the version update, ensure newer `.identity`
+   fields exist for backward compatibility. If `.gald3r/.identity` (or the
+   `.gald3r/.project_type` dotfile, depending on install idiom) has no
+   `project_type`, add it with the safe default `project_type=software_development`
+   (existing installs keep current behavior — GitHub/code workflows stay active).
+   An unknown value read later logs a warning and is treated as `freeform`.
 
 ### `@g-update --changelog`
 

@@ -8,6 +8,18 @@
   },
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [],
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/g-hk-claude-chat-logger.ps1"
+          }
+        ]
+      }
+    ]
+  },
   "mcpServers": {
     "gald3r_docker": {
       "url": "http://localhost:8092/mcp",

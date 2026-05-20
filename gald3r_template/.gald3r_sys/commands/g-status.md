@@ -83,10 +83,21 @@ If the manifest is absent, workspace output stays quiet unless you explicitly as
 
 ## Status Report Format
 
+### 🧩 Project Type (T1283)
+- Project type: `{project_type}` (from `.gald3r/.identity`; default `software_development` if absent)
+- Workflow profile: `{project_type}.yaml` (`.gald3r/config/workflow_profiles/`)
+- GitHub integration: `{enabled|disabled}` (enabled only when `project_type=software_development`)
+- Show this line near the top of the report; no-op silently when invoked outside a gald3r project.
+
 ### 📋 Task Summary
 - Total tasks: X (Y pending, Z in-progress, W completed)
 - Completion rate: X%
 - Recent completions: [List]
+- **PR column (T1293)**: when at least one task has a `pr_url`, show a compact `PR` column
+  per task line — `#1234 (ready)` / `#1234 (merged)` from the task's `pr_url` + `pr_status`
+  frontmatter. **Omit the column entirely** when no task has a `pr_url` (keeps non-software /
+  integration-off projects clean). This is a **pure display read** — never makes a GitHub API
+  call. `@g-status --pr-detail` shows full URLs and (if cached) check status.
 
 ### 🐛 Bug Summary
 - Open bugs: X (Y critical, Z high)

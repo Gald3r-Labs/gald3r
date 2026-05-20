@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Nightly session summary extraction into learned-facts.md (T928).
 
@@ -58,9 +58,17 @@ function Out-Json {
     Write-Output (ConvertTo-Json $Data -Compress -Depth 6)
 }
 
+# PS5.1-compatible multi-segment path join.
+# PS7 Join-Path accepts 3+ positional args; PS5.1 only accepts 2.
+function Join-Paths {
+    $result = $args[0]
+    for ($i = 1; $i -lt $args.Count; $i++) { $result = Join-Path $result $args[$i] }
+    return $result
+}
+
 # ── Load .identity ────────────────────────────────────────────────────────────
 
-$identityPath = Join-Path $ProjectRoot '.gald3r' '.identity'
+$identityPath = Join-Paths $ProjectRoot '.gald3r' '.identity'
 $projectName  = 'unknown'
 $vaultLocation = ''
 
@@ -73,7 +81,7 @@ if (Test-Path $identityPath) {
 
 # ── Locate learned-facts.md ──────────────────────────────────────────────────
 
-$learnedFactsPath = Join-Path $ProjectRoot '.gald3r' 'learned-facts.md'
+$learnedFactsPath = Join-Paths $ProjectRoot '.gald3r' 'learned-facts.md'
 $existingFacts = ''
 if (Test-Path $learnedFactsPath) {
     $existingFacts = Get-Content $learnedFactsPath -Raw
@@ -122,8 +130,18 @@ if ($Apply) {
 
     # Ensure the file has an Architecture section
     if (-not (Test-Path $learnedFactsPath)) {
-        "# learned-facts.md`n`n## Architecture & Conventions`n`n## Recurring Preferences`n`n## Watch-Outs & Gotchas`n`n## Superseded Facts`n" |
-            Out-File -FilePath $learnedFactsPath -Encoding utf8
+        $scaffold = @"
+# learned-facts.md
+
+## Architecture & Conventions
+
+## Recurring Preferences
+
+## Watch-Outs & Gotchas
+
+## Superseded Facts
+"@
+        [System.IO.File]::WriteAllText($learnedFactsPath, $scaffold, [System.Text.UTF8Encoding]::new($false))
         $existingFacts = Get-Content $learnedFactsPath -Raw
     }
 
@@ -149,7 +167,7 @@ $sessionFiles = @()
 
 # 1. Vault sessions path
 if ($vaultLocation -and $vaultLocation -ne '{LOCAL}' -and (Test-Path $vaultLocation)) {
-    $vaultSessions = Join-Path $vaultLocation "projects" $projectName "sessions"
+    $vaultSessions = Join-Paths $vaultLocation "projects" $projectName "sessions"
     if (Test-Path $vaultSessions) {
         $sessionFiles += Get-ChildItem $vaultSessions -Filter "*.md" -ErrorAction SilentlyContinue |
             Where-Object { $_.LastWriteTime -ge $cutoff }
@@ -157,14 +175,14 @@ if ($vaultLocation -and $vaultLocation -ne '{LOCAL}' -and (Test-Path $vaultLocat
 }
 
 # 2. Local fallback: .gald3r/logs/ or .gald3r/reports/
-$localLogs = Join-Path $ProjectRoot '.gald3r' 'logs'
+$localLogs = Join-Paths $ProjectRoot '.gald3r' 'logs'
 if (Test-Path $localLogs) {
     $sessionFiles += Get-ChildItem $localLogs -Filter "*session*" -ErrorAction SilentlyContinue |
         Where-Object { $_.LastWriteTime -ge $cutoff }
 }
 
 # 3. Check last-extracted timestamp
-$lastExtractedPath = Join-Path $ProjectRoot '.gald3r' 'logs' 'nightly_learn_last_run.txt'
+$lastExtractedPath = Join-Paths $ProjectRoot '.gald3r' 'logs' 'nightly_learn_last_run.txt'
 $lastExtracted = $null
 if (Test-Path $lastExtractedPath) {
     $lastExtracted = [datetime]::Parse((Get-Content $lastExtractedPath -Raw).Trim())
@@ -173,7 +191,8 @@ if (Test-Path $lastExtractedPath) {
 }
 
 if (-not $sessionFiles) {
-    Log "No new session files found since $($lastExtracted ?? $cutoff) — nothing to extract." 'Cyan'
+    $sinceDate = if ($null -ne $lastExtracted) { $lastExtracted } else { $cutoff }
+    Log "No new session files found since $sinceDate - nothing to extract." 'Cyan'
     if ($Json) { Out-Json @{ ok = $true; sessionsFound = 0; action = 'none' } }
     exit 0
 }
@@ -227,7 +246,7 @@ Emit ONLY the bullet list. If nothing new, emit: (none)
 "@
 
 # Write extraction prompt to a temp file for the agent to use
-$promptPath = Join-Path $ProjectRoot '.gald3r' 'logs' 'nightly_learn_pending.txt'
+$promptPath = Join-Paths $ProjectRoot '.gald3r' 'logs' 'nightly_learn_pending.txt'
 New-Item -ItemType Directory -Force -Path (Split-Path $promptPath) | Out-Null
 [System.IO.File]::WriteAllText($promptPath, $prompt, [System.Text.UTF8Encoding]::new($false))
 

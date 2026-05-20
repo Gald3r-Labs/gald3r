@@ -20,10 +20,23 @@ Only when PCAC is active, call `g-hk-pcac-inbox-check.ps1 -BlockOnConflict` when
    ```
    📌 SESSION CONTEXT
    Mission: [1 line from PROJECT.md]
+   Project type: [project_type from .identity] | github_integration: [enabled/disabled]
    Goals: G-01: [name] | G-02: [name]
    Phase: [current phase name and status]
    Ideas: [N] active on IDEA_BOARD
    ```
+
+   **Project type line (T1283)**: read `project_type=` from `.gald3r/.identity` (default
+   `software_development` if absent — log silently, never error). The active workflow profile is
+   `<project_type>.yaml` under `.gald3r/config/workflow_profiles/`. `github_integration` is
+   `enabled` only when `project_type=software_development` (the GitHub bundle is gated on that type
+   per T1285+); otherwise `disabled`. No-op silently when invoked outside a gald3r project.
+
+   **PR column (T1293)**: when any task has a `pr_url` frontmatter field, add a compact `PR`
+   column to the task lines — `#1234 (ready)` / `#1234 (merged)` derived from `pr_url` + `pr_status`.
+   Omit the column when no task has a PR (keeps non-software / integration-off projects clean).
+   This is a **pure display read of task frontmatter — never a GitHub API call**. `--pr-detail`
+   expands to full URLs and any cached check status.
 
 2. **Run sync validation** (brief):
    - TASKS.md ↔ task files: X synced, Y issues

@@ -7,6 +7,15 @@
     The helper can create, detect/reuse, report, remove, and clean up gald3r-owned
     worktrees without nesting them inside the active repository checkout.
 
+    Cancellation (T1123 — external-runner AbortSignal pattern):
+      Run        - launch an agent subprocess inside an existing worktree and
+                   record its PID on the ownership marker (non-blocking; -Wait to block).
+      Cancel     - terminate the agent recorded on one worktree (graceful, then a
+                   forced tree-kill after -GraceSeconds). The worktree is PRESERVED.
+      CancelAll  - cancel every active agent owned by a given -TaskId. Used by the
+                   g-go --swarm coordinator on timeout or conflict-gate abort.
+      Cancellation events are appended to .gald3r/logs/worktree_cancellations.log.
+
     Default root:
       $env:GALD3R_WORKTREE_ROOT, when set
       otherwise: <repo-parent>/.gald3r-worktrees/<repo-name>
@@ -16,7 +25,7 @@
 #>
 
 param(
-    [ValidateSet("Create", "Report", "Remove", "Cleanup")]
+    [ValidateSet("Create", "Report", "Remove", "Cleanup", "Run", "Cancel", "CancelAll")]
     [string]$Action = "Report",
 
     [string]$RepoPath = ".",
@@ -29,7 +38,21 @@ param(
     [int]$StaleHours = 24,
     [switch]$AllowDirty,
     [switch]$Apply,
-    [switch]$Json
+    [switch]$Json,
+
+    # --- Run: launch an agent subprocess inside an existing worktree (T1123) ---
+    # The agent process id is recorded in the worktree's .gald3r-worktree.json so
+    # Cancel / CancelAll can terminate it later. Run is non-blocking by default
+    # (records the PID and returns); pass -Wait to block until the agent exits.
+    [string]$AgentCommand,
+    [string[]]$AgentArguments = @(),
+    [switch]$Wait,
+
+    # --- Cancel / CancelAll: graceful-then-forced termination (T1123) ---
+    # Grace period before escalating from graceful stop to a forced tree-kill.
+    [int]$GraceSeconds = 5,
+    # Free-text reason recorded in the cancellation log.
+    [string]$Reason = "coordinator-cancel"
 )
 
 $ErrorActionPreference = "Stop"
@@ -499,6 +522,205 @@ function Invoke-Gald3rWorktreeCleanup {
     return $results
 }
 
+# ---------------------------------------------------------------------------
+# Cancellation signal threading (T1123 — external-runner AbortSignal pattern)
+# ---------------------------------------------------------------------------
+
+function Test-IsWindows {
+    # $IsWindows is $true/$false on PS 7+, and $null on Windows PowerShell 5.1
+    # (which only runs on Windows). Treat $null as Windows.
+    return ($IsWindows -or ($null -eq $IsWindows))
+}
+
+function Write-CancellationLog {
+    param(
+        [string]$RepoRoot,
+        [string]$TaskId,
+        [string]$WorktreePath,
+        [string]$Reason
+    )
+
+    $logDir = Join-Path (Join-Path $RepoRoot ".gald3r") "logs"
+    if (-not (Test-Path $logDir)) {
+        New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+    }
+    $logPath = Join-Path $logDir "worktree_cancellations.log"
+    $stamp = (Get-Date).ToUniversalTime().ToString("o")
+    $line = "$stamp | $TaskId | $WorktreePath | $Reason"
+    Add-Content -Path $logPath -Value $line -Encoding UTF8
+}
+
+function Stop-AgentProcess {
+    # Graceful termination first, then a forced tree-kill after the grace period.
+    # Returns: already-exited | terminated-graceful | killed-forced
+    param(
+        [int]$ProcessId,
+        [int]$GraceSeconds
+    )
+
+    $proc = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
+    if ($null -eq $proc) {
+        return "already-exited"
+    }
+
+    # Graceful request.
+    if (Test-IsWindows) {
+        try { [void]$proc.CloseMainWindow() } catch { }
+    } else {
+        & kill -TERM $ProcessId 2>$null
+    }
+
+    $deadline = (Get-Date).AddSeconds([Math]::Max(0, $GraceSeconds))
+    while ((Get-Date) -lt $deadline) {
+        if ($null -eq (Get-Process -Id $ProcessId -ErrorAction SilentlyContinue)) {
+            return "terminated-graceful"
+        }
+        Start-Sleep -Milliseconds 200
+    }
+
+    # Force-kill the whole process tree (the agent may have spawned children).
+    if (Test-IsWindows) {
+        & taskkill /PID $ProcessId /T /F 2>$null | Out-Null
+    } else {
+        & kill -KILL $ProcessId 2>$null
+    }
+    Start-Sleep -Milliseconds 200
+    if ($null -eq (Get-Process -Id $ProcessId -ErrorAction SilentlyContinue)) {
+        return "killed-forced"
+    }
+    return "kill-failed"
+}
+
+function Start-AgentInWorktree {
+    # Launch an agent subprocess inside an existing gald3r-owned worktree and
+    # record its PID in the ownership marker so it can be cancelled later.
+    param(
+        [string]$RepoRoot,
+        [object]$Metadata,
+        [string]$AgentCommand,
+        [string[]]$AgentArguments,
+        [switch]$Wait
+    )
+
+    if ([string]::IsNullOrWhiteSpace($AgentCommand)) {
+        throw "-AgentCommand is required for Run."
+    }
+    if ($null -eq $Metadata -or -not $Metadata.gald3r_owned) {
+        throw "Run requires an existing gald3r-owned worktree (create it first with -Action Create)."
+    }
+    $markerPath = Join-Path $Metadata.worktree_path ".gald3r-worktree.json"
+    if (-not (Test-Path $markerPath)) {
+        throw "Ownership marker missing at '$markerPath' — refusing to Run."
+    }
+
+    $startArgs = @{
+        FilePath         = $AgentCommand
+        WorkingDirectory = $Metadata.worktree_path
+        PassThru         = $true
+    }
+    if ($null -ne $AgentArguments -and $AgentArguments.Count -gt 0) {
+        $startArgs.ArgumentList = $AgentArguments
+    }
+    $proc = Start-Process @startArgs
+
+    # Persist the PID onto the marker (additive — preserve existing fields).
+    $obj = [ordered]@{}
+    foreach ($p in $Metadata.PSObject.Properties) { $obj[$p.Name] = $p.Value }
+    $obj["agent_pid"] = $proc.Id
+    $obj["agent_command"] = (@($AgentCommand) + $AgentArguments) -join " "
+    $obj["agent_started_at"] = (Get-Date).ToUniversalTime().ToString("o")
+    $obj["agent_status"] = "running"
+    Write-Metadata -MarkerPath $markerPath -Metadata $obj
+
+    if ($Wait) {
+        $proc.WaitForExit()
+        $obj["agent_status"] = "exited"
+        $obj["agent_exit_code"] = $proc.ExitCode
+        Write-Metadata -MarkerPath $markerPath -Metadata $obj
+    }
+
+    return [pscustomobject]@{
+        action          = if ($Wait) { "ran" } else { "started" }
+        task_id         = $Metadata.task_id
+        worktree_path   = $Metadata.worktree_path
+        agent_pid       = $proc.Id
+        agent_command   = $obj["agent_command"]
+        agent_status    = $obj["agent_status"]
+        agent_exit_code = if ($Wait) { $proc.ExitCode } else { $null }
+    }
+}
+
+function Stop-WorktreeAgentByMetadata {
+    # Cancel the agent recorded on a single worktree marker. Preserves the
+    # worktree (never calls Remove) so dirty state is kept for forensics.
+    param(
+        [string]$RepoRoot,
+        [object]$Metadata,
+        [int]$GraceSeconds,
+        [string]$Reason
+    )
+
+    $markerPath = Join-Path $Metadata.worktree_path ".gald3r-worktree.json"
+    $hasPid = ($null -ne $Metadata.PSObject.Properties['agent_pid']) -and ($null -ne $Metadata.agent_pid)
+    if (-not $hasPid) {
+        return [pscustomobject]@{
+            action        = "no-agent"
+            task_id       = $Metadata.task_id
+            worktree_path = $Metadata.worktree_path
+            outcome       = "no-pid-recorded"
+        }
+    }
+
+    $outcome = Stop-AgentProcess -ProcessId ([int]$Metadata.agent_pid) -GraceSeconds $GraceSeconds
+    Write-CancellationLog -RepoRoot $RepoRoot -TaskId $Metadata.task_id -WorktreePath $Metadata.worktree_path -Reason "$Reason ($outcome)"
+
+    # Update the marker: clear the live PID, record the cancellation. Worktree
+    # files are intentionally preserved.
+    if (Test-Path $markerPath) {
+        $obj = [ordered]@{}
+        foreach ($p in $Metadata.PSObject.Properties) { $obj[$p.Name] = $p.Value }
+        $obj["agent_status"] = "cancelled"
+        $obj["agent_cancelled_at"] = (Get-Date).ToUniversalTime().ToString("o")
+        $obj["agent_cancel_reason"] = $Reason
+        $obj["agent_cancel_outcome"] = $outcome
+        $obj["agent_pid"] = $null
+        Write-Metadata -MarkerPath $markerPath -Metadata $obj
+    }
+
+    return [pscustomobject]@{
+        action        = "cancelled"
+        task_id       = $Metadata.task_id
+        worktree_path = $Metadata.worktree_path
+        outcome       = $outcome
+        reason        = $Reason
+    }
+}
+
+function Invoke-CancelAllForTask {
+    param(
+        [string]$RepoRoot,
+        [string]$Root,
+        [string]$TaskId,
+        [int]$GraceSeconds,
+        [string]$Reason
+    )
+
+    if ([string]::IsNullOrWhiteSpace($TaskId)) {
+        throw "-TaskId is required for CancelAll."
+    }
+    $results = @()
+    foreach ($metadata in Get-Gald3rWorktreeReport -Root $Root -RepoRoot $RepoRoot) {
+        if ($metadata.task_id -ne $TaskId) {
+            continue
+        }
+        $results += Stop-WorktreeAgentByMetadata -RepoRoot $RepoRoot -Metadata $metadata -GraceSeconds $GraceSeconds -Reason $Reason
+    }
+    if ($results.Count -eq 0) {
+        return [pscustomobject]@{ action = "cancel-all"; task_id = $TaskId; outcome = "no-worktrees-found" }
+    }
+    return $results
+}
+
 $repoRoot = Resolve-RepoRoot -Path $RepoPath
 $resolvedRoot = Get-WorktreeRoot -RepoRoot $repoRoot -RequestedRoot $WorktreeRoot
 
@@ -521,6 +743,29 @@ switch ($Action) {
     }
     "Cleanup" {
         $result = Invoke-Gald3rWorktreeCleanup -RepoRoot $repoRoot -Root $resolvedRoot -TaskRoot $TaskRoot -StaleHours $StaleHours -Apply:$Apply
+    }
+    "Run" {
+        if ([string]::IsNullOrWhiteSpace($TaskId)) {
+            throw "-TaskId is required for Run."
+        }
+        $metadata = Find-Gald3rWorktree -Root $resolvedRoot -RepoRoot $repoRoot -TaskId $TaskId -Role $Role -Owner $Owner
+        if ($null -eq $metadata) {
+            throw "No gald3r-owned worktree found for task '$TaskId', role '$Role', owner '$Owner'. Create it first."
+        }
+        $result = Start-AgentInWorktree -RepoRoot $repoRoot -Metadata $metadata -AgentCommand $AgentCommand -AgentArguments $AgentArguments -Wait:$Wait
+    }
+    "Cancel" {
+        if ([string]::IsNullOrWhiteSpace($TaskId)) {
+            throw "-TaskId is required for Cancel."
+        }
+        $metadata = Find-Gald3rWorktree -Root $resolvedRoot -RepoRoot $repoRoot -TaskId $TaskId -Role $Role -Owner $Owner
+        if ($null -eq $metadata) {
+            throw "No gald3r-owned worktree found for task '$TaskId', role '$Role', owner '$Owner'."
+        }
+        $result = Stop-WorktreeAgentByMetadata -RepoRoot $repoRoot -Metadata $metadata -GraceSeconds $GraceSeconds -Reason $Reason
+    }
+    "CancelAll" {
+        $result = Invoke-CancelAllForTask -RepoRoot $repoRoot -Root $resolvedRoot -TaskId $TaskId -GraceSeconds $GraceSeconds -Reason $Reason
     }
 }
 

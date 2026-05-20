@@ -16,11 +16,17 @@ token_budget: medium
 
 `PROJECT.md` is the project identity document. It holds mission, goals, and cross-project linking. Agents read it at session start to orient themselves.
 
-**Optional frontmatter (T1238)**: set `workflow_profile:` at the top of PROJECT.md to select a per-project task lifecycle vocabulary. Built-in profile IDs are `software_dev` (default — legacy gald3r behavior), `content_creation`, and `research`. Drop additional profiles into `.gald3r/config/workflow_profiles/<id>.yaml` to extend. Individual task files may override with `workflow_profile:` in their own YAML frontmatter. See `g-skl-tasks` § Workflow Profiles for the schema.
+**Workflow Profile / Project Type (T1280 epic, reconciled by BUG-092 / T1335)**: the active task-lifecycle vocabulary is selected by the **hybrid activation chain** (highest priority first):
+1. a task file's own `workflow_profile:` frontmatter,
+2. PROJECT.md's optional `workflow_profile:` field,
+3. `project_type=` in `.gald3r/.identity` (the primary switch),
+4. `freeform` (final fallback).
+
+Canonical profile filenames equal the `project_type` value: `software_development` (default), `content_creation`, `3d_modeling`, `research_analysis`, `freeform` — stored as `.gald3r/config/workflow_profiles/<project_type>.yaml` (schema B). Drop additional profiles there to extend. The `g-skl-project` skill reads/writes `project_type=` in `.identity` (set during `g-setup`); `g-skl-tasks` § Workflow Profiles documents the schema; `g-skl-project-types` `load_profile.ps1` resolves the chain. (The legacy T1238 `software_dev`/`research` files were archived to `.gald3r/archive/superseded/workflow_profiles/`.)
 
 ```markdown
 ---
-workflow_profile: software_dev   # optional; default = software_dev
+workflow_profile: content_creation   # optional override; default = .identity project_type=
 ---
 # PROJECT.md — {project_name}
 
@@ -75,6 +81,7 @@ When PROJECT.md exists, surface:
 ```
 📌 SESSION CONTEXT
 Mission: [1 line from PROJECT.md]
+Project type: [project_type from .identity] | github_integration: [enabled/disabled]
 Goals: G-01: [name] | G-02: [name]
 Constraints: [N] active
 ```

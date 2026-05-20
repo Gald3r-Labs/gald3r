@@ -71,6 +71,14 @@ When `$ARGUMENTS` is empty or contains no task/bug IDs, the coordinator selects 
 
 When `$ARGUMENTS` provides explicit task/bug IDs, use those IDs exactly — skip scope filtering. The user's explicit selection is the plan. The `--workspace` flag still affects per-repo clean-check and authorization behavior even with explicit IDs: every repo touched by the explicit task list is gated per-root.
 
+### Optional GitHub PR hooks (T1291 / T1292)
+
+The pipeline inherits the GitHub PR hooks from its phase commands — **off by default**, byte-identical behavior unless explicitly enabled:
+- **Phase 1** (`g-go-code`) runs the PR-open hook (step 7b-pr) after the code-complete checkpoint commit.
+- **Phase 2** (`g-go-review`) runs the PR-close hook after the review-result commit.
+
+Both are **triple-gated**: `project_type=software_development` **and** `github_integration: enabled` **and** `github_pr_hooks: enabled` in `AGENT_CONFIG.md`. Any miss → skip silently. A GitHub failure never rolls back implementation `[🔍]` status or a review verdict. See `g-go-code` § 7b-pr and `g-go-review` § "Optional GitHub PR-Close Hook".
+
 ---
 
 ## Prompt Template Variables (T1175 — Sandcastle promptArgs pattern)
@@ -632,6 +640,58 @@ not individual commands.
   external-runner-style external runner takes over orchestration, the
   template names become the stable user-facing surface; the flag
   compositions become implementation detail of the runner.
+
+
+## Session Capture & Cross-Sandbox Resume (T1124 — Sandcastle harvest pattern)
+
+When a `g-go` iteration runs inside an agent worktree/sandbox, the full Claude Code
+conversation transcript (the session JSONL) can be captured to the host so a later
+iteration — or a fresh agent in a different sandbox — resumes the *literal* thread with
+`claude --resume`. This is distinct from `memory_capture_session` (semantic summaries
+for search); JSONL capture preserves the conversation itself.
+
+### Capture helper
+
+`gald3r_session_capture.ps1` ships beside `gald3r_worktree.ps1` in each IDE skill folder
+(`.gald3r_sys/skills/g-skl-git-commit/scripts/`, `.cursor/...`, `.claude/...`).
+
+```powershell
+# After an iteration completes in a worktree, capture its session JSONL to the host
+.\scripts\gald3r_session_capture.ps1 -Action Capture -Apply `
+    -WorktreePath {{WORKTREE_PATH}} -TaskId {{TASK_ID}} -Json
+```
+
+What it does:
+
+1. Locates the worktree's session JSONL under the Claude projects dir
+   (`$env:CLAUDE_CONFIG_DIR\projects` or `~/.claude/projects`), using Claude's
+   path-folder encoding (every non-alphanumeric char in the cwd → `-`).
+2. Copies it to `~/.gald3r-sessions/<project_id>/<task_id>/<session_id>.jsonl`
+   (root overridable via `$env:GALD3R_SESSIONS_ROOT`).
+3. Rewrites embedded worktree paths (`cwd` and file references, both JSON-escaped
+   `\\` and raw forms) to the host repo path so resume references real host files.
+4. Upserts metadata to `~/.gald3r-sessions/<project_id>/sessions.json`.
+
+Without `-Apply` the helper is a dry-run (`-Action Report`). `-Action List` enumerates
+captured sessions; `-Action Resolve -SessionId <id>` prints the JSONL path and the
+`claude --resume` command.
+
+### `--resume-session <session_id>` flag
+
+`g-go --resume-session <session_id>` starts the next iteration by reusing a previously
+captured session context instead of a cold start:
+
+1. The coordinator runs `gald3r_session_capture.ps1 -Action Resolve -SessionId <id> -Json`
+   to obtain the host JSONL path and resume command.
+2. The spawned agent is launched with `claude --resume <session_id>` (host cwd), so it
+   inherits the full prior conversation thread.
+3. If the session id is unknown (no metadata record and no JSONL on disk), the coordinator
+   logs `RESUME_MISS: <session_id>` to the session summary and falls back to a normal cold
+   iteration — a missing capture never blocks the pipeline.
+
+Capture is **best-effort and non-blocking**: if no session JSONL is found (e.g. the runner
+stores transcripts elsewhere), the helper reports `no-session-found` and the pipeline
+continues unaffected.
 
 
 ## Model-Tier Selection (`--mode fast|standard|cheap`)
@@ -1200,6 +1260,27 @@ Partition mixed `phase1_results` (tasks and bugs) round-robin across M reviewer 
 Coordinator claims each review bucket as `[🕵️]` before spawning reviewers, skips non-expired verifier claims, and establishes one review isolation source per bucket (`review-swarm` worktree or snapshot mode).
 Each reviewer produces a result payload only: PASS/FAIL, evidence, proposed Status History rows, and any fix-forward patch if explicitly authorized. Reviewers do not write `TASKS.md`, `BUGS.md`, task/bug files, changelog/docs, generated prompts, parity output, or commits.
 Coordinator performs one final shared-write pass for `TASKS.md`, `BUGS.md`, task/bug files, changelog/docs updates, generated prompts, parity sync output, final staging, and the review-result commit. The coordinator commits PASS, FAIL, and mixed review verdicts by default after status writes, unless a narrow non-commit blocker applies.
+
+### Bucket Cancellation Contract (T1123 — external-runner AbortSignal pattern)
+
+The coordinator can abort in-flight bucket agents cleanly — required when a bucket
+times out (`--timeout-minutes`), runs rogue, or the PCAC conflict gate fires mid-run.
+
+- When a bucket agent is launched in its worktree, the coordinator records the agent's
+  PID via `gald3r_worktree.ps1 -Action Run ... -AgentCommand <agent>` (non-blocking;
+  the PID is persisted to that worktree's `.gald3r-worktree.json`).
+- **On timeout or conflict-gate abort**, the coordinator calls
+  `gald3r_worktree.ps1 -Action CancelAll -TaskId <id> -Reason <why>` to terminate **all**
+  active bucket agents owned by that task. A single bucket can be killed with
+  `-Action Cancel -TaskId <id> -Role <role> -Owner <owner>`.
+- Termination is **graceful first** (window-close / SIGTERM), then a **forced tree-kill**
+  after `-GraceSeconds` (default 5).
+- **Dirty worktrees are PRESERVED** on cancellation — the coordinator never runs
+  `-Action Remove` as part of the cancellation flow, so bucket state is kept for forensics.
+- Every cancellation appends a row to `.gald3r/logs/worktree_cancellations.log`
+  (`{timestamp} | {task_id} | {worktree_path} | {reason} ({outcome})`).
+- Cancellation only stops the subprocess; the coordinator still performs its normal
+  reconciliation/clean-gate handling on any partial bucket output.
 
 ### Swarm Pipeline Summary
 

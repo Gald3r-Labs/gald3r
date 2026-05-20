@@ -120,6 +120,42 @@ git remote -v
    python -c "import uuid; print(uuid.uuid4())" > .gald3r/.identity
    ```
 
+4b. **Set project_type** (T1280):
+   Ask the user "What kind of project is this?" with numbered choices, then write
+   the chosen value to `.gald3r/.identity` as `project_type=<value>` (key=value
+   format, canonical lowercase). Pressing enter selects the default.
+   ```
+   What kind of project is this?
+     1. software_development   (default — enables GitHub PR/issue integration, code review, etc.)
+     2. content_creation
+     3. 3d_modeling
+     4. research_analysis
+     5. freeform
+   [1]
+   ```
+   - Default selection (enter) = `software_development`.
+   - Honor a `--project-type=<value>` CLI flag to skip the prompt.
+   - Validation is case-insensitive but stored lowercase. An unknown value read
+     later logs a warning and is treated as `freeform`.
+   - Confirm: `Project type set to: {value}`.
+   - The chosen `project_type` gates which Workflow Profile, Integration Bundle,
+     and Command Set are active (e.g. GitHub integration activates only for
+     `software_development`).
+
+4c. **Optional Git LFS** (T1311 — all project types, **off by default**):
+   Prompt:
+   ```
+   Enable Git LFS for binary files? (recommended for: 3d_modeling, content_creation)  [y/N]
+   ```
+   - Default **No** (enter declines) — existing repos are unaffected unless the user opts in.
+   - On **yes**: run `git lfs install`, then copy
+     `.gald3r_sys/templates/gitattributes-lfs.template` into the project's `.gitattributes`
+     (merge/append if one already exists — never clobber existing attributes).
+   - Mention the storage/bandwidth consideration: "GitHub LFS quota is limited and may incur
+     cost on large repos — review your plan before committing many large assets."
+   - Verify with `git check-attr filter -- some.psd` → should report `filter: lfs`.
+   - Honor a `--lfs` CLI flag to skip the prompt and enable directly.
+
 5. **Verify structure** (slim v3 layout — ground truth from G:\gald3r\.gald3r):
    ```
    .gald3r/ ✅

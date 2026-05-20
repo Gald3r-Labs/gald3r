@@ -1,4 +1,4 @@
-# generate_copilot_instructions.ps1
+﻿# generate_copilot_instructions.ps1
 # Generates .github/copilot-instructions.md from gald3r always-apply rules.
 # Idempotent — safe to rerun; output is deterministic given the same input files.
 #
@@ -109,7 +109,7 @@ foreach ($dest in $destinations) {
     if ($DryRun) {
         Write-Host "[DRY-RUN] Would write $($output.Length) chars to: $dest"
     } else {
-        $output | Set-Content -Path $dest -Encoding UTF8 -NoNewline
+        [System.IO.File]::WriteAllText($dest, $output, [System.Text.UTF8Encoding]::new($false))
         Write-Host "Written: $dest ($($output.Length) chars)"
     }
 }
@@ -209,7 +209,7 @@ foreach ($hDst in $hooksTargets) {
     }
     if ($DryRun) { Write-Host "[DRY-RUN] Would write gald3r-hooks.json -> $hDst" }
     else {
-        $hooksContent | Set-Content -Path $hDst -Encoding UTF8 -NoNewline
+        [System.IO.File]::WriteAllText($hDst, $hooksContent, [System.Text.UTF8Encoding]::new($false))
         Write-Host "Hooks written: $hDst"
     }
 }

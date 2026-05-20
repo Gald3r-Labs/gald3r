@@ -211,6 +211,14 @@ preferred_model: null
 workspace_repos:
   - gald3r_dev
 workspace_touch_policy: source_only
+# Optional GitHub integration cross-references (T1285) — null/absent unless
+# github_integration is enabled and a g-pr-*/g-issue-* command has populated them.
+# Only meaningful on project_type=software_development with integration_scope: github.
+project_type_scope: software_development  # which Project Type this task belongs to (T1280); default software_development
+integration_scope: null        # github | youtube | … | null — which Integration Bundle owns this task
+issue_ref: null                # GitHub issue number, e.g. "#1234", or null
+pr_url: null                   # full GitHub PR URL, or null
+pr_status: null                # null | draft | ready | merged | closed
 # Optional — only present when this task gates on a cross-project order:
 cross_project_ref:
   - order_id: "ord-abc123"
@@ -291,6 +299,31 @@ pcac_source:
 <!-- Optional. Append-only cross-session handoff notes. Do not edit prior entries. -->
 <!-- Format: [AGENT:{platform}-{role}] [ISO-8601 timestamp] Note content here  -->
 ```
+
+### GitHub integration fields (T1285)
+
+`project_type_scope`, `integration_scope`, `issue_ref`, `pr_url`, and `pr_status` are
+**optional** frontmatter fields used only by the GitHub Integration Bundle:
+
+| Field | Type | Values |
+|---|---|---|
+| `project_type_scope` | string | the owning Project Type (T1280); default `software_development` |
+| `integration_scope` | string\|null | `github` \| `youtube` \| … \| `null` |
+| `issue_ref` | string\|null | GitHub issue number, e.g. `"#1234"` |
+| `pr_url` | string\|null | full GitHub PR URL |
+| `pr_status` | string\|null | `null` \| `draft` \| `ready` \| `merged` \| `closed` |
+
+Handling rules:
+- They stay `null`/absent until a `g-pr-*` / `g-issue-*` command (T1287–T1290) populates
+  them; they are never required and never block any flow.
+- **UPDATE TASK** accepts and round-trips them like any other frontmatter field.
+- **`g-task-sync-check`** ignores them — their presence/absence is never reported as drift.
+- **TASKS.md regeneration** ignores them — no row display change unless explicitly added to
+  the index generator later.
+- The forthcoming database task model holds them as three nullable columns
+  (`issue_ref`, `pr_url`, `pr_status`) plus the two scope strings — see the DB migration epic.
+
+A populated example lives at `docs/20260520_000000_Cursor_GITHUB_TASK_FIELDS_EXAMPLE.md`.
 
 4. **Subsystem guard** (subsystem integrity check — do before TASKS.md):
    - For each name in the task's `subsystems:` field:
