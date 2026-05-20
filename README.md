@@ -65,17 +65,18 @@ You finish a feature and ask the same agent to verify it. It passes everything �
 
 | Component | Count | What it covers |
 |-----------|-------|----------------|
-| **Agents** | 12 | Task manager, code reviewer, QA engineer, project planner, infrastructure, ideas, verifier, project initializer, PCAC coordinator |
-| **Skill Packs** | 142+ | 142 optional packs across 20 categories (Vercel, HuggingFace, Cursor Team Kit, Superpowers, AI Media, AI Video Tools, Cloud Providers, Blockchain, 3D Graphics, Community, Content Creation, Startup Tools, Phantom Connect, Context7, Continual Learning, Create Plugin, Firecrawl, Infrastructure, User Skills, and more) |
-| **Skills** | 195 | 58 individual skills — recon suite (docs/file/repo/url/yt), research suite (deep/review/apply), release management, platform skills (21 platforms), medic, tier-setup, PCAC (10 skills), tasks, bugs, plan, project, features, subsystems, vault, constraints, code review, git, crawl, learn, subsystem-graph, swot, verify-ladder, and more |
-| **Commands** | 146 | Full `@g-*` command surface — task management, bug management, feature pipeline, release management, recon, research, code quality, vault, multi-repo, ideas, constraints, subsystems, swarm, and maintenance |
+| **Agents** | 22 | Task manager, code reviewer, QA engineer, project planner, infrastructure, ideas, verifier, project initializer, PCAC coordinator, and more |
+| **Core Skills** | 100 | Recon suite (docs/file/repo/url/yt), research suite (deep/review/apply), release management, platform skills (21 platforms), medic, tier-setup, PCAC (10 skills), tasks, bugs, plan, project, features, subsystems, vault, constraints, code review, git, crawl, learn, subsystem-graph, swot, verify-ladder, and more |
+| **Addon: Skill Packs** | 142 skills / 20 packs | Vercel, HuggingFace, Cursor Team Kit, Superpowers, AI Media, AI Video Tools, Cloud Providers, Blockchain, 3D Graphics, Community, Content Creation, Startup Tools, Phantom Connect, Context7, Continual Learning, Create Plugin, Firecrawl, Infrastructure, User Skills, and more |
+| **Addon: Personality Packs** | 8 themes | Silicon Valley, Star Wars, Star Trek, BSG, Firefly, Hackers, Shoresy, gald3r |
+| **Commands** | 149 | Full `@g-*` command surface — task management, bug management, feature pipeline, release management, recon, research, code quality, vault, multi-repo, ideas, constraints, subsystems, swarm, and maintenance |
 | **Hooks** | 17 | Session start, agent complete, pre-commit, pre-push, PCAC inbox check, vault operations |
 | **Rules** | 15 | Always-apply: documentation, git workflow, error reporting, task completion gates, TODO/stub lifecycle, bug discovery |
 | **IDE Platforms** | 21 | 16 installer-managed + 5 reference-skill platforms (see Quick Start for full list) |
 
 ### Agents
 
-gald3r ships 12 specialized agents — each is a focused persona with a defined scope, tool set, and activation criteria. Agents are plain markdown files living in `.cursor/agents/`, `.claude/agents/`, etc. They are **inert until you copy the platform folder into your project.**
+gald3r ships 22 specialized agents — each is a focused persona with a defined scope, tool set, and activation criteria. Agents are plain markdown files living in `.cursor/agents/`, `.claude/agents/`, etc. They are **inert until you copy the platform folder into your project.**
 
 | Agent | File | What it does |
 |-------|------|-------------|
@@ -218,9 +219,9 @@ your-project/
 │   └── vault/                 # Local vault (if .vault_location = {LOCAL})
 │
 ├── .cursor/                   # Cursor IDE
-│   ├── agents/                # 12 gald3r agents
-│   ├── skills/                # 195 skills (g-skl-*)
-│   ├── commands/              # 146 @g-* commands
+│   ├── agents/                # 22 gald3r agents
+│   ├── skills/                # 100 core skills (g-skl-*)
+│   ├── commands/              # 149 @g-* commands
 │   ├── hooks/                 # 17 PowerShell automation hooks
 │   └── rules/                 # 15 always-apply rules
 │
