@@ -113,6 +113,8 @@ git remote -v
         <!-- CONSTRAINT SCOPE: local-only (default) | inheritable (propagate to children on spawn) | shareable (peers opt-in) | ecosystem-wide (all topology members) -->
         ```
 
+3b. **Skill trust-level warning (C-032 — non-blocking)**: when the install bundles or copies any skills (template skill packs, adv-tier skill_packs), apply the same provenance check as `g-skill-pack-add` step 3b — surface a non-blocking warning for any skill whose `skill_trust_level:` is `community` or unset (trust level, source, `allowed-tools:` reminder, inspect-before-first-invocation). Slim setup ships only `core` skills, so this normally produces no warning; it fires when a non-core pack is added during or after setup. Canonical wording: `skl-skill-create/SKILL.md` → `### skill_trust_level:` declaration.
+
 4. **Generate .identity**:
    ```bash
    python -c "import uuid; print(uuid.uuid4())" > .gald3r/.identity
@@ -189,6 +191,33 @@ git remote -v
    - Pair with `-Action UPGRADE -SourceRoot <gald3r_dev path>` to classify each installed skill as `unchanged | local-modified | upstream-changed | both-changed | new | removed` before pulling a new gald3r version.
    - Lock file format and operations documented in `docs/SKILLS_LOCK_FORMAT.md`.
 
+8b. **Codebase Graph Initialization (gald3r_muninn, T1149)** — non-blocking, always optional:
+   - Check index state via `graph_status` (MCP) or `.gald3r_sys/skills/g-skl-muninn/scripts/graph_impact.ps1 -File <any source file> -Json`. If it reports `index_missing` / `warning: not_indexed`, offer to build it now:
+     ```powershell
+     python -m docker.gald3r.tools.plugins.muninn.indexers.python_indexer --root .   # Python sources
+     node  docker/gald3r/tools/plugins/muninn/indexers/ts_indexer.js  --root .       # TS/JS sources (needs Node.js)
+     ```
+     The gald3r_muninn indexers run **natively on Windows, macOS, and Linux** (clean-room rewrite — no WSL2/Docker required, unlike the deprecated GitNexus). If Python or Node.js is missing, skip that indexer and continue — setup never blocks on graph init, and if the user declines the index simply stays absent (g-go-code Step b0 falls back to ripgrep).
+   - **Auto-wire the post-commit refresh hook** (idempotent, after user confirmation) so the index stays fresh:
+
+     **PowerShell (Windows — native):**
+     ```powershell
+     $hookFile = ".git/hooks/post-commit"
+     # use the active platform's hook path (.cursor/hooks/, .claude/hooks/, ...)
+     $hookLine = "powershell -NoProfile -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-graph-update.ps1"
+     $existing = if (Test-Path $hookFile) { Get-Content $hookFile -Raw } else { "" }
+     if ($existing -notlike "*$hookLine*") { Add-Content -Path $hookFile -Value $hookLine }
+     ```
+
+     **Bash (Linux / macOS / Git Bash on Windows):**
+     ```bash
+     HOOK_FILE=".git/hooks/post-commit"
+     # use the active platform's hook path (.cursor/hooks/, .claude/hooks/, ...)
+     HOOK_LINE="powershell -NoProfile -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-graph-update.ps1"
+     grep -qF "$HOOK_LINE" "$HOOK_FILE" 2>/dev/null || { printf '%s\n' "$HOOK_LINE" >> "$HOOK_FILE"; chmod +x "$HOOK_FILE"; }
+     ```
+     Re-running setup does not duplicate the line; the hook exits 0 on all platforms even if indexing fails. See the **Codebase Graph (gald3r_muninn)** section below.
+
 9. **Print next steps**:
    - Review `.gald3r/PROJECT.md` and confirm mission and goals
    - Review SUBSYSTEMS.md and adjust detected components
@@ -197,3 +226,23 @@ git remote -v
    - Draft or refine `.gald3r/PLAN.md` and Feature under `features/` as needed
    - Declare cross-project relationships in **Project Linking** (`@g-project (Project Linking section)`) when ready
    - **Optional**: Install domain-specific skill packs from `skill_packs/` directory — run `.\skill_packs\{pack}\install.ps1` for infrastructure, ai-ml-dev, startup-tools, and other packs
+
+---
+
+## Codebase Graph (gald3r_muninn)
+
+The codebase graph (gald3r_muninn) indexes Python and TypeScript/JavaScript source so `g-go-code` **Step b0 Impact Scan** can answer "what breaks if I change this file?" with real import/call edges instead of a linear grep. It is **optional** — when absent, Step b0 falls back to ripgrep (non-blocking).
+
+**What it does**: builds a local SQLite graph at `~/.gald3r/muninn.db` (override with `MUNINN_DB_PATH`). `graph_impact` / `graph_callers` / `graph_callees` / `graph_deps` / `graph_status` query it.
+
+**How to initialize** (step 8b above): run the Python + TypeScript indexers once, then let the post-commit hook (`g-hk-graph-update.ps1`) refresh changed files on every commit.
+
+**OS support matrix** (clean-room rewrite — supersedes the WSL-only GitNexus):
+
+| OS | Python indexer | TypeScript indexer | Notes |
+|----|----------------|--------------------|-------|
+| Windows | ✅ native | ✅ native (needs Node.js) | No WSL2/Docker required |
+| macOS | ✅ native | ✅ native (needs Node.js) | — |
+| Linux | ✅ native | ✅ native (needs Node.js) | — |
+
+If a runtime (Python / Node.js) is missing, skip that indexer — the graph simply indexes the languages it can, and Step b0 falls back to ripgrep for the rest. Initialization, the post-commit hook, and the `gald3r_install` post-install offer are all non-blocking.
