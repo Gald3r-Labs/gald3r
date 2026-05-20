@@ -444,8 +444,9 @@ if ($isNew) {
 }
 
 Write-Host "  [3/5] Merging project root files..." -ForegroundColor Cyan
-# Platform-conditional files live in platforms/ subfolder; universal files at payload root
-$platformsPayload = Join-Path $templatePayload "platforms"
+# Platform-conditional files live in .gald3r_sys/platforms/ (deployed at step [1/5])
+# Use the already-deployed copy at $sysDst so the source path is consistent
+$platformsPayload = Join-Path $sysDst "platforms"
 
 # Universal files (always installed) — sourced from templatePayload root
 $mergeFiles = @{
