@@ -53,7 +53,15 @@ Phase: {N}
    ```
    No `Agent:`, `Model:`, `Rules-Version:`, or `Co-Authored-By:` lines for AI agents. C-021 prohibits AI co-author attribution to keep commercial-licensing and acquisition IP records clean. Cursor IDE's built-in agent co-author footer setting must also be disabled by every operator.
 
-5. **Commit**:
+4b. **GPG signing (T1310)**: read `gpg_signing:` from `.gald3r/config/AGENT_CONFIG.md`
+   (default `disabled`). When `enabled`, add `-S` to the commit command.
+   - Preflight: verify `git config user.signingkey` is set **and** `gpg` is on PATH
+     (`gpg --version`). If either is missing, **STOP** with:
+     `gpg_signing: enabled but GPG is not configured — set user.signingkey and install gpg, or set gpg_signing: disabled.`
+     Do **not** fall back to an unsigned commit.
+   - When `disabled`, omit `-S` (current behavior, unchanged).
+
+5. **Commit** (add `-S` when `gpg_signing: enabled`):
    ```powershell
    git commit -m "$(cat <<'EOF'
    feat(api): implement task NNN

@@ -3,6 +3,8 @@ name: g-skl-pcac-ask
 description: Child project requests parent action — writes parent INBOX.md and marks local task as blocked with cross-project metadata.
 token_budget: low
 ---
+
+> **Multi-agent framework (T1094):** Direct communication — child requests action from its parent.
 # g-skl-pcac-ask
 
 ## When to Use

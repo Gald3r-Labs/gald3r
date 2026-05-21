@@ -6,6 +6,10 @@ description: >
   and full write operations (oracle_execute) including DDL and PL/SQL blocks.
 version: 1.0.0
 min_tier: adv
+# Conditional skill activation (T1250): this skill only makes sense when the
+# Oracle MCP tools are active — it directly calls them. Optional + inert until
+# the T1394 catalog-generation filter ships; omitting it = always-show.
+requires_toolsets: [oracle_query, oracle_execute]
 triggers:
   - "oracle query"
   - "oracle execute"

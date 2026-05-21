@@ -9,6 +9,8 @@ description: >
 token_budget: medium
 ---
 
+> **Multi-agent framework (T1094):** Topology registration + Delegation — creates & seeds a child project.
+
 # g-skl-pcac-spawn
 
 **File Owner**: none (creates a new project; source project's topology is updated in place)

@@ -69,3 +69,18 @@ token_budget: medium
 7. **Create tasks for critical findings**:
    - 🔴 CRITICAL security → immediate task (`priority: critical`)
    - Files > 800 lines → refactoring task
+
+
+## HTML Output (`--html`) — T1318
+
+When invoked with `--html` (or AGENT_CONFIG `output_format: html|both`), render this
+report as themed HTML instead of / in addition to markdown:
+
+1. Assemble the report body as an HTML fragment following the `docs/templates/review.html` structure.
+2. Invoke **g-skl-html-output** `RENDER` with template `review`, the body fragment, and a topic slug.
+3. g-skl-html-output links the active theme (`docs/themes/_active.css`, T1328) and writes a
+   timestamped file to `html_output_dir` (default `docs/`) per the g-rl-01 naming convention.
+
+Flags: `--html` forces HTML, `--md` forces markdown. With neither flag, AGENT_CONFIG
+`output_format` decides (default `markdown` — current behavior, unchanged).
+Example: `g-review --html`. Coordination files (TASKS.md, task specs) are never HTML.

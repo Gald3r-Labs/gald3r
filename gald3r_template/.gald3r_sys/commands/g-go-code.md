@@ -701,6 +701,26 @@ Default review handoff is branch-addressable. After successful implementation re
 
 Snapshot review mode is fallback-only. Use it when the user explicitly requests uncommitted review, when a source cannot be made branch-addressable, or when a failed reconciliation must be inspected read-only. Do not make dirty snapshot mode the default.
 
+### 7b-pr. Optional GitHub PR-Open Hook (T1291)
+
+**Run AFTER the checkpoint commit in step 7b — never before.** This hook is triple-gated to ensure zero behavior change when GitHub integration is disabled.
+
+**Triple-gate evaluation (must ALL be true to invoke):**
+1. Read `.gald3r/.identity` → `project_type=software_development` (else skip silently)
+2. Read `.gald3r/config/AGENT_CONFIG.md` → `github_integration: enabled` (else skip silently)
+3. Read `.gald3r/config/AGENT_CONFIG.md` → `github_pr_hooks: enabled` (else skip silently)
+
+**When all three gates pass:** invoke `g-pr-open --task <id>` for each task that transitioned `[🔄]→[🔍]` this session.
+
+**Behavior:**
+- Invocation happens AFTER shared writes (TASKS.md, task file) AND the checkpoint commit.
+- A PR-open failure does NOT roll back the `[🔍]` status — the implementation is done; the PR is a delivery artifact.
+- On success: append Status History row: `| {date} | in-progress | awaiting-verification | {agent} | PR opened: {pr_url} |`
+- On failure: append Status History row: `| {date} | awaiting-verification | awaiting-verification | {agent} | PR-open failed: {error}; task stays [🔍] |` and surface a notice in the session summary so the user can retry manually.
+- In `--swarm` mode: the coordinator runs this hook once per completed task after reconciliation, not per-bucket.
+
+**Default state:** all three flags are `disabled` / absent → behavior is byte-identical to pre-T1291.
+
 ### 7c. Rolling Implementation Waves
 
 `g-go-code` and `g-go-code --swarm` must optimize for throughput. A code-complete checkpoint is a stable handoff point, not a global stop sign.
@@ -953,3 +973,14 @@ Want me to push now?
 ```
 
 **Rules:** Offer push **once**, at the end of the session summary only. Do NOT offer push after each individual task commit — the session is still running. If the user replies "yes": push immediately.
+
+
+## Structured output (`--json` / `--toon`) — T1381 / T1382
+
+This command supports machine-readable output in addition to its default text/markdown:
+
+- `--json` → structured JSON envelope via **g-skl-json-output** (`{ gald3r_version, generated_at, command, schema, data }`). For scripting, CI gates, dashboards.
+- `--toon` → **g-skl-toon-output** TOON: compact, lossless, LLM-friendly (tabular arrays state keys once; ≥20% smaller than JSON). For agent handoff / context injection / vault ingestion.
+- `--md` forces markdown. With no flag, AGENT_CONFIG `output_format` decides (default `markdown`, unchanged).
+
+Output is saved to `html_output_dir` (default `docs/`) as `YYYYMMDD_HHMMSS_<IDE>_<TOPIC>.json|.toon` per g-rl-01.

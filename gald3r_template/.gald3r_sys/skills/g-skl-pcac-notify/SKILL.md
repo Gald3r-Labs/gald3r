@@ -4,6 +4,8 @@ description: Send lightweight [INFO] freeform notifications to one or more proje
 token_budget: low
 ---
 
+> **Multi-agent framework (T1094):** Broadcast — one-to-many [INFO] notification, no task created.
+
 # g-skl-pcac-notify — PCAC Freeform Notifications
 
 ## When to Use

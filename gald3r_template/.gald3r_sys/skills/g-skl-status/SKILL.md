@@ -137,3 +137,18 @@ Only when PCAC is active, call `g-hk-pcac-inbox-check.ps1 -BlockOnConflict` when
 - Include current task/bug `workspace_repos` and `workspace_touch_policy` only when metadata exists or the user asks for routing detail.
 - Cite Task 177 boundaries when a user might expect backend/UI/control-plane status: those systems are deferred and must not appear as missing or broken bootstrap deliverables.
 - For deeper detail, point to `@g-workspace-status` and `@g-workspace-validate` instead of expanding `@g-status` into a full manifest dump.
+
+
+## HTML Output (`--html`) — T1318
+
+When invoked with `--html` (or AGENT_CONFIG `output_format: html|both`), render this
+report as themed HTML instead of / in addition to markdown:
+
+1. Assemble the report body as an HTML fragment following the `docs/templates/report.html` structure.
+2. Invoke **g-skl-html-output** `RENDER` with template `report`, the body fragment, and a topic slug.
+3. g-skl-html-output links the active theme (`docs/themes/_active.css`, T1328) and writes a
+   timestamped file to `html_output_dir` (default `docs/`) per the g-rl-01 naming convention.
+
+Flags: `--html` forces HTML, `--md` forces markdown. With neither flag, AGENT_CONFIG
+`output_format` decides (default `markdown` — current behavior, unchanged).
+Example: `g-status --html`. Coordination files (TASKS.md, task specs) are never HTML.

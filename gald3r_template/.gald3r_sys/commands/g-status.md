@@ -137,3 +137,14 @@ If the manifest is absent, workspace output stays quiet unless you explicitly as
 - Time period for "recent" (default: last 7 days)
 
 Let's see where your project stands!
+
+
+## Structured output (`--json` / `--toon`) — T1381 / T1382
+
+This command supports machine-readable output in addition to its default text/markdown:
+
+- `--json` → structured JSON envelope via **g-skl-json-output** (`{ gald3r_version, generated_at, command, schema, data }`). For scripting, CI gates, dashboards.
+- `--toon` → **g-skl-toon-output** TOON: compact, lossless, LLM-friendly (tabular arrays state keys once; ≥20% smaller than JSON). For agent handoff / context injection / vault ingestion.
+- `--md` forces markdown. With no flag, AGENT_CONFIG `output_format` decides (default `markdown`, unchanged).
+
+Output is saved to `html_output_dir` (default `docs/`) as `YYYYMMDD_HHMMSS_<IDE>_<TOPIC>.json|.toon` per g-rl-01.

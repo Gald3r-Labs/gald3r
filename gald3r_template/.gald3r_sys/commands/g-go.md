@@ -6,6 +6,12 @@ Pipeline orchestrator — implement then auto-review: $ARGUMENTS
 independent reviewer agent on the completed work. You get adversarial QA without manually
 alternating between sessions.
 
+> **Multi-agent frameworks used (T1094):** `g-go` combines **delegation** (Phase 1 spawns
+> implementation work / swarm buckets), **creator–verifier** (Phase 2's fresh independent
+> reviewer), and **broadcast** (status/constraints surfaced to sub-agents). `--swarm` adds
+> **negotiation** (coordinator-owned reconciliation over shared `.gald3r/` state). See the
+> 5-framework taxonomy table in `@g-go-swarm`.
+
 > **Independence guarantee**: The Phase 2 reviewer is a fresh Task subagent. It receives only
 > the task IDs and the `g-go-review` protocol — it has **no access** to Phase 1's conversation
 > history, reasoning, or implementation decisions. It reads the artifacts on disk cold.
@@ -1018,6 +1024,8 @@ After all items are processed, reconcile successful worktree diffs into the prim
   Blocked/Skipped: {list with reasons}
 ```
 
+**5b. Optional GitHub PR-Open Hook (T1291)** — after the checkpoint commit, run the triple-gated PR-open hook from `g-go-code` section 7b-pr for each task that reached `[🔍]` this session. The gate checks `project_type=software_development`, `github_integration: enabled`, and `github_pr_hooks: enabled` in AGENT_CONFIG.md. Failure does not roll back task state or block Phase 2.
+
 If `phase1_results` is empty → skip Phase 2:
 ```
 [PIPELINE] Phase 1 completed 0 items — Phase 2 skipped. Nothing to review.
@@ -1081,6 +1089,9 @@ After reviewer completes:
 4. Write Pipeline Session Summary (see format below), including the review-result commit SHA or the explicit non-commit blocker
 
 The coordinator commits the review result by default for PASS, FAIL, and mixed verdicts. Allowed reasons not to commit are limited to unresolved conflicts, failed commit hooks, staged or untracked unrelated changes, detected secrets, dirty generated outputs not owned by review, missing user permission for destructive or out-of-scope changes, or repository state that prevents a safe commit.
+
+**4b. Optional GitHub PR-Close Hook (T1292)** — after the review-result commit, run the triple-gated PR-close hook from `g-go-review` section "Optional GitHub PR-Close Hook" for each reviewed item. The gate checks `project_type=software_development`, `github_integration: enabled`, and `github_pr_hooks: enabled`. PASS items are squash-merged; FAIL items get a failure comment. A hook failure never rolls back the recorded verdict.
+
 ### 5. Member Repo Auto-Merge (Post-PASS)
 
 > **Flags** (pass in `$ARGUMENTS` or inherit from `@g-go-go`):

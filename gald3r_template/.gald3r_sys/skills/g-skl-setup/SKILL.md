@@ -80,6 +80,31 @@ git remote -v
 
 **All prompts default to Y and are non-blocking** — declining any prompt adds a warning but does not stop the setup. The agent should present options as numbered choices in its response, then run the chosen commands.
 
+### Step 0.7 — Optional Git LFS (T1311)
+
+Offered for **all** project types (3d_modeling and content_creation benefit most;
+software_development repos with large binaries also). **Not enabled by default** —
+must be explicitly opted in.
+
+```
+"Enable Git LFS for binary files? Recommended for 3d_modeling / content_creation. [y/N]"
+→ Y:
+   git lfs install
+   copy assets/gitattributes-lfs.template  →  <project>/.gitattributes
+       (if .gitattributes exists, append the gald3r LFS block under a
+        '# <!-- gald3r LFS SECTION -->' marker rather than clobbering it)
+   git add .gitattributes
+→ N (default): skip — existing repos are unaffected.
+```
+
+Storage-cost note to surface: GitHub LFS bills for **storage + bandwidth** beyond
+the free quota (1 GB / 1 GB-month on free plans); large media histories can exceed
+it quickly. Use LFS deliberately, not as a default. Verify patterns apply with
+`git check-attr filter <file>` (expect `filter: lfs`).
+
+The template (`assets/gitattributes-lfs.template`) covers: `.psd .ai .fbx .obj
+.blend .max .png .jpg .gif .mp4 .mov .wav .zip .glb .gltf` and similar binaries.
+
 ### Step 1 — Detect if existing (check before creating anything)
    ```
    □ .gald3r/TASKS.md exists AND > 20 lines?
@@ -268,3 +293,23 @@ The codebase graph (gald3r_muninn) indexes Python and TypeScript/JavaScript sour
 | Linux | ✅ native | ✅ native (needs Node.js) | — |
 
 If a runtime (Python / Node.js) is missing, skip that indexer — the graph simply indexes the languages it can, and Step b0 falls back to ripgrep for the rest. Initialization, the post-commit hook, and the `gald3r_install` post-install offer are all non-blocking.
+
+---
+
+## Relationship to the root installer (`setup_gald3r_project.ps1`)
+
+gald3r has **two distinct setup entry points** with non-overlapping responsibilities. They are not alternatives that ask the same questions twice:
+
+| Entry point | Owns | Does NOT do |
+|-------------|------|-------------|
+| **`setup_gald3r_project.ps1`** (root installer, run from a shell) | **Platform selection** (`-Platforms`, the interactive platform picker, `-Platform all`), copying the `.gald3r_sys/` payload + per-platform IDE dirs into the target, section-marker merge of `AGENTS.md`/`CLAUDE.md`/`.gitignore`, JSON key-merge of platform config, and v1/v2/v3 version detection on upgrade | Author project mission/goals or scaffold the `.gald3r/` control plane content |
+| **`@g-setup`** (this skill, run in-session) | The `.gald3r/` control-plane scaffold — folder layout, `PROJECT.md`/`PLAN.md`/`CONSTRAINTS.md`/`SUBSYSTEMS.md`, identity files, subsystem detection, codebase-graph init offer | **Platform selection** — it does **not** re-prompt for or deploy IDE platform dirs |
+
+**Design decision (T1209 AC6 / T1275):** `@g-setup` **delegates** platform selection to the root installer; it does **not** re-prompt in-session. The platform picker (`-Platforms` / interactive prompt in `setup_gald3r_project.ps1`) is the single source of truth for *which* IDE surfaces (`.cursor/`, `.claude/`, `.codex/`, …) get deployed. Re-implementing a second platform prompt inside `@g-setup` would duplicate that logic and risk drift.
+
+**Recommended order for a brand-new project:**
+
+1. Run `setup_gald3r_project.ps1 -TargetPath <dir>` (it prompts for platforms if `-Platforms` is omitted) — this lays down `.gald3r_sys/` + the chosen IDE platform dirs and merges the marker-managed root files.
+2. Then run `@g-setup` in-session to scaffold and personalize the `.gald3r/` control plane (mission, goals, subsystems, first task).
+
+If a user invokes `@g-setup` on a project that has no IDE platform dirs yet, point them at `setup_gald3r_project.ps1` for platform deployment rather than prompting for platforms here.

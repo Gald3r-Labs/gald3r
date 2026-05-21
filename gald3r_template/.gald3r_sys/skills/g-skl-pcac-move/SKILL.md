@@ -9,6 +9,8 @@ description: >
 token_budget: medium
 ---
 
+> **Multi-agent framework (T1094):** Direct communication — point-to-point file/folder transfer with provenance.
+
 # g-skl-pcac-move
 
 **File Owner**: none (source project's files, destination project's `.gald3r/vault/log.md`)

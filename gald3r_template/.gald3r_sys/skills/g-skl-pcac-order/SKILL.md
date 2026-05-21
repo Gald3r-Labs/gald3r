@@ -3,6 +3,8 @@ name: g-skl-pcac-order
 description: As a parent project, push a task to one or more child projects with configurable cascade depth (1–3). Creates tasks in child .gald3r/ folders and an INBOX notification.
 token_budget: medium
 ---
+
+> **Multi-agent framework (T1094):** Delegation + Broadcast — parent pushes task(s) to child project(s).
 # g-skl-pcac-order
 
 ## When to Use

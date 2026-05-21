@@ -39,6 +39,7 @@ alwaysApply: true
 ```
 📌 SESSION CONTEXT
 Mission: [from PROJECT.md, 1 line]
+Project type: software_development | github_integration: enabled/disabled  ← read project_type= from .gald3r/.identity; fallback: .gald3r/.project_type dotfile; default software_development if absent; github_integration shown only when project_type=software_development
 Goals: G-01: [name] | G-02: [name] (from PROJECT.md)
 Plan focus: [current milestone or theme from PLAN.md]
 Ideas: [N] active (from IDEA_BOARD.md)
@@ -46,6 +47,7 @@ Subsystems: [N] registered (from SUBSYSTEMS.md + subsystems/)
 Specs: [N] in specifications_collection/ (newest: YYYY-MM-DD) [or "none"]
 ⚠️ Unreviewed: {spec_filename}  ← only if spec mtime > date of last [✅] task
 🧠 Learned Facts: [N] project facts | [M] global facts  (run /g-learn review to see them)
+📖 Vocab: [V] abbreviations loaded (from .gald3r/vocab.md) — expand silently, no narration  ← only if vocab.md exists with ≥1 entry
 📓 Journal: [last entry date] for {active-agent-slug}  ← only when the active agent role has journal entries
 ⚠️ Avoid: {one-line summary}  ← only if the active agent's most recent journal entry is `category: anti-pattern`
 Experiments: [summary from experiments/EXPERIMENTS.md if it has active entries]
@@ -55,6 +57,7 @@ Experiments: [summary from experiments/EXPERIMENTS.md if it has active entries]
 
 Learned fact counts: count `-` bullet points in `.gald3r/learned-facts.md` (skip headers and empties).
 Global fact count: count bullets in `{vault_location}/projects/{project_name}/memory.md` if it exists.
+Vocab count: count data rows in the `.gald3r/vocab.md` "Active Vocabulary" table (skip header + separator rows). Load each `Abbreviation → Expansion` into working context and **expand silently** when the user uses one (no "you said X, which means…" narration). Skip the line entirely if `vocab.md` is absent or has no entries. Manage with `@g-vocab-add` / `@g-vocab-list` / `@g-vocab-search`.
 
 ## Agent Journal Read (T1010 — REDACTED-PATTERN pattern)
 

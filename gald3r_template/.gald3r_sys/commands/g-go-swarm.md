@@ -108,6 +108,90 @@ For swarm mode or any run lasting more than 30 minutes, the coordinator reruns t
 
 All filter arguments pass through to `@g-go --swarm`. The `--workspace` flag composes with task/bug filters and bugs-only.
 
+## Multi-Agent Communication Frameworks (T1094)
+
+gald3r implements all five frontier multi-agent communication frameworks (Factory's taxonomy)
+across its primitives. Use this table to name what's happening and pick the right primitive.
+
+| Framework | What it is | gald3r primitive(s) |
+|-----------|-----------|---------------------|
+| **Delegation** | Parent spawns child work, gets a result | `@g-go-code` spawning swarm buckets; `@g-pcac-order` (parent→child task) |
+| **Creator–verifier** | One agent builds, a **fresh** agent verifies (no implementation-cost bias) | `@g-go` Phase 1 (`g-go-code`) → Phase 2 (`g-go-review`); `g-agnt-verifier` may not verify its own work |
+| **Direct communication** | Agents/projects message point-to-point | `@g-pcac-ask` (child→parent), `@g-pcac-send-to` / `@g-pcac-move` |
+| **Negotiation** | Agents coordinate over shared resources, net-positive | `@g-pcac-sync` (sibling contract sync); the swarm coordinator's resource reconciliation over shared `.gald3r/` ledgers |
+| **Broadcast** | One-to-many: status, new context, constraints | `@g-pcac-order` (broadcast), `@g-pcac-notify`, INBOX `[BROADCAST]`, session-start surfacing |
+
+`g-go --swarm` itself combines **delegation** (buckets) + **creator–verifier** (Phase 2 review) +
+**negotiation** (coordinator-owned reconciliation, T206). Each `@g-pcac-*` SKILL.md carries a
+one-line `Multi-agent framework (T1094):` tag identifying its type.
+
+**Serial vs. parallel (important).** Like Factory's "Missions," gald3r runs *features* serially
+within a mission/pipeline even though *buckets* within a phase run in parallel — long-running,
+state-dependent work is sequenced (claims, gates, reconciliation), and only independent,
+side-effect-isolated work fans out to parallel worktrees. Don't parallelize tasks that mutate the
+same shared `.gald3r/` state or depend on each other's output; partition on independence.
+
 See `@g-go` for full pipeline documentation, worktree isolation, and swarm agent count / partition rules.
+
+---
+
+## ADR-001 — Shared-context vs. independent-context bucket model (T976)
+
+**Status:** Accepted (2026-05-21) · **Default:** independent-context (current behavior, unchanged)
+
+### Context
+
+`g-go-swarm` runs Phase 1 implementation buckets with **independent context** — each bucket
+agent sees only its own slice spec, not the live output of sibling buckets. This maximizes
+parallelism and isolation but can produce **incoherence** when bucket outputs must read as one
+voice or share conventions (naming, prose tone, helper-extraction choices).
+
+An alternative is the **shared-context** pattern: the orchestrator holds the full prompt, breaks
+it into N subtasks, and each specialist agent sees the **full prompt + all prior specialist
+outputs** before generating its own. Coherence rises; parallelism falls (buckets serialize on
+each other's output) and token cost rises (every bucket re-reads the growing shared context).
+
+### Decision
+
+Keep **independent-context as the default**. Treat shared-context as an **opt-in mode** chosen by
+the coordinator per run, not a global switch. The two models are selected by task *character*,
+not preference.
+
+### When to prefer SHARED context
+
+- **Documentation generation** spanning multiple files/sections that must read as one voice
+  (e.g. a multi-page guide, a README + reference set, llms.txt + llms-full.txt).
+- **Consistency-critical refactors** where every bucket must apply the *same* naming, API shape,
+  or helper-extraction decision (e.g. a cross-file rename, a shared-utility extraction pass).
+- **Small bucket counts** (≈2–4) where the serialization cost is acceptable.
+- Output where a human would notice "different hands wrote these" as a defect.
+
+### When to prefer INDEPENDENT context (default)
+
+- **Independent implementation buckets** partitioned on true subsystem boundaries with no shared
+  surface (the normal `g-go-swarm` case).
+- **Security-isolated work** where a bucket must NOT see another bucket's secrets, paths, or
+  scratch reasoning (least-context is a safety property here).
+- **Large bucket counts** where serialization would erase the parallelism that justifies a swarm.
+- Latency- or token-budget-sensitive runs.
+
+### Evaluation criteria for a future switch / per-run heuristic
+
+The coordinator MAY auto-select shared-context for a Phase 1 wave when **all** hold:
+
+1. **Coherence-sensitive type** — the wave is dominated by `type: documentation` or a refactor
+   tagged consistency-critical (e.g. `tags: [cross-file-rename, shared-extraction]`).
+2. **Small fan-out** — runnable bucket count ≤ 4 after partitioning.
+3. **Shared surface present** — buckets touch overlapping files or a shared public API (high
+   incoherence risk if isolated).
+4. **No security-isolation requirement** — no bucket carries `context_isolation: required`.
+
+A future coherence metric (e.g. reviewer-flagged style/naming inconsistencies per 1k LOC above a
+threshold) can promote a task class from independent → shared. Until that metric exists, the mode
+is a coordinator judgment call documented in the run summary. Independent-context remains the safe
+default whenever the criteria are not unambiguously met.
+
+> Compatibility: this ADR is descriptive — terminal-first, markdown-defined bucket instructions
+> support both models, and no current `g-go-swarm` behavior changes by adopting this record.
 
 Let's go.

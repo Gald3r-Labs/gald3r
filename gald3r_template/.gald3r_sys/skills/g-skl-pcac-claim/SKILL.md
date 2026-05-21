@@ -3,6 +3,8 @@ name: g-skl-pcac-claim
 description: Register another project as the parent of the current project. Creates or updates linking/link_topology.md on both sides when the parent is locally accessible.
 token_budget: low
 ---
+
+> **Multi-agent framework (T1094):** Topology registration — registers a parent; enables receiving Delegation/Broadcast.
 # g-skl-pcac-claim
 
 ## When to Use

@@ -234,9 +234,10 @@ For each `[🕵️]` task claimed by this verifier:
   - Any criterion FAIL → **before changing status**:
     1. Append a row to `## Status History` at the bottom of the task file (add section if missing):
        ```
-       | YYYY-MM-DD | verification-in-progress | pending | FAIL: {AC-NNN, AC-NNN} not met — {brief reason} |
+       | YYYY-MM-DD | verification-in-progress | pending | FAIL: {AC-NNN, AC-NNN} not met — {brief reason}; impl_sha/branch cleared |
        ```
-    2. **🚨 STUCK LOOP CHECK** — count all rows in the task's `## Status History` where the Message column contains `FAIL:`:
+    2. **Clear stale provenance (T1380)** — reset `implementation_sha: ''` and `implementation_branch: ''` in the task file YAML frontmatter. This prevents the next implementer from inheriting a SHA that points at a failed attempt. (PASS path: leave sha/branch unchanged — they are correct provenance for completed work.)
+    3. **🚨 STUCK LOOP CHECK** — count all rows in the task's `## Status History` where the Message column contains `FAIL:`:
        - **Count < 3** → mark back to `[📋]` (pending) in task file YAML and TASKS.md
        - **Count ≥ 3** → mark `[🚨]` (requires-user-attention) in task file YAML and TASKS.md; append a `## [🚨] Requires User Attention` block to the task file:
          ```markdown
@@ -252,7 +253,7 @@ For each `[🕵️]` task claimed by this verifier:
          - Cancel → mark `[❌]` with reason
          - Override as complete → mark `[✅]` with manual sign-off note
          ```
-    3. Document specific failure reason in task file (Review Note section)
+    4. Document specific failure reason in task file (Review Note section)
     - The Status History row message must name which ACs failed and why. `FAIL` alone is not acceptable.
     - **Agents must NEVER autonomously reset `[🚨]` back to `[📋]` — only a human can do this.**
 
@@ -394,6 +395,34 @@ Required flow:
 
 Allowed reasons not to create the review-result commit are limited to: unresolved conflicts, failed commit hooks, staged or untracked unrelated changes, detected secrets, dirty generated outputs not owned by review, missing user permission for destructive or out-of-scope changes, or repository state that prevents a safe commit. If one of these blockers applies, state the blocker explicitly and leave the review status writes uncommitted for human resolution.
 
+### Optional GitHub PR-Close Hook (T1292)
+
+**Run AFTER the review-result commit — never before.** This hook is triple-gated (same as T1291).
+
+**Triple-gate evaluation (must ALL be true to invoke):**
+1. Read `.gald3r/.identity` → `project_type=software_development` (else skip silently)
+2. Read `.gald3r/config/AGENT_CONFIG.md` → `github_integration: enabled` (else skip silently)
+3. Read `.gald3r/config/AGENT_CONFIG.md` → `github_pr_hooks: enabled` (else skip silently)
+
+**When all three gates pass:** invoke `g-pr-close --task <id>` for each reviewed item.
+
+**PASS path:** PR is merged (default: squash-merge via `gh pr merge --squash`). Append Status History row:
+```
+| {date} | awaiting-verification | completed | {agent} | PR merged: {pr_url} |
+```
+
+**FAIL path:** post a review-failure comment on the PR and leave it as Draft. Append Status History row:
+```
+| {date} | awaiting-verification | pending | {agent} | PR-close skipped (FAIL): failure comment posted on {pr_url} |
+```
+
+**Behavior:**
+- A PR-close failure does NOT roll back the recorded PASS/FAIL verdict.
+- On error: append a notice to the session summary so the user can retry manually.
+- In `--swarm` mode: the coordinator runs this hook in the batch-write pass, after the review-result commit.
+
+**Default state:** all three flags are `disabled` / absent → behavior is byte-identical to pre-T1292.
+
 ## Swarm Mode (`--swarm`)
 
 When `$ARGUMENTS` includes `--swarm`, activate the **COORDINATOR PHASE** to parallelize review.
@@ -455,7 +484,7 @@ Spawning {N} reviewer agents...
 
 After all reviewers complete:
 1. Read each reviewer's results (which tasks/bugs PASS, which FAIL)
-2. **Batch-update individual task/bug files** with review notes and Status History rows from reviewer payloads.
+2. **Batch-update individual task/bug files** with review notes and Status History rows from reviewer payloads. For each FAIL item: also reset `implementation_sha: ''` and `implementation_branch: ''` in frontmatter (T1380).
 3. **Batch-update TASKS.md** in a single write:
    - Task PASS items: `[🕵️]` → `[✅]`
    - Task FAIL items: `[🕵️]` → `[📋]` (back to pending)
@@ -533,3 +562,63 @@ Want me to push now?
 ```
 
 **Rules:** Offer push **once**, in the final review summary only. Do NOT offer push between individual task reviews. If the user replies "yes": push immediately.
+
+
+## Structured output (`--json` / `--toon`) — T1381 / T1382
+
+This command supports machine-readable output in addition to its default text/markdown:
+
+- `--json` → structured JSON envelope via **g-skl-json-output** (`{ gald3r_version, generated_at, command, schema, data }`). For scripting, CI gates, dashboards.
+- `--toon` → **g-skl-toon-output** TOON: compact, lossless, LLM-friendly (tabular arrays state keys once; ≥20% smaller than JSON). For agent handoff / context injection / vault ingestion.
+- `--md` forces markdown. With no flag, AGENT_CONFIG `output_format` decides (default `markdown`, unchanged).
+
+Output is saved to `html_output_dir` (default `docs/`) as `YYYYMMDD_HHMMSS_<IDE>_<TOPIC>.json|.toon` per g-rl-01.
+
+
+## Skill Proposal (`--propose-skill`) — T992
+
+Optional, **off by default**. When `--propose-skill` is passed (or `propose_skills: true` in
+`.gald3r/config/AGENT_CONFIG.md`), the reviewer runs **one extra evaluation step after a PASS
+verdict and before the review-result commit** — it never blocks or alters the verdict.
+
+**Step (post-PASS, pre-commit):**
+
+1. The reviewer asks itself: *"Did this implementation solve a problem type that is NOT covered by
+   any existing skill in `.gald3r_sys/skills/`? Was there a novel, generalizable multi-step
+   technique that would help a future agent on a similar task?"* Answer is **No** for routine work
+   — most tasks produce no proposal. This is a deliberately high bar.
+2. **If yes**, draft a SKILL.md into **`.gald3r/proposed_skills/{task_id}_{slug}_draft.md`**
+   (provenance in the filename) using this shape:
+
+   ```markdown
+   ---
+   name: {proposed-slug}
+   description: <one-line trigger summary>
+   status: proposed            # NOT active until promoted
+   proposed_from_task: {task_id}
+   proposed_date: YYYY-MM-DD
+   ---
+   # {Skill Name}
+   ## When to use
+   - <trigger phrase 1>
+   - <trigger phrase 2>
+   ## What it does
+   <1-2 sentence summary of the reusable pattern>
+   ## Steps
+   1. <generalized step>  2. ...
+   ## Example
+   <minimal example drawn from the implementation, redacted of project specifics>
+   ```
+
+3. Append an **IDEA_BOARD.md** entry (via `g-skl-ideas CAPTURE`) linking the draft:
+   `IDEA-AUTOSKILL-{task_id}: proposed skill '{slug}' — see .gald3r/proposed_skills/{task_id}_{slug}_draft.md`.
+4. Note the proposal in the review summary (one line) and the task `## Status History`.
+
+**Hard gate — human approval required for promotion.** A draft in `proposed_skills/` is **never**
+auto-promoted to `.gald3r_sys/skills/` (and therefore never synced to `.cursor/`/`.claude/`). Promotion
+is a separate, human-invoked action via **`@g-skill-review`** (see that command), which routes the
+polished draft through the skill-creator/writing-skills flow and then a normal parity sync. The
+reviewer's job ends at writing the draft + the IDEA_BOARD link.
+
+**Why post-PASS only:** a failed task has no validated pattern to generalize. Proposals come only
+from work that actually passed verification.

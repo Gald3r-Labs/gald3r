@@ -567,3 +567,18 @@ This Skill works with Cursor's gald3r QA system. The system uses:
 - Consistent YAML frontmatter for bug fix tasks
 - Git-friendly plain text files
 - Sequential task IDs with subsystem / area impact tracking
+
+
+## HTML Output (`--html`) — T1318
+
+When invoked with `--html` (or AGENT_CONFIG `output_format: html|both`), render this
+report as themed HTML instead of / in addition to markdown:
+
+1. Assemble the report body as an HTML fragment following the `docs/templates/report.html` structure.
+2. Invoke **g-skl-html-output** `RENDER` with template `report`, the body fragment, and a topic slug.
+3. g-skl-html-output links the active theme (`docs/themes/_active.css`, T1328) and writes a
+   timestamped file to `html_output_dir` (default `docs/`) per the g-rl-01 naming convention.
+
+Flags: `--html` forces HTML, `--md` forces markdown. With neither flag, AGENT_CONFIG
+`output_format` decides (default `markdown` — current behavior, unchanged).
+Example: `g-qa-report --html`. Coordination files (TASKS.md, task specs) are never HTML.

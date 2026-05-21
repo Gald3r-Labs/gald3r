@@ -9,6 +9,8 @@ description: >
 token_budget: medium
 ---
 
+> **Multi-agent framework (T1094):** Direct communication — point-to-point transfer to any related project.
+
 # g-skl-pcac-send-to
 
 **File Owner**: none (operates across projects; updates source vault/log.md and destination INBOX.md)

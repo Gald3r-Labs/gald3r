@@ -87,6 +87,20 @@ not replace project facts).
 
 Journal entries are plain markdown: git-tracked, Obsidian-readable, no DB.
 
+### CAPTURE_VOCAB (user shorthand / abbreviations, T1279)
+
+When the user defines a personal abbreviation/acronym/alias — explicitly (`--vocab`, "remember
+the abbreviation…", "ABBR means…") or by intent (a line shaped `ABBR = expansion — context`) —
+route it to `.gald3r/vocab.md` (the vocabulary source of truth), **not** `learned-facts.md`:
+
+1. Parse `ABBR = expansion — context` (context optional).
+2. Delegate to `@g-vocab-add` (append/update the `## Active Vocabulary` table; UPPERCASE the abbr).
+3. Confirm `📖 Added: ABBR → expansion` and use the expansion silently for the rest of the session.
+
+Vocab is loaded at session start by `g-rl-25` (the `📖 Vocab:` line) and recognized whole-word,
+case-insensitively. `@g-vocab-list` / `@g-vocab-search` read it back. Keep vocab (compact shorthand)
+distinct from `learned-facts.md` (project knowledge) and journals (per-agent-role learning).
+
 ### REVIEW
 
 Triggered by `/g-learn review`.

@@ -440,3 +440,22 @@ ollama pull qwen2.5:14b  # 14B model for 8GB VRAM
 ollama pull qwen2.5:32b  # 32B model for 20GB+ VRAM
 # Serves OpenAI-compatible API on localhost:11434 by default
 ```
+
+### gald3r-lite context mode (small/local models — T1081)
+
+When targeting a small/local model (≤8B, 4–32K window) the full ~300-line always-apply budget +
+`AGENTS.md` + `CLAUDE.md` saturates the window. **gald3r-lite** is a defined, *safe* trim
+(≤~2K-token system prompt). Classification:
+
+- **Never-drop (safety):** `g-rl-34` (TODO/stub gate), `g-rl-35` (bug-discovery gate), the
+  `.gald3r/` agent-gate + code-needs-task/bug + no-autonomous-push rules from `g-rl-33` (terse form).
+- **Must-keep, compressed:** `g-rl-00` (footer/refactor/shell-probe), `g-rl-08` (PowerShell correctness).
+- **Drop for lite:** `g-rl-25` (session-start), bulk of `g-rl-33` (swarm/PCAC/clean-gates),
+  `g-rl-36` (workspace guard), `g-rl-26`, full `AGENTS.md` body — replace each with a 1-line pointer.
+- **Stub:** `CLAUDE.md` → 5 lines (name, type, mission, "tasks in `.gald3r/`", "full rules on frontier sessions").
+- **Roles:** reviewer / QA / verifier / single scoped implement are **lite-safe**; orchestrator /
+  task-manager / planner (anything mutating shared `.gald3r/` state or coordinating agents) need **full context**.
+
+Full design spec (rationale, budget composition, portable-mode tie-in): see
+`docs/20260521_111712_Claude_GALD3R_LITE_CONTEXT_MODE_DESIGN.md`. The proxy that *applies* the
+trim (OpenClaude `local-proxy.js`-style) is implementation, tracked under portable mode (T1082/T1084).

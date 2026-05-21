@@ -14,15 +14,25 @@ or `gh` missing → **no-op** with a friendly message.
 2. Read the review verdict from the most recent `## Status History` row of the task file:
    - `[✅]` / `verification-in-progress → completed` ⇒ **PASS**
    - `FAIL:` / back-to-`pending` ⇒ **FAIL**
-3. **On PASS:**
-   - `g-skl-github-pr READY` (Draft → Ready).
+3. **Detect fork PRs first (T1309):** `gh pr view <n> --json headRepositoryOwner,isCrossRepository`.
+   If `isCrossRepository: true`, set `is_fork=1` and **skip** any head-branch write
+   (head-ref label edits, pushes to the fork) — we lack write on a contributor's fork.
+   Base-repo operations (comment, PR labels, merge) still proceed normally.
+4. **On PASS:**
+   - `g-skl-github-pr READY` (Draft → Ready). *(fork: skip if Ready requires head-branch write; comment instead.)*
    - `g-skl-github-pr COMMENT` — post the review summary (verdict + reviewer agent identity + review-result commit SHA).
    - `g-skl-github-pr CLOSE` — merge using `merge_strategy` (default `squash`); `--delete-branch` when configured.
-   - Write `pr_status: merged`; auto-close the linked `issue_ref` when `auto_close_issue_on_merge: true`.
-4. **On FAIL:**
+     - **Merge queue (T1312):** when `merge_queue: enabled`, merge with `gh pr merge --auto <strategy-flag>`
+       (queue the PR; GitHub merges when checks pass and the queue front is reached) instead of an
+       immediate merge. If `gh` reports auto-merge/queue is unavailable on the repo plan, surface the
+       error — do not silently fall back to an immediate merge.
+   - Write `pr_status: merged` (or `pr_status: ready` while queued); auto-close the linked `issue_ref` when `auto_close_issue_on_merge: true`.
+5. **On FAIL:**
    - `g-skl-github-pr COMMENT` — post the FAIL summary explaining the unmet criteria.
    - Leave the PR open as Draft (do **not** merge); keep `pr_status: draft`.
-5. Fork-originated PRs: defer merge handling to T1309 (forking workflow); comment + flag.
+6. **Fork PRs (T1309) summary:** merge is allowed (base-repo permission); head-branch writes are
+   skipped; comments/labels on the PR work. See `github_config.md` § "Forking workflow" and
+   `branch_protection.md` § "For external contributors".
 
 ## Flags
 

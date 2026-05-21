@@ -210,6 +210,10 @@ implementation_sha: ''       # full 40-char git commit SHA of the implementation
 # When present, agents log the resolved mode in the claim's Status History row as
 # `mode=<tier>` (e.g. `mode=opus — Claimed for implementation`).
 preferred_model: null
+# Optional retry budget (T1100). Integer; when FAIL cycles reach it, g-go transitions the
+# task to [❌] instead of escalating to [🚨]. Omitted = default ([🚨] at >=3 FAIL cycles).
+# See "Durability Patterns (Hermes Tenacity)" for semantics.
+max_retries: null
 # Optional workspace-control routing; omit for current-repo-only work:
 workspace_repos:
   - gald3r_dev
@@ -226,6 +230,12 @@ pcac_source:
   type: order                  # order | ask | broadcast | sync | conflict
   source_project: "child_or_parent_project_id"
   inbox_ref: "REQ-123"         # cross-link to the originating INBOX entry
+# Optional — GitHub Integration Bundle fields (T1285); null when github_integration disabled:
+project_type_scope: null       # scope this task to a project type; default software_development
+integration_scope: null        # e.g. github, youtube — which integration bundle owns this task
+issue_ref: null                # GitHub issue number, e.g. "#1234"; written by g-issue-open
+pr_url: null                   # full GitHub PR URL; written by g-pr-open
+pr_status: null                # null | draft | ready | merged | closed; updated by g-pr-* commands
 ---
 
 # Task NNN: [Title]
@@ -1017,6 +1027,41 @@ agent_heartbeat_expires: "YYYY-MM-DDTHH:MM:SSZ" # ISO-8601; claim time + 10 min 
 
 **Absence = legacy behavior**: tasks without `agent_heartbeat` fields fall back to TTL-only staleness detection (unchanged).
 
+### Durability Patterns (Hermes Tenacity — T1100)
+
+The Hermes 0.13 "Tenacity" reliability patterns map onto features gald3r already has — only
+the per-task **retry budget** is net-new. This table is the canonical mapping; do not
+duplicate the referenced mechanisms.
+
+| Hermes pattern | gald3r mechanism | Status |
+|---|---|---|
+| Heartbeat liveness | `agent_heartbeat` / `agent_heartbeat_expires` (T1058, above) — write at claim, refresh every 5 min, expire +10 min | **Implemented** |
+| Zombie detection | Stale-heartbeat detection (above): expired `agent_heartbeat_expires` ⇒ "treating as abandoned"; TTL-only fallback for legacy tasks | **Implemented** |
+| Reclaim logic | Expired heartbeat ⇒ re-claim without waiting full TTL, with a Status History takeover row | **Implemented** |
+| Hallucination gate | **Definition-of-Done gate (T1168)**: g-go-code Step b3.5 runs a per-criterion PASS/FAIL/UNSURE eval against every `- [ ]` row in `## Acceptance Criteria` before `[🔍]`. Any FAIL blocks the `[🔍]` transition; UNSURE surfaces to the coordinator. This *is* the "board state must match the completion claim" check. | **Implemented** |
+| Retry budget | Default: `[🚨]` requires-user-attention after **≥3 FAIL cycles** (human-only, no agent retry). Optional explicit override: `max_retries:` (below). | **Default + new field** |
+
+**Optional `max_retries:` field (net-new).** Add to task YAML to cap retries explicitly:
+```yaml
+max_retries: 2   # optional; integer. Counts FAIL-cycle Status History rows for this task.
+                 # When the count reaches max_retries, g-go-code/g-go-review transition the
+                 # task to [❌] (terminal failure) instead of looping or escalating to [🚨].
+                 # Omitted (null) = default behavior: escalate to [🚨] at >=3 FAIL cycles.
+```
+- A "FAIL cycle" = a Status History row whose `To` is `pending`/`open` with a `FAIL:` message.
+- `max_retries: 0` means "no retry — first FAIL is terminal `[❌]`".
+- The default `[🚨]`-at-3 rule still applies when `max_retries` is absent; an explicit
+  `max_retries` overrides it (terminal `[❌]` rather than human-attention `[🚨]`).
+
+**Swarm bucket handoff (g-go-swarm).** When a swarm bucket returns its handoff, the report
+SHOULD include a durability line: `heartbeats=<n> retries=<n>/<max|∞> zombie=<none|reclaimed-from:agent> dod_gate=<PASS|FAIL|UNSURE|SKIPPED>`. The coordinator uses it to decide
+re-queue vs. `[❌]` vs. `[🚨]` during reconciliation (it never lets a bucket write that status itself).
+
+**Automation deferred.** Heartbeat *emission* and *automated* zombie reclaim run today inside
+g-go-code/g-go bucket loops (file writes); a standalone watchdog reclaimer is tracked under
+T968 (`no_agent_cron_watchdog_mode`). This section is guidance + the `max_retries` contract;
+no separate enforcement script is added here.
+
 ### Mode Logging on Claim (T1166)
 
 When `g-go-code` / `g-go` (or any swarm bucket agent) claims a task and writes the initial
@@ -1046,6 +1091,27 @@ Bucket agents in `--swarm` runs each record their own inherited mode independent
 coordinator does not aggregate or override these per-task rows. Coordinator-owned shared
 writes (TASKS.md rollups, CHANGELOG entries, parity sync) are not subject to this rule
 because the coordinator does not "claim" individual tasks in the implementing sense.
+
+### GitHub Integration Fields (T1285)
+
+Five optional fields are added to task frontmatter when the GitHub Integration Bundle is active
+(`project_type=software_development` AND `github_integration=enabled` in AGENT_CONFIG.md).
+They are `null` / absent on non-software projects and on software projects with integration disabled.
+
+| Field | Type | Written by | Values |
+|---|---|---|---|
+| `project_type_scope` | string or null | task creator | `software_development` (default) or other type slug |
+| `integration_scope` | string or null | task creator | `github`, `youtube`, etc., or null |
+| `issue_ref` | string or null | `g-issue-open` | `"#1234"` or null |
+| `pr_url` | string or null | `g-pr-open` | full GitHub PR URL or null |
+| `pr_status` | string or null | `g-pr-*` commands | `null \| draft \| ready \| merged \| closed` |
+
+**Handling rules:**
+- UPDATE TASK round-trips all five fields unchanged if present.
+- SYNC-CHECK does not flag them as drift.
+- TASKS.md regeneration ignores them (no display change).
+- Database model holds three nullable columns (`issue_ref`, `pr_url`, `pr_status`); migration is a separate epic.
+- Fields stay `null` until populated by their respective GitHub commands (`g-pr-open` → T1287).
 
 ### [🕵️] Verification Claim Rules
 
