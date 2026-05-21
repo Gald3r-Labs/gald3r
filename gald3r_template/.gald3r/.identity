@@ -2,6 +2,6 @@ project_id={project_id}
 project_name={project_name}
 user_id={USER_ID}
 user_name={user_name}
-gald3r_version=1.4
+gald3r_version=1.5.2
 vault_location={LOCAL}
 repos_location={LOCAL_REPOS}

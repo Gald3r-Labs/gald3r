@@ -9,27 +9,36 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Added
-- **`@g-mission resume --budget N`**: override the turn budget on resume without re-setting the mission — enables overnight budget expansion. `ACTIVE_MISSION.md` persists across terminal kills and context fills; paste `@g-mission resume` into any fresh session to continue from the last checkpoint.
-- **`@g-mission` drain queue scan order**: `open/` → `in-progress/` → `paused/`, priority `critical → high → medium → low`, lowest task ID first within same priority.
-
-### Changed
-- **`@g-mission` context checkpoint threshold raised to 75%**: previous behaviour could fire session checkpoints at ~33% context, leaving almost no usable capacity after startup overhead. Checkpoint now fires at 75% — finishes in-flight task, writes checkpoint cleanly, maximises work per session.
-
-### Fixed
-- **`@g-mission` scope-too-large is now a mandatory split, never a defer**: tasks the agent considers too big for one session are immediately decomposed into subtasks (`T{id}a/b/c`); the first slice is claimed and implemented in the same loop iteration. Writing a "deferred" summary and stopping is explicitly forbidden.
-- **`@g-mission --until-empty` — cross-repo tasks no longer blanket-skipped**: tasks with `workspace_repos:` are now run after passing the Clean Controller Gate; they are only skipped if a required repo is inaccessible or has unrelated dirty paths. Previously all cross-repo tasks were skipped in `--until-empty` mode.
-- **`@g-mission --until-empty` — queue-level assessment forbidden**: the agent must individually read every task in `open/`, `in-progress/`, and `paused/` before writing a session checkpoint. A global "the queue looks hard" assessment no longer qualifies as a completed scan.
-- **Autonomous push gate (all `g-go` family workflows)**: no `g-go`, `g-go-code`, `g-go-review`, `g-go-go`, or `g-mission` run may silently push to remote. Push is offered once in the final summary; the agent pushes only after the user confirms.
-- **Push offer now appears once, in the final summary only**: `g-mission`, `g-go`, `g-go-go`, `g-go-code`, and `g-go-review` no longer offer a push at every checkpoint, between tasks, or between swarm waves — only in the final completed/achieved summary.
-- **`.gald3r/` gitignore gate for controller and PCAC-linked repos**: if an agent detects the repo is a Workspace-Control controller, a PCAC-linked project, or an active coordination repo and would write a broad `.gald3r/` gitignore entry, it now surfaces a plan-loss warning and asks YES/NO before proceeding. Gitignoring `.gald3r/` in a coordination repo means all tasks, bugs, plans, and PCAC topology become unrecoverable on a fresh clone.
-- **`@g-mission --until-empty` soft-pauses now convert to skips**: `blast_radius:high`, cross-repo touches, design-judgment-required, and oversized scope all become logged skips in `--until-empty` mode instead of pausing the loop. Only `ai_safe:false` and PCAC `[ORDER]`/`[CONFLICT]` remain as true hard stops.
-- **`@g-mission` session-end framing corrected**: session boundaries now produce a brief checkpoint row (`status: active`) with "Run `@g-mission resume` to continue" — not a "paused-partial Mission Report".
-
-### Removed
-
 ---
 
+## [1.5.2] - 2026-05-21 (HTML/JSON/TOON output, compress-memory, vocab, auto-skill, g-mission hardening)
+
+### Added
+- **HTML output + theme system** (`g-skl-html-output`, `--html` flag): human-facing reports (`g-status`, `g-review`, `g-qa-report`) now render as self-contained themed HTML. Three built-in themes: `gald3r-dark` (Catppuccin Mocha, default), `gald3r-light` (Latte), `gald3r-mocha` (sepia). Token contract in `docs/themes/theme-schema.json`; opt-in via `output_format: html` in AGENT_CONFIG. Coordination files (TASKS.md, BUGS.md, task specs) stay markdown.
+- **JSON output mode** (`g-skl-json-output`, `--json` flag): structured `{gald3r_version, generated_at, command, schema, data}` envelope for scripting, CI gates, and dashboards.
+- **TOON output mode** (`g-skl-toon-output`, `--toon` flag): Token-Oriented Object Notation — compact, lossless, LLM-friendly tabular arrays (~40% smaller than JSON). `output_format` enum extended to `markdown|html|json|toon|both`.
+- **Theme editor** (`g-skl-theme-editor`, `@g-theme-edit`): file-first theme editor for creating and editing gald3r HTML themes against `docs/themes/theme-schema.json`. Supports import/export of `:root` token blocks.
+- **Memory compression** (`g-skl-compress-memory`, `@g-compress-memory`): compact session memory and learned-facts entries to reduce context bloat while preserving key insights.
+- **Vocabulary management** (`@g-vocab-add`, `@g-vocab-list`, `@g-vocab-search`): define project-specific abbreviations that agents read at session start — no more re-explaining domain terms every session.
+- **Skill review command** (`@g-skill-review`): list, review, and selectively promote auto-proposed skill drafts. Human approval required before promotion — drafts are never auto-promoted.
+- **Auto-skill-generation** (`--propose-skill` on `@g-go-review`): after a PASS review verdict, the reviewer optionally drafts a `SKILL.md` into `.gald3r/proposed_skills/` when a novel, generalizable pattern is found. Off by default; opt-in via `propose_skills:` in AGENT_CONFIG.
+- **`@g-mission resume --budget N`**: override the turn budget on resume — enables overnight budget expansion. `ACTIVE_MISSION.md` persists across terminal kills and context fills.
+- **`@g-mission` drain queue scan order**: `open/` -> `in-progress/` -> `paused/`, priority `critical -> high -> medium -> low`, lowest task ID first within same priority.
+
+### Changed
+- **`@g-mission` context checkpoint threshold raised to 75%**: prevents premature session checkpoints that left almost no usable capacity after startup overhead. Checkpoint fires at 75% — finishes the in-flight task, writes checkpoint cleanly.
+
+### Fixed
+- **`@g-mission` scope-too-large is now a mandatory split, never a defer**: oversized tasks are immediately decomposed into subtasks; the first slice is claimed and implemented in the same loop iteration.
+- **`@g-mission --until-empty` — cross-repo tasks no longer blanket-skipped**: tasks with `workspace_repos:` now run after passing the Clean Controller Gate; only skipped if a required repo is inaccessible or has unrelated dirty paths.
+- **`@g-mission --until-empty` — queue-level assessment forbidden**: every task in `open/`, `in-progress/`, and `paused/` must be individually read before writing a session checkpoint.
+- **Autonomous push gate (all `g-go` family workflows)**: no `g-go`, `g-go-code`, `g-go-review`, `g-go-go`, or `g-mission` run may silently push to remote. Push is offered once in the final summary; the agent pushes only after the user confirms.
+- **Push offer now appears once, in the final summary only**: no mid-checkpoint or between-task push offers.
+- **`.gald3r/` gitignore gate for controller and PCAC-linked repos**: agents surface a plan-loss warning and require YES confirmation before writing a broad `.gald3r/` gitignore entry.
+- **`@g-mission --until-empty` soft-pauses now convert to skips**: `blast_radius:high`, cross-repo touches, and oversized scope become logged skips. Only `ai_safe:false` and PCAC `[ORDER]`/`[CONFLICT]` remain as true hard stops.
+- **`@g-mission` session-end framing corrected**: session boundaries produce a brief checkpoint row (`status: active`) with "Run `@g-mission resume` to continue".
+
+---
 ## [1.5.1] - 2026-05-18 (README sync, personality packs, new commands)
 
 ### Added

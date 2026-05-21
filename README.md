@@ -9,7 +9,7 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-FSL--1.1--Apache-purple.svg" alt="License: FSL-1.1-Apache"></a>
-  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/version-1.5.1-green.svg" alt="Version"></a>
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/version-1.5.2-green.svg" alt="Version"></a>
   <a href="https://www.python.org"><img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python 3.10+"></a>
   <a href="https://github.com/wrm3/gald3r"><img src="https://img.shields.io/github/stars/wrm3/gald3r?style=social" alt="GitHub stars"></a>
 </p>
