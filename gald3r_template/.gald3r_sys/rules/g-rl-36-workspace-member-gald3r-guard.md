@@ -1,41 +1,94 @@
 ---
-description: "Workspace-Control member-repository .gald3r/ marker-only invariant — slim marker (.identity + PROJECT.md) is the only legal member content; live control plane lives only in the controller"
+description: "Workspace member .gald3r/ policy — autonomous_child repos own full .gald3r/; controlled_member repos keep marker-only (.identity + PROJECT.md); controller direct-write is the WPAC coordination path"
 globs:
 alwaysApply: true
 ---
 
-# Workspace-Control Member `.gald3r/` Marker-Only Guard (HARD RULE)
+# Workspace Member `.gald3r/` Policy (WPAC v1.6)
 
-**Workspace-Control controlled_member and migration_source repositories may keep ONLY a slim `.gald3r/` marker:**
+## Repository Role Taxonomy
+
+| workspace_role | What it means | .gald3r/ policy |
+|---|---|---|
+| `controller` | Owns the ecosystem control plane (e.g. `gald3r_dev`) | Full `.gald3r/` — tasks, bugs, plans, everything |
+| `autonomous_child` | Independent gald3r project, WPAC-linked to the controller | Full `.gald3r/` — self-managed; controller may also direct-write |
+| `controlled_member` | Source-only repo, no independent task tracking | **Marker-only** — `.identity` + `PROJECT.md` only |
+| `migration_source` | Being adopted; pre-migration state | Marker-only until migration completes |
+
+Read `workspace_role` from `.gald3r/workspace/workspace_manifest.yaml` for each repo.
+
+---
+
+## autonomous_child repos — full `.gald3r/` is EXPECTED
+
+Repos with `workspace_role: autonomous_child` (e.g. `gald3r_valhalla`, `gald3r_throne`,
+`gald3r_world_tree`, `gald3r_templates`) **own and manage their own `.gald3r/`**. This is
+intentional WPAC v1.6 behavior (ADR-003, ADR-013, ADR-014). Seeing full `.gald3r/` in an
+`autonomous_child` repo is **correct** — do not flag it as a violation.
+
+Autonomous children have:
+- `workspace/topology.md` — parent/child wiring
+- `workspace/inbox.md` — WPAC directive inbox
+- `TASKS.md`, `tasks/`, `BUGS.md`, `PLAN.md`, etc. — self-managed coordination
+
+**WPAC Controller Direct-Write Exemption (ADR-003, ADR-013)**: A controller agent (confirmed
+`project_type: controller` in manifest) MAY write task files, bug files, INBOX directives, and
+other WPAC-dispatched content directly into any registered member's `.gald3r/`. This is the
+primary controller→child coordination mechanism. Applies to all `autonomous_child` and
+`controlled_member` targets, via `@g-wpac-order`, `@g-wpac-spawn`, or controller task push.
+
+---
+
+## controlled_member repos — MARKER-ONLY (HARD RULE)
+
+**`controlled_member` and `migration_source` repositories may keep ONLY a slim `.gald3r/` marker:**
 
 - `.gald3r/.identity` — identifies the member and ties it back to the workspace controller
-- `.gald3r/PROJECT.md` — copied / parity-maintained from the controller; describes the member's mission
+- `.gald3r/PROJECT.md` — describes the member's mission; cross-links to controller
 
-**Live gald3r control-plane state is forbidden in member repositories.** Any of the following inside a member's `.gald3r/` is a hard violation: `TASKS.md`, `tasks/`, `BUGS.md`, `bugs/`, `PLAN.md`, `FEATURES.md`, `SUBSYSTEMS.md`, `RELEASES.md`, `CONSTRAINTS.md`, `IDEA_BOARD.md`, `PRDS.md`, `prds/`, `features/`, `releases/`, `subsystems/`, `config/`, `linking/`, `experiments/`, `logs/`, `reports/`, `archive/`, `specifications_collection/`, `learned-facts.md`, or any equivalent orchestration state.
+**Live gald3r control-plane state is forbidden in `controlled_member` repos** unless written
+by the controller via WPAC direct-write. Any of the following spontaneously appearing in a
+`controlled_member`'s `.gald3r/` (without controller authority) is a hard violation:
+`TASKS.md`, `tasks/`, `BUGS.md`, `bugs/`, `PLAN.md`, `FEATURES.md`, `SUBSYSTEMS.md`,
+`RELEASES.md`, `CONSTRAINTS.md`, `IDEA_BOARD.md`, `PRDS.md`, `prds/`, `features/`,
+`releases/`, `subsystems/`, `config/`, `workspace/`, `experiments/`, `logs/`, `reports/`,
+`archive/`, `specifications_collection/`, `learned-facts.md`, or any equivalent orchestration state.
 
-The workspace controller (e.g. `gald3r_dev`) is the source of truth for live tasks, bugs, plans, features, releases, subsystems, constraints, ideas, PRDs, and cross-project orchestration. Members are independent git roots that hold source code, packaging, and history — but never live project task state.
+External workspace member template repos (`G:/gald3r_ecosystem/gald3r_template_slim`,
+`G:/gald3r_ecosystem/gald3r_template_full`, `G:/gald3r_ecosystem/gald3r_template_adv`) are the
+**only** legitimate exception: their `.gald3r/` content is intentional install template content.
 
-External workspace member template repos (`G:/gald3r_ecosystem/gald3r_template_slim`, `G:/gald3r_ecosystem/gald3r_template_full`, `G:/gald3r_ecosystem/gald3r_template_adv`) are the **only** legitimate exception: their `.gald3r/` content is intentional install template content.
+This invariant fires for every workflow that may write `.gald3r/` to an arbitrary destination:
+`g-skl-setup`, `g-skl-wpac-spawn`, `g-skl-wpac-adopt`, `g-skl-workspace` SPAWN_APPLY /
+ADOPT_APPLY, `gald3r_install`, and any future scaffold/repair flow.
 
-This invariant fires for every workflow that may write `.gald3r/` to an arbitrary destination: `g-skl-setup`, `g-skl-pcac-spawn`, `g-skl-pcac-adopt`, `g-skl-workspace` SPAWN_APPLY / ADOPT_APPLY, `gald3r_install`, and any future scaffold/repair flow.
+---
 
 ## Source of truth
 
-- **Bug**: `BUG-021` (Critical) — Workspace-Control scaffold/setup can create live `.gald3r/` control planes inside member repositories.
-- **Task**: `Task 213` (spec v1.1) — defines the marker-only policy and its enforcement layers.
-- **Manifest**: `.gald3r/linking/workspace_manifest.yaml` → `routing_policy.member_gald3r_invariant`.
-- **Helper scripts** (gald3r_dev root + `G:/gald3r_ecosystem/gald3r_template_full/scripts/` for installed projects):
-  - `.gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1` — marker-aware preflight
-  - `.gald3r_sys/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1` — only sanctioned writer of member `.gald3r/`
-  - `.gald3r_sys/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1` — non-destructive cleanup of forbidden member content
-  - `.gald3r_sys/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1` — workspace-wide marker compliance audit
+- **Canonical rule file (edit here)**: `G:/gald3r_ecosystem/gald3r_templates/gald3r_template/.gald3r_sys/rules/g-rl-36-workspace-member-gald3r-guard.md`
+- **Propagate**: `G:/gald3r_ecosystem/gald3r_templates/scripts/platform_parity_sync.ps1 -SyncGaldSys -Sync` → `gald3r_dev/.gald3r_sys/`, `gald3r_template_{slim,full,adv}/gald3r_template/.gald3r_sys/`, `gald3r/gald3r_template/.gald3r_sys/`
+- **Do NOT edit for framework changes**: `gald3r_dev/.gald3r_sys/` (sync target only; preserves `.understand-anything/` on controller)
+- **ADR-003**: WPAC Controller Direct-Write Authority (supersedes BUG-021 marker-only-only stance)
+- **ADR-013**: autonomous_child workspace_role definition
+- **ADR-014**: Ecosystem v1.6 redesign
+- **Bug**: `BUG-021` — original marker-only violation; now scoped to `controlled_member` only
+- **Task**: `T1395` — WPAC v1.6 epic; `T1413` — this rule update (task tracked in `gald3r_dev/.gald3r/`)
+- **Manifest**: `.gald3r/workspace/workspace_manifest.yaml` → each repo's `workspace_role`
+- **Helper scripts** (under canonical `.gald3r_sys/`, synced to consumers):
+  - `skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1` — marker-aware preflight (autonomous_child aware)
+  - `skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1` — sanctioned writer of `controlled_member` markers
+  - `skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1` — cleanup of `controlled_member` violations
+  - `skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1` — workspace-wide compliance audit
+
+---
 
 ## Guard call contract
 
-Before any code path writes a `.gald3r/` file inside a member repository, call the guard:
+Before any code path writes a `.gald3r/` file inside a **`controlled_member`** repository,
+call the guard:
 
 ```powershell
-# Per-path check (preferred — most precise)
 powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 `
     -TargetPath "<absolute_member_repo_path>" `
     -DotGald3rPath "<relative_path_inside_dot_gald3r>"
@@ -43,38 +96,43 @@ $exit = $LASTEXITCODE
 ```
 
 | Mode | What it answers |
-|------|-----------------|
+|---|---|
 | `-DotGald3rPath ".identity"` or `-DotGald3rPath "PROJECT.md"` | ALLOW (marker-safe) |
-| `-DotGald3rPath "TASKS.md"` (or any control-plane path) | BLOCK |
-| `-AllowMarkerInit` (no path) | ALLOW (caller asserts marker bootstrap intent; bootstrap helper enforces actual filesystem allowlist) |
-| Default (no path, no flags) | BLOCK on member targets — caller must specify intent |
+| `-DotGald3rPath "TASKS.md"` (or any control-plane path) | BLOCK for `controlled_member`; ALLOW for `autonomous_child` |
+| `-AllowMarkerInit` (no path) | ALLOW (caller asserts marker bootstrap intent) |
+| Default (no path, no flags) | BLOCK on `controlled_member` targets; ALLOW on `autonomous_child` |
 
 Exit codes: `0` ALLOW, `1` BLOCK, `2` ERROR. Optional flags: `-WarnOnly`, `-Json`, `-ManifestPath`.
 
-## Bootstrap call contract (the only legal `.gald3r/` writer for members)
+> **autonomous_child repos do not need guard calls** — they self-manage `.gald3r/`. The guard
+> is only meaningful for `controlled_member` targets.
 
-When a member is added, adopted, or spawned, create the marker via:
+---
+
+## Bootstrap call contract (`controlled_member` only)
+
+When a `controlled_member` is added, adopted, or spawned:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1 `
     -MemberPath "<absolute_member_repo_path>" `
     -MemberId "<manifest_repo_id>" `
-    -ControllerPath "<absolute_controller_path>" `   # optional: defaults to upward manifest discovery
-    -Apply                                            # omit for dry-run
+    -ControllerPath "<absolute_controller_path>" `
+    -Apply
 ```
 
 The bootstrap helper:
 
-1. Confirms membership via the guard (`-AllowMarkerInit` mode).
-2. Refuses to proceed if existing `.gald3r/` already contains forbidden content — directs the user to remediate first.
-3. Creates `.gald3r/.identity` (if absent) tying the member back to the controller (member project_id, member project_name, controller project_id, controller path, `member_gald3r_marker_only=true`).
-4. Creates `.gald3r/PROJECT.md` (if absent) as a member-stub identifying the member + cross-linking to the controller.
-5. Preserves any pre-existing `.identity` or `PROJECT.md`.
-6. Refuses to write any other path.
+1. Confirms `workspace_role: controlled_member` in the manifest (skips `autonomous_child`).
+2. Refuses if existing `.gald3r/` contains forbidden content — directs to remediate first.
+3. Creates `.gald3r/.identity` and `.gald3r/PROJECT.md` if absent.
+4. Refuses to write any other path.
 
-## Remediation call contract (existing violation cleanup)
+For `autonomous_child` repos, use `g-skl-wpac-spawn` or the full gald3r setup flow instead.
 
-When a member already contains live control-plane content, remediate it:
+---
+
+## Remediation call contract (`controlled_member` violations only)
 
 ```powershell
 # Dry-run first
@@ -87,67 +145,35 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-wor
     -Apply
 ```
 
-Remediation **never deletes**; it quarantines forbidden entries to `<member>/.gald3r-quarantine/<timestamp>/` (or to an explicit `-BackupTo` path). The marker pair (`.identity` + `PROJECT.md`) is preserved in place. The user controls final disposition of the quarantine folder.
+Remediation **never deletes**. Do NOT run remediation against `autonomous_child` repos — their
+full `.gald3r/` is intentional.
 
-## Validation call contract
-
-Audit all manifest members at any time:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1
-```
-
-Reports per-member compliance: `clean` / `marker_missing` / `has_violations` / `not_yet_created`. Exit `0` if all clean, `1` if any have violations (use `-WarnOnly` for advisory mode). Required as part of pre-adoption preflight before any new member (e.g. `gald3r_valhalla`) is added.
+---
 
 ## Skill / command preflight requirements
 
-The following surfaces MUST call the guard before writing live `.gald3r/` content, and MUST call the bootstrap helper as the sanctioned writer:
+- **`g-skl-setup`** — check manifest `workspace_role`. `controlled_member` → BLOCK (marker-only via bootstrap). `autonomous_child` → ALLOW full setup.
+- **`g-skl-wpac-spawn`** — spawning into a `controlled_member` path is forbidden. Spawning a new `autonomous_child` is ALLOW.
+- **`g-skl-wpac-adopt`** — when adopting a `controlled_member`, guard `.gald3r/workspace/` writes. `autonomous_child` adoption proceeds without the guard.
+- **`gald3r_install`** — check manifest before writing `.gald3r/` files. `controlled_member` → refuse and direct to bootstrap. `autonomous_child` → allow install.
 
-- **`g-skl-workspace`**:
-  - `SPAWN_APPLY` — after creating directory + git init + minimal `.gitignore`/`README.md`, call bootstrap with `-Apply` to create the marker pair.
-  - `ADOPT_APPLY` — refuse if target's `.gald3r/` already contains live control plane (require remediation first); then call bootstrap to ensure marker is present.
-  - `MEMBER_ADD_APPLY` — when path exists, call bootstrap; when path is planned, defer to first SPAWN/ADOPT.
-  - New ops: `MEMBER_MARKER_BOOTSTRAP`, `MEMBER_MARKER_REMEDIATE`, `MEMBER_MARKER_VALIDATE`.
-- **`g-skl-setup`** — Step 0 calls the guard. If target is a controlled_member, BLOCK setup (members get marker-only via `g-wrkspc-spawn` / `g-wrkspc-adopt`, not full setup).
-- **`g-skl-pcac-spawn`** — Pre-Flight Checks call the guard. PCAC-spawning a project INTO a controlled member path is forbidden (PCAC spawn = new standalone project, not a workspace member; use `g-wrkspc-spawn` for workspace members).
-- **`g-skl-pcac-adopt`** — Step 2.5 calls the guard for `.gald3r/linking/` writes against the target. If target is a workspace member, switch to `--one-way` automatically (skip the target write) and direct user to `@g-wrkspc-adopt` for full Workspace-Control adoption.
-- **`gald3r_install` MCP tool** — before writing `.gald3r/.project_id`, `.gald3r/.vault_location`, `.gald3r/.user_id`, call the guard. If member match, refuse and direct to bootstrap helper instead.
-- **Future workflows** (`@g-wrkspc-init`, scaffold/repair tools) that materialize `.gald3r/` files at an arbitrary path.
-
-## Pre-adoption preflight (gald3r_valhalla and any future populated member)
-
-Before adopting an existing populated gald3r project (e.g. `gald3r_valhalla`) as a Workspace-Control member, the operator MUST:
-
-1. Run `.gald3r_sys/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1` to baseline current workspace marker compliance.
-2. Run `.gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath <candidate>` to confirm the candidate would be classified as a member after adoption.
-3. Inspect the candidate's existing `.gald3r/` for live control plane.
-4. If live control plane is present, do NOT silently overwrite. Either:
-   - **Adopt the project's history** via the upcoming Workspace-Control populated-gald3r adoption flow (Tasks 214–217). The flow imports active items into the controller with provenance, archives terminal items, and reduces the candidate's `.gald3r/` to the marker pair via remediation.
-   - **Defer adoption** until cleanup/migration is complete.
-5. Pass marker bootstrap only after preflight + remediation + history import are all complete.
-
-The adoption preflight refuses to overwrite an existing real `.gald3r/` control plane. It reports the required migration or cleanup steps instead of mutating it.
-
-## Existing-violation handling (e.g. gald3r_throne)
-
-If a member repository already contains a live control plane (the historical `gald3r_throne` case), the agent MUST:
-
-1. Surface the violation explicitly in the session summary.
-2. Refuse any new write that would touch the existing live state without explicit remediation.
-3. Recommend the user run `remediate_member_gald3r_marker.ps1` (dry-run, then `-Apply`) followed by `bootstrap_member_gald3r_marker.ps1 -Apply` to land on the marker-only shape. Both helpers are non-destructive (the remediator quarantines, never deletes).
-4. Cleanup is never bundled with prevention work — it gets its own task with explicit user authorization.
+---
 
 ## Rationalization table
 
 | Rationalization | Reality |
 |---|---|
-| "It's just a small TASKS.md stub" | A stub is still live control plane. Member `.gald3r/` is marker-only. |
-| "The member needs its own task tracker" | The controller IS the task tracker. Members don't have parallel state. |
-| "I'll mark it gitignored" | Gitignored is not the boundary. The bug is the existence of live state. |
-| "But T197 created `.gald3r/TASKS.md` and it shipped" | That violated the policy. T213 v1.1 + remediate fix it; bootstrap creates the correct marker. |
-| "The manifest has `write_allowed: true` for gald3r_throne" | `write_allowed: true` does not extend to `.gald3r/` control plane. See `member_gald3r_invariant.marker_allowlist` and `disallowed_paths` in the manifest. |
-| "I just need a quick `.gald3r/PLAN.md` for this member" | No. PLAN.md is controller-only. The member's mission goes in `PROJECT.md`. |
+| "This autonomous_child has a full .gald3r/, that's a violation" | No. `autonomous_child` repos own their own .gald3r/. Check `workspace_role` first. |
+| "I see TASKS.md in gald3r_valhalla, that must be wrong" | Correct and expected — `gald3r_valhalla` is `autonomous_child`. |
+| "A controlled_member needs its own task tracker" | The controller IS the tracker for `controlled_member` repos. Use `autonomous_child` if the repo needs independence. |
+| "I'll just put a small TASKS.md in this controlled_member" | Still a violation. If the repo needs tasks, promote it to `autonomous_child` via T1395 process. |
+| "The manifest says write_allowed: true so it's fine" | `write_allowed` covers source code writes. The `.gald3r/` policy is set by `workspace_role`, not `write_allowed`. |
+| "I'll edit gald3r_dev/.gald3r_sys/ directly" | Edit canonical under `gald3r_templates/gald3r_template/.gald3r_sys/` then run `-SyncGaldSys -Sync`. |
+
+---
 
 ## Template directory exception (mandatory honor)
 
-Paths matching `**/template_(slim|full|adv)/**` carry deliberate `.gald3r/` template content. The guard helper recognizes these paths and returns ALLOW with reason `template_directory_exception`. Do **not** add additional carve-outs — the only legitimate `.gald3r/` writes outside the control project are template content under those three directories.
+Paths matching `**/template_(slim|full|adv)/**` carry deliberate `.gald3r/` template content.
+The guard helper returns ALLOW with reason `template_directory_exception`. Do **not** add
+additional carve-outs.

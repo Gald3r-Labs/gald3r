@@ -11,5 +11,8 @@ during setup_gald3r_project.ps1 installation.
 | opencode.json   | opencode (OpenCode / sst.dev)    |
 | .github/        | copilot (GitHub Copilot)         |
 
-Files at the gald3r_template/ root (GUARDRAILS.md, WORKFLOW.md, .gitignore, scripts/, etc.)
-are installed unconditionally for every project.
+Deployable markdown (GUARDRAILS.md, WORKFLOW.md, GALD3R-MIGRATION.md, GALD3R-PROMPT.md) lives in
+`.gald3r_sys/install/project_root/` and is merged into the target project root on install/update.
+
+Payload scaffold at `gald3r_template/` root: `.gald3r/`, `.gitignore`, `scripts/`, `temp_docs/`,
+`temp_scripts/`, `docs/`, and `setup_gald3r_project.ps1`.

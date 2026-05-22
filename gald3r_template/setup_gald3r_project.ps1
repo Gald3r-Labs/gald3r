@@ -443,17 +443,29 @@ if ($isNew) {
     Write-Host "  [SKIP] .gald3r/ already exists — preserving your project state" -ForegroundColor DarkGray
 }
 
+function Get-TemplatePayloadSource {
+    param(
+        [string]$PayloadRoot,
+        [string]$RelativeName
+    )
+    # Canonical deployables live under .gald3r_sys/install/project_root/ (T1424+).
+    $fromInstall = Join-Path $PayloadRoot ".gald3r_sys\install\project_root\$RelativeName"
+    if (Test-Path $fromInstall) { return $fromInstall }
+    return Join-Path $PayloadRoot $RelativeName
+}
+
 Write-Host "  [3/5] Merging project root files..." -ForegroundColor Cyan
 # Platform-conditional files live in .gald3r_sys/platforms/ (deployed at step [1/5])
 # Use the already-deployed copy at $sysDst so the source path is consistent
 $platformsPayload = Join-Path $sysDst "platforms"
 
-# Universal files (always installed) — sourced from templatePayload root
+# Universal files (always installed) — deployables from install/project_root when present
 $mergeFiles = @{
     ".gitignore"         = "section"
     ".claudeignore"      = "section"
     ".cursorignore"      = "section"
     "GUARDRAILS.md"      = "add-if-missing"
+    "WORKFLOW.md"        = "add-if-missing"
     "GALD3R-MIGRATION.md"= "add-if-missing"
     "GALD3R-PROMPT.md"   = "add-if-missing"
     "scripts"            = "dir-merge"
@@ -477,7 +489,7 @@ $platformFiles = @{
 
 foreach ($file in $mergeFiles.Keys) {
     $strategy = $mergeFiles[$file]
-    $srcFile = Join-Path $templatePayload $file
+    $srcFile = Get-TemplatePayloadSource -PayloadRoot $templatePayload -RelativeName $file
     $dstFile = Join-Path $TargetPath $file
 
     # Universal files only in this loop — platform-conditional are in $platformFiles loop below

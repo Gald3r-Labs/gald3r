@@ -443,16 +443,29 @@ if ($isNew) {
     Write-Host "  [SKIP] .gald3r/ already exists — preserving your project state" -ForegroundColor DarkGray
 }
 
+function Get-TemplatePayloadSource {
+    param(
+        [string]$PayloadRoot,
+        [string]$RelativeName
+    )
+    # Canonical deployables live under .gald3r_sys/install/project_root/ (T1424+).
+    $fromInstall = Join-Path $PayloadRoot ".gald3r_sys\install\project_root\$RelativeName"
+    if (Test-Path $fromInstall) { return $fromInstall }
+    return Join-Path $PayloadRoot $RelativeName
+}
+
 Write-Host "  [3/5] Merging project root files..." -ForegroundColor Cyan
+# Platform-conditional files live in .gald3r_sys/platforms/ (deployed at step [1/5])
+# Use the already-deployed copy at $sysDst so the source path is consistent
+$platformsPayload = Join-Path $sysDst "platforms"
+
+# Universal files (always installed) — deployables from install/project_root when present
 $mergeFiles = @{
-    "CLAUDE.md"          = "section"
-    "AGENTS.md"          = "section"
-    "GEMINI.md"          = "section"
     ".gitignore"         = "section"
     ".claudeignore"      = "section"
     ".cursorignore"      = "section"
-    "opencode.json"      = "json"
     "GUARDRAILS.md"      = "add-if-missing"
+    "WORKFLOW.md"        = "add-if-missing"
     "GALD3R-MIGRATION.md"= "add-if-missing"
     "GALD3R-PROMPT.md"   = "add-if-missing"
     "scripts"            = "dir-merge"
@@ -460,10 +473,36 @@ $mergeFiles = @{
     "temp_scripts"       = "add-if-missing-dir"
 }
 
+# Platform-conditional files — sourced from platforms/ subfolder
+# CLAUDE.md  : Claude Code (primary author), Cursor, Kiro, Windsurf, Roo, Cline, Augment
+# AGENTS.md  : Claude, Codex, Gemini, Copilot, OpenCode, Cursor, OpenHands (effectively universal)
+# GEMINI.md  : Gemini CLI only (.agent/ folder)
+# opencode.json: OpenCode only (.opencode/ folder)
+# .github/   : GitHub Copilot only (copilot-instructions.md, workflows, prompts)
+$platformFiles = @{
+    "CLAUDE.md"          = "section"
+    "AGENTS.md"          = "section"
+    "GEMINI.md"          = "section"
+    "opencode.json"      = "json"
+    ".github"            = "copilot-dir"
+}
+
 foreach ($file in $mergeFiles.Keys) {
     $strategy = $mergeFiles[$file]
-    $srcFile = Join-Path $templatePayload $file
+    $srcFile = Get-TemplatePayloadSource -PayloadRoot $templatePayload -RelativeName $file
     $dstFile = Join-Path $TargetPath $file
+
+    # Universal files only in this loop — platform-conditional are in $platformFiles loop below
+    # Minor gate: skip ignore files if their platform isn't selected
+    $shouldInstall = switch ($file) {
+        ".claudeignore" { $Platforms -contains "claude" }
+        ".cursorignore" { $Platforms -contains "cursor" }
+        default         { $true }
+    }
+    if (-not $shouldInstall) {
+        Write-Host "    skip: $file (platform not selected)" -ForegroundColor DarkGray
+        continue
+    }
 
     switch ($strategy) {
         "section" {
@@ -496,6 +535,66 @@ foreach ($file in $mergeFiles.Keys) {
                     }
                 }
                 Write-Host "    merged: $file/" -ForegroundColor DarkGray
+            }
+        }
+        "copilot-dir" {
+            # Full recursive copy of .github/ — only reached when copilot is a selected platform
+            if (Test-Path $srcFile) {
+                New-Item -ItemType Directory -Force $dstFile | Out-Null
+                Copy-Item -Path "$srcFile\*" -Destination $dstFile -Recurse -Force
+                Write-Host "    added: .github/ (GitHub Copilot)" -ForegroundColor DarkGray
+            }
+        }
+    }
+}
+
+# ── Platform-conditional files (sourced from platforms/ subfolder) ────────────
+foreach ($file in $platformFiles.Keys) {
+    $strategy = $platformFiles[$file]
+    $srcFile = Join-Path $platformsPayload $file
+    $dstFile = Join-Path $TargetPath $file
+
+    # Platform gate — skip if platform not selected
+    $shouldInstall = switch ($file) {
+        "GEMINI.md" {
+            $Platforms -contains "agent"
+        }
+        "opencode.json" {
+            $Platforms -contains "opencode"
+        }
+        "CLAUDE.md" {
+            $claudeReaders = @("claude","cursor","kiro","windsurf","roo","cline","augment")
+            ($Platforms | Where-Object { $claudeReaders -contains $_ }).Count -gt 0
+        }
+        "AGENTS.md" {
+            # Universal — any platform install gets AGENTS.md
+            $Platforms.Count -gt 0
+        }
+        ".github" {
+            $Platforms -contains "copilot"
+        }
+        default { $true }
+    }
+
+    if (-not $shouldInstall) {
+        Write-Host "    skip: $file (platform not selected)" -ForegroundColor DarkGray
+        continue
+    }
+
+    switch ($strategy) {
+        "section" {
+            Merge-SectionMarker -TargetFile $dstFile -SourceFile $srcFile -SectionTag $file
+            Write-Host "    merged: $file" -ForegroundColor DarkGray
+        }
+        "json" {
+            Merge-Json -TargetFile $dstFile -SourceFile $srcFile
+            Write-Host "    merged: $file" -ForegroundColor DarkGray
+        }
+        "copilot-dir" {
+            if (Test-Path $srcFile) {
+                New-Item -ItemType Directory -Force $dstFile | Out-Null
+                Copy-Item -Path "$srcFile\*" -Destination $dstFile -Recurse -Force
+                Write-Host "    added: .github/ (GitHub Copilot)" -ForegroundColor DarkGray
             }
         }
     }
