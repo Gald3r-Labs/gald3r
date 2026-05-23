@@ -12,9 +12,18 @@ The **only** valid reasons to stop are documented **hard-gate failures** (PCAC c
 
 When `$ARGUMENTS` is empty or contains no task/bug IDs:
 
-1. **Scope filter** — branches on the `--workspace` flag (T532):
-   - **Bare `@g-go-swarm` (default)** — include only items that are **gald3r_dev-scoped**: `workspace_repos` is absent, empty, or contains only the controller repo's own manifest ID. Items naming other member repos are **deferred** (logged in session summary; no user prompt). Bare swarm MUST NEVER scan member repos automatically.
-   - **`@g-go-swarm --workspace`** (alias for `@g-go --swarm --workspace`) — include items routed to manifest-declared workspace repositories whose `local_path` exists, `lifecycle_status` permits work, `allowed_write_policy.write_allowed` is true, and `workspace_touch_policy` is compatible. Items routing to missing/planned/unauthorized repos are deferred with explicit per-repo reasons. Per-repo clean checks, worktree contexts, and blocker reporting apply individually to every selected member root.
+1. **Scope filter** — determined by flags AND `.gald3r/config/AGENT_CONFIG.md` `g_go_default_scope` (same logic as `g-go`):
+
+   | Priority | Condition | Effective scope |
+   |---|---|---|
+   | 1 | `--local` flag | local-only (current repo tasks only) |
+   | 2 | `--workspace <id>` or `--workspace <id1,id2>` | narrow to named member(s) |
+   | 3 | `--workspace` (no value) | all manifest members |
+   | 4 | *(no flag)* + `g_go_default_scope: workspace_all` | all members (controller default) |
+   | 5 | *(no flag)* + `g_go_default_scope: local_only` or absent | local-only (member default) |
+
+   - **local-only** — `workspace_repos` is absent, empty, or contains only the current repo's manifest ID. Items naming other member repos are **deferred** (logged; no prompt).
+   - **workspace scope** — include items routed to manifest-declared repositories in the resolved member set whose `local_path` exists, `lifecycle_status` permits work, `write_allowed` is true, and `workspace_touch_policy` is compatible. Items routing to missing/unauthorized repos are deferred with explicit per-repo reasons. Per-repo clean checks, worktree contexts, and blocker reporting apply individually.
 2. **Phase 1 queue** — all `[📋]` / `[ ]` / stale-`[📝]` items passing the scope filter, Critical → High → Medium → Low. Auto-downgrade to single-agent if exactly one item passes after preflight.
 3. **Phase 2 queue** — all `[🔍]` items passing the scope filter, reachable from the Phase 1 checkpoint.
 4. **Zero runnable items** — output `[PIPELINE] No runnable items after scope filter. Deferred: {list}. Nothing to commit.` and exit cleanly. **Do not ask.**

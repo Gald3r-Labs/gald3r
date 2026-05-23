@@ -20,6 +20,10 @@
       {
         "command": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-nightly-learn.ps1",
         "_hook_md": ".cursor/hooks/g-hk-nightly-learn.md"
+      },
+      {
+        "command": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-session-end.ps1",
+        "_hook_md": ".cursor/hooks/g-hk-session-end.md"
       }
     ],
     "beforeShellExecution": [

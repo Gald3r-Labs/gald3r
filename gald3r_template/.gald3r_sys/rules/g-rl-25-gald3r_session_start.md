@@ -47,7 +47,7 @@ Subsystems: [N] registered (from SUBSYSTEMS.md + subsystems/)
 Specs: [N] in specifications_collection/ (newest: YYYY-MM-DD) [or "none"]
 ⚠️ Unreviewed: {spec_filename}  ← only if spec mtime > date of last [✅] task
 🧠 Learned Facts: [N] project facts | [M] global facts  (run /g-learn review to see them)
-📖 Vocab: [V] abbreviations loaded (from .gald3r/vocab.md) — expand silently, no narration  ← only if vocab.md exists with ≥1 entry
+📖 Vocab: [V] abbreviations loaded (local + parent if WPAC-linked) — expand silently, no narration  ← only if vocab.md exists with ≥1 entry
 📓 Journal: [last entry date] for {active-agent-slug}  ← only when the active agent role has journal entries
 ⚠️ Avoid: {one-line summary}  ← only if the active agent's most recent journal entry is `category: anti-pattern`
 Experiments: [summary from experiments/EXPERIMENTS.md if it has active entries]
@@ -57,7 +57,13 @@ Experiments: [summary from experiments/EXPERIMENTS.md if it has active entries]
 
 Learned fact counts: count `-` bullet points in `.gald3r/learned-facts.md` (skip headers and empties).
 Global fact count: count bullets in `{vault_location}/projects/{project_name}/memory.md` if it exists.
-Vocab count: count data rows in the `.gald3r/vocab.md` "Active Vocabulary" table (skip header + separator rows). Load each `Abbreviation → Expansion` into working context and **expand silently** when the user uses one (no "you said X, which means…" narration). Skip the line entirely if `vocab.md` is absent or has no entries. Manage with `@g-vocab-add` / `@g-vocab-list` / `@g-vocab-search`.
+Vocab loading (WPAC-aware):
+1. Load `.gald3r/vocab.md` — count data rows in the "Active Vocabulary" table (skip header + separator rows).
+2. If `.gald3r/workspace/topology.md` exists and declares a `parent:` with a resolvable local path, also load the parent's `.gald3r/vocab.md`. Merge: local entries take precedence over parent entries on name collision.
+3. Total vocab count = unique abbreviations across both sources.
+4. Load all entries into working context and **expand silently** when the user uses one (no "you said X, which means…" narration).
+5. Skip silently if both files are absent or have no entries.
+Manage with `@g-vocab-add` / `@g-vocab-list` / `@g-vocab-search`.
 
 ## Agent Journal Read (T1010 — REDACTED-PATTERN pattern)
 

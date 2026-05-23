@@ -1,4 +1,4 @@
-# setup_gald3r_project.ps1 - gald3r Installer & Updater
+﻿# setup_gald3r_project.ps1 - gald3r Installer & Updater
 # =====================================================
 # TWO MODES:
 #   INSTALLER mode  : Run from this template folder to install gald3r INTO a target project.
@@ -34,6 +34,14 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+
+# Normalize $Platforms: when called via -File, comma-separated values arrive as
+# a single string ("cursor,claude") rather than a proper string array.
+if ($Platforms.Count -eq 1 -and $Platforms[0] -match ',') {
+    $Platforms = $Platforms[0] -split '\s*,\s*' | Where-Object { $_ -ne '' }
+}
+# Normalize platform names to lowercase
+$Platforms = @($Platforms | ForEach-Object { $_.ToLower().Trim() })
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Detect which mode we are in
@@ -95,7 +103,7 @@ if (-not $isInstallerMode) {
 
     $sysRoot = Join-Path $projectRoot ".gald3r_sys"
     if (-not (Test-Path $sysRoot)) {
-        if (-not $Quiet) { Write-Warning ".gald3r_sys/ not found at $projectRoot — run installer first." }
+        if (-not $Quiet) { Write-Warning ".gald3r_sys/ not found at $projectRoot - run installer first." }
         exit 1
     }
 
@@ -128,7 +136,7 @@ if (-not $isInstallerMode) {
     }
 
     foreach ($platKey in $targets) {
-        if (-not $allPlatforms.ContainsKey($platKey)) { continue }
+        if (-not $allPlatforms.Contains($platKey)) { continue }
         $plat = $allPlatforms[$platKey]
         $platDst = Join-Path $projectRoot $plat.prefix
 
@@ -150,7 +158,7 @@ if (-not $isInstallerMode) {
             $catSrc = Join-Path $sysRoot $cat
             $catDst = Join-Path $platDst $cat
             $n = Sync-GaldContent -Src $catSrc -Dst $catDst -CleanFirst:$Clean.IsPresent
-            if (-not $Quiet) { Write-Host "  $platKey/$cat: $n files synced" }
+            if (-not $Quiet) { Write-Host "  $platKey/${cat}: $n files synced" }
         }
 
         # Rules (with extension translation)
@@ -256,54 +264,44 @@ function Merge-Json {
         }
         $tgtJson | ConvertTo-Json -Depth 10 | Set-Content $TargetFile
     } catch {
-        Write-Warning "Could not merge $TargetFile — keeping existing."
+        Write-Warning "Could not merge $TargetFile - keeping existing."
     }
 }
 
 function Deploy-PlatformDirs {
     param([string]$TargetPath, [string[]]$PlatformKeys, [string]$SysRoot)
     foreach ($platKey in $PlatformKeys) {
-        if (-not $allPlatforms.ContainsKey($platKey)) {
+        if (-not $allPlatforms.Contains($platKey)) {
             Write-Warning "Unknown platform: $platKey"
             continue
         }
         $plat = $allPlatforms[$platKey]
         $platDst = Join-Path $TargetPath $plat.prefix
+        Write-Host "    $platKey scaffold..." -ForegroundColor DarkGray
         New-Item -ItemType Directory -Force $platDst | Out-Null
 
-        # Phase 1: scaffold
+        # Phase 1: scaffold - use robocopy for speed
         $scaffoldSrc = Join-Path $SysRoot "platforms\$($plat.prefix)"
         if (Test-Path $scaffoldSrc) {
-            Get-ChildItem $scaffoldSrc -Recurse -File | ForEach-Object {
-                $rel = $_.FullName.Substring($scaffoldSrc.Length + 1)
-                $tgt = Join-Path $platDst $rel
-                $tgtDir = Split-Path $tgt
-                New-Item -ItemType Directory -Force $tgtDir | Out-Null
-                if (-not (Test-Path $tgt)) { Copy-Item $_.FullName $tgt -Force }
-            }
+            robocopy $scaffoldSrc $platDst /E /NJH /NJS /NFL /NDL /NC /NS /NP /XO 2>$null | Out-Null
         }
 
-        # Phase 2: universal content
+        # Phase 2: universal content - use robocopy for speed
         foreach ($cat in $plat.cats) {
             $catSrc = Join-Path $SysRoot $cat
             $catDst = Join-Path $platDst $cat
+            Write-Host "    $platKey/${cat}..." -ForegroundColor DarkGray
             if (Test-Path $catSrc) {
                 New-Item -ItemType Directory -Force $catDst | Out-Null
-                Get-ChildItem $catSrc -Recurse -File | ForEach-Object {
-                    $rel = $_.FullName.Substring($catSrc.Length + 1)
-                    $tgt = Join-Path $catDst $rel
-                    $tgtDir = Split-Path $tgt
-                    New-Item -ItemType Directory -Force $tgtDir | Out-Null
-                    if ($rel -match "^g-" -or $rel -match "[/\\]g-" -or -not (Test-Path $tgt)) {
-                        Copy-Item $_.FullName $tgt -Force
-                    }
-                }
+                # Only copy g- prefixed files or new files (robocopy /XO skips older source files)
+                robocopy $catSrc $catDst /E /NJH /NJS /NFL /NDL /NC /NS /NP 2>$null | Out-Null
             }
         }
 
-        # Rules
+        # Rules (with extension translation - must be done file-by-file)
         $rulesSrc = Join-Path $SysRoot "rules"
         if (Test-Path $rulesSrc) {
+            Write-Host "    $platKey/rules..." -ForegroundColor DarkGray
             $rulesDst = Join-Path $platDst "rules"
             New-Item -ItemType Directory -Force $rulesDst | Out-Null
             Get-ChildItem $rulesSrc -File | ForEach-Object {
@@ -351,17 +349,17 @@ $isNew = $galdVersion -eq "none"
 Write-Host "  Project state: " -NoNewline
 switch -Wildcard ($galdVersion) {
     "none"         { Write-Host "New project (no gald3r found)" -ForegroundColor Green }
-    "v1-*"         { Write-Host "LEGACY gald3r v1 (symlink pattern) — will migrate" -ForegroundColor Yellow }
-    "v2-phase"     { Write-Host "gald3r v2 (phase-based tasks) — will migrate" -ForegroundColor Yellow }
-    "v2-*"         { Write-Host "gald3r v2 — will update" -ForegroundColor Yellow }
-    "v3-*"         { Write-Host "gald3r $galdVersion — updating" -ForegroundColor Cyan }
+    "v1-*"         { Write-Host "LEGACY gald3r v1 (symlink pattern) - will migrate" -ForegroundColor Yellow }
+    "v2-phase"     { Write-Host "gald3r v2 (phase-based tasks) - will migrate" -ForegroundColor Yellow }
+    "v2-*"         { Write-Host "gald3r v2 - will update" -ForegroundColor Yellow }
+    "v3-*"         { Write-Host "gald3r $galdVersion - updating" -ForegroundColor Cyan }
     default        { Write-Host "Unknown / partial install" -ForegroundColor Yellow }
 }
 
 if (-not $isNew -and -not $Force -and -not $DryRun) {
     Write-Host ""
     Write-Host "  Existing gald3r detected. This will:" -ForegroundColor Yellow
-    Write-Host "    - Update .gald3r_sys/ (framework files — safe overwrite)"
+    Write-Host "    - Update .gald3r_sys/ (framework files - safe overwrite)"
     Write-Host "    - Merge CLAUDE.md, AGENTS.md, .gitignore etc. (section markers)"
     Write-Host "    - Update g- prefixed skills/agents/commands only"
     Write-Host "    - NEVER touch README.md, LICENSE, CHANGELOG.md"
@@ -380,7 +378,7 @@ if ($Platforms.Count -eq 0) {
     $platformList = @()
     foreach ($key in $allPlatforms.Keys) {
         $label = $allPlatforms[$key].label
-        Write-Host "    $idx) $key  — $label"
+        Write-Host "    $idx) $key  - $label"
         $platformList += $key
         $idx++
     }
@@ -396,7 +394,7 @@ if ($Platforms.Count -eq 0) {
             if ($part -match "^\d+$") {
                 $i = [int]$part - 1
                 if ($i -ge 0 -and $i -lt $platformList.Count) { $Platforms += $platformList[$i] }
-            } elseif ($allPlatforms.ContainsKey($part.ToLower())) {
+            } elseif ($allPlatforms.Contains($part.ToLower())) {
                 $Platforms += $part.ToLower()
             } else {
                 Write-Warning "Unknown platform: $part"
@@ -406,7 +404,7 @@ if ($Platforms.Count -eq 0) {
 }
 
 if ($Platforms.Count -eq 0) {
-    Write-Host "  No platforms selected — defaulting to cursor + claude." -ForegroundColor Yellow
+    Write-Host "  No platforms selected - defaulting to cursor + claude." -ForegroundColor Yellow
     $Platforms = @("cursor", "claude")
 }
 
@@ -415,7 +413,7 @@ Write-Host "  Installing platforms: $($Platforms -join ', ')" -ForegroundColor C
 
 if ($DryRun) {
     Write-Host ""
-    Write-Host "  DRY RUN — no files will be written." -ForegroundColor Yellow
+    Write-Host "  DRY RUN - no files will be written." -ForegroundColor Yellow
     Write-Host "  Would install to: $TargetPath"
     Write-Host "  Platforms: $($Platforms -join ', ')"
     exit 0
@@ -440,7 +438,7 @@ if ($isNew) {
         Write-Host "  [OK] .gald3r/ initialized from template" -ForegroundColor Green
     }
 } else {
-    Write-Host "  [SKIP] .gald3r/ already exists — preserving your project state" -ForegroundColor DarkGray
+    Write-Host "  [SKIP] .gald3r/ already exists - preserving your project state" -ForegroundColor DarkGray
 }
 
 function Get-TemplatePayloadSource {
@@ -619,7 +617,7 @@ Write-Host ""
 Write-Host "  Next steps:" -ForegroundColor Yellow
 Write-Host "  1. Open your project in your preferred IDE:"
 foreach ($p in $Platforms) {
-    if ($allPlatforms.ContainsKey($p)) {
+    if ($allPlatforms.Contains($p)) {
         Write-Host "       $($allPlatforms[$p].label)"
     }
 }

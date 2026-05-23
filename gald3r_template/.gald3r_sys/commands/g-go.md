@@ -68,9 +68,22 @@ Asking "Go?" or "Confirm?" or "Which tasks?" or "Conservative or expanded?" is a
 
 When `$ARGUMENTS` is empty or contains no task/bug IDs, the coordinator selects the work queue **immediately and silently** using these ordered rules:
 
-1. **Scope filter** — branches on the `--workspace` flag (T532):
-   - **Bare `/g-go` (default, no `--workspace`)** — include only items that are **gald3r_dev-scoped**: the task's `workspace_repos` field is absent, empty, or contains only the controller repo's own manifest ID (`gald3r_dev`). Items whose `workspace_repos` lists other member repos are **deferred** (logged as `Deferred — member-repo scope` in the session summary; no prompt to the user). Bare `/g-go` MUST NEVER scan all manifest workspace repositories — that is the explicit `--workspace` opt-in below.
-   - **`/g-go --workspace`** — include items routed to any manifest-declared workspace repository whose `repository.local_path` exists, whose `lifecycle_status` permits work, and whose `allowed_write_policy` is compatible with the task's `workspace_touch_policy`. Items routing to repos that are missing/planned/unavailable, write-disallowed, or unauthorized are **deferred** with explicit per-repo reasons in the summary. The orchestration controller and every selected member repo each get their own per-root clean check, worktree context, and blocker reporting; no per-repo blocker silently affects unrelated repos.
+1. **Scope filter** — determined by flags AND `.gald3r/config/AGENT_CONFIG.md` `g_go_default_scope` (T532 + controller-default extension):
+
+   **Step 1a — Resolve effective scope** (evaluated in priority order, highest wins):
+   | Priority | Condition | Effective scope |
+   |---|---|---|
+   | 1 | `--local` flag present | **local-only**: current repo tasks only |
+   | 2 | `--workspace <id>` or `--workspace <id1,id2>` | **narrow**: only the named manifest member(s) |
+   | 3 | `--workspace` (flag, no value) | **all members**: full workspace scan |
+   | 4 | *(no flag)* + AGENT_CONFIG `g_go_default_scope: workspace_all` | **all members** (controller-repo default) |
+   | 5 | *(no flag)* + AGENT_CONFIG `g_go_default_scope: local_only` or absent | **local-only** (member-repo default) |
+
+   **Step 1b — Apply the resolved scope:**
+   - **local-only** — include only items that are **this-repo-scoped**: the task's `workspace_repos` field is absent, empty, or contains only the current repo's own manifest ID. Items whose `workspace_repos` lists other member repos are **deferred** (logged as `Deferred — member-repo scope` in the session summary; no prompt to the user).
+   - **workspace scope (all or filtered)** — include items routed to any manifest-declared workspace repository that (a) is in the resolved member set, (b) has `repository.local_path` existing on disk, (c) has `lifecycle_status` permitting work, and (d) has `allowed_write_policy` compatible with the task's `workspace_touch_policy`. Items routing to repos that are missing/planned/unavailable, write-disallowed, or unauthorized are **deferred** with explicit per-repo reasons. The orchestration controller and every selected member repo each get their own per-root clean check, worktree context, and blocker reporting; no per-repo blocker silently affects unrelated repos.
+
+   > **Controller repos** (those with `g_go_default_scope: workspace_all` in AGENT_CONFIG.md) default to workspace-wide scope because they have no code of their own. Use `--local` to explicitly restrict to controller-only tasks, or `--workspace <repo_id>` to narrow to a specific member.
 2. **Phase 1 queue** — all `[📋]` / `[ ]` / stale-`[📝]` items that pass the scope filter, ordered Critical → High → Medium → Low. Apply the auto-downgrade rule: if exactly one implementation item passes the filter, downgrade to single-agent `g-go-code` and continue — do not stop.
 3. **Phase 2 queue** — all `[🔍]` items that pass the scope filter and are reachable from the Phase 1 checkpoint.
 4. **Zero runnable items** — output `[PIPELINE] No runnable items after scope filter. Deferred: {list with reasons}. Nothing to commit.` and exit cleanly. **Do not ask what to do.**
