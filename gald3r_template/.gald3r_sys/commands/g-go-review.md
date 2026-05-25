@@ -110,6 +110,14 @@ Read in this order:
 - Individual bug files (`.gald3r/bugs/bug*.md`) for each `[🔍]` bug — read fix description and affected file/line
 - `git log --oneline -10` — understand what was recently implemented
 - `.gald3r/CONSTRAINTS.md` — guardrails
+- **Active workflow profile (T1239)** — load once via `load_profile.ps1` (active
+  skill folder; see g-skl-tasks "Reading the active profile"). The review-gate
+  status (the `[🔍]`-equivalent), the PASS target, and the FAIL target come from
+  the profile's `review_gate` + `task_statuses[]` rather than hardcoded strings
+  (AC1). For `software_dev` these resolve to `awaiting-verification` → PASS `done`
+  / FAIL `pending` exactly as before; a `content_creation` project reviews
+  `in_review` → PASS `rendering`/`published` per its DAG order. Absent
+  `.gald3r/config/workflow_profiles/` → built-in `software_dev` lifecycle.
 
 > If a task has no `## Handoff Report` section, note "No Handoff Report" in your review summary and proceed to read the implementation files listed in acceptance criteria directly.
 
@@ -174,6 +182,17 @@ review_worktree_created_at: "{created_at}"
 review_source_branch: "{base_branch}"
 review_source_commit: "{git rev-parse base_branch}"
 ```
+
+**Shared-sandbox mode (T1118).** When the `g-go` coordinator hands off `shared_sandbox: true` and a `shared_worktree_path` (the `--shared-sandbox` flow), do **NOT** create a separate `review` worktree. Reuse the named Phase 1 `code` worktree read-only — the Phase 1 checkpoint commits and installed dependencies are already present there, so the reviewer sees the same git/filesystem state without re-cloning. Record:
+
+```yaml
+review_isolation_mode: shared-worktree
+review_worktree_path: "{shared_worktree_path}"
+review_source_branch: "{implementation_branch}"
+review_source_commit: "{git rev-parse implementation_branch}"
+```
+
+Shared-worktree mode is read-only for the reviewer (same boundary as snapshot mode): inspect files under `shared_worktree_path`, but never modify implementation files there unless the user explicitly requests fix-forward review, in which case the coordinator reconciles the changes. The independence guarantee is unaffected — the reviewer is still a fresh agent with no Phase 1 reasoning context; only the worktree filesystem is shared. This mode applies only when the coordinator passes the shared-sandbox handoff; without it, use the default worktree-from-checkpoint or snapshot fallback below.
 
 **Snapshot mode fallback.** Use snapshot mode instead of creating a review worktree only when the candidate changes are explicitly left uncommitted, dirty, or non-branch-addressable. Record:
 

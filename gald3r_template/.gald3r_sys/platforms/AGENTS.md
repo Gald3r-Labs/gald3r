@@ -184,6 +184,36 @@ This project is both a live gald3r workspace and a source of installable framewo
 
 ---
 
+## `g-go --swarm` Bucket Rules
+
+When `@g-go --swarm` (or `g-go-code --swarm` / `g-go-review --swarm`) fans work out to
+parallel buckets, each bucket runs in its own T170 worktree and must not touch files another
+bucket is editing. File-lock manifests enforce this (T1059):
+
+- **Lock directory** — `.gald3r-swarm-locks/` at the repo root holds one JSON manifest per
+  bucket: `lock_{bucket_id}.json`. Each manifest lists the file `paths` the bucket intends to
+  modify, the `owner`, a `created_at`, and an `expires_at` timestamp
+  (`created_at + 2 * bucket_TTL`).
+- **Ephemeral / never committed** — the directory is listed in `.gald3rignore` (and gitignored).
+  It is visible during an active swarm and torn down after. Expired manifests are silently
+  ignored, so a crashed bucket never deadlocks the swarm.
+- **Claim on worktree create** — a bucket claims its scope when its worktree is created:
+  ```powershell
+  .gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_worktree.ps1 `
+      -Action Create -TaskId <id> -BucketId <bucket> -Owner <owner> `
+      -LockFiles "AGENTS.md","src/foo.ps1" -BucketTtlMinutes 60
+  ```
+  If any claimed path overlaps another **active** bucket's manifest, Create fails with
+  `LOCK_CONFLICT` (printing the conflicting paths and the owning bucket id) **before** the
+  worktree is created, so the colliding bucket never spawns.
+- **Coordinator conflict detection** — before reconciliation the coordinator re-reads every
+  manifest with `-Action LockReport`. Any file claimed by more than one bucket is surfaced as a
+  `WARN` (not a `BLOCK`) so a human can override. This complements the Swarm Reconciliation Gate.
+- **Phase 1 is file-level only** — no line-level granularity. Partition buckets on
+  subsystem/file boundaries so claims do not overlap in the first place.
+
+---
+
 ## Security
 
 - Never commit API keys, tokens, or passwords

@@ -96,6 +96,19 @@ T600 / `feat-106` extends gald3r's hook layer with four contract-level features 
 
 Lifecycle stamps are written to each worktree's `.gald3r-worktree.json` under a new `lifecycle:` map keyed by event name (and `<event>_<bucket>` in swarm flows).
 
+### gald3r-internal lifecycle events (T1055)
+
+Beyond the harness-native events (`sessionStart`, `stop`, `beforeShellExecution`, `preToolUse`), gald3r defines four **gald3r-internal** lifecycle events. Cursor does NOT expose a native skill-boundary event nor a gald3r-session-boundary event, so these are dispatched by the gald3r skill/command runner (or fired manually) and are **NOT auto-wired** into `.cursor/hooks.json` — like `manual` and `nightly` hooks. They enable per-skill tracing/timing and per-session observability without editing skill bodies.
+
+| Event | Payload (stdin JSON) | Fires |
+|-------|----------------------|-------|
+| `pre_skill` | `skill_name`, `skill_path`, `timestamp` | Before a skill body executes |
+| `post_skill` | `skill_name`, `skill_path`, `timestamp` | After a skill body finishes |
+| `pre_session` | `session_id` (if available), `project_path` | Session start (gald3r-level, not harness `sessionStart`) |
+| `post_session` | `session_id` (if available), `project_path` | Session end (gald3r-level, not harness `stop`) |
+
+Reference example hooks (under `.cursor/hooks/`, each with a companion `hook.md`): `g-hk-pre-skill-timing.ps1` + `g-hk-post-skill-timing.ps1` (per-skill elapsed timing via a `.gald3r/logs/skill_timing_*.json` start marker), and `g-hk-pre-session-trace.ps1` + `g-hk-post-session-trace.ps1` (per-session duration via `.gald3r/logs/session_trace_*.json`). All four are non-blocking, emit the standard `{ continue = true }` envelope, and never touch control-plane state. The `_doc.gald3r_lifecycle_events` key in `hooks.json` documents the same contract. Scaffold new ones with `@g-hook-create <hook-name> pre_skill|post_skill|pre_session|post_session`.
+
 ### Reference helpers
 
 - `.gald3r_sys/scripts/gald3r_hook_helpers.ps1` — `Test-HookToolMatch`, `Convert-HookArgSafe`, `Read-HookEventEnvelope`. Run with `-RunSelfTest` to verify behavior.
@@ -257,6 +270,15 @@ gald3r ships three hooks on the `stop` event for full session-end coverage:
 3. `g-hk-session-end.ps1` (T1057) — appends a structured record to `.gald3r/logs/session_end.log` and overwrites `.gald3r/logs/session_end_pending.json` with a memory-capture pending marker for a future `memory_capture_session` MCP consumer
 
 All three return `continue: true` immediately and never delay session close. PowerShell hooks cannot invoke MCP tools directly (the MCP client is the chat agent, not the shell), so `g-hk-session-end` stages the data and T1263 will wire the actual consumer.
+
+### Available `preToolUse` Hooks
+
+gald3r ships four hooks on the `preToolUse` event:
+
+1. `g-hk-pre-tool-call-gald3r-guard.ps1` (matcher `Edit|Write|MultiEdit|NotebookEdit|...`) — `.gald3r/` agent-required gate
+2. `g-hk-pre-tool-call-prd-freeze.ps1` — refuses Edit/Write to a released/superseded PRD (C-019)
+3. `g-hk-pre-tool-call-member-gald3r-guard.ps1` — `controlled_member` `.gald3r/` marker-only guard
+4. `g-hk-pre-tool-call.ps1` (matcher `Bash|Shell|Terminal|run_terminal_cmd`, T1106) — compresses large shell/terminal output to the last N lines + summary prefix, preserving the full block to `.gald3r/logs/tool_output_<session_id>.log`. N = `pre_tool_call_compress_lines` in `AGENT_CONFIG.md` (default 50; 0 = disabled). Non-blocking; error/warning lines from the truncated region are surfaced in the summary. Reports 60-90% token reduction in shell-heavy sessions.
 
 ---
 

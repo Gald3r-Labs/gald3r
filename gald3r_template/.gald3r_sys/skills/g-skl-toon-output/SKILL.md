@@ -102,6 +102,6 @@ pwsh -File .gald3r_sys/skills/g-skl-toon-output/scripts/toon_output.ps1 `
 
 ## Token efficiency
 TOON's tabular arrays state each field name once instead of per-record (JSON) or per
-bullet (markdown). On a representative `g-status` payload this yields a ≥20% character
-(≈token) reduction vs JSON and substantially more vs markdown — run with `-Compare`.
+bullet (markdown). On a representative `g-status` payload this yields a ~20% character
+(~token) reduction vs JSON and substantially more vs markdown — run with `-Compare`.
 `--md`/`--toon` override AGENT_CONFIG `output_format`; default `markdown` is unchanged.

@@ -20,6 +20,11 @@ Asking "Continue?" "Which next?" "Looks like X — proceed?" mid-run is a **viol
 
 **⛔ CONTEXT WINDOW PANIC — FORBIDDEN STOP REASON**: "A full run would spawn 30+ subagents and consume major context" is NOT a valid reason to stop or ask. Claude Code has a 1M-token context window. The `context_budget_tokens` value in AGENT_CONFIG.md is a **context assembly budget** (how many tokens to use when building task context for a subagent) — it is NOT the model's total context limit. Stopping because of perceived context cost is a complexity-aversion stop, which is forbidden.
 
+**⛔ DISGUISED CONTEXT-PANIC STOPS ARE THE SAME VIOLATION (BUG-107)**: Relabeling a context-pressure halt as a "session checkpoint", "handing off cleanly", "natural stopping point", "I've made good progress — the rest can continue in a fresh session", or any similar softened phrasing does NOT make it valid. It is the forbidden CONTEXT WINDOW PANIC stop wearing a gentler name, and it is the single most common way this rule is broken under load. Enforcement is **self-naming, not self-soothing**:
+- If you feel the urge to stop and the underlying reason is context size, subagent count, elapsed iterations, or *anticipated* future accumulation → you MUST either (a) run the next lowest-ID eligible iteration anyway (at N=1 bucket if needed), or (b) if and only if a genuine hard-stop row applies, **quote that hard-stop row verbatim** as your stop reason. There is no third move.
+- You may NOT invent a "checkpoint" as a substitute for the next iteration you are avoiding. A mid-run checkpoint is valid ONLY when emitted by the documented checkpoint mechanism *between completed iterations while the loop continues* — never as the loop's exit.
+- Before emitting ANY non-final-summary stop, you must be able to point to the exact hard-stop table row that authorizes it. "Context", "complexity", "this is a good place to pause", and "to be safe" are not rows. If no row matches, the correct action is to keep going.
+
 ### ⛔ ANTI-QUITTING RULE — EQUALLY MANDATORY
 
 **Stopping because tasks appear "complex," "feature-class," "large," or "need scoping decisions" is a VIOLATION of this command.** Those are not hard stops. The hard-stop table is exhaustive — there is no ninth stop.
@@ -54,6 +59,7 @@ Asking "Continue?" "Which next?" "Looks like X — proceed?" mid-run is a **viol
 | Auto-merge target | `dev` (B+C pattern — Bot handles dev, Contributor controls main) | `g-go-go --target-branch main` to ship PASS items directly to main |
 | Auto-merge behavior | enabled by default after every PASS verdict | `g-go-go --no-auto-merge` to preserve old `[MERGE-BLOCKED]` behavior |
 | Repo scope filter | (none — global scope across all manifest members) | `g-go-go --repos <repo_id>[,<repo_id>...]` to scope autopilot to tasks whose `workspace_repos:` contains at least one of the listed IDs. Skipped tasks (not in scope) are NOT marked failed — they're left for the next run. Budget counter only counts iterations that execute in-scope tasks. Example: `g-go-go --repos gald3r_agent --budget 3` runs only `gald3r_agent` tasks. |
+| Context-aware throttle | off | `g-go-go --context-aware` proactively REDUCES the bucket count N under context pressure (instead of stopping). See "Context-Aware Throttle (BUG-107 Fix Direction #3)" below. |
 
 `g-go-go` accepts the same `$ARGUMENTS` filters as `g-go` (`tasks N,M`, `bugs BUG-NNN`, `subsystem ...`, `bugs-only`, `tasks-only`) plus the autopilot knobs above.
 
@@ -66,6 +72,64 @@ Multiple repos can be comma-separated: `--repos gald3r_agent,gald3r_throne`. Aut
 Budget accounting: the iteration counter (`iter`) only increments when at least one in-scope task is actually attempted (claimed and run through Phase 1/Phase 2). Iterations that find an empty in-scope queue (because all remaining work is out-of-scope or blocked) terminate the run with the standard "no runnable work" hard stop — they do NOT burn budget on no-ops.
 
 `--repos` composes with all other filters: `g-go-go --repos gald3r_agent --controller-only` is a no-op (gald3r_agent tasks are workspace-routed by definition, so the controller-only mode strips them all). Use either `--repos` OR `--controller-only`, not both.
+
+---
+
+## Stop-Detection Re-Invoke Hook (BUG-107 Fix Direction #2)
+
+Spec language alone (the forbidden-stop blocks above) cannot guarantee model compliance under context pressure. The `g-hk-ggo-stop-detect` stop hook makes the no-early-stop contract **mechanically self-enforcing**: if the autopilot loop halts mid-run without quoting an authorizing hard-stop row, the hook forces it to continue.
+
+### Run-state marker — `.gald3r/logs/ggo_run_state.json`
+
+The autopilot maintains a single run-state marker that the stop hook reads. The coordinator MUST:
+
+1. **At INIT** — write the marker with the run config:
+   ```json
+   { "active": true, "iter": 0, "budget_remaining": 12,
+     "authorized_hard_stop": "", "reinvoke_count": 0,
+     "updated_at": "<iso-8601>" }
+   ```
+2. **Each iteration** — refresh `iter` and `budget_remaining` (the hook reads the latest values to bound re-invokes).
+3. **On a genuine hard stop** — BEFORE emitting the final summary, write the exact hard-stop table row verbatim into `authorized_hard_stop`. This is the ONLY way to legitimately end the run. A blank `authorized_hard_stop` means "the loop has no authorized reason to stop".
+4. **At clean EXIT** (budget exhausted, no runnable work) — set `active` to `false` or delete the marker. The hook also clears it automatically on authorized hard stop, budget exhaustion, or re-invoke-cap.
+
+### What the hook enforces
+
+When the `stop` event fires with an active marker, `g-hk-ggo-stop-detect.ps1`:
+
+- **Allows the stop** when `authorized_hard_stop` is populated (genuine hard stop), when `budget_remaining <= 0` (budget cap IS a hard stop), or when the re-invoke cap is hit.
+- **Re-invokes the loop** otherwise — it increments `reinvoke_count` and returns a stop-continuation decision (`decision:block` for Claude Code / `continue:false`+`followup` for Cursor) carrying a verbatim reminder of the forbidden stop reasons. A disguised "checkpoint" cannot end the run.
+
+### Bounding (never infinite-loops)
+
+Re-invokes are capped at `min(budget_remaining, 25)`. A genuine hard stop and budget exhaustion are always honored and never re-invoked. The re-invoke ceiling is the anti-infinite-loop fail-safe: if it is ever reached, the hook allows the exit and treats it as a hard stop. This satisfies the contract that re-invocation always respects genuine hard stops and the configured budget cap.
+
+> The hook is a **no-op** when no `ggo_run_state.json` marker exists — ordinary, non-autopilot stop events are never affected. See `hooks/g-hk-ggo-stop-detect.md` for the full self-description.
+
+---
+
+## Context-Aware Throttle (BUG-107 Fix Direction #3)
+
+`g-go-go --context-aware` gives the loop a graceful pressure-relief valve: instead of stopping when context is tight, **reduce N (the parallel bucket / implementer count)** so the run continues with less parallelism. Trading parallelism for continuation is always preferred over halting.
+
+### Behavior
+
+- Default is **off**. When `--context-aware` is passed, each iteration computes its bucket count N as usual (smart agent count from `g-go --swarm`, hard cap 5), then applies a deterministic reduction based on estimated context usage:
+
+  | Estimated context usage | N adjustment |
+  |-------------------------|--------------|
+  | `< 60%` | no change (full N) |
+  | `60%–74%` | `N = ceil(N / 2)` |
+  | `75%–84%` | `N = 2` (or current N if already lower) |
+  | `>= 85%` | `N = 1` (single implementer, single reviewer) |
+
+- **N is never reduced below 1.** A reduced N still runs the next lowest-ID eligible task — reduction throttles parallelism, it never skips or defers work for context reasons.
+- The reduction is **per-iteration and reversible**: when context pressure subsides on a later iteration, N is recomputed from the table and may rise back toward the full smart count.
+- Context-aware reduction is **never a stop reason**. Reducing to N=1 and continuing is the correct response to context pressure — halting is the forbidden CONTEXT WINDOW PANIC stop (see above).
+
+### Interaction with the stop-detection hook
+
+`--context-aware` is the proactive valve; the stop-detection hook is the reactive backstop. Under pressure the loop first throttles N (Fix #3); if the agent still attempts an unauthorized halt, the hook re-invokes it (Fix #2). Together they close BUG-107 from both directions.
 
 ---
 
@@ -139,6 +203,8 @@ INIT
   ├─ Housekeeping preflight at orchestration root
   ├─ Clean Controller Gate per-root
   ├─ Initialize: iter=0, budget_remaining=12 (or user override)
+  ├─ Write run-state marker .gald3r/logs/ggo_run_state.json
+  │   { active:true, iter:0, budget_remaining:B, authorized_hard_stop:"", reinvoke_count:0 }
   └─ Snapshot: tasks, bugs, manifest at start
 
 LOOP (iter < budget_remaining)
@@ -161,9 +227,11 @@ LOOP (iter < budget_remaining)
   │   └─ If budget_remaining > 1 and task queue is clear: run @g-go-bugs severity:medium,low
   │       (capacity-permitting low-severity sweep)
   │
+  ├─ Refresh run-state marker: update iter + budget_remaining (the stop hook reads these to bound re-invokes)
   ├─ Phase 1 (g-go-code --swarm --workspace protocol):
   │   ├─ Skip non-expired [📝] / [🔄] / [🕵️] claims
   │   ├─ Partition into N buckets (N = smart agent count from g-go)
+  │   │   If --context-aware: reduce N per the context-usage table (never below 1); reversible per-iteration
   │   ├─ Pre-create one coding worktree per bucket
   │   ├─ Spawn N implementer subagents (handoff mode — return patches/artifacts/evidence/proposed-status only)
   │   ├─ Wait for all bucket handoffs
@@ -185,6 +253,9 @@ LOOP (iter < budget_remaining)
   └─ Loop again
 
 EXIT
+  ├─ On a genuine hard stop: write the verbatim hard-stop row into the marker's
+  │   authorized_hard_stop field BEFORE emitting the summary (this authorizes the stop)
+  ├─ Clear / deactivate run-state marker (set active:false or delete it)
   └─ Emit final summary
 ```
 
@@ -319,6 +390,9 @@ Want me to push now?
 | Per-repo commits only — no cross-repo single commits | Each manifest member is an independent git root |
 | Marker-only `.gald3r/` invariant is absolute | Member control-plane writes are forbidden, period |
 | `[🚨]` items are NEVER auto-retried | Human-only resolution by policy (T047) |
+| **Stop-detection re-invoke (BUG-107 #2)** — the `g-hk-ggo-stop-detect` stop hook re-invokes the loop when it halts without an authorized hard-stop row; bounded by `min(budget_remaining, 25)` re-invokes; genuine hard stops and budget exhaustion are never re-invoked | Makes the no-early-stop contract mechanically self-enforcing instead of prose-only |
+| **Context-aware throttle (BUG-107 #3)** — `--context-aware` reduces bucket count N under context pressure (never below 1; reversible per-iteration) instead of stopping | Trades parallelism for continuation; context pressure is never a stop reason |
+| **Run-state marker is mandatory under autopilot** — write `.gald3r/logs/ggo_run_state.json` at INIT, refresh `iter`/`budget_remaining` each iteration, and write `authorized_hard_stop` verbatim before any genuine hard-stop exit | The stop hook depends on this marker to distinguish authorized stops from disguised context-panic stops |
 
 ---
 
@@ -338,6 +412,8 @@ Want me to push now?
 @g-go-go --target-branch staging        # merge to a custom branch instead of dev
 @g-go-go --repos gald3r_agent --budget 3   # scope autopilot to gald3r_agent tasks only
 @g-go-go --repos gald3r_agent,gald3r_throne # scope autopilot to two specific member repos
+@g-go-go --context-aware                 # reduce bucket count N under context pressure instead of stopping (BUG-107)
+@g-go-go --context-aware --budget 25     # long unattended run that throttles parallelism rather than halting
 ```
 
 The defaults (workspace mode, 12-iteration budget, 30-minute heartbeat) are tuned for a multi-hour overnight or background run. Use `--budget 3` and `--heartbeat 5m` for quick autopilot bursts.

@@ -41,11 +41,22 @@ If your response mentions ANY of the following — create a `.gald3r/BUGS.md` en
 If work was just completed on any task — offer a git commit before ending the response.
 Never end a response after task completion without this offer.
 
+**Exception — active `g-go*` pipeline runs**: When the active command is `g-go`, `g-go-code`,
+`g-go-review`, `g-go-go`, or any `--swarm` variant, **do NOT inject a per-task commit offer**.
+These pipelines manage their own commit flow via the Gald3r Housekeeping Commit Gate and the
+Review Checkpoint / Result Commit gates. An interactive commit offer mid-pipeline breaks the
+fire-and-forget loop contract and causes the documented 2-task-then-stop failure pattern.
+Per-task commits are handled automatically by the pipeline; push offers are emitted **only** in
+the final autopilot session summary (g-go-go) or after the last phase completes (g-go, g-go-code,
+g-go-review). This carve-out does not apply to bare interactive sessions — the offer is still
+mandatory outside pipeline runs.
+
 | Rationalization | Reality |
 |---|---|
 | "The user will commit when they're ready" | Your job is to offer it. Offer it. |
 | "It's a small change, not worth committing" | Small changes get lost. Offer the commit. |
 | "I already mentioned it earlier in the conversation" | Offer it again at completion. Every time. |
+| "g-go-go is completing tasks, so I should offer commits" | g-go-go is a pipeline — use the Housekeeping Commit Gate, not interactive offers. |
 
 ## .gald3r/ Folder Gate (HARD RULE)
 
@@ -248,9 +259,15 @@ This applies to: `g-mission`, `g-go`, `g-go-code`, `g-go-review`, `g-go-go`, any
 2. Ask: *"Ready to push to remote?"* or *"Want me to push these?"*
 3. Push only after the user confirms
 
+**Exception — active `g-go*` pipeline runs**: Do NOT offer push between iterations, between
+task commits, or at partial-run checkpoints — it interrupts the fire-and-forget loop. Push
+offers in autopilot runs (`g-go-go`) appear **only** in the final autopilot session summary.
+Push offers in `g-go` / `g-go-code` / `g-go-review` appear only after the final phase completes.
+
 **Incorrect behavior:**
 - Pushing immediately after commit with no offer or confirmation
 - Saying "run git push yourself" as if the agent can't do it — the agent CAN push, but only after the user says so
+- Offering a push after every task completion inside a g-go-go loop
 
 | Rationalization | Reality |
 |---|---|
@@ -258,6 +275,7 @@ This applies to: `g-mission`, `g-go`, `g-go-code`, `g-go-review`, `g-go-go`, any
 | "The task spec says 'ship it'" | Ship = file work done. Offer push as a follow-up step. |
 | "It's docs-only, low risk" | The rule doesn't have a risk exemption. Ask. |
 | "We always push at the end of g-go" | Offer, confirm, then push. Always. |
+| "g-go-go just finished a task, I should offer a push" | Autopilot push offer = final summary only. Mid-loop offers break the loop. |
 
 ## `.gald3r/` Gitignore Gate — Controller & PCAC-Linked Repos (HARD RULE)
 
@@ -329,6 +347,48 @@ If the user reports a bug or describes unexpected behavior without invoking `g-q
 Any of these → experiment workflow:
 `"run experiment"` | `"check gate"` | `"experiment status"` | `"failure autopsy"` |
 `"new experiment"` | `"experiment chain"` | `"run stage"` | `"next experiment"`
+
+## Context Budget Gate (HARD RULE — all agents)
+
+Token budgets are not advisory. Context overrun degrades output quality before the hard stop and causes the documented `g-go-go` context panic failure pattern (BUG-107).
+
+**When approaching context limits (est. >80% context used):**
+1. Stop the current operation
+2. Summarize: what was done, what is verified, what remains
+3. Surface the breach explicitly to the user
+4. Do NOT silently continue — "just one more thing" while overrunning is the failure mode
+
+**Correct response when breaching:**
+> "Context approaching limit. Completed: [X]. Verified: [Y]. Remaining: [Z]. Recommend starting a fresh session."
+
+| Rationalization | Reality |
+|---|---|
+| "I'm almost done, just a few more tokens" | Overrun = degraded output = mystery failures. Stop and summarize. |
+| "The model handles it gracefully" | Output quality degrades before the hard stop. Stop early. |
+| "I'll mention the limit at the end" | Surface it before the breach, not after. |
+| "g-go-go will handle it" | g-go-go's fire-and-forget loop breaks exactly here. Stop the loop. |
+
+## Conflict Pattern Gate (HARD RULE — implementation)
+
+When two patterns in the codebase contradict each other, **do not blend them**. Blended patterns produce code that fails in both patterns' edge cases and creates errors that are invisible until they fire in production.
+
+**Required behavior on pattern conflict:**
+1. Pick one pattern — prefer: more recent, more tested, wider usage in the file
+2. State the choice explicitly in a comment or the commit message
+3. Flag the losing pattern for cleanup — add a `TODO[TASK-X→TASK-Y]` annotation at the conflict site or file a bug
+4. Never silently merge both approaches
+
+**Examples of blending (forbidden):**
+- Using both `async/await` and `.then()` chaining in the same function
+- Two error-handling strategies (return codes + exceptions) mixed in one call chain
+- Two naming conventions applied to the same new symbol
+
+| Rationalization | Reality |
+|---|---|
+| "I used a bit of both — it still works" | It works until the edge case that each pattern was designed to prevent. |
+| "They're similar enough" | They contradicted for a reason. Pick one and explain why. |
+| "I'll note it in the commit message" | The conflict site in the code needs the annotation. Commit messages are not searched. |
+| "The user can clean it up later" | They won't know which pattern won. They'll blend it again. |
 
 ## Routing Error Hard Delete (HARD RULE — all agents, all repos)
 

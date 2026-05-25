@@ -39,7 +39,8 @@ function Write-Result {
         Write-Output (ConvertTo-Json $obj -Compress)
     } else {
         $prefix = if ($OK) { '[LINT OK]' } else { '[LINT FAIL]' }
-        Write-Host "$prefix $Message" -ForegroundColor (if ($OK) { 'Green' } else { 'Red' })
+        $fg = if ($OK) { 'Green' } else { 'Red' }
+        Write-Host "$prefix $Message" -ForegroundColor $fg
         if ($Detail -and -not $OK) { Write-Host "  $Detail" -ForegroundColor Yellow }
     }
 }
@@ -108,11 +109,13 @@ switch ($ext) {
         }
     }
     { $_ -in '.ps1', '.psm1', '.psd1' } {
-        try {
-            $null = [System.Management.Automation.PSParser]::Tokenize((Get-Content $abs -Raw), [ref]$null)
-        } catch {
+        # Use Parser::ParseFile (not PSParser::Tokenize) so structural syntax
+        # errors (e.g. unbalanced braces) actually surface (BUG-101 Gap 2).
+        $parseErrors = $null
+        $null = [System.Management.Automation.Language.Parser]::ParseFile($abs, [ref]$null, [ref]$parseErrors)
+        if ($parseErrors -and $parseErrors.Count -gt 0) {
             $ok = $false
-            $detail = $_.Exception.Message
+            $detail = ($parseErrors | ForEach-Object { "L$($_.Extent.StartLineNumber): $($_.Message)" }) -join '; '
         }
     }
     default {

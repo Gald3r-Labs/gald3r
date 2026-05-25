@@ -32,6 +32,23 @@ Only when PCAC is active, call `g-hk-pcac-inbox-check.ps1 -BlockOnConflict` when
    `enabled` only when `project_type=software_development` (the GitHub bundle is gated on that type
    per T1285+); otherwise `disabled`. No-op silently when invoked outside a gald3r project.
 
+   **Workflow line (T1239)**: resolve the active profile via the loader
+   (`load_profile.ps1` in the active skill folder — see g-skl-tasks "Reading the
+   active profile") and surface it as a dedicated session-context line:
+   ```
+   Workflow: Content Creation (content_creation.yaml)
+   ```
+   Use the profile's `name` field and source filename. When the loader falls back
+   to `freeform`/`software_dev`, show that resolved profile. Skip silently when no
+   `.gald3r/config/workflow_profiles/` directory exists (pre-T1238 installs).
+
+   **Status labels from the profile (T1239 — AC2)**: any phase/active/ready/done
+   counts and badges in the output use the active profile's `task_statuses[]`
+   `symbol` + human label, **not** hardcoded `[🔄]`/`In-Progress`. For a
+   `content_creation` project this renders e.g. `🎬 In Production` instead of
+   `🔄 In Progress`. The `software_dev` profile resolves to the legacy labels, so
+   code repos are unchanged.
+
    **PR column (T1293)**: when any task has a `pr_url` frontmatter field, add a compact `PR`
    column to the task lines — `#1234 (ready)` / `#1234 (merged)` derived from `pr_url` + `pr_status`.
    Omit the column when no task has a PR (keeps non-software / integration-off projects clean).

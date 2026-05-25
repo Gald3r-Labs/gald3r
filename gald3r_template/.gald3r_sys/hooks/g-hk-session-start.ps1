@@ -71,14 +71,14 @@ if (-not ($projectId -match $uuidPattern)) {
 # ── Build context message ─────────────────────────────────────────────────────
 $setupBanner = ""
 if ($setupNeeded) {
-    $setupBanner = @"
+    $setupBanner = @'
 ## GALD3R FIRST-TIME SETUP NEEDED
 Your gald3r user ID has not been configured yet.
 
 **Quick setup:** Edit `.gald3r/.identity` and set `user_id` and `user_name` to your values.
 
 ---
-"@
+'@
 }
 
 $reflectionBanner = ""

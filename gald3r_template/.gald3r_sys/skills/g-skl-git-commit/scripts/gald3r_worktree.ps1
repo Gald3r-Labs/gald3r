@@ -46,7 +46,7 @@
 #>
 
 param(
-    [ValidateSet("Create", "Report", "Remove", "Cleanup", "Run", "Cancel", "CancelAll", "Checkpoint", "Resume", "Steer", "Queue")]
+    [ValidateSet("Create", "Report", "Remove", "Cleanup", "Run", "Cancel", "CancelAll", "Checkpoint", "Resume", "Steer", "Queue", "LockReport", "Keep")]
     [string]$Action = "Report",
 
     [string]$RepoPath = ".",
@@ -57,6 +57,12 @@ param(
     [string]$WorktreeRoot = $env:GALD3R_WORKTREE_ROOT,
     [string]$TaskRoot,
     [int]$StaleHours = 24,
+    # --- Keep: shared-sandbox phase handoff (T1118) ---
+    # Marks an existing worktree as protected from Cleanup for KeepHours so the same
+    # worktree/branch survives the g-go Phase 1 (implement) -> Phase 2 (review) handoff.
+    # Writes keep_until (ISO-8601) + phase_handoff=true onto the ownership marker (additive).
+    # Cleanup honours a future keep_until and skips removal during the handoff window.
+    [int]$KeepHours = 2,
     [switch]$AllowDirty,
     # --- Stale-base detection (rolling-wave autopilot fix) ---
     # When an existing valid worktree is found on Create, compare its stored base_sha with the
@@ -108,7 +114,23 @@ param(
     # Queue: when -QueueText is supplied, APPEND it as a new queue.md item. when absent, READ the
     #        pending queue items.
     [string]$SteerText,
-    [string]$QueueText
+    [string]$QueueText,
+
+    # --- Swarm file-lock manifests (T1059 - earendil-works/pi file-lock pattern) ---
+    # On -Action Create, when -LockFiles is supplied, write a per-bucket lock manifest
+    # under .gald3r-swarm-locks/lock_{bucket_id}.json listing the file paths this bucket
+    # intends to modify, the owner, and an expiry timestamp. Before writing, existing
+    # active (non-expired) manifests are re-read; if any claimed path overlaps another
+    # bucket's active claim, Create fails with LOCK_CONFLICT (prints the conflicting
+    # paths and owning bucket id). -Action LockReport re-reads all active manifests for
+    # coordinator-side conflict detection (overlaps surfaced as WARN, never BLOCK).
+    #
+    # Phase 1: file-level locks only (no line-level granularity). Locks are ephemeral -
+    # the .gald3r-swarm-locks/ directory is gald3rignored and never committed.
+    [string]$BucketId,
+    [string[]]$LockFiles = @(),
+    # Bucket time-to-live in minutes; expiry = created_at + 2 * BucketTtlMinutes.
+    [int]$BucketTtlMinutes = 60
 )
 
 $ErrorActionPreference = "Stop"
@@ -485,7 +507,10 @@ function New-Gald3rWorktree {
         }
     }
 
-    $dirty = Get-DirtyStatus -RepoRoot $RepoRoot
+    # The ephemeral swarm-lock directory (T1059) is gald3rignored coordination state,
+    # never committed, so it must never count toward the dirty gate - otherwise a
+    # bucket that claimed its own lock manifest would block its own worktree create.
+    $dirty = @(Get-DirtyStatus -RepoRoot $RepoRoot | Where-Object { $_ -notmatch '\.gald3r-swarm-locks/' })
     if ($dirty.Count -gt 0 -and -not $AllowDirty) {
         throw "Active checkout is dirty. Commit/stash changes, or rerun with -AllowDirty after recording explicit ownership. Dirty entries: $($dirty -join '; ')"
     }
@@ -588,6 +613,55 @@ function Remove-Gald3rWorktree {
     }
 }
 
+function Set-Gald3rWorktreeKeep {
+    # T1118 - shared-sandbox phase handoff. Stamp an existing gald3r-owned worktree with a
+    # future keep_until so Cleanup skips it across the g-go Phase 1 -> Phase 2 boundary.
+    # Additive: preserves every existing marker field (PID, checkpoint, base_sha, etc.).
+    param(
+        [string]$RepoRoot,
+        [object]$Metadata,
+        [int]$KeepHours
+    )
+
+    if ($null -eq $Metadata -or -not $Metadata.gald3r_owned) {
+        throw "Keep requires an existing gald3r-owned worktree (create it first with -Action Create)."
+    }
+    $markerPath = Join-Path $Metadata.worktree_path ".gald3r-worktree.json"
+    if (-not (Test-Path $markerPath)) {
+        throw "Ownership marker missing at '$markerPath' - refusing to Keep."
+    }
+
+    $keepUntil = (Get-Date).ToUniversalTime().AddHours([Math]::Max(0, $KeepHours)).ToString("o")
+    $obj = [ordered]@{}
+    foreach ($p in $Metadata.PSObject.Properties) { $obj[$p.Name] = $p.Value }
+    $obj["phase_handoff"] = $true
+    $obj["keep_until"] = $keepUntil
+    Write-Metadata -MarkerPath $markerPath -Metadata $obj
+
+    return [pscustomobject]@{
+        action          = "kept"
+        task_id         = $Metadata.task_id
+        worktree_path   = $Metadata.worktree_path
+        worktree_branch = $Metadata.worktree_branch
+        keep_until      = $keepUntil
+    }
+}
+
+function Test-WorktreeKept {
+    # Returns $true when a worktree carries a keep_until that is still in the future (T1118).
+    param([object]$Metadata)
+
+    if ($null -eq $Metadata.PSObject.Properties['keep_until']) { return $false }
+    $raw = $Metadata.keep_until
+    if ([string]::IsNullOrWhiteSpace($raw)) { return $false }
+    try {
+        $until = ([datetime]$raw).ToUniversalTime()
+    } catch {
+        return $false
+    }
+    return $until -gt (Get-Date).ToUniversalTime()
+}
+
 function Invoke-Gald3rWorktreeCleanup {
     param(
         [string]$RepoRoot,
@@ -600,6 +674,12 @@ function Invoke-Gald3rWorktreeCleanup {
     $cutoff = (Get-Date).ToUniversalTime().AddHours(-1 * $StaleHours)
     $results = @()
     foreach ($metadata in Get-Gald3rWorktreeReport -Root $Root -RepoRoot $RepoRoot) {
+        # T1118 - shared-sandbox handoff protection. A worktree stamped with a future
+        # keep_until is mid Phase 1 -> Phase 2 handoff; never reclaim it during that window,
+        # even if its claim looks expired or it is old by age.
+        if (Test-WorktreeKept -Metadata $metadata) {
+            continue
+        }
         $created = [datetime]$metadata.created_at
         $taskFile = Get-TaskFileForWorktree -RepoRoot $RepoRoot -TaskRoot $TaskRoot -TaskId $metadata.task_id
         $missingTask = $null -eq $taskFile
@@ -1194,12 +1274,252 @@ function Invoke-WorktreeQueue {
     }
 }
 
+# ---------------------------------------------------------------------------
+# Swarm file-lock manifests (T1059 - earendil-works/pi file-lock pattern)
+# ---------------------------------------------------------------------------
+#
+# Each parallel swarm bucket declares the files it intends to modify in a lock
+# manifest written under .gald3r-swarm-locks/lock_{bucket_id}.json BEFORE it
+# starts work. The Create action checks existing active manifests for overlap and
+# refuses (LOCK_CONFLICT) so two buckets never claim the same file. The coordinator
+# re-reads all manifests before reconciliation (LockReport) and surfaces any file
+# claimed by more than one bucket as a WARN - not a BLOCK - to allow manual override.
+#
+# Manifests are ephemeral: the .gald3r-swarm-locks/ directory is listed in
+# .gald3rignore (visible during an active swarm, never committed). Expired
+# manifests (expires_at in the past) are silently ignored everywhere.
+
+function Get-SwarmLockDir {
+    param([string]$RepoRoot)
+    return Join-Path $RepoRoot ".gald3r-swarm-locks"
+}
+
+function ConvertTo-NormalizedLockPath {
+    # Normalize a claimed path to a stable, case-insensitive comparison key.
+    # Backslashes become forward slashes; leading "./" is stripped; trailing
+    # separators are trimmed. Relative paths are kept relative (repo-root anchored).
+    param([string]$Path)
+
+    if ([string]::IsNullOrWhiteSpace($Path)) { return $null }
+    $p = $Path.Trim() -replace '\\', '/'
+    $p = $p -replace '^\./', ''
+    $p = $p.TrimEnd('/')
+    return $p.ToLowerInvariant()
+}
+
+function Get-ActiveSwarmLocks {
+    # Read every lock_*.json manifest in the lock dir, skipping expired ones.
+    # Returns an array of psobjects: { bucket_id, owner, paths[], created_at,
+    # expires_at, manifest_path, normalized_paths[] }.
+    param([string]$RepoRoot)
+
+    $lockDir = Get-SwarmLockDir -RepoRoot $RepoRoot
+    if (-not (Test-Path $lockDir)) { return @() }
+
+    $now = (Get-Date).ToUniversalTime()
+    $active = @()
+    foreach ($file in (Get-ChildItem -Path $lockDir -Filter "lock_*.json" -File -ErrorAction SilentlyContinue)) {
+        $manifest = $null
+        try {
+            $manifest = Get-Content -Path $file.FullName -Raw | ConvertFrom-Json
+        } catch {
+            continue
+        }
+        if ($null -eq $manifest) { continue }
+
+        # Silently ignore expired locks (Implementation Note: expired locks are ignored).
+        # The stored value is ISO-8601 UTC ("...Z"). ConvertFrom-Json may hand it back as a
+        # System.DateTime whose wall-clock equals the UTC value but with Kind=Local - calling
+        # .ToUniversalTime() on that would double-shift it. Coerce to a true UTC instant:
+        #   - DateTime  -> reinterpret the wall-clock components as UTC (SpecifyKind Utc)
+        #   - string    -> parse with AssumeUniversal/AdjustToUniversal
+        $expiresRaw = $manifest.expires_at
+        if ($null -ne $expiresRaw -and -not [string]::IsNullOrWhiteSpace([string]$expiresRaw)) {
+            $expiresUtc = $null
+            if ($expiresRaw -is [datetime]) {
+                $dt = [datetime]$expiresRaw
+                if ($dt.Kind -eq [System.DateTimeKind]::Utc) {
+                    $expiresUtc = $dt
+                } else {
+                    $expiresUtc = [datetime]::SpecifyKind($dt, [System.DateTimeKind]::Utc)
+                }
+            } else {
+                $parsed = [datetime]::MinValue
+                $styles = [System.Globalization.DateTimeStyles]::AssumeUniversal -bor [System.Globalization.DateTimeStyles]::AdjustToUniversal
+                if ([datetime]::TryParse([string]$expiresRaw, [System.Globalization.CultureInfo]::InvariantCulture, $styles, [ref]$parsed)) {
+                    $expiresUtc = $parsed
+                }
+            }
+            if ($null -ne $expiresUtc -and $expiresUtc -lt $now) { continue }
+        }
+
+        $paths = @()
+        if ($null -ne $manifest.PSObject.Properties['paths'] -and $null -ne $manifest.paths) {
+            $paths = @($manifest.paths)
+        }
+        $normalized = @($paths | ForEach-Object { ConvertTo-NormalizedLockPath -Path $_ } | Where-Object { $_ })
+
+        $active += [pscustomobject]@{
+            bucket_id       = $manifest.bucket_id
+            owner           = $manifest.owner
+            paths           = $paths
+            created_at      = $manifest.created_at
+            expires_at      = $manifest.expires_at
+            manifest_path   = $file.FullName
+            normalized_paths = $normalized
+        }
+    }
+    return $active
+}
+
+function Write-SwarmLockManifest {
+    # Check for overlap against other buckets' active manifests, then write this
+    # bucket's manifest. Throws LOCK_CONFLICT (listing conflicting paths + owning
+    # bucket id) when any claimed path overlaps another active bucket's claim.
+    # A manifest already owned by the same bucket_id is treated as a refresh
+    # (its own paths do not count as a conflict).
+    param(
+        [string]$RepoRoot,
+        [string]$BucketId,
+        [string]$Owner,
+        [string[]]$LockFiles,
+        [int]$BucketTtlMinutes
+    )
+
+    if ([string]::IsNullOrWhiteSpace($BucketId)) {
+        throw "-BucketId is required to write a swarm lock manifest."
+    }
+
+    $claimedNormalized = @($LockFiles | ForEach-Object { ConvertTo-NormalizedLockPath -Path $_ } | Where-Object { $_ })
+    if ($claimedNormalized.Count -eq 0) {
+        throw "-LockFiles must list at least one path to claim for bucket '$BucketId'."
+    }
+
+    $conflicts = @()
+    foreach ($lock in (Get-ActiveSwarmLocks -RepoRoot $RepoRoot)) {
+        if ($lock.bucket_id -eq $BucketId) { continue }   # our own prior manifest = refresh, not a conflict
+        foreach ($claimed in $claimedNormalized) {
+            if ($lock.normalized_paths -contains $claimed) {
+                $conflicts += [pscustomobject]@{
+                    path           = $claimed
+                    owning_bucket  = $lock.bucket_id
+                    owning_owner   = $lock.owner
+                }
+            }
+        }
+    }
+
+    if ($conflicts.Count -gt 0) {
+        $detail = ($conflicts | ForEach-Object { "$($_.path) (owned by bucket '$($_.owning_bucket)')" }) -join "; "
+        throw "LOCK_CONFLICT: bucket '$BucketId' claims path(s) already locked by another bucket: $detail"
+    }
+
+    $lockDir = Get-SwarmLockDir -RepoRoot $RepoRoot
+    if (-not (Test-Path $lockDir)) {
+        New-Item -ItemType Directory -Path $lockDir -Force | Out-Null
+    }
+
+    $createdAt = (Get-Date).ToUniversalTime()
+    $expiresAt = $createdAt.AddMinutes(2 * [Math]::Max(1, $BucketTtlMinutes))
+    $safeBucket = ConvertTo-SafeSegment -Value $BucketId
+    $manifestPath = Join-Path $lockDir "lock_$safeBucket.json"
+
+    $manifest = [ordered]@{
+        schema_version = "1.0"
+        bucket_id      = $BucketId
+        owner          = $Owner
+        paths          = @($LockFiles)
+        created_at     = $createdAt.ToString("o")
+        expires_at     = $expiresAt.ToString("o")
+        ttl_minutes    = $BucketTtlMinutes
+    }
+
+    # Atomic write: temp file + rename so a concurrent reader never sees a half file.
+    $tempPath = Join-Path $lockDir (".lock_$safeBucket.$([guid]::NewGuid().ToString('N')).tmp")
+    try {
+        $manifest | ConvertTo-Json -Depth 4 | Set-Content -Path $tempPath -Encoding UTF8
+        Move-Item -Path $tempPath -Destination $manifestPath -Force
+    } finally {
+        if (Test-Path $tempPath) { Remove-Item -Path $tempPath -Force -ErrorAction SilentlyContinue }
+    }
+
+    return [pscustomobject]@{
+        action        = "lock-claimed"
+        bucket_id     = $BucketId
+        owner         = $Owner
+        manifest_path = $manifestPath
+        paths         = @($LockFiles)
+        created_at    = $manifest["created_at"]
+        expires_at    = $manifest["expires_at"]
+    }
+}
+
+function Get-SwarmLockConflictReport {
+    # Coordinator-side conflict detection: re-read all active manifests and flag any
+    # file claimed by more than one bucket. Overlaps are surfaced as WARN (never BLOCK)
+    # to allow manual override before reconciliation.
+    param([string]$RepoRoot)
+
+    $locks = @(Get-ActiveSwarmLocks -RepoRoot $RepoRoot)
+
+    # Map normalized path -> list of bucket ids claiming it.
+    $byPath = @{}
+    foreach ($lock in $locks) {
+        for ($i = 0; $i -lt $lock.normalized_paths.Count; $i++) {
+            $norm = $lock.normalized_paths[$i]
+            $orig = if ($i -lt @($lock.paths).Count) { @($lock.paths)[$i] } else { $norm }
+            if (-not $byPath.ContainsKey($norm)) {
+                $byPath[$norm] = [pscustomobject]@{ path = $orig; buckets = @() }
+            }
+            $byPath[$norm].buckets += $lock.bucket_id
+        }
+    }
+
+    $conflicts = @()
+    foreach ($key in $byPath.Keys) {
+        $entry = $byPath[$key]
+        $uniqueBuckets = @($entry.buckets | Select-Object -Unique)
+        if ($uniqueBuckets.Count -gt 1) {
+            $conflicts += [pscustomobject]@{
+                path    = $entry.path
+                buckets = $uniqueBuckets
+                level   = "WARN"
+            }
+        }
+    }
+
+    return [pscustomobject]@{
+        action          = "lock-report"
+        active_locks    = $locks.Count
+        conflict_count  = $conflicts.Count
+        conflicts       = $conflicts
+        locks           = @($locks | Select-Object bucket_id, owner, paths, expires_at)
+    }
+}
+
 $repoRoot = Resolve-RepoRoot -Path $RepoPath
 $resolvedRoot = Get-WorktreeRoot -RepoRoot $repoRoot -RequestedRoot $WorktreeRoot
 
 switch ($Action) {
     "Create" {
+        # T1059 - when the bucket declares a file scope (-LockFiles), claim the lock
+        # manifest FIRST. This fails with LOCK_CONFLICT before any worktree is created
+        # if another active bucket already claims an overlapping path, so a conflicting
+        # bucket never even spawns its worktree.
+        $lockResult = $null
+        if ($null -ne $LockFiles -and @($LockFiles).Count -gt 0) {
+            $lockResult = Write-SwarmLockManifest -RepoRoot $repoRoot -BucketId $BucketId -Owner $Owner -LockFiles $LockFiles -BucketTtlMinutes $BucketTtlMinutes
+        }
         $result = New-Gald3rWorktree -RepoRoot $repoRoot -Root $resolvedRoot -TaskId $TaskId -Role $Role -Owner $Owner -BaseBranch $BaseBranch -AllowDirty:$AllowDirty -StaleBaseAction $StaleBaseAction
+        if ($null -ne $lockResult) {
+            # Surface the lock claim alongside the worktree metadata (additive fields).
+            $merged = [ordered]@{}
+            foreach ($p in $result.PSObject.Properties) { $merged[$p.Name] = $p.Value }
+            $merged["swarm_lock_manifest"] = $lockResult.manifest_path
+            $merged["swarm_lock_bucket_id"] = $lockResult.bucket_id
+            $merged["swarm_lock_expires_at"] = $lockResult.expires_at
+            $result = [pscustomobject]$merged
+        }
     }
     "Report" {
         $result = Get-Gald3rWorktreeReport -Root $resolvedRoot -RepoRoot $repoRoot
@@ -1216,6 +1536,16 @@ switch ($Action) {
     }
     "Cleanup" {
         $result = Invoke-Gald3rWorktreeCleanup -RepoRoot $repoRoot -Root $resolvedRoot -TaskRoot $TaskRoot -StaleHours $StaleHours -Apply:$Apply
+    }
+    "Keep" {
+        if ([string]::IsNullOrWhiteSpace($TaskId)) {
+            throw "-TaskId is required for Keep."
+        }
+        $metadata = Find-Gald3rWorktree -Root $resolvedRoot -RepoRoot $repoRoot -TaskId $TaskId -Role $Role -Owner $Owner
+        if ($null -eq $metadata) {
+            throw "No gald3r-owned worktree found for task '$TaskId', role '$Role', owner '$Owner'. Create it first."
+        }
+        $result = Set-Gald3rWorktreeKeep -RepoRoot $repoRoot -Metadata $metadata -KeepHours $KeepHours
     }
     "Run" {
         if ([string]::IsNullOrWhiteSpace($TaskId)) {
@@ -1258,6 +1588,11 @@ switch ($Action) {
     }
     "Queue" {
         $result = Invoke-WorktreeQueue -Root $resolvedRoot -RepoRoot $repoRoot -TaskId $TaskId -Role $Role -Owner $Owner -QueueText $QueueText
+    }
+    "LockReport" {
+        # T1059 - coordinator conflict detection. Re-read all active swarm lock
+        # manifests and flag files claimed by more than one bucket (WARN, not BLOCK).
+        $result = Get-SwarmLockConflictReport -RepoRoot $repoRoot
     }
 }
 

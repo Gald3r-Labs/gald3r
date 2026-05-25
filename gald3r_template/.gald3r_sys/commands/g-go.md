@@ -705,6 +705,88 @@ stores transcripts elsewhere), the helper reports `no-session-found` and the pip
 continues unaffected.
 
 
+## Shared Sandbox Phase Handoff (`--shared-sandbox`) — T1118 (Sandcastle createSandbox pattern)
+
+By **default**, `g-go` uses **separate-context handoff**: Phase 1 implements in a `code`
+worktree, reconciles the diff into the primary checkout, creates a code-complete checkpoint
+commit, and Phase 2 spawns a fresh reviewer that creates its **own** `review` worktree from
+that checkpoint commit. This is the proven default and is unchanged — see Phase 1 Completion
+and Phase 2 below.
+
+`--shared-sandbox` is an **opt-in** flag that keeps the **same `code` worktree alive across
+Phase 1 and Phase 2** instead of spinning up a separate reviewer worktree. This mirrors
+external-runner's `createSandbox()` multi-run pattern: the sandbox is created once, dependencies
+are installed once, commits accumulate on a single branch, and a second `run()` (the review
+pass) sees the same filesystem/git state without re-cloning. (REDACTED-HARVEST-214 — REDACTED-AUTHOR/external-runner.)
+
+### Lifecycle contract
+
+| Stage | Default (separate-context) | `--shared-sandbox` |
+|-------|----------------------------|--------------------|
+| Phase 1 worktree | `code` worktree off current branch | same — `code` worktree off current branch |
+| End of Phase 1 | reconcile diff to primary checkout → checkpoint commit on primary | checkpoint commit **on the `code` worktree branch**; no reconcile to primary yet |
+| Between phases | `code` worktree may be cleaned up | coordinator runs `-Action Keep` to protect the worktree across the boundary |
+| Phase 2 review source | fresh `review` worktree created from checkpoint commit | **reuse the same `code` worktree path/branch, read-only** |
+| Phase 2 verdict | review-result commit on primary | review-result commit on primary after coordinator reconciles the (now reviewed) `code` branch |
+| Post-PASS | member auto-merge from `code` branch | member auto-merge from the same `code` branch |
+
+The independence guarantee is **preserved**: the Phase 2 reviewer is still a fresh Task
+subagent with no Phase 1 conversation history. It reads the code on disk cold. Sharing the
+**worktree filesystem** is not sharing the **reasoning context** — the reviewer only inherits
+the installed dependencies and accumulated commits, never the implementer's decisions.
+
+### Handoff artifacts (coordinator → reviewer)
+
+Under `--shared-sandbox`, the coordinator passes the shared worktree as the review source
+instead of a separate-worktree base. These three fields are the handoff contract:
+
+```
+shared_sandbox       = true
+implementation_branch = {code worktree branch from Phase 1 -Action Create JSON}
+shared_worktree_path  = {worktree_path from Phase 1 -Action Create JSON}
+implementation_sha    = {checkpoint commit SHA on that branch}
+```
+
+The reviewer receives these in its initial prompt and, per `g-go-review` Step 2b, **reuses the
+named worktree read-only** (sets `review_isolation_mode: shared-worktree`) rather than calling
+`-Action Create -Role review`.
+
+### Keep / cleanup protection
+
+To stop the normal cleanup pass from reclaiming the shared worktree between phases, the
+coordinator stamps it with a keep window immediately after the Phase 1 checkpoint commit:
+
+```powershell
+.\scripts\gald3r_worktree.ps1 -Action Keep -TaskId {id} -Role code -Owner {owner} -KeepHours 2 -Json
+```
+
+`-Action Keep` writes `phase_handoff: true` and a future `keep_until` (ISO-8601) onto the
+worktree's `.gald3r-worktree.json` marker (additive — all existing fields preserved).
+`-Action Cleanup` skips any worktree whose `keep_until` is still in the future, so the shared
+sandbox survives the Phase 1→2 boundary. Once the keep window elapses (default 2h), or after
+Phase 2 reconciliation removes the worktree explicitly via `-Action Remove` / member
+auto-merge, the worktree is reclaimable again. `Keep` is idempotent and may be re-stamped to
+extend the window for long review passes.
+
+### Flag semantics
+
+- **Default (no flag)**: current separate-context behavior — backwards compatible, unchanged.
+- **`--shared-sandbox`**: opt-in single-worktree lifecycle described above. Composes with
+  `--swarm` (each bucket's `code` worktree is its own shared sandbox for that bucket's
+  reviewer), `--mode`, `--workspace`, and explicit task/bug filters.
+- All existing safety gates (Review Checkpoint Gate, Review Result Commit Gate, Clean
+  Controller Gate, Pre-Reconciliation Clean Gate, member touch-set gates) apply unchanged. The
+  only change is **which worktree the reviewer inspects** and **when the primary-checkout
+  reconcile happens** (after review rather than before).
+
+> **Integration test contract (AC5)**: a full `g-go --shared-sandbox tasks T<id>` run must
+> demonstrate that Phase 2 sees Phase 1's commits without re-cloning — i.e. the reviewer's
+> `review_isolation_mode` is `shared-worktree`, its inspected path equals
+> `shared_worktree_path`, and `git log` on that worktree shows the Phase 1 checkpoint commit
+> with no intervening `git worktree add`/clone for the review role. The keep-window protection
+> is unit-verifiable via `gald3r_worktree.ps1 -Action Keep` followed by `-Action Cleanup
+> -StaleHours 0`, which must leave the kept worktree intact.
+
 ## Model-Tier Selection (`--mode fast|standard|cheap`)
 
 `g-go` accepts an optional `--mode` flag in `$ARGUMENTS` that selects model-tier policy for
@@ -913,9 +995,24 @@ Read in this order:
 - `.gald3r/TASKS.md` — master task list
 - `.gald3r/CONSTRAINTS.md` — guardrails (if exists)
 - `.gald3r/DECISIONS.md` — past decisions (if exists, read-only)
+- **Active workflow profile (T1239)** — load once via `load_profile.ps1` (active
+  skill folder; see g-skl-tasks "Reading the active profile"). The resulting
+  `task_statuses[]` (each with `id`, `symbol`, `skip_in_pipeline`) is the
+  pipeline's source of truth for which statuses are claimable vs. skipped and for
+  status-DAG transition order — **not** the hardcoded `[📋]/[🔄]/[🔍]/[✅]`
+  strings (AC1). When `.gald3r/config/workflow_profiles/` is absent (pre-T1238
+  installs), use the built-in `software_dev` lifecycle so behavior is unchanged.
 - `git log --oneline -10` — recent changes
 
 ### 2. Build the Work Queue
+
+> **Profile-driven queue (T1239 AC1):** the "claimable" vs. "skip" decisions
+> below are derived from the active profile's `task_statuses[]` `skip_in_pipeline`
+> flag, and status transitions (`[📋]→[🔄]→[🔍]→[✅]` for `software_dev`) follow
+> the profile's `task_statuses[]` declaration order. The symbols shown in this
+> section are the `software_dev` defaults; a non-code profile substitutes its own
+> (e.g. `content_creation`: claim `[💡] concept`/`[✍️] scripting`, skip
+> `[✅] published`). g-go-code and g-go-review inherit this same loaded profile.
 
 **Bugs first (Tier 1), then tasks (Tier 2).**
 
@@ -1030,6 +1127,14 @@ For each item:
 
 After all items are processed, reconcile successful worktree diffs into the primary checkout, batch-write task/bug status, then create a code-complete checkpoint commit before reviewer handoff. For each successful worktree, stage only intended files in that worktree with `git add -A -- {paths}`, export `git diff --binary --cached HEAD`, and apply it to the primary checkout with `git apply --3way --index` so new files are included. Never use `git add .` in swarm worktrees. If the patch does not apply cleanly, preserve the worktree and list the item as skipped.
 
+**`--shared-sandbox` variation (T1118)**: when the session is run with `--shared-sandbox`, do **NOT** reconcile the diff into the primary checkout at end of Phase 1. Instead, create the code-complete checkpoint commit **on the `code` worktree branch itself**, then stamp the worktree with a keep window so the cleanup pass cannot reclaim it before Phase 2:
+
+```powershell
+.\scripts\gald3r_worktree.ps1 -Action Keep -TaskId {id} -Role code -Owner {owner} -KeepHours 2 -Json
+```
+
+Record `shared_sandbox: true`, `shared_worktree_path`, and `implementation_branch` in each `[🔍]` task's metadata so Phase 2 reuses the same worktree read-only. The primary-checkout reconcile is deferred until after Phase 2 review passes (see the "Shared Sandbox Phase Handoff" section above).
+
 ```
 [PIPELINE] Phase 1 complete
   Implemented → [🔍]: {phase1_results IDs}
@@ -1077,6 +1182,14 @@ Spawn a Task subagent with:
     Implementation checkpoint SHA: {implementation_sha}
   The reviewer should use Branch Pre-Flight (Step 0 of g-go-review) to confirm it is on branch {implementation_branch} before scanning the review queue.
   ```
+- **Shared-sandbox handoff context (T1118)** — when the session ran with `--shared-sandbox`, also append the shared worktree path so the reviewer reuses it read-only instead of creating a new `review` worktree:
+  ```
+  Shared sandbox (from Phase 1 coordinator):
+    shared_sandbox: true
+    shared_worktree_path: {shared_worktree_path}
+  Per g-go-review Step 2b, reuse this worktree read-only (review_isolation_mode: shared-worktree). Do NOT create a separate review worktree — the Phase 1 commits and installed dependencies are already present on {implementation_branch} at {shared_worktree_path}.
+  ```
+  Omit this block entirely when `--shared-sandbox` was not passed (separate-context default).
 - No other context from Phase 1
 
 ### Reviewer Protocol

@@ -1,4 +1,4 @@
-﻿Implementation-only backlog execution: $ARGUMENTS
+Implementation-only backlog execution: $ARGUMENTS
 
 ## Mode: IMPLEMENT ONLY
 
@@ -351,11 +351,19 @@ Read in this order:
 - `.gald3r/TASKS.md` — master task list
 - `.gald3r/CONSTRAINTS.md` — guardrails (if exists)
 - `.gald3r/DECISIONS.md` — past decisions (if exists, read-only)
+- **Active workflow profile (T1239)** — load once via `load_profile.ps1` (active
+  skill folder; see g-skl-tasks "Reading the active profile"). Its
+  `task_statuses[]` (`id`, `symbol`, `skip_in_pipeline`) is the source of truth
+  for claimable-vs-skip and status-transition order, replacing hardcoded status
+  strings (AC1). Absent `.gald3r/config/workflow_profiles/` → built-in
+  `software_dev` lifecycle (unchanged behavior).
 - `git log --oneline -10` — recent changes
 
 ### 2. Build the Work Queue
 
-**Bugs first (Tier 1), then tasks (Tier 2).**
+**Bugs first (Tier 1), then tasks (Tier 2).** Claimable-vs-skip below follows the
+active profile's `task_statuses[].skip_in_pipeline` (T1239 AC1); the symbols shown
+are the `software_dev` defaults.
 
 **Tier 1 — Open bugs:**
 - From `BUGS.md` + `bugs/` files; Critical → High → Medium → Low

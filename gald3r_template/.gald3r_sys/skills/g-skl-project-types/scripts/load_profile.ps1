@@ -106,17 +106,42 @@ function Resolve-Profile {
     return $FALLBACK
 }
 
+# T1239: normalize legacy project_type / project-types-epic ids onto the
+# canonical T1238 workflow-profile filenames actually shipped under
+# .gald3r/config/workflow_profiles/. Keeps the .identity project_type= switch
+# (e.g. software_development) resolving to the real software_dev.yaml file.
+$PROFILE_ALIASES = @{
+    'software_development' = 'software_dev'
+    'software'             = 'software_dev'
+    'research_analysis'    = 'research'
+    'research_science'     = 'research'
+    'content'              = 'content_creation'
+}
+
 $root = Find-ProjectRoot -Start $ProjectRoot
 if (-not $ProjectType) { $ProjectType = Resolve-Profile -Root $root -TaskFilePath $TaskFile }
 $ProjectType = $ProjectType.ToLower()
+if ($PROFILE_ALIASES.ContainsKey($ProjectType)) { $ProjectType = $PROFILE_ALIASES[$ProjectType] }
 
 $profileDir = Join-Path $root '.gald3r/config/workflow_profiles'
 $profilePath = Join-Path $profileDir "$ProjectType.yaml"
 
 if (-not (Test-Path $profilePath)) {
-    Write-Warning "Profile '$ProjectType' not found; falling back to '$FALLBACK'."
-    $ProjectType = $FALLBACK
-    $profilePath = Join-Path $profileDir "$FALLBACK.yaml"
+    # T1239: prefer freeform.yaml; if absent, fall back to the T1238 default
+    # profile (software_dev) before the builtin minimal snapshot below.
+    $freeformPath = Join-Path $profileDir "$FALLBACK.yaml"
+    $defaultPath  = Join-Path $profileDir 'software_dev.yaml'
+    if (Test-Path $freeformPath) {
+        Write-Warning "Profile '$ProjectType' not found; falling back to '$FALLBACK'."
+        $ProjectType = $FALLBACK
+        $profilePath = $freeformPath
+    } elseif (Test-Path $defaultPath) {
+        Write-Warning "Profile '$ProjectType' not found and no '$FALLBACK.yaml'; falling back to 'software_dev'."
+        $ProjectType = 'software_dev'
+        $profilePath = $defaultPath
+    } else {
+        $profilePath = $freeformPath
+    }
 }
 
 if (-not (Test-Path $profilePath)) {

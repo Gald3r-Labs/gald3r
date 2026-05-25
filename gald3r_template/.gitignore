@@ -70,6 +70,10 @@ logs/
 # Worktrees (parallel agent execution)
 worktrees/
 
+# Swarm file-lock manifests (T1059) — ephemeral, visible during an active
+# g-go --swarm run, never committed. Also listed in .gald3rignore.
+.gald3r-swarm-locks/
+
 # Scripts (host-side automation, may contain local paths)
 # Ignore scripts/ contents by default; explicitly re-include safe ones below.
 # Note: must use /scripts/* (not /scripts/) so negations can re-include files.

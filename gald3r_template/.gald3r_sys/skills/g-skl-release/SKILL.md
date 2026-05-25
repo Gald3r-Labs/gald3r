@@ -229,6 +229,35 @@ Generates `ROADMAP.md` at the project root. Overwrites cleanly — do not hand-e
 
 ---
 
+## Operation: BACKFILL (create release files for CHANGELOG versions, C-023 / BUG-104)
+
+**Usage**: `@g-release-sync` remediation, `@g-update` upgrade path, or `g-medic --heal-c023`
+
+Where SYNC **reports** the gap, BACKFILL **closes** it: for every `## [X.Y.Z]` CHANGELOG header
+that has no matching `.gald3r/releases/` file, create one with `status: released` and the date
+parsed from the CHANGELOG header. This is the standard fix for projects that predate the
+`releases/` concept (T1416) and therefore see the C-023 warning on every session.
+
+**Script**: `.gald3r_sys/skills/g-skl-release/scripts/backfill_release_files.ps1`
+
+```powershell
+# Dry-run: list which release files would be created
+.\backfill_release_files.ps1 -ProjectRoot "<project_root>"
+
+# Apply: create the missing release files
+.\backfill_release_files.ps1 -ProjectRoot "<project_root>" -Apply
+```
+
+**Behavior**:
+- Backfilled files are named `release{NNN}_v{X}-{Y}-{Z}.md` so the filename contains the version
+  (satisfies the g-rl-25 Step 2b "filename contains the version" check) while keeping the
+  canonical `release{NNN}_` prefix and a numeric `id:`.
+- Sequential `id:` continues from the highest existing release-file id.
+- **Idempotent**: a version that already has a release file (by frontmatter `version:`) is skipped.
+- Dry-run by default; `-Apply` writes. `-Json` emits a structured result.
+
+---
+
 ## File Placement (10-target propagation)
 
 Per C-009, this skill exists in all 10 IDE targets:

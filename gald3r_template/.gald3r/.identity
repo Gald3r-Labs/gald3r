@@ -5,6 +5,6 @@ project_name={project_name}
 project_type=software_development
 user_id={USER_ID}
 user_name={user_name}
-gald3r_version=1.5.2
+gald3r_version=1.6.0
 vault_location={LOCAL}
 repos_location={LOCAL_REPOS}

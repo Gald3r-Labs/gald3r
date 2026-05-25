@@ -104,6 +104,25 @@ Note: Claude's `hooks.json` uses `"command"` (a full shell string), NOT Copilot'
 
 All three are non-blocking. PS hooks cannot call MCP tools directly, so the actual session-summary capture is staged by `g-hk-session-end` and actioned later — either by the next session-start hook, the `g-learn` skill, or a scheduled drainer.
 
+**gald3r-internal lifecycle events (T1055 — `pre_skill` / `post_skill` / `pre_session` / `post_session`)**:
+
+Beyond the harness-native events (`sessionStart`, `stop`, `beforeShellExecution`, `PreToolUse`), gald3r defines four **gald3r-internal** lifecycle events. Claude Code does NOT expose a native skill-boundary event nor a gald3r-session-boundary event, so these are dispatched by the gald3r skill/command runner (or fired manually) and are **NOT auto-wired** into `hooks.json` — exactly like `manual` and `nightly` hooks. They enable per-skill tracing/timing and per-session observability without editing skill bodies.
+
+| Event | Payload (stdin JSON) | Fires |
+|-------|----------------------|-------|
+| `pre_skill` | `skill_name`, `skill_path`, `timestamp` | Before a skill body executes |
+| `post_skill` | `skill_name`, `skill_path`, `timestamp` | After a skill body finishes |
+| `pre_session` | `session_id` (if available), `project_path` | Session start (gald3r-level, not harness `sessionStart`) |
+| `post_session` | `session_id` (if available), `project_path` | Session end (gald3r-level, not harness `stop`) |
+
+Reference example hooks (under `.claude/hooks/`, each with a companion `hook.md`): `g-hk-pre-skill-timing.ps1` + `g-hk-post-skill-timing.ps1` (per-skill elapsed timing via a `.gald3r/logs/skill_timing_*.json` start marker), and `g-hk-pre-session-trace.ps1` + `g-hk-post-session-trace.ps1` (per-session duration via `.gald3r/logs/session_trace_*.json`). All four are non-blocking, emit the standard `{ continue = true }` envelope, and never touch control-plane state. The `_doc.gald3r_lifecycle_events` key in `hooks.json` documents the same contract. Scaffold new ones with `/g-hook-create <hook-name> pre_skill|post_skill|pre_session|post_session`.
+
+**Available `PreToolUse` hooks (gald3r ships four)**:
+- `g-hk-pre-tool-call-gald3r-guard.ps1` (matcher `Edit|Write|MultiEdit|NotebookEdit`) — `.gald3r/` agent-required gate
+- `g-hk-pre-tool-call-prd-freeze.ps1` — refuses Edit/Write to a released/superseded PRD (C-019)
+- `g-hk-pre-tool-call-member-gald3r-guard.ps1` — `controlled_member` `.gald3r/` marker-only guard
+- `g-hk-pre-tool-call.ps1` (matcher `Bash|Shell|Terminal|run_terminal_cmd`, T1106) — compresses large shell/terminal output to the last N lines + summary, preserving the full block to `.gald3r/logs/tool_output_<session_id>.log`. N = `pre_tool_call_compress_lines` in `AGENT_CONFIG.md` (default 50; 0 = disabled). Non-blocking; reports 60-90% token reduction in shell-heavy sessions.
+
 ### Hook Companion `hook.md` Pattern (T1171)
 
 Every gald3r hook script (`.claude/hooks/g-hk-*.ps1`) has a companion `hook.md` self-description file at the same path. Pattern harvested from OpenClaw Hooks Crash Course (V18 — Bdr7afGhh4I, 2026-05-13).

@@ -150,6 +150,32 @@ full `.gald3r/` is intentional.
 
 ---
 
+## Promotion off-ramp (`controlled_member` -> `autonomous_child`) (BUG-097 / T1435)
+
+The marker-only guard is intentional, but it is **not** a permanent freeze. When a
+`controlled_member` needs to become independent, use the formal promotion path instead of
+hand-editing `.gald3r/` or `.gitignore`:
+
+```powershell
+# Dry-run (default)
+powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/gald3r_promote_member.ps1 `
+    -MemberPath "<absolute_member_repo_path>"
+
+# Apply
+powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/gald3r_promote_member.ps1 `
+    -MemberPath "<absolute_member_repo_path>" `
+    -Apply
+```
+
+Command surface: `@g-wpac-promote <member-id> --dry-run|--apply` (delegates to `g-skl-workspace`
+PROMOTE). Apply scaffolds the standard `autonomous_child` files (`RELEASES.md`, `releases/`,
+`vocab.md`, `workspace/topology.md`, `workspace/inbox.md`, `FEATURES.md`, `BUGS.md`, `PLAN.md`),
+rewrites `.identity` (`workspace_role=autonomous_child`, removes `member_gald3r_marker_only`, bumps
+`gald3r_version`), and updates the manifest `workspace_role`. After promotion the guard ALLOWS
+`@g-skl-setup` on the repo — run `@g-skl-setup --upgrade-existing` for a full top-up.
+
+---
+
 ## Skill / command preflight requirements
 
 - **`g-skl-setup`** — check manifest `workspace_role`. `controlled_member` → BLOCK (marker-only via bootstrap). `autonomous_child` → ALLOW full setup.

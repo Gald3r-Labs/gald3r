@@ -1203,6 +1203,45 @@ vocabulary is in effect.
 `requires_review_gate: bool`, `transition_rules`, and `claim_constraints` —
 all backwards-compatible additions.
 
+### Reading the active profile (T1239)
+
+Profiles are **operational**, not just descriptive. Before any status transition,
+emoji-symbol regeneration, or `--promote`/`--demote`, load the active profile
+snapshot once and use it as the source of truth for valid statuses + symbols:
+
+```powershell
+# Resolves the hybrid activation chain (task frontmatter > PROJECT.md >
+# .identity project_type= > freeform) and prints a JSON snapshot.
+# -TaskFile lets a per-task workflow_profile: override win.
+pwsh -NoProfile -File .gald3r_sys/skills/g-skl-project-types/scripts/load_profile.ps1 `
+    -TaskFile .gald3r/tasks/open/task<id>_<slug>.md
+```
+
+Installed templates resolve the loader from the active IDE skill folder
+(`.claude/skills/...`, `.cursor/skills/...`, etc.). When `powershell-yaml` is not
+installed the loader still returns the profile id + raw YAML (`parsed: false`) —
+parse `task_statuses[]` from the embedded `raw_yaml` in that case.
+
+**Symbol regeneration (AC3 — TASKS.md emoji from profile, not hardcoded):**
+when regenerating TASKS.md rows or status badges, map each task's `status:`
+frontmatter value to the `symbol` of the matching `task_statuses[].id` from the
+active profile. Do **not** hardcode `[📋]`/`[🔄]`/`[🔍]`/`[✅]`; for the
+`software_dev` profile these resolve identically, so legacy code repos are
+unchanged, but a `content_creation` project renders `[✍️]` for `scripting`,
+`[🎬]` for `in_production`, etc.
+
+**Transition validation (AC4 — `--promote`/`--demote` against the profile DAG):**
+the canonical order of a transition is the **declaration order** of
+`task_statuses[]` in the active profile. `--promote` advances to the next
+non-terminal status in that order; `--demote` moves to the previous one.
+A requested target status that is not present in the active profile's
+`task_statuses[]` is rejected with
+`Invalid transition: '<status>' is not in profile '<id>' (valid: <id list>)`
+rather than silently written. Terminal statuses (`skip_in_pipeline: true` AND no
+forward neighbour, e.g. `done`/`published`/`cancelled`) cannot be `--promote`d
+further. This replaces the hardcoded `[ ] → [📋] → [🔄] → [🔍] → [✅]` ladder
+with the profile-defined one while keeping `software_dev` byte-identical.
+
 ---
 
 ## Mid-Task Checkpoint Protocol (T836)

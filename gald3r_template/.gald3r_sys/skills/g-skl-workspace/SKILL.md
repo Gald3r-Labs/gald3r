@@ -1,7 +1,7 @@
 ---
 name: g-skl-workspace
 description: Workspace-Control Mode skill. Reads .gald3r/linking/workspace_manifest.yaml as the canonical registry and provides STATUS, VALIDATE, MEMBER LIST, SPAWN, ADOPT, EXPORT/SYNC dry-run planning, and member `.gald3r/` marker bootstrap/remediate/validate operations for manifest-declared repositories.
-operations: [STATUS, VALIDATE, MEMBER_LIST, INIT_PLAN, INIT_APPLY, MEMBER_ADD_PLAN, MEMBER_ADD_APPLY, MEMBER_REMOVE_PLAN, MEMBER_REMOVE_APPLY, SPAWN_PLAN, SPAWN_APPLY, EXPORT_PLAN, SYNC_PLAN, PARSE_MANIFEST, ENFORCE_SCOPE, ADOPT_DISCOVER, ADOPT_DRY_RUN, ADOPT_APPLY, MEMBER_MARKER_BOOTSTRAP, MEMBER_MARKER_REMEDIATE, MEMBER_MARKER_VALIDATE]
+operations: [STATUS, VALIDATE, MEMBER_LIST, INIT_PLAN, INIT_APPLY, MEMBER_ADD_PLAN, MEMBER_ADD_APPLY, MEMBER_REMOVE_PLAN, MEMBER_REMOVE_APPLY, SPAWN_PLAN, SPAWN_APPLY, EXPORT_PLAN, SYNC_PLAN, PARSE_MANIFEST, ENFORCE_SCOPE, ADOPT_DISCOVER, ADOPT_DRY_RUN, ADOPT_APPLY, MEMBER_MARKER_BOOTSTRAP, MEMBER_MARKER_REMEDIATE, MEMBER_MARKER_VALIDATE, PROMOTE_PLAN, PROMOTE_APPLY]
 min_tier: slim
 token_budget: medium
 ---
@@ -11,7 +11,7 @@ token_budget: medium
 
 **Files Written**: none by default. This skill is read-only for member repositories except for the explicit `SPAWN_APPLY` lifecycle operation, which may create a new minimal independent git root and update the control project's workspace manifest when an active task authorizes it. It may only update `.gald3r/` task status when the active gald3r task workflow explicitly requires it.
 
-**Activate for**: "workspace status", "workspace validate", "workspace manifest", "member list", "workspace export dry-run", "workspace sync dry-run", "workspace spawn", "spawn workspace member", "workspace adopt", "adopt gald3r project", `@g-wrkspc`, `@g-wrkspc-status`, `@g-wrkspc-validate`, `@g-wrkspc-member-list`, `@g-wrkspc-init --dry-run`, `@g-wrkspc-member-add --dry-run`, `@g-wrkspc-member-remove --dry-run`, `@g-wrkspc-spawn --dry-run`, `@g-wrkspc-spawn --apply`, `@g-wrkspc-export --dry-run`, `@g-wrkspc-sync --dry-run`, `@g-wrkspc-adopt --discover`, `@g-wrkspc-adopt --dry-run`, `@g-wrkspc-adopt --apply`, plus backwards-compatible `@g-workspace-*` aliases.
+**Activate for**: "workspace status", "workspace validate", "workspace manifest", "member list", "workspace export dry-run", "workspace sync dry-run", "workspace spawn", "spawn workspace member", "workspace adopt", "adopt gald3r project", `@g-wrkspc`, `@g-wrkspc-status`, `@g-wrkspc-validate`, `@g-wrkspc-member-list`, `@g-wrkspc-init --dry-run`, `@g-wrkspc-member-add --dry-run`, `@g-wrkspc-member-remove --dry-run`, `@g-wrkspc-spawn --dry-run`, `@g-wrkspc-spawn --apply`, `@g-wrkspc-export --dry-run`, `@g-wrkspc-sync --dry-run`, `@g-wrkspc-adopt --discover`, `@g-wrkspc-adopt --dry-run`, `@g-wrkspc-adopt --apply`, "promote member", "promote to autonomous_child", `@g-wpac-promote --dry-run`, `@g-wpac-promote --apply`, plus backwards-compatible `@g-workspace-*` aliases.
 
 **Canonical Registry**: `.gald3r/linking/workspace_manifest.yaml`
 
@@ -1212,6 +1212,82 @@ Before adopting an existing populated gald3r project as a Workspace-Control memb
 1. Run MEMBER_MARKER_VALIDATE to baseline current marker compliance.
 2. Run guard against the candidate path to confirm membership classification post-adoption.
 3. If candidate's existing `.gald3r/` contains live control plane, refuse silent overwrite — either route through the Workspace-Control populated-gald3r adoption flow (Tasks 214-217: history import + provenance + active/terminal classification + remediation), or defer adoption until cleanup is complete.
+
+---
+
+## Operation: PROMOTE PLAN / PROMOTE APPLY (controlled_member -> autonomous_child) (BUG-097 / T1435 / g-rl-36)
+
+**Usage**: `@g-wpac-promote <member-id> --dry-run` or `@g-wpac-promote <member-id> --apply`
+
+PROMOTE migrates an existing `controlled_member` (or `migration_source`) repository into a
+fully self-managed `autonomous_child`. It is the formal off-ramp for the g-rl-36 marker-only
+guard: a `controlled_member` is intentionally restricted to a marker-only `.gald3r/` (`.identity`
++ `PROJECT.md`), and `@g-skl-setup` is blocked there. When the intent changes and the member must
+become independent, PROMOTE lifts that guard by flipping `workspace_role` and backfilling the
+standard framework files that postdate the original member creation. Without it, promotions are
+done ad-hoc and produce incomplete `.gald3r/` structures (BUG-097).
+
+PROMOTE is distinct from the other lifecycle modes:
+
+| Operation | What it does |
+|-----------|--------------|
+| `MEMBER_ADD` | Registry-only; never writes inside the member |
+| `SPAWN` | Creates a brand-new empty member + marker |
+| `ADOPT` | Imports an existing populated gald3r project's history into the controller |
+| **`PROMOTE`** | Takes an existing marker-only `controlled_member` and upgrades it in place to `autonomous_child` with full self-managed `.gald3r/` |
+
+### PROMOTE PLAN Steps (dry-run, default)
+
+1. Resolve the member path, manifest entry, and `.gald3r/.identity`.
+2. Classify the current role via `check_member_repo_gald3r_guard.ps1` and the member `.identity`.
+3. If the role is already `autonomous_child` -> exit with an informational message (no-op).
+4. If the role is `controlled_member` or `migration_source` -> build the promotion plan:
+   - missing standard files to scaffold: `RELEASES.md`, `releases/`, `vocab.md`,
+     `workspace/topology.md`, `workspace/inbox.md`, `FEATURES.md`, `BUGS.md`, `PLAN.md`
+   - `.identity` changes: `workspace_role -> autonomous_child`, remove
+     `member_gald3r_marker_only`, bump `gald3r_version` to the current framework version
+   - manifest change: `repositories[<member-id>].workspace_role -> autonomous_child`
+5. Print the plan; write nothing.
+
+### PROMOTE APPLY Gate
+
+Apply runs only when the user supplies `--apply`. It then:
+
+1. Re-confirms the member is `controlled_member`/`migration_source` (blocks otherwise).
+2. Creates only **missing** standard files/dirs (existing files are preserved, never overwritten).
+3. Rewrites `.gald3r/.identity` (role flip, marker-flag removal, version bump), preserving all
+   other keys and key order.
+4. Updates **only** the named member's `workspace_role` in the workspace manifest; other members
+   are left untouched.
+5. Logs a `## Status History` row in the originating controller task and prints a promote summary.
+
+After apply, the g-rl-36 guard allows `@g-skl-setup` on the repo. Run `@g-skl-setup
+--upgrade-existing` for a full file top-up, then `@g-wrkspc-validate` to confirm.
+
+### Helper script
+
+```powershell
+# Dry-run (default)
+powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/gald3r_promote_member.ps1 `
+    -MemberPath "<absolute_member_path>" `
+    [-MemberId "<manifest_repo_id>"] `      # inferred from manifest/.identity when omitted
+    [-ControllerPath "<absolute_controller_path>"] `
+    [-ManifestPath "<absolute_manifest_path>"]
+
+# Apply
+powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/gald3r_promote_member.ps1 `
+    -MemberPath "<absolute_member_path>" `
+    -Apply
+```
+
+Exit codes: `0` plan/applied/already-autonomous (info), `1` block (not a promotable role, guard
+refused, manifest unwritable), `2` input/manifest error. Pass `-Json` for machine-readable output.
+
+### Refusals
+
+- `BLOCK not_a_promotable_member` - the target role is not `controlled_member`/`migration_source`.
+- `INFO already_autonomous_child` - the member is already promoted; nothing to do.
+- `ERROR member_path_not_found` / `guard_helper_missing` / `guard_parse_failed` - input errors.
 
 ---
 

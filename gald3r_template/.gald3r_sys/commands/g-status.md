@@ -43,7 +43,11 @@ Provides a comprehensive status update for your gald3r project.
 ### 1. Task Analysis (from TASKS.md)
 I'll review:
 - Total tasks by phase
-- Tasks by status: `[ ]` Pending, `[📋]` Ready, `[🔄]` In-Progress, `[✅]` Completed, `[❌]` Failed
+- Tasks by status — labels and symbols from the **active workflow profile's**
+  `task_statuses[]` (T1239 AC2), not hardcoded. For the default `software_dev`
+  profile this is `[📋]` Ready, `[🔄]` In-Progress, `[🔍]` Awaiting-Verification,
+  `[✅]` Done, `[❌]` Failed; a `content_creation` project shows its own
+  vocabulary (`[✍️]` Scripting, `[🎬]` In Production, `[✅]` Published, …)
 - Tasks by priority: Critical, High, Medium, Low
 - Recently completed tasks
 - Blocked or stalled tasks
@@ -88,6 +92,16 @@ If the manifest is absent, workspace output stays quiet unless you explicitly as
 - Workflow profile: `{project_type}.yaml` (`.gald3r/config/workflow_profiles/`)
 - GitHub integration: `{enabled|disabled}` (enabled only when `project_type=software_development`)
 - Show this line near the top of the report; no-op silently when invoked outside a gald3r project.
+
+### 🔀 Workflow (T1239)
+- Resolve the active profile via `load_profile.ps1` (active skill folder; hybrid
+  activation chain) and display: `Workflow: {profile.name} ({profile.id}.yaml)`,
+  e.g. `Workflow: Content Creation (content_creation.yaml)`.
+- This is the session-start workflow header (T1239 AC5). Skip silently when
+  `.gald3r/config/workflow_profiles/` is absent (pre-T1238 installs).
+- All status labels/badges below come from the active profile's `task_statuses[]`
+  (`symbol` + label), **not** hardcoded strings (T1239 AC2). `software_dev`
+  resolves to the legacy labels, so code repos render unchanged.
 
 ### 📋 Task Summary
 - Total tasks: X (Y pending, Z in-progress, W completed)
@@ -144,7 +158,7 @@ Let's see where your project stands!
 This command supports machine-readable output in addition to its default text/markdown:
 
 - `--json` → structured JSON envelope via **g-skl-json-output** (`{ gald3r_version, generated_at, command, schema, data }`). For scripting, CI gates, dashboards.
-- `--toon` → **g-skl-toon-output** TOON: compact, lossless, LLM-friendly (tabular arrays state keys once; ≥20% smaller than JSON). For agent handoff / context injection / vault ingestion.
+- `--toon` → **g-skl-toon-output** TOON: compact, lossless, LLM-friendly (tabular arrays state keys once; ~20% smaller than JSON). For agent handoff / context injection / vault ingestion.
 - `--md` forces markdown. With no flag, AGENT_CONFIG `output_format` decides (default `markdown`, unchanged).
 
 Output is saved to `html_output_dir` (default `docs/`) as `YYYYMMDD_HHMMSS_<IDE>_<TOPIC>.json|.toon` per g-rl-01.
