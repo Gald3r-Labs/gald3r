@@ -62,7 +62,7 @@ Write-Host "  Mode        : $(if ($Apply) { 'APPLY' } else { 'DRY-RUN' })" -Fore
 Write-Host ""
 
 # --- Step 1: Parity gate ---
-$ParityScript = Join-Path $RepoRoot "scripts\platform_parity_check.ps1"
+$ParityScript = Join-Path $RepoRoot "custom_scripts\platform_parity_check.ps1"
 if (-not $SkipParityCheck -and -not $Force) {
     if (-not (Test-Path $ParityScript)) {
         Write-Warning "Parity check script not found at $ParityScript — skipping (use -Force to suppress this warning)"
@@ -72,7 +72,7 @@ if (-not $SkipParityCheck -and -not $Force) {
         & $ParityScript
         if ($LASTEXITCODE -ne 0) {
             Write-Host ""
-            Write-Error "Parity gaps detected. Fix with:`n  .\scripts\platform_parity_sync.ps1 -Sync`nThen re-run, or use -Force to override."
+            Write-Error "Parity gaps detected. Fix with:`n  .\custom_scripts\platform_parity_sync.ps1 -Sync`nThen re-run, or use -Force to override."
             exit 1
         }
         Write-Host "  Parity: CLEAN" -ForegroundColor Green
@@ -174,7 +174,7 @@ Write-Host "  CHANGELOG.md: heading [[$Version]] found" -ForegroundColor Green
 
 # --- Step 4: Export ---
 Write-Host "Step 4: Running export_slim_template_repo.ps1..." -ForegroundColor Cyan
-$exportScript = Join-Path $RepoRoot "scripts\export_slim_template_repo.ps1"
+$exportScript = Join-Path $RepoRoot "custom_scripts\export_slim_template_repo.ps1"
 if (-not (Test-Path $exportScript)) {
     Write-Error "Export script not found: $exportScript"
     exit 1

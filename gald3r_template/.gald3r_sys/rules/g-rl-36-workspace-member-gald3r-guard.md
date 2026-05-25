@@ -67,7 +67,7 @@ ADOPT_APPLY, `gald3r_install`, and any future scaffold/repair flow.
 ## Source of truth
 
 - **Canonical rule file (edit here)**: `G:/gald3r_ecosystem/gald3r_templates/gald3r_template/.gald3r_sys/rules/g-rl-36-workspace-member-gald3r-guard.md`
-- **Propagate**: `G:/gald3r_ecosystem/gald3r_templates/scripts/platform_parity_sync.ps1 -SyncGaldSys -Sync` → `gald3r_dev/.gald3r_sys/`, `gald3r_template_{slim,full,adv}/gald3r_template/.gald3r_sys/`, `gald3r/gald3r_template/.gald3r_sys/`
+- **Propagate**: `G:/gald3r_ecosystem/gald3r_templates/custom_scripts/platform_parity_sync.ps1 -SyncGaldSys -Sync` → `gald3r_dev/.gald3r_sys/`, `gald3r_template_{slim,full,adv}/gald3r_template/.gald3r_sys/`, `gald3r/gald3r_template/.gald3r_sys/`
 - **Do NOT edit for framework changes**: `gald3r_dev/.gald3r_sys/` (sync target only; preserves `.understand-anything/` on controller)
 - **ADR-003**: WPAC Controller Direct-Write Authority (supersedes BUG-021 marker-only-only stance)
 - **ADR-013**: autonomous_child workspace_role definition

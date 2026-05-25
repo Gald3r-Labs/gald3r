@@ -27,8 +27,9 @@ rerouted API calls and broke user setups overnight):
 
 ```powershell
 $scriptPath = @(
-    "scripts\gald3r_doctor.ps1",
-    ".cursor\hooks\gald3r_doctor.ps1"
+    ".gald3r_sys\skills\g-skl-medic\scripts\gald3r_doctor.ps1",
+    ".cursor\skills\g-skl-medic\scripts\gald3r_doctor.ps1",
+    ".claude\skills\g-skl-medic\scripts\gald3r_doctor.ps1"
 ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 
 if ($scriptPath) {
@@ -37,7 +38,7 @@ if ($scriptPath) {
     $catFlag  = if ($catArg) { "-Category $catArg" } else { '' }
     powershell -NoProfile -ExecutionPolicy Bypass -File $scriptPath $fixFlag $catFlag
 } else {
-    Write-Host "⚠️ scripts\gald3r_doctor.ps1 not found — running AI-assisted checks below."
+    Write-Host "⚠️ g-skl-medic/scripts/gald3r_doctor.ps1 not found — running AI-assisted checks below."
 }
 ```
 

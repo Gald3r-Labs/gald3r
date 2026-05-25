@@ -1,4 +1,4 @@
-﻿Verification-only backlog review: $ARGUMENTS
+Verification-only backlog review: $ARGUMENTS
 
 ## Mode: REVIEW ONLY
 

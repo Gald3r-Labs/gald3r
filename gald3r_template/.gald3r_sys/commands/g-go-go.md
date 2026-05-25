@@ -1,4 +1,4 @@
-﻿Maximal workspace swarm autopilot — rolling implement/review until a hard stop: $ARGUMENTS
+Maximal workspace swarm autopilot — rolling implement/review until a hard stop: $ARGUMENTS
 
 ## Mode: AUTOPILOT (rolling implement → review → next batch)
 

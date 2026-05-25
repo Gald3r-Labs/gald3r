@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Load a gald3r Workflow Profile YAML and emit a JSON snapshot for agents.
     T1281 (Project Types epic); hybrid activation + freeform fallback added by

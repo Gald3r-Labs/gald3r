@@ -1,4 +1,4 @@
-﻿Pipeline orchestrator — implement then auto-review: $ARGUMENTS
+Pipeline orchestrator — implement then auto-review: $ARGUMENTS
 
 ## Mode: PIPELINE (Implement → Auto-Review)
 

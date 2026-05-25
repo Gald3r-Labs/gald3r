@@ -1,0 +1,17 @@
+# Aider configuration — gald3r deploy scaffold
+# Docs: https://aider.chat/docs/config/aider_conf.html
+# Installed to the project root by the gald3r installer.
+
+# Model used by Aider (override per your provider / subscription)
+model: claude-opus-4-5
+
+# Disable auto-commits so commits follow gald3r task-scoped discipline:
+#   feat(T{id}): description   |   fix(BUG-{id}): description
+auto-commits: false
+
+# Persistent read-only context: gald3r control-plane files Aider should always see
+# but never edit. Keep this list small to protect the context token budget.
+read:
+  - .gald3r/PROJECT.md
+  - .gald3r/CONSTRAINTS.md
+  - CONVENTIONS.md

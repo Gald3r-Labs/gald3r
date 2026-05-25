@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Post-write lint validation for gald3r g-go-code workflow (T919).
 

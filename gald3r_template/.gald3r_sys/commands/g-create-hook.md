@@ -67,7 +67,7 @@ For the gald3r-specific idempotency guard pattern (`$env:GALD3R_HK_<NAME>_APPLIE
 ## After scaffolding
 
 1. Implement the hook body in `.cursor/hooks/<hook-name>.ps1` (canonical).
-2. Mirror to `.claude/`, `.agent/`, `.codex/`, `.opencode/` (the scaffold step does this automatically; subsequent edits use `scripts/platform_parity_sync.ps1`).
+2. Mirror to `.claude/`, `.agent/`, `.codex/`, `.opencode/` (the scaffold step does this automatically; subsequent edits use `custom_scripts/platform_parity_sync.ps1`).
 3. Update the `hook.md` `## Side Effects` and `## Related Tasks` sections to match the final implementation.
 4. Add an entry to `CHANGELOG.md` under `### Added` per `g-rl-26`.
 5. Run the hook directly to verify the JSON contract and exit-code behavior.

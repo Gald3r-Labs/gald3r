@@ -83,7 +83,7 @@ Only runs after explicit user approval in Phase 3. Actions:
    `.claude/agents/`, `.codex/agents/`, etc. — where the platform
    supports the `agents/` primitive).
 2. Append a new row to the canonical AGENTS.md roster table.
-3. Run `scripts/platform_parity_sync.ps1 -Sync` so external template
+3. Run `custom_scripts/platform_parity_sync.ps1 -Sync` so external template
    member repos pick up the new agent (controller parity is owned by
    gald3r_dev — see CLAUDE.md learned fact #31).
 4. Move the staged draft to
@@ -124,7 +124,7 @@ Only runs after explicit user approval in Phase 3. Actions:
   pattern).
 - T1172a — `token_budget:` ordinal bands (re-used here for the
   agent's "Estimated context impact").
-- `scripts/platform_parity_sync.ps1` — controller parity machinery
+- `custom_scripts/platform_parity_sync.ps1` — controller parity machinery
   invoked in Phase 4.
 - AGENTS.md "Agents" roster table — canonical source-of-truth for the
   active agent set.

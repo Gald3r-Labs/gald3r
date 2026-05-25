@@ -14,7 +14,7 @@ Files here are merged into the **target project root** by `setup_gald3r_project.
 After edits, run:
 
 ```powershell
-G:/gald3r_ecosystem/gald3r_templates/scripts/platform_parity_sync.ps1 -SyncGaldSys -Sync
+G:/gald3r_ecosystem/gald3r_templates/custom_scripts/platform_parity_sync.ps1 -SyncGaldSys -Sync
 ```
 
 That sync propagates `.gald3r_sys/` (including this folder) and the `gald3r_template/` payload to `gald3r_template_adv`, `gald3r_template_full`, `gald3r_template_slim`, and `gald3r`.

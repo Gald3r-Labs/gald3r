@@ -1,4 +1,4 @@
-# g-hk-session-start.ps1 - Cursor hook for session initialization
+﻿# g-hk-session-start.ps1 - Cursor hook for session initialization
 # Triggered when a new composer conversation is created.
 # Injects gald3r context and handles first-time user setup.
 

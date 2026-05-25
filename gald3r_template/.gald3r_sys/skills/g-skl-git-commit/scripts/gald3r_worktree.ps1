@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Shared gald3r Git worktree helper for agent isolation.
 
