@@ -266,6 +266,15 @@ When a fix was applied in this session but no bug was filed before or during the
    ```
    If bug was reopened: `| YYYY-MM-DD | resolved | open | Reopened: {reason} |`
 8. **Update linked task** (if any) → `status: awaiting-verification` via g-tasks UPDATE
+
+8.5. **Write CHANGELOG [Unreleased] entry** (REQUIRED — AC5 gate):
+   Open `CHANGELOG.md` at the project root. Locate the `## [Unreleased]` section (create it if absent). Append under `### Fixed`:
+   ```markdown
+   ### Fixed
+   - BUG-NNN: {brief one-line description of the fix} ({subsystem})
+   ```
+   If a `### Fixed` subsection already exists under `[Unreleased]`, append the bullet to it (do not duplicate the heading). The entry is written even for pre-existing / Low-severity bugs — every closed bug deserves a release-note credit.
+
 9. **Offer git commit**:
    ```
    fix({subsystem}): resolve BUG-NNN — {brief description}
@@ -273,7 +282,7 @@ When a fix was applied in this session but no bug was filed before or during the
    ```
 
 **Fast path (pre-existing/Low severity)**:
-- Fix inline, update bug file + BUGS.md status, append Activity Log — no separate task needed
+- Fix inline, update bug file + BUGS.md status, append Activity Log, write CHANGELOG entry — no separate task needed
 
 ---
 

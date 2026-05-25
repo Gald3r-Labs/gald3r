@@ -1,4 +1,4 @@
-Dedicated bug-fix pipeline — reproduce → fix → regression test → adversarial review: $ARGUMENTS
+﻿Dedicated bug-fix pipeline — reproduce → fix → regression test → adversarial review: $ARGUMENTS
 
 ## Mode: BUG-FIX PIPELINE
 
@@ -22,7 +22,7 @@ fixes each bug in severity order; Phase 2 spawns an independent reviewer agent t
 options, or approve a proposal.** This command is designed for fire-and-forget operation. The
 user typed it and is not watching this session.
 
-The **only** valid reasons to stop are the documented **hard-gate failures** (PCAC conflict
+The **only** valid reasons to stop are the documented **hard-gate failures** (WPAC conflict
 exit-code `2`, dirty orchestration root outside the staging allowlist, `[🚨]` bugs, or all bugs
 deferred). Everything else is resolved silently by the auto-plan rules.
 
@@ -56,25 +56,25 @@ When `$ARGUMENTS` provides explicit bug IDs (`bug:BUG-NNN`), use those exactly.
 
 ---
 
-## PCAC Inbox Gate (Only When PCAC Is Configured)
+## WPAC inbox Gate (Only When WPAC is configured)
 
-Before any bug claiming or implementation, run the re-callable inbox check if PCAC is configured:
+Before any bug claiming or implementation, run the re-callable inbox check if WPAC is configured:
 
 ```powershell
-$hook = @( ".cursor\hooks\g-hk-pcac-inbox-check.ps1", ".claude\hooks\g-hk-pcac-inbox-check.ps1", ".agent\hooks\g-hk-pcac-inbox-check.ps1", ".codex\hooks\g-hk-pcac-inbox-check.ps1", ".opencode\hooks\g-hk-pcac-inbox-check.ps1" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+$hook = @( ".cursor\hooks\g-hk-wpac-inbox-check.ps1", ".claude\hooks\g-hk-wpac-inbox-check.ps1", ".agent\hooks\g-hk-wpac-inbox-check.ps1", ".codex\hooks\g-hk-wpac-inbox-check.ps1", ".opencode\hooks\g-hk-wpac-inbox-check.ps1" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 if ($hook) { powershell -NoProfile -ExecutionPolicy Bypass -File $hook -ProjectRoot . -BlockOnConflict }
 ```
 
-PCAC is configured only when `.gald3r/linking/link_topology.md` declares at least one
+WPAC is configured only when `.gald3r/workspace/topology.md` declares at least one
 parent/child/sibling relationship. A Workspace-Control manifest and local `INBOX.md` alone are
 not sufficient. If the check reports `INBOX CONFLICT GATE` or exits code `2`, stop and run
-`@g-pcac-read`. If PCAC is not configured, skip and report `PCAC: not configured / skipped`.
+`@g-wpac-read`. If WPAC is not configured, skip and report `WPAC: not configured / skipped`.
 
 ---
 
 ## Gald3r Housekeeping Commit Gate (T531)
 
-After the PCAC gate passes and before the Clean Controller Gate:
+After the WPAC gate passes and before the Clean Controller Gate:
 
 ```powershell
 .\scripts\gald3r_housekeeping_commit.ps1 -Mode preflight -Apply -Json

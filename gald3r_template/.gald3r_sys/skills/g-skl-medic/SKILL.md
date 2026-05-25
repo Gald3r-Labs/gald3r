@@ -120,25 +120,54 @@ specifications_collection/   incoming specs/wireframes
 linking/          INBOX.md, shared contracts
 ```
 
-Report any folders created.
+Report any folders created. When a required folder is missing and the canonical template
+`.gald3r_sys/install/dot_gald3r/<folder>/` exists (T1442), restore it (including its
+`.gitkeep`) from there rather than creating a bare empty folder.
 In `--dry-run`, report missing folders as `would_create` and do not create them.
 
 ### L1-B: Root File Audit
 
-Check each required root file. Create from template if missing:
+Check each required root file. When a file is missing, **restore the pristine canonical
+copy from `.gald3r_sys/install/dot_gald3r/` first** (T1442); fall back to an empty in-skill
+template only when the canonical file is unavailable.
 
-| File | If Missing | Health Check |
+#### Restore-from-canonical (T1442 — preferred heal path)
+
+The framework ships a pristine `.gald3r/` template instance at
+`.gald3r_sys/install/dot_gald3r/` on every install. When a required `.gald3r/` file or folder
+is missing, g-medic L1 **restores it from that canonical source** instead of reporting
+error-only or writing a bare stub. This guarantees the restored file carries the correct
+T1439 versioned frontmatter (`schema_version` / `gald3r_rel_version`) for the installed release.
+
+Restore order for any missing required file:
+
+1. **Canonical copy** — if `.gald3r_sys/install/dot_gald3r/<relpath>` exists, copy it to
+   `.gald3r/<relpath>` (creating parent folders as needed). This is the default heal.
+2. **Engine shell-out (optional)** — for a batch restore of all missing single-file artifacts,
+   shell out to the canonical engine rather than re-implementing the copy:
+   ```
+   pwsh -File .gald3r_sys/scripts/migrate_schemas.ps1 -ProjectPath <proj> -RestoreMissing -Apply
+   ```
+   (`-RestoreMissing` without `-Apply` reports what it would restore — use for `--dry-run`.)
+3. **Empty in-skill template** — only when the canonical file is absent from `dot_gald3r/`
+   (e.g. a corrupt or partial install). Fall back to the per-file stub in the table below.
+
+Resolve the canonical path script-adjacent (`.gald3r_sys/install/dot_gald3r/`) or
+project-local (`<proj>/.gald3r_sys/install/dot_gald3r/`). Never hardcode a dev-machine path.
+
+| File | If Missing (canonical absent) | Health Check |
 |---|---|---|
-| `TASKS.md` | Create empty template | Task Sync (L1-D) |
-| `BUGS.md` | Create empty template | Bug Sync (L1-D) |
-| `PLAN.md` | Create empty template | Has `## Current Focus`? |
-| `FEATURES.md` | Create empty template | Has `## PRD Index` table? |
-| `PROJECT.md` | Create empty template | Goals Check (L1-D) |
-| `CONSTRAINTS.md` | Create header-only stub | Has `## Architectural Constraints`? |
-| `SUBSYSTEMS.md` | Create empty template | Subsystem Sync (L1-D) |
-| `IDEA_BOARD.md` | Create empty template | Has `## Active Ideas`? |
+| `TASKS.md` | Restore from dot_gald3r, else empty template | Task Sync (L1-D) |
+| `BUGS.md` | Restore from dot_gald3r, else empty template | Bug Sync (L1-D) |
+| `PLAN.md` | Restore from dot_gald3r, else empty template | Has `## Current Focus`? |
+| `FEATURES.md` | Restore from dot_gald3r, else empty template | Has `## PRD Index` table? |
+| `PROJECT.md` | Restore from dot_gald3r, else empty template | Goals Check (L1-D) |
+| `CONSTRAINTS.md` | Restore from dot_gald3r, else header-only stub | Has `## Architectural Constraints`? |
+| `SUBSYSTEMS.md` | Restore from dot_gald3r, else empty template | Subsystem Sync (L1-D) |
+| `IDEA_BOARD.md` | Restore from dot_gald3r, else empty template | Has `## Active Ideas`? |
 
-In `--dry-run`, report missing files as `would_create` and do not create them.
+In `--dry-run`, report missing files as `would_restore` (from dot_gald3r) or `would_create`
+(canonical absent) and do not write them.
 
 ### L1-C: .identity Integrity
 
@@ -292,6 +321,146 @@ Tool count is sourced from a prior live tool-list capture when available, otherw
 - Treat malformed JSON as a critical L1 finding (do NOT crash the rest of L1) and surface in the report.
 - L1-K is read-only in all modes including `--apply`: it never edits MCP config files. Pruning is a user decision.
 - In `--dry-run` mode, L1-K behaves identically (it's already read-only).
+
+### L1-L: Schema Validation (T1440)
+
+*Runs AFTER the L1-A/L1-B folder/file existence checks above. Read-driven; writes
+only the safe auto-fixes / TODO markers described below. Skips silently if the
+schema system is not installed.*
+
+The schema layer enforces the file schemas defined in `.gald3r_sys/schemas/`
+(registry: `_registry.yaml`; enum auto-fix map: `_fix_mappings.yaml`). It
+auto-fixes what it safely can, inserts `TODO:` markers where human input is
+required, and **never halts** — medic always continues to L1 Output.
+
+**Skip condition**: if `.gald3r_sys/schemas/_registry.yaml` does not exist, skip
+L1-L entirely (schema system not installed). Treat malformed registry/schema
+YAML as a critical L1 finding without crashing the rest of L1.
+
+#### Deterministic processing order
+
+Collect every `.gald3r/` file matching a `pattern` in `_registry.yaml`, then
+process them **sorted by path** (ascending) so reports are reproducible across
+runs.
+
+#### Schema check algorithm
+
+For each matched file:
+
+```
+1. Determine schema version:
+   - Read schema_version from frontmatter.
+   - If missing → treat as v0 (pre-schema era).
+
+2. Compare to the system current_version (from _registry.yaml for this pattern):
+   - file < system  → migration path (see below), then validation path
+   - file == system → validation-only path
+   - file > system  → SKIP; add to "Newer than system" report (do not touch)
+   - file == v0     → migration path from v0, then validation path
+
+3. Validation path (for each REQUIRED field in the schema):
+   - present + valid value          → PASS
+   - present + invalid enum value   → attempt_fix     (Fix Rules)
+   - missing                        → attempt_populate (Population Rules)
+
+4. Migration path (file < system):
+   - Load migration_notes from the schema file.
+   - Apply each new required field added since the file's schema version.
+   - Then run the validation path on the result.
+```
+
+> **Protected paths**: never touch a file whose `schema_version` is **newer than
+> system** when it lives in a protected path (e.g. a PRD in `released` state).
+> Log it as `skipped (newer)` and move on — no read-fix, no migration.
+
+#### Fix Rules (invalid enum value)
+
+The auto-fix mapping lives in `.gald3r_sys/schemas/_fix_mappings.yaml` — the
+**canonical, extensible** source of enum aliases. Extend that YAML to add new
+aliases; no skill/rule code changes are needed. A hit means an unambiguous fix
+(auto-applied + logged); a miss means insert a `TODO:` (never guess).
+
+| Situation | Action |
+|---|---|
+| `status: done` → maps to `qa_complete` in `_fix_mappings.yaml` | Auto-fix, log: `Auto-fixed status: done → qa_complete` |
+| `status: complete` / `completed` → `qa_complete` | Auto-fix |
+| `status: wip` / `active` → `coding` | Auto-fix |
+| `status: blocked` → `resource_gated`; `hold` → `paused` | Auto-fix |
+| `status: <unknown>` → not in `_fix_mappings.yaml` (ambiguous) | Insert `TODO: invalid status value "<value>" — see valid values in schema` |
+| `priority: urgent` / `blocker` → `critical` | Auto-fix |
+| `priority: nice_to_have` → `low` | Auto-fix |
+| `priority: <unknown>` (ambiguous) | Insert TODO |
+| `type: <unknown>` | Insert TODO |
+
+> The `done → qa_complete` mapping is the canonical fix for the **"done status
+> incident"**; the rationale is documented as a comment at the top of
+> `_fix_mappings.yaml`.
+
+#### Population Rules (missing required field)
+
+| Field | Auto-populate source |
+|---|---|
+| `created_date` | `git log --diff-filter=A -- <file>` → extract the add date |
+| `schema_version` | Current schema version from `_registry.yaml` |
+| `gald3r_rel_version` | Current framework version from `.gald3r/.identity` |
+| `priority` | Default to `medium` (safe neutral) |
+| `id` | Cannot auto-determine → `TODO: assign sequential task ID` |
+| `title` | Cannot auto-determine → `TODO: add descriptive task title` |
+| `type` | Cannot auto-determine → `TODO: [feature\|bug_fix\|refactor\|chore\|documentation]` |
+| `status` | Cannot auto-determine → `TODO: [see valid status values in schema]` |
+
+#### Non-required (optional) field behavior
+
+- Missing → **never** fail, **never** insert a TODO, **never** emit a report line.
+- Present with an invalid value → **warn** in the report; do **NOT** auto-fix.
+
+#### Missing folder handling
+
+```powershell
+foreach ($folder in $canonicalFolders) {       # canonical set from _registry.yaml patterns
+    if (-not (Test-Path $folder)) {
+        New-Item $folder -ItemType Directory | Out-Null
+        Copy-TemplateContents $folder          # README/.gitkeep from gald3r_template/.gald3r/
+        $report.FoldersCreated += $folder
+    }
+}
+```
+
+Template contents are sourced from `gald3r_template/.gald3r/`. Creation is silent
+and **never halts**; created folders are listed in the medic report.
+
+#### `schema_error` in-memory flag
+
+When a required field is missing AND cannot be auto-populated AND a `TODO:` was
+inserted, medic adds a flag to that file's **in-memory** record (it is NOT
+written into the file):
+
+```
+schema_error: true
+affected_fields: [title]
+```
+
+This flag surfaces in `g-status` alongside the task until a human clears the
+TODO.
+
+#### L1-L Report block (folds into L1 Output)
+
+```
+🔍 Schema Validation (L1 schema layer)
+   Files checked:    42
+   PASS:             38
+   Auto-fixed:        2  (status: done → qa_complete, status: complete → qa_complete)
+   TODO inserted:     1  (task1019 missing title field)
+   Schema migrated:   1  (task0967: v0 → v1, added schema_version + gald3r_rel_version)
+   Newer than system: 0
+   Folders created:   1  (tasks/65_qa_complete/)
+
+   ⚠️ Action required:
+      task1019_some_task.md — title field missing (TODO inserted)
+```
+
+In `--dry-run`, L1-L reports what it *would* fix/populate/migrate/create instead
+of writing (consistent with the L1 dry-run contract).
 
 ### L1 Output
 

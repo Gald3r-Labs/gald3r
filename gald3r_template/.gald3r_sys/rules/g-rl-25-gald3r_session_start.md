@@ -142,11 +142,11 @@ This prevents architectural drift and ensures changes respect subsystem boundari
 **Step 5: ACTIVE_BACKLOG.md**
 - Older than 26 hours → flag as stale, offer regeneration
 
-**Step 6: Cross-Project INBOX Check** (only when PCAC is configured)
+**Step 6: Cross-Project INBOX Check** (only when WPAC is configured)
 
-Run this check only when the current project is a PCAC participant. PCAC is active only when `.gald3r/linking/link_topology.md` exists and declares at least one non-empty parent, child, or sibling relationship, or when `.gald3r/PROJECT.md` explicitly declares PCAC project linking relationships. A Workspace-Control manifest and a local `.gald3r/linking/INBOX.md` alone do **not** make a project part of a PCAC group.
+Run this check only when the current project is a WPAC participant. WPAC is configured only when `.gald3r/workspace/topology.md` exists and declares at least one non-empty parent, child, or sibling relationship, or when `.gald3r/PROJECT.md` explicitly declares WPAC project linking relationships. A Workspace-Control manifest and a local `.gald3r/workspace/INBOX.md` alone do **not** make a project part of a WPAC group.
 
-When PCAC is active, `g-hk-pcac-inbox-check.ps1` runs this check automatically at session start. Behavior (T168):
+When WPAC is active, `g-hk-wpac-inbox-check.ps1` runs this check automatically at session start. Behavior (T168):
 
 - **Per-item display, not just counts** — the hook surfaces each open INBOX item with a one-line summary (type, source project, subject, age in hours/days). Items are grouped by type with subheadings, sorted within each group oldest-first, and truncated at 10 per group with a "+N more" note.
 
@@ -217,6 +217,56 @@ When PCAC is active, `g-hk-pcac-inbox-check.ps1` runs this check automatically a
   Display: `🔔 gald3r {latestVersion} available — run @g-upgrade to update`
   (single line only — do not block the session or show full release notes)
 - If `update_available: false`: skip silently
+
+**Step 10b: Schema Version Probe** (T1440 — alert only, never writes)
+
+A lightweight read-only probe that surfaces schema drift between this project's
+`.gald3r/` files and the installed gald3r system schema. It runs **after** the
+gald3r update check above. It NEVER writes, modifies, or creates any file — it
+only alerts. Auto-fix/migration is g-medic's job; this probe just points there.
+
+```powershell
+# Pseudocode for probe logic
+$registry = ".gald3r_sys/schemas/_registry.yaml"
+if (-not (Test-Path $registry)) { return }   # Case 4: schema system not installed → silent
+$systemSchema = Read-RegistryCurrentVersion $registry   # e.g. "v1" for task-file
+$sampleFiles  = Get-GaldSampleFiles                     # ≤5: TASKS.md, BUGS.md, 3 task files by mtime
+foreach ($file in $sampleFiles) {
+    $fileSchema = Read-FrontmatterField $file "schema_version"  # missing → treat as v0
+    Compare-SchemaVersions $fileSchema $systemSchema
+}
+```
+
+- Read the system schema version from `.gald3r_sys/schemas/_registry.yaml`
+  (`current_version` of the matching `schema_id`).
+- Sample **at most 5 files**: `.gald3r/TASKS.md`, `.gald3r/BUGS.md`, and the **3
+  most-recently-modified** task files under `.gald3r/tasks/**` (by modification
+  time). For each, read the `schema_version` frontmatter field; a missing field
+  means **v0** (pre-versioned era).
+
+**Output cases:**
+
+```
+# Case 1: Files OLDER than system (most common right after an upgrade)
+⚠️ Schema drift detected: 3 files use schema v0 (pre-versioned), current is v1
+   Run @g-medic to auto-migrate and validate
+
+# Case 2: Files MATCH system
+(silent — no output)
+
+# Case 3: Any file NEWER than system
+💡 1 file uses schema v2 but installed gald3r supports v1 (schema: task-file)
+   Your .gald3r files may be from a newer gald3r install. Consider: @g-update
+
+# Case 4: _registry.yaml MISSING (schema system not installed yet)
+(silent — no alert)
+```
+
+**Rules:**
+- Reads **at most 5 files** (TASKS.md, BUGS.md, 3 task files sampled by modification time).
+- Completes in **under 1 second** — no heavy/recursive scanning at session start.
+- **Never writes, never modifies, never creates** any file.
+- **Skips silently** if `.gald3r_sys/schemas/_registry.yaml` does not exist.
 
 **Fix issues BEFORE proceeding with user request.**
 

@@ -157,6 +157,30 @@ Use `scripts/gald3r_worktree.ps1` for agent-owned isolated checkouts in the gald
 - Cleanup is report-only unless `-Apply` is provided, and removal is limited to directories with `.gald3r-worktree.json` ownership metadata.
 - When committing from a worktree, run `git status` and `git commit` from that worktree's repository root, not from the control checkout.
 
+### Continuity Artifact & Session Resume (T967)
+
+Long-horizon implementation work in a worktree can be interrupted by a crash, OOM, or power loss. To resume from the last clean state — rather than the conversation transcript — `gald3r_worktree.ps1` writes a **continuity artifact** at each implementation checkpoint and exposes a `Resume` action that restores it as a context prefix. This is distinct from `gald3r_session_capture.ps1` (which preserves the literal JSONL transcript): the continuity artifact is a structured *resume summary* (goal, completed/pending ACs, last tool summary, next action, blockers).
+
+```powershell
+# At each implementation checkpoint — write continuity_artifact.md + update marker.
+# Run this BEFORE the checkpoint commit so the artifact survives a crash mid-commit.
+.\scripts\gald3r_worktree.ps1 -Action Checkpoint -TaskId 967 -Role code -Owner cursor `
+    -Goal "Add session resume to the worktree lifecycle" `
+    -CompletedAcs "AC1 artifact write","AC2 marker fields" `
+    -PendingAcs "AC3 resume read","AC4 resume banner" `
+    -LastToolSummary "Edited gald3r_worktree.ps1 metadata schema" `
+    -NextAction "Document --resume in g-go-code" `
+    -CheckpointSha (git rev-parse HEAD)
+
+# Resume after a crash — prints the banner + emits the artifact body as a context prefix.
+.\scripts\gald3r_worktree.ps1 -Action Resume -TaskId 967 -Role code -Owner cursor
+```
+
+- **Marker fields (`.gald3r-worktree.json`)**: `Create` seeds `last_checkpoint_sha` and `continuity_artifact_path` as `null`; `Checkpoint` populates both (additive — existing fields preserved) plus a `continuity_updated_at` stamp.
+- **Atomic durability**: the artifact is written to a unique sibling temp file, then `Move-Item -Force` renames it over `continuity_artifact.md` in one same-volume rename. An interrupt before the rename leaves the previous good artifact intact.
+- **Write timing**: the artifact is written **before** the code-complete checkpoint commit (`g-go-code` step 7b), so a crash during the commit still leaves a resumable artifact on disk. `-CheckpointSha` may be supplied after the commit exists, or left blank when writing pre-commit (the artifact then records the SHA as pending).
+- **Resume banner**: `Resume` reads the artifact, counts checked (`- [x]`) vs unchecked (`- [ ]`) AC lines, and prints `Resuming from checkpoint {sha} — {N} ACs complete, {M} remaining`. The full artifact body is returned as `context_prefix` (with `-Json`) for `g-go-code --resume` to inject.
+
 ### Session JSONL Capture & Cross-Sandbox Resume (T1124)
 
 `scripts/gald3r_session_capture.ps1` (mirrored beside `gald3r_worktree.ps1` in each IDE skill folder) preserves the full Claude Code conversation thread from a worktree/sandbox so it can be resumed natively with `claude --resume`. This complements `memory_capture_session` (semantic summaries) — JSONL capture keeps the *literal* transcript, with `cwd` paths rewritten from the worktree to the host repo so resume works from any sandbox.

@@ -1,4 +1,4 @@
-Implementation-only backlog execution: $ARGUMENTS
+﻿Implementation-only backlog execution: $ARGUMENTS
 
 ## Mode: IMPLEMENT ONLY
 
@@ -119,6 +119,91 @@ concise entry to the active agent's journal:
 
 **Why dual limits**: relying on iteration count alone fails when a single complex task burns the entire run budget; relying on timeout alone fails when many trivial items get cut off without a clean stopping point. Dual limits give a predictable upper bound on both attempts and wall-clock.
 
+## Session Resume after Crash (`--resume T{id}` — T967)
+
+Long-horizon implementation can be interrupted by a process kill, OOM, or power loss. `g-go-code` writes a **continuity artifact** at each mid-task checkpoint (step 4a) and the code-complete checkpoint commit (step 7b), so a crashed session can resume from the last clean state instead of replaying conversation history.
+
+The continuity artifact (`continuity_artifact.md`, written into the task's worktree) is a structured resume summary — **not** a transcript. It records: task ID, completed ACs (checked list), pending ACs, last tool summary, next planned action, and blockers. It is written **atomically** (temp file + rename) and **before** the checkpoint commit, so it survives an interrupt mid-commit. It complements `gald3r_session_capture.ps1` (literal JSONL transcript): the artifact answers *"where was I and what is left"*.
+
+### Behavior
+
+When `$ARGUMENTS` contains `--resume T{id}`:
+
+1. **Locate the worktree** for `T{id}` via `gald3r_worktree.ps1 -Action Resume -TaskId {id} -Role code -Owner {owner}`. The helper reads `.gald3r-worktree.json` (`last_checkpoint_sha`, `continuity_artifact_path`) and the worktree's `continuity_artifact.md`.
+2. **Print the resume banner** (verbatim format):
+   ```
+   Resuming from checkpoint {sha} — {N} ACs complete, {M} remaining
+   ```
+   `{N}`/`{M}` are the checked (`- [x]`) / unchecked (`- [ ]`) AC counts read from the artifact.
+3. **Inject the artifact as a context prefix** — the artifact body (returned as `context_prefix` under `-Json`) is prepended to the implementation context so the resumed session re-grounds on the goal, the ACs already done, and the next planned action before claiming new tool work.
+4. **Continue the b/c/d/e/f loop** from the pending ACs. The worktree, branch, and `last_checkpoint_sha` are reused — no new worktree is created for the resumed task.
+
+```powershell
+# Resume a crashed implementation of T824 from its last checkpoint
+.\.gald3r_sys\skills\g-skl-git-commit\scripts\gald3r_worktree.ps1 -Action Resume -TaskId 824 -Role code -Owner cursor -Json
+```
+
+If no worktree or no `continuity_artifact.md` exists for the task, `--resume` reports that there is nothing to resume and falls back to a normal (fresh) implementation pass.
+
+## Mid-Flight Course Correction (`/steer` + `/queue` — T969)
+
+A running `g-go-code` session does **not** need to be restarted to redirect it. Two small files
+dropped into the **worktree root** let a user steer the work in flight or queue follow-up work to
+run after the main goal completes. Both files are written by their own commands (`@g-steer`,
+`@g-queue`) and consumed by this command at well-defined points in the loop. Like `--resume`, the
+mechanism is file-grounded so it survives context compression and works across separate sessions.
+
+| File (at worktree root) | Written by | Read by | Lifecycle |
+|---|---|---|---|
+| `steer.md` | `@g-steer T{id} "..."` | g-go-code AC-gate poll (step b2.5) | One-shot: injected as a steering prompt, then **deleted** |
+| `queue.md` | `@g-queue T{id} "..."` | g-go-code drain step (step 7d) | Append-only list; each `- [ ]` item processed after the main goal completes |
+
+Both files live at the **worktree root** for the task (`<worktree>/steer.md`, `<worktree>/queue.md`),
+i.e. the per-branch isolated checkout created by `gald3r_worktree.ps1 -Action Create`. The
+worktree helper owns all reads/writes so the file format and locating logic stay in one place:
+
+```powershell
+# @g-steer writes (overwrite — latest steer wins)
+.\.gald3r_sys\skills\g-skl-git-commit\scripts\gald3r_worktree.ps1 -Action Steer -TaskId 824 -Role code -Owner cursor -SteerText "focus on the accept loop, skip the auth tests" -Json
+
+# g-go-code AC-gate poll (read + clear; one-shot)
+.\.gald3r_sys\skills\g-skl-git-commit\scripts\gald3r_worktree.ps1 -Action Steer -TaskId 824 -Role code -Owner cursor -Json
+
+# @g-queue appends a follow-up
+.\.gald3r_sys\skills\g-skl-git-commit\scripts\gald3r_worktree.ps1 -Action Queue -TaskId 824 -Role code -Owner cursor -QueueText "after done, also add prometheus metrics" -Json
+
+# g-go-code drain reads the pending queue
+.\.gald3r_sys\skills\g-skl-git-commit\scripts\gald3r_worktree.ps1 -Action Queue -TaskId 824 -Role code -Owner cursor -Json
+```
+
+Installed templates may call the helper from the `g-skl-git-commit/scripts/gald3r_worktree.ps1`
+skill directory when no root `scripts/` copy exists (same resolution rule as `--resume`).
+
+### steer.md — interrupt the current trajectory
+
+At **every AC-gate iteration** (step b2.5 below), the implementer polls for `steer.md`. If it
+exists:
+
+1. **Inject** the file's `## Steering Prompt` body as a high-priority steering instruction into the
+   next reasoning step — it takes precedence over the prior plan for the remainder of the task.
+2. **Log** `STEERED by user at turn N` (N = current AC-gate iteration count) to the task's
+   `## Status History` and surface the same line in the running output.
+3. **Delete** `steer.md` after injection (the helper's read mode does this). The steer is
+   one-shot — a new steer requires a new `@g-steer` write. This prevents a stale steer from
+   re-firing on every subsequent iteration.
+
+If no `steer.md` exists, the poll is a silent no-op (`steered: false`) and the loop continues.
+
+### queue.md — follow-up work after the main goal
+
+`queue.md` is an append-only checklist of follow-up prompts. It is **not** processed mid-task —
+items are drained only after the main goal's acceptance criteria are all met and the task reaches
+`[🔍]` (step 7d below). Each `- [ ]` item becomes a follow-up unit of work: the implementer either
+(a) handles it inline within the same worktree when it is small and in-scope, or (b) when it is a
+distinct deliverable, files a real follow-up task via `g-skl-tasks CREATE TASK` (per the Follow-Up
+Task Filing Gate) and references it. Drained items are checked off (`- [x]`) in `queue.md` so a
+resumed or re-run session does not reprocess them.
+
 ## ⚙️ Pure Executor Contract
 
 `g-go-code` is a **pure executor** — it receives a task spec routed by the `g-go` coordinator and
@@ -136,26 +221,26 @@ writes (TASKS.md, BUGS.md, task files, CHANGELOG.md, generated prompts, parity o
 ---
 
 
-### PCAC Inbox Gate (Only When PCAC Is Configured)
+### WPAC inbox Gate (Only When WPAC is configured)
 
-Before task claiming, implementation, verification, planning, or swarm partitioning, first determine whether this project is a PCAC participant. PCAC is configured only when `.gald3r/linking/link_topology.md` declares at least one parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares PCAC project linking relationships. A Workspace-Control manifest and local `INBOX.md` alone do not make the project a PCAC group member.
+Before task claiming, implementation, verification, planning, or swarm partitioning, first determine whether this project is a WPAC participant. WPAC is configured only when `.gald3r/workspace/topology.md` declares at least one parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares WPAC project linking relationships. A Workspace-Control manifest and local `INBOX.md` alone do not make the project a WPAC group member.
 
-If PCAC is configured, run the re-callable PCAC inbox check when the hook exists.
+If WPAC is configured, run the re-callable WPAC inbox check when the hook exists.
 
-> **Tool routing (BUG-031)**: on Windows, invoke this snippet through the **PowerShell tool**, not Bash. It uses PowerShell-only syntax (`@(...)` array, `Where-Object`, `Test-Path`, `Select-Object`, pipeline). Routing it through Bash produces a parse error such as ``syntax error near unexpected token `('`` — that failure is a tool-selection error, **NOT** a real PCAC conflict gate. Re-run via PowerShell. On Linux/macOS hosts use `pwsh` if available; if neither shell can reach the hook, treat the gate as advisory and let Workspace-Control routing re-evaluate.
+> **Tool routing (BUG-031)**: on Windows, invoke this snippet through the **PowerShell tool**, not Bash. It uses PowerShell-only syntax (`@(...)` array, `Where-Object`, `Test-Path`, `Select-Object`, pipeline). Routing it through Bash produces a parse error such as ``syntax error near unexpected token `('`` — that failure is a tool-selection error, **NOT** a real WPAC conflict gate. Re-run via PowerShell. On Linux/macOS hosts use `pwsh` if available; if neither shell can reach the hook, treat the gate as advisory and let Workspace-Control routing re-evaluate.
 
 ```powershell
-$hook = @( ".cursor\hooks\g-hk-pcac-inbox-check.ps1", ".claude\hooks\g-hk-pcac-inbox-check.ps1", ".agent\hooks\g-hk-pcac-inbox-check.ps1", ".codex\hooks\g-hk-pcac-inbox-check.ps1", ".opencode\hooks\g-hk-pcac-inbox-check.ps1" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+$hook = @( ".cursor\hooks\g-hk-wpac-inbox-check.ps1", ".claude\hooks\g-hk-wpac-inbox-check.ps1", ".agent\hooks\g-hk-wpac-inbox-check.ps1", ".codex\hooks\g-hk-wpac-inbox-check.ps1", ".opencode\hooks\g-hk-wpac-inbox-check.ps1" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 if ($hook) { powershell -NoProfile -ExecutionPolicy Bypass -File $hook -ProjectRoot . -BlockOnConflict }
 ```
 
-Installed templates may call the equivalent hook from the active IDE folder. If the check reports `INBOX CONFLICT GATE` or exits with code `2`, stop immediately and run `@g-pcac-read`; do not claim tasks, create worktrees, spawn reviewers, or continue planning until conflicts are resolved. Non-conflict requests, broadcasts, and syncs are advisory and should be surfaced in the session summary.
+Installed templates may call the equivalent hook from the active IDE folder. If the check reports `INBOX CONFLICT GATE` or exits with code `2`, stop immediately and run `@g-wpac-read`; do not claim tasks, create worktrees, spawn reviewers, or continue planning until conflicts are resolved. Non-conflict requests, broadcasts, and syncs are advisory and should be surfaced in the session summary.
 
 
 ### Gald3r Housekeeping Commit Gate (T531)
 
 <!-- T531-HOUSEKEEPING-GATE -->
-After the PCAC gate is skipped or passes and **before** the Clean Controller Gate hard-blocks the run, run the safety classifier helper at the orchestration root:
+After the WPAC gate is skipped or passes and **before** the Clean Controller Gate hard-blocks the run, run the safety classifier helper at the orchestration root:
 
 ```powershell
 .\scripts\gald3r_housekeeping_commit.ps1 -Mode preflight -Apply -TaskId <id-when-known> -Json
@@ -167,18 +252,18 @@ Behavior:
 - **`safe-gald3r-housekeeping`** -> the helper stages **only** allowlisted controller `.gald3r/` paths via explicit `git add -- <paths>` (never `git add .`), re-checks for drift, and creates a focused `chore(gald3r): preflight gald3r housekeeping` commit. The run continues automatically.
 - **`unsafe-gald3r` / `mixed-dirty` / `conflict` / `drift-detected` / unknown `.gald3r` paths / member-repo `config-fault`** -> the helper exits non-zero, the existing Clean Controller Gate hard-block applies, and the run STOPs with the exact unsafe paths listed.
 
-The helper allowlist covers the safe controller `.gald3r/` coordination surfaces (TASKS.md, BUGS.md, FEATURES.md, PRDS.md, SUBSYSTEMS.md, IDEA_BOARD.md, learned-facts.md, tasks/, bugs/, features/, prds/, subsystems/, reports/, logs/pcac_auto_actions.log, linking/sent_orders/, linking/INBOX.md). The deny list covers `.identity`, `.user_id`, `.project_id`, `.vault_location`, `vault/`, `config/`, `.gald3r-worktree.json`, secret-named files, and unknown `.gald3r/` paths. Member-repo targets (marker-only `.gald3r/`) are refused -- this gate is **controller-only**.
+The helper allowlist covers the safe controller `.gald3r/` coordination surfaces (TASKS.md, BUGS.md, FEATURES.md, PRDS.md, SUBSYSTEMS.md, IDEA_BOARD.md, learned-facts.md, tasks/, bugs/, features/, prds/, subsystems/, reports/, logs/wpac_auto_actions.log, workspace/sent_orders/, workspace/inbox.md). The deny list covers `.identity`, `.user_id`, `.project_id`, `.vault_location`, `vault/`, `config/`, `.gald3r-worktree.json`, secret-named files, and unknown `.gald3r/` paths. Member-repo targets (marker-only `.gald3r/`) are refused -- this gate is **controller-only**.
 
 Re-run the helper in `-Mode post-write -Apply` immediately after coordinator-owned shared `.gald3r` writes (task/bug status writes, review-result writes, sent_orders ledger updates, safe report/log outputs) and before the next major phase so the shared-state dirty window stays short. In `--swarm` flows only the coordinator runs the helper; bucket agents remain handoff producers.
 ### Clean Controller Gate (before claims, worktrees, reconciliation)
 
-After the PCAC gate is skipped or passes:
+After the WPAC gate is skipped or passes:
 
 1. At the **orchestration git root** (the repo from which you run this command — normally the Workspace-Control owner, e.g. `gald3r_dev`): run `git status --short`. If anything is listed **outside** this run's explicit coordinator staging allowlist for the active task and bug IDs, **STOP** here. Do not claim tasks or bugs, create or reuse T170 worktrees, partition swarms, or write coordinator-owned updates to `.gald3r/TASKS.md`, `.gald3r/BUGS.md`, other shared `.gald3r` coordination files, `CHANGELOG.md`, generated Copilot prompts, or parity output until unrelated changes are committed, stashed, or moved to a prior focused commit. Preserve any bucket handoff artifacts already produced and list the paths that blocked progress.
 
 2. **`gald3r_worktree.ps1 -AllowDirty`**: do not use this switch for `g-go`, `g-go-code`, `g-go-review`, or any `--swarm` variant **except** when every dirty path is owned exclusively by the active task/bug scope and a `## Status History` row documents that override. Otherwise clean the checkout first. The same **per-root** `-AllowDirty` discipline applies to every repository included in the touch set below when multi-repo work is in scope.
 
-3. **Member touch-set (v1 — `workspace_repos`)** — The orchestration root is **always** gated. When the active task or bug declares **`workspace_repos:`** with manifest `repository.id` entries, extend the gate to each **other** resolved member root (blast radius follows declared cross-repo scope). Read `.gald3r/linking/workspace_manifest.yaml` when present; map each listed ID (deduplicated) to `repositories[?].local_path`. For each existing path, run `git -C "<path>" rev-parse --show-toplevel` then `git status --short` at that root. Apply the same **explicit coordinator staging allowlist** per root. Skip IDs whose paths are missing while `lifecycle_status` is a planned/bootstrap gap (report only; do not expand the touch set). If the manifest is missing while `workspace_repos` is non-empty, or an ID is unknown under `repositories:`, **STOP** multi-repo coordinator work until manifest or frontmatter is repaired (controller-only queue items whose `workspace_repos` lists only the owner id may proceed once that id resolves).
+3. **Member touch-set (v1 — `workspace_repos`)** — The orchestration root is **always** gated. When the active task or bug declares **`workspace_repos:`** with manifest `repository.id` entries, extend the gate to each **other** resolved member root (blast radius follows declared cross-repo scope). Read `.gald3r/workspace/workspace_manifest.yaml` when present; map each listed ID (deduplicated) to `repositories[?].local_path`. For each existing path, run `git -C "<path>" rev-parse --show-toplevel` then `git status --short` at that root. Apply the same **explicit coordinator staging allowlist** per root. Skip IDs whose paths are missing while `lifecycle_status` is a planned/bootstrap gap (report only; do not expand the touch set). If the manifest is missing while `workspace_repos` is non-empty, or an ID is unknown under `repositories:`, **STOP** multi-repo coordinator work until manifest or frontmatter is repaired (controller-only queue items whose `workspace_repos` lists only the owner id may proceed once that id resolves).
 
 4. **Touch-set expansion (v2 — optional signals)** — Union extra repository roots into the same per-root checks (still **not** a blanket scan of every manifest member):
    - **`extended_touch_repos:`** — optional task/bug YAML list of additional manifest `repository.id` values beyond `workspace_repos`.
@@ -245,13 +330,13 @@ Concrete syntax differences to keep in mind (mirrors `g-rl-00-always` §6):
 - File-exists test: `Test-Path $p` (PS) vs `[ -f "$p" ]` (bash)
 - Pipeline filters: `Where-Object { ... }` (PS) vs `grep` / `awk` / `xargs` (bash)
 
-**Regression canonical (BUG-031 family)** — the PCAC inbox hook lookup snippet that triggered T1144:
+**Regression canonical (BUG-031 family)** — the WPAC inbox hook lookup snippet that triggered T1144:
 
 ```powershell
-$hook = @( ".cursor\hooks\g-hk-pcac-inbox-check.ps1", ".claude\hooks\g-hk-pcac-inbox-check.ps1" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+$hook = @( ".cursor\hooks\g-hk-wpac-inbox-check.ps1", ".claude\hooks\g-hk-wpac-inbox-check.ps1" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 ```
 
-This snippet appears literally in the PCAC Inbox Gate section below. It is PowerShell-only — invoking it via `Bash(...)` produces `syntax error near unexpected token '('` (exit 2). That error is a **tool-routing failure**, NOT a real PCAC conflict or hook-missing state. Re-route through PowerShell and the call succeeds; do not enter an error-driven retry loop.
+This snippet appears literally in the WPAC inbox Gate section below. It is PowerShell-only — invoking it via `Bash(...)` produces `syntax error near unexpected token '('` (exit 2). That error is a **tool-routing failure**, NOT a real WPAC conflict or hook-missing state. Re-route through PowerShell and the call succeeds; do not enter an error-driven retry loop.
 
 When in doubt on Windows, default to PowerShell for any snippet that uses `@(`, `$env:`, `Where-Object`, `Select-Object`, `Test-Path`, or backslash paths. Linux/macOS hosts use `pwsh` if available, otherwise fall back to bash equivalents.
 
@@ -461,23 +546,69 @@ Failure modes (never halt the run):
 
 The b0.2 query is **advisory**, **non-blocking**, and **single tool call** (g-rl-37 "Think in Code" — one query, ≤200 tokens of returned context). Operators opt in by flipping `graphify_b0_enabled: true` in `AGENT_CONFIG.md`.
 
-**b1) Post-Write Lint Gate (T919)** — after each Write or StrReplace tool call, run the language-appropriate syntax check:
+**b1) `post_write_lint` step — Post-Write Lint Gate (T919 + T977)** — this is the **delta-lint** step of the implementation loop. It runs **immediately after each `Write` or `StrReplace`/Edit tool call**, inside the per-item b/c/d/e/f loop — *not* at the end-of-task AC gate (b2). The goal is to shrink the feedback loop: catch a syntax error on the file you just wrote and fix it inline **before** advancing to the next write, instead of discovering a pile of broken files when the b2 AC gate or a downstream test runs.
+
+> **Loop placement (explicit)**: `post_write_lint` belongs to the implementation loop (Step 4 → b), one rung below b2. After every Write/Edit, run `post_write_lint` → fix inline if it fails → then continue editing. The b2 AC gate and the b3.5 Definition-of-Done gate remain the end-of-task gates; `post_write_lint` is the per-write gate that feeds them clean files.
+
+Canonical entry point (PowerShell, runs the per-extension check for you):
 
 ```powershell
 .\scripts\gald3r_post_write_lint.ps1 -FilePath "{relative_path_to_written_file}" -ProjectRoot . -Json
 ```
 
-| Extension | Lint command |
-|-----------|-------------|
-| `.py` | `python -m py_compile {file}` |
-| `.json` | `python -c "import json; json.load(open('{file}'))"` |
-| `.yaml` / `.yml` | `python -c "import yaml; yaml.safe_load(open('{file}').read())"` |
-| `.toml` | `python -c "import tomllib; tomllib.load(open('{file}', 'rb'))"` |
-| `.ts` / `.tsx` / `.js` | `npx tsc --noEmit` (when tsconfig present) |
-| `.ps1` | PowerShell AST parser |
-| Other | Pass silently |
+Per-language lint commands (single-line PowerShell-safe per g-rl-08 — no multi-line `python -c`):
 
-If the script exits non-zero (`exit 2` = syntax error), **stop and fix the file before proceeding**. Do not advance to the next write. Treat a lint failure the same as a TypeScript compile error — it blocks continuation.
+| Extension | PowerShell lint command (run from the worktree/project root) |
+|-----------|-------------|
+| `.py` | `python -m py_compile "{file}"` |
+| `.json` | `python -c "import json,sys; json.load(open(sys.argv[1]))" "{file}"` |
+| `.yaml` / `.yml` | `python -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]).read())" "{file}"` |
+| `.toml` | `python -c "import tomllib,sys; tomllib.load(open(sys.argv[1],'rb'))" "{file}"` |
+| `.ts` / `.tsx` / `.js` | `npx tsc --noEmit` (only when a `tsconfig.json` is present; else skip) |
+| `.ps1` / `.psm1` / `.psd1` | `$errs=$null; [System.Management.Automation.Language.Parser]::ParseFile("{file}", [ref]$null, [ref]$errs) > $null; if ($errs.Count) { throw $errs[0].Message }` — or the lighter `[scriptblock]::Create((Get-Content "{file}" -Raw)) > $null` (throws on a syntax error). The shipped helper uses `PSParser::Tokenize`, which also throws on malformed PowerShell. |
+| Markdown / `.md` / TASKS.md / other prose | Pass silently (use `--skip-post-lint` for explicit prose-only runs) |
+
+Each `python -c` form is **single-line** and passes the file as `sys.argv[1]` so PowerShell never has to interpolate the path into the Python string (avoids the quoting/parse pitfalls called out in g-rl-08). On a clean parse the command exits `0`; on a syntax error it raises and exits non-zero.
+
+If the helper script exits non-zero (`exit 2` = syntax error), **stop and fix the file before proceeding (AC4 — inline fix)**. Do not advance to the next write. Treat a `post_write_lint` failure the same as a TypeScript compile error — it blocks continuation. Re-run `post_write_lint` on the fixed file; only a clean (exit 0) result lets the loop continue.
+
+**`--skip-post-lint` flag (AC5)** — when `$ARGUMENTS` contains `--skip-post-lint`, the `post_write_lint` step is suppressed for the whole session. Use it for documentation-only or coordination-only runs (Markdown, `TASKS.md`/`BUGS.md` index edits, `.gald3r/` housekeeping) where a syntax linter has nothing meaningful to check. The flag does **not** disable the b2 AC gate or b3.5 DoD gate — it only skips the per-write delta lint. The helper already passes silently on prose/unknown extensions, so `--skip-post-lint` is mainly an explicit-intent signal that avoids spawning the lint subprocess at all on non-code writes; record `post_write_lint: SKIPPED (--skip-post-lint)` once in the session summary when it is set.
+
+**Worked examples (AC6)** — three delta-lint scenarios showing the fix-inline-before-proceeding loop:
+
+*Python write* — you just wrote `src/services/charge.py`:
+
+```powershell
+# Right after the Write/Edit tool call:
+.\scripts\gald3r_post_write_lint.ps1 -FilePath "src/services/charge.py" -ProjectRoot . -Json
+# Equivalent raw check the helper runs:
+python -m py_compile "src/services/charge.py"
+# exit 0  -> {"ok":true,"message":"Syntax OK (.py)",...}  -> continue the loop
+# exit 2  -> {"ok":false,"message":"Syntax error (.py)","detail":"... IndentationError ..."}
+#            -> STOP, fix the indentation/typo in charge.py, re-run the lint, only then proceed
+```
+
+*JSON write* — you just wrote `config/feature_flags.json`:
+
+```powershell
+.\scripts\gald3r_post_write_lint.ps1 -FilePath "config/feature_flags.json" -ProjectRoot . -Json
+# Equivalent raw check:
+python -c "import json,sys; json.load(open(sys.argv[1]))" "config/feature_flags.json"
+# A trailing comma -> json.decoder.JSONDecodeError -> exit 2 -> fix the comma inline, re-run, then continue
+```
+
+*YAML write* — you just wrote `.github/workflows/ci.yml`:
+
+```powershell
+.\scripts\gald3r_post_write_lint.ps1 -FilePath ".github/workflows/ci.yml" -ProjectRoot . -Json
+# Equivalent raw check:
+python -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]).read())" ".github/workflows/ci.yml"
+# A bad indent / tab -> yaml.scanner.ScannerError -> exit 2 -> fix the indentation inline, re-run, then continue
+```
+
+In all three cases the rule is identical: **lint the file you just wrote → if it fails, fix it inline and re-lint → only a clean exit 0 advances the loop to the next write.**
+
+**Parity note (AC7)** — this `g-go-code.md` under canonical `gald3r_template/.gald3r_sys/commands/` is the **source of truth** for the `post_write_lint` step. The per-IDE mirrors (`.claude/commands/g-go-code.md`, `.cursor/commands/g-go-code.md`, and the other platform copies) are **propagated later** by `scripts/platform_parity_sync.ps1` — do **not** hand-edit the mirrors. The lint helper `gald3r_post_write_lint.ps1` lives under the same canonical `.gald3r_sys/scripts/` tree and is synced alongside.
 
 **b2) AC gate** — before moving on, walk every `- [ ]` acceptance criterion in the task spec:
   - Is this criterion now satisfied? Check the actual files, not just intent.
@@ -486,8 +617,14 @@ If the script exits non-zero (`exit 2` = syntax error), **stop and fix the file 
   - **Stub/TODO scan**: search files modified for this task for bare `# TODO`, `// TODO`, `pass` (non-abstract), `raise NotImplementedError`, `throw new Error("not implemented")` — each is an unmet criterion until annotated `TODO[TASK-X→TASK-Y]` with a follow-up task created (see `g-rl-34`)
   - **Bug-discovery check**: any pre-existing bug encountered while implementing must have a BUG entry + `BUG[BUG-{id}]` comment before `[🔍]`; bugs introduced by this task must be fixed inline (see `g-rl-35`)
   - **Constraint check**: run `@g-constraint-check` mentally — does this implementation violate any active constraint? Any `🚫 VIOLATION` blocks `[🔍]`
-  - **Workspace boundary check**: run `g-skl-workspace` ENFORCE_SCOPE before editing and before `[🔍]`; omitted metadata is current-repo-only, unknown manifest repo IDs block, and member repo writes require explicit `workspace_repos`, compatible `workspace_touch_policy`, authorization text, reviewed member git status, and manifest write permission.
+  - **Workspace boundary check**: run `g-skl-workspace` ENFORCE_SCOPE before editing and before `[🔍]`; omitted metadata is current-repo-only, unknown manifest repo IDs block, and member repo writes require explicit `workspace_repos`, compatible `workspace_touch_policy`, authorization text, reviewed member git status, and manifest write permission. **`workspace_touch_policy: member_only` is a write-scope limiter (changes land exclusively in the named member repo) — it is NOT a location gate requiring the agent to be opened inside the member repo. The controller may implement `member_only` tasks by writing to member on-disk paths after the Clean Controller Gate passes on that member root. (BUG-098)**
   - All criteria confirmed met → continue.
+**b2.5) Steer poll (T969)** — at every AC-gate iteration, poll for a user steer dropped into the worktree root:
+  ```powershell
+  .\.gald3r_sys\skills\g-skl-git-commit\scripts\gald3r_worktree.ps1 -Action Steer -TaskId {id} -Role code -Owner {owner} -Json
+  ```
+  - `steered: false` → silent no-op; continue the loop.
+  - `steered: true` → **inject** the returned `steer_prompt` body as a high-priority steering instruction for the next reasoning step (it takes precedence over the prior plan for the rest of this task), **log** `STEERED by user at turn N` to `## Status History` (and the running output), and note that the helper has already **deleted** `steer.md` so the steer fires exactly once. Re-evaluate the AC list under the new steering before proceeding. See "Mid-Flight Course Correction (`/steer` + `/queue`)" above.
 **b3) Queue Status History** — collect the row that will be appended before marking `[🔍]`:
   ```
   | YYYY-MM-DD | pending | awaiting-verification | Implementation complete; {1-line summary} |
@@ -618,9 +755,24 @@ Correction plan: {1-2 sentences}.
 | YYYY-MM-DD | in-progress | in-progress | CHECKPOINT {N}: {1-line summary}. AC: {X}/{total}. Blockers: {none|description}. Continuing. |
 ```
 
+**Continuity artifact write (T967):** after the self-evaluation and the Status History row, write the **continuity artifact** so the session is resumable from this checkpoint after a crash:
+
+```powershell
+.\.gald3r_sys\skills\g-skl-git-commit\scripts\gald3r_worktree.ps1 -Action Checkpoint -TaskId {id} -Role code -Owner {owner} `
+    -Goal "{1-line task goal}" `
+    -CompletedAcs "{AC text}","{AC text}" `
+    -PendingAcs "{AC text}","{AC text}" `
+    -LastToolSummary "{what the last operations did}" `
+    -NextAction "{what this session will do next}" `
+    -Blockers "{none|description}"
+```
+
+This writes `continuity_artifact.md` atomically into the worktree and updates the `.gald3r-worktree.json` marker (`continuity_artifact_path`; `last_checkpoint_sha` is set later by step 7b once a commit exists). The artifact is the structured resume summary read by `g-go-code --resume T{id}`.
+
 **Rules:**
 - Checkpoint is **mandatory** — not optional. Fires every N major operations with no exceptions.
 - A task completed with ≥1 checkpoints must show those rows in `## Status History` before being marked `[🔍]`.
+- The continuity artifact write is part of the checkpoint — write it BEFORE any checkpoint commit so it survives a crash mid-commit.
 - If checkpoint yields `NEEDS_CORRECTION` with an unresolvable blocker, surface `⚠️ CHECKPOINT: [issue]` in the next message and log as Blocked in step 6.
 - In `--swarm` mode, each bucket agent runs independent checkpoints; the coordinator does not aggregate them.
 
@@ -694,10 +846,11 @@ The coordinator alone performs shared writes after all bucket outputs are collec
 
 Default review handoff is branch-addressable. After successful implementation reconciliation and shared writes, the coordinator creates a code-complete checkpoint commit before handing work to review:
 
+0. **Continuity artifact first (T967)**: ensure the worktree's `continuity_artifact.md` reflects the final pre-commit state (run `gald3r_worktree.ps1 -Action Checkpoint ...` if it has drifted since the last mid-task checkpoint). Writing it before the commit guarantees a crash mid-commit still leaves a resumable artifact.
 1. Stage only intended paths by explicit allowlist.
 2. Include implementation files plus coordinator-owned shared writes needed for `[🔍]` handoff.
 3. Commit with a message that names the implemented task/bug IDs and states that the commit is ready for independent review.
-4. Record the checkpoint branch and commit SHA in the handoff summary.
+4. Record the checkpoint branch and commit SHA in the handoff summary, and write the SHA back onto the marker so resume reports it: `gald3r_worktree.ps1 -Action Checkpoint -TaskId {id} -Role code -Owner {owner} -CheckpointSha {sha}` (updates `last_checkpoint_sha` + refreshes the artifact).
 
 Snapshot review mode is fallback-only. Use it when the user explicitly requests uncommitted review, when a source cannot be made branch-addressable, or when a failed reconciliation must be inspected read-only. Do not make dirty snapshot mode the default.
 
@@ -732,7 +885,7 @@ After a checkpoint commit is created:
 3. Start the next coding wave from the latest checkpoint or member-repo branch that contains the dependency output.
 4. Record checkpoint-dependent downstream work in the dependent task's Status History:
    `Started on unverified dependency T{id} at checkpoint {sha}; rework required if review fails.`
-5. Continue coding until no runnable work remains, a PCAC conflict appears, Workspace-Control preflight fails, or a task explicitly requires verified dependencies.
+5. Continue coding until no runnable work remains, a WPAC conflict appears, Workspace-Control preflight fails, or a task explicitly requires verified dependencies.
 
 Review remains mandatory, but `g-go-code*` only prepares the handoff. It must not start the review lane itself. A later review failure requeues only the failed item and any downstream tasks that explicitly consumed its checkpoint. Do not stop unrelated implementation work merely because a prior item is awaiting review.
 
@@ -743,6 +896,21 @@ requires_verified_dependencies: true
 ```
 
 Use that field for destructive operations, irreversible migrations, public release/signing, production writes, security-sensitive changes, or any task whose acceptance criteria explicitly require verified predecessor behavior.
+
+### 7d. Drain Follow-Up Queue (T969)
+
+After a task's main goal is complete (all AC met, task at `[🔍]`) and before recomputing the next rolling wave, drain any follow-up prompts the user queued for that task's worktree:
+
+```powershell
+.\.gald3r_sys\skills\g-skl-git-commit\scripts\gald3r_worktree.ps1 -Action Queue -TaskId {id} -Role code -Owner {owner} -Json
+```
+
+For each pending `- [ ]` item returned in `items`:
+
+1. **In-scope + small** → handle it inline within the same worktree (additional edits + the standard b1/b2/b2.5 gates), then check the item off (`- [x]`) in `queue.md`.
+2. **Distinct deliverable** → file a real follow-up task via `g-skl-tasks CREATE TASK` (Follow-Up Task Filing Gate — never a slug-only name), reference the new `T{id}` next to the checked-off item, and include it in the session summary's "Follow-Up Tasks Filed" block.
+
+If `pending_count: 0`, this step is a silent no-op. Queue draining never blocks the `[🔍]` of the main task — the main goal completing is what triggers the drain, not the other way around.
 
 ### 8. Final Status Batch + Handoff
 
@@ -807,9 +975,9 @@ Rolling waves: {continued|stopped}; next runnable queue: {ids or none}; verified
 | Abort if destructive (schema drop, data loss) | Safety first — log it as a blocker |
 
 
-### PCAC Inbox Heartbeats (Swarm / Long Runs)
+### WPAC inbox Heartbeats (Swarm / Long Runs)
 
-For swarm mode or any run lasting more than 30 minutes, the coordinator reruns the PCAC inbox check every 30 minutes and once more before the final summary. If a conflict appears mid-run, pause new claims/spawns/reconciliation, preserve worktrees and partial outputs, and require `@g-pcac-read` before continuing.
+For swarm mode or any run lasting more than 30 minutes, the coordinator reruns the WPAC inbox check every 30 minutes and once more before the final summary. If a conflict appears mid-run, pause new claims/spawns/reconciliation, preserve worktrees and partial outputs, and require `@g-wpac-read` before continuing.
 
 ## Swarm Mode (`--swarm`)
 
@@ -864,15 +1032,23 @@ Swarm mode partitions the work queue into conflict-safe buckets and spawns N par
 [SWARM] Work queue: {M} items → {N} agents
   Bucket 1: Task 7 (vault-knowledge-store), Task 9 (vault-knowledge-store)
   Bucket 2: Task 10 (task-lifecycle-management), Task 11 (behavioral-rules-engine)
-  Bucket 3: Task 12 (cross-project-coordination-pcac)
+  Bucket 3: Task 12 (cross-project-coordination-WPAC)
 Spawning {N} implementation agents...
 ```
 
 **Step S6: Spawn sub-agents**
 - Before spawning, create or reuse one coding worktree per bucket:
   ```powershell
-  .\scripts\gald3r_worktree.ps1 -Action Create -TaskId bucket-{bucket_number} -Role code-swarm -Owner {platform_or_agent_slug} -Json
+  .\scripts\gald3r_worktree.ps1 -Action Create -TaskId bucket-{bucket_number} -Role code-swarm -Owner {platform_or_agent_slug} -StaleBaseAction Recreate -Json
   ```
+  **`-StaleBaseAction Recreate` is mandatory for rolling-wave bucket worktrees.** Without it,
+  iteration-2+ bucket worktrees silently reuse the iteration-1 worktrees (same `TaskId
+  bucket-N`), which forked from the session-start HEAD. Implementers then miss all Alembic
+  migrations, model files, and router wiring committed by prior iterations. With `Recreate`,
+  the helper detects that the stored `base_sha` predates the current HEAD, removes the stale
+  worktree, and creates a fresh one from the latest commit. Task-specific worktrees (not
+  bucket worktrees) should default to `-StaleBaseAction Warn` so stale-base conditions are
+  surfaced but not silently discarded.
 - Branch/worktree names must include the bucket role plus repo/owner suffix from the helper contract.
 - Each bucket agent receives its assigned `worktree_path` and `worktree_branch` and must run implementation from that worktree root.
 - Bucket agents MUST NOT directly write shared `.gald3r/TASKS.md` / `.gald3r/BUGS.md`, task/bug status files, `CHANGELOG.md`, generated Copilot prompts, parity output, or commits. They return proposed status changes, changed-file inventory, generated artifacts, and evidence to the coordinator.
@@ -947,7 +1123,12 @@ Rolling waves completed: {count}; checkpoint-dependent downstream items: {ids}; 
 @g-go-code --timeout-minutes 15 bugs-only
 @g-go-code --max-iterations 10 --timeout-minutes 60 --swarm
 @g-go-code --max-iterations 1 tasks 14
+@g-go-code --skip-post-lint docs-only
 ```
+
+`--skip-post-lint` suppresses the per-write `post_write_lint` delta-lint step (Step 4 b1) for the
+session — use it for documentation-only / `TASKS.md`-update runs where a syntax linter has nothing
+to check. It does not disable the b2 AC gate or b3.5 DoD gate.
 
 `--mode fast` and `--mode cheap` are equivalent (both → haiku-class). `--mode standard` is
 the explicit form of the default (sonnet-class). Omit the flag to inherit the host IDE's

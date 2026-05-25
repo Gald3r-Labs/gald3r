@@ -189,6 +189,97 @@ try {
     }
 } catch {}
 
+# ── HEARTBEAT no_agent watchdog (T968) ────────────────────────────────────────
+# Cron entries in `.gald3r/config/HEARTBEAT.md` flagged `no_agent: true` run their
+# script DIRECTLY (no agent invocation) and deliver output only when stdout is
+# non-empty — a cheap "watchdog" for health checks. Entries without the flag
+# (the default, `no_agent: false`) are left untouched for the normal agent path.
+#
+# Entry format (fenced ```yaml block per cron entry inside HEARTBEAT.md):
+#   - id: disk-space-check
+#     schedule: "0 * * * *"
+#     no_agent: true            # run script directly, no agent
+#     script: scripts/health/check_disk.ps1
+#     output: log               # `log` (→ .gald3r/logs/) or `terminal` (default)
+#
+# Silent contract: empty stdout = no banner, no agent call, no message.
+$watchdogBanner = ""
+try {
+    $heartbeatFile = Join-Path (Join-Path (Join-Path (Get-Location).Path '.gald3r') 'config') 'HEARTBEAT.md'
+    if (Test-Path $heartbeatFile) {
+        $hbRaw = Get-Content $heartbeatFile -Raw -ErrorAction Stop
+
+        # Split into per-entry blocks on the leading `- id:` marker. Each entry is a
+        # YAML-ish list item; we parse line-by-line rather than pulling a YAML module
+        # so the hook stays dependency-free.
+        $entryBlocks = [regex]::Split($hbRaw, '(?m)^\s*-\s+id:\s*') | Select-Object -Skip 1
+        foreach ($block in $entryBlocks) {
+            $blockText = $block
+
+            # no_agent flag — only true entries are watchdogs. Default/false is skipped.
+            if ($blockText -notmatch '(?m)^\s*no_agent:\s*true\s*$') { continue }
+
+            # Required: a script path to execute directly.
+            $scriptRel = $null
+            if ($blockText -match '(?m)^\s*script:\s*["'']?([^"''\r\n]+?)["'']?\s*$') {
+                $scriptRel = $Matches[1].Trim()
+            }
+            if (-not $scriptRel) { continue }
+
+            # Optional output channel: `log` writes to .gald3r/logs/; default is terminal
+            # (surfaced in the session-start additional_context banner).
+            $outputChannel = 'terminal'
+            if ($blockText -match '(?m)^\s*output:\s*["'']?(\w+)["'']?\s*$') {
+                $outputChannel = $Matches[1].Trim().ToLower()
+            }
+
+            # Entry id (already consumed by the split) — recover the first token for labels.
+            $entryId = ($blockText -split "`n", 2)[0].Trim().Trim('"', "'")
+            if (-not $entryId) { $entryId = $scriptRel }
+
+            # Resolve script path relative to the project root.
+            $scriptPath = if ([System.IO.Path]::IsPathRooted($scriptRel)) {
+                $scriptRel
+            } else {
+                Join-Path (Get-Location).Path $scriptRel
+            }
+            if (-not (Test-Path $scriptPath)) { continue }
+
+            # Run the script directly and capture stdout only. Failures are swallowed
+            # so a broken watchdog never blocks session start.
+            $stdout = ""
+            try {
+                if ($scriptPath -match '\.ps1$') {
+                    $stdout = & powershell -NoProfile -ExecutionPolicy Bypass -File $scriptPath 2>$null | Out-String
+                } else {
+                    $stdout = & $scriptPath 2>$null | Out-String
+                }
+            } catch {
+                $stdout = ""
+            }
+
+            # Silent on empty stdout — the whole point of watchdog mode.
+            if (-not $stdout -or $stdout.Trim() -eq "") { continue }
+
+            $stdout = $stdout.TrimEnd()
+            if ($outputChannel -eq 'log') {
+                # Deliver verbatim to a per-entry log file under .gald3r/logs/.
+                try {
+                    $wdLogDir = Join-Path (Join-Path (Get-Location).Path '.gald3r') 'logs'
+                    if (-not (Test-Path $wdLogDir)) { New-Item -ItemType Directory -Path $wdLogDir -Force | Out-Null }
+                    $stamp = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+                    $wdLogFile = Join-Path $wdLogDir "watchdog_$entryId.log"
+                    Add-Content -Path $wdLogFile -Value "## $stamp`n$stdout`n" -ErrorAction SilentlyContinue
+                } catch {}
+            } else {
+                # Deliver verbatim to the terminal (session-start banner).
+                $watchdogBanner += "## Watchdog: $entryId`n$stdout`n`n"
+            }
+        }
+        if ($watchdogBanner) { $watchdogBanner += "---`n" }
+    }
+} catch {}
+
 # ── Cross-project INBOX check ─────────────────────────────────────────────────
 $inboxBanner = ""
 try {
@@ -198,7 +289,7 @@ try {
     }
 } catch {}
 
-$additionalContext = "${setupBanner}${reflectionBanner}${vaultBanner}${archiveGateBanner}${inboxBanner}gald3r task management system is active. Check .gald3r/TASKS.md for current tasks."
+$additionalContext = "${setupBanner}${reflectionBanner}${vaultBanner}${archiveGateBanner}${watchdogBanner}${inboxBanner}gald3r task management system is active. Check .gald3r/TASKS.md for current tasks."
 
 # ── Append GUARDRAILS if present ──────────────────────────────────────────────
 $guardrailsFile = "GUARDRAILS.md"

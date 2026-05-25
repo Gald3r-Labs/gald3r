@@ -16,6 +16,27 @@
                    g-go --swarm coordinator on timeout or conflict-gate abort.
       Cancellation events are appended to .gald3r/logs/worktree_cancellations.log.
 
+    Session resume (T967 — continuity artifact + checkpoint):
+      Checkpoint - after each implementation checkpoint, write a continuity_artifact.md
+                   into the worktree (atomically: temp file + Move-Item -Force) and update
+                   the ownership marker's last_checkpoint_sha + continuity_artifact_path.
+                   The artifact is a structured summary (goal, completed/pending ACs, last
+                   tool summary, next action, blockers) — written BEFORE the checkpoint
+                   commit so it survives a crash / OOM / power loss mid-commit.
+      Resume     - locate the worktree for a -TaskId, read continuity_artifact.md, print the
+                   "Resuming from checkpoint {sha} — {N} ACs complete, {M} remaining" line,
+                   and emit the artifact body as a context prefix for g-go-code --resume.
+
+    Mid-flight course correction (T969 — /steer + /queue):
+      Steer      - write (or read+clear) steer.md at the worktree root. -SteerText writes a
+                   steering prompt for the running g-go-code session to pick up at the next
+                   AC-gate iteration; with no -SteerText the action READS steer.md, returns its
+                   body, and DELETES the file (one-shot inject). Used by @g-steer and by the
+                   g-go-code AC-gate poll.
+      Queue      - append a follow-up prompt to queue.md at the worktree root (-QueueText), or
+                   read the pending queue with no -QueueText. queue.md items are processed after
+                   the main goal is complete. Used by @g-queue and by the g-go-code drain step.
+
     Default root:
       $env:GALD3R_WORKTREE_ROOT, when set
       otherwise: <repo-parent>/.gald3r-worktrees/<repo-name>
@@ -25,7 +46,7 @@
 #>
 
 param(
-    [ValidateSet("Create", "Report", "Remove", "Cleanup", "Run", "Cancel", "CancelAll")]
+    [ValidateSet("Create", "Report", "Remove", "Cleanup", "Run", "Cancel", "CancelAll", "Checkpoint", "Resume", "Steer", "Queue")]
     [string]$Action = "Report",
 
     [string]$RepoPath = ".",
@@ -37,6 +58,17 @@ param(
     [string]$TaskRoot,
     [int]$StaleHours = 24,
     [switch]$AllowDirty,
+    # --- Stale-base detection (rolling-wave autopilot fix) ---
+    # When an existing valid worktree is found on Create, compare its stored base_sha with the
+    # current repo HEAD. If HEAD has advanced (main received new commits since the worktree was
+    # branched), the existing worktree's base is stale.
+    #   Reuse    - return the stale worktree unchanged (legacy behavior)
+    #   Warn     - return the worktree but add stale_base=true fields to the result (default)
+    #   Recreate - remove the stale worktree and create a fresh one from the current HEAD
+    # Pass -StaleBaseAction Recreate for rolling-wave bucket worktrees so each iteration
+    # forks from the latest commit rather than the session-start HEAD (BUG: stale-base).
+    [ValidateSet("Reuse", "Warn", "Recreate")]
+    [string]$StaleBaseAction = "Warn",
     [switch]$Apply,
     [switch]$Json,
 
@@ -52,7 +84,31 @@ param(
     # Grace period before escalating from graceful stop to a forced tree-kill.
     [int]$GraceSeconds = 5,
     # Free-text reason recorded in the cancellation log.
-    [string]$Reason = "coordinator-cancel"
+    [string]$Reason = "coordinator-cancel",
+
+    # --- Checkpoint: write a continuity artifact for crash-safe resume (T967) ---
+    # The continuity artifact is a structured resume summary distinct from the
+    # conversation transcript. All fields are optional; absent fields render as a
+    # placeholder so a partial checkpoint still produces a valid, resumable artifact.
+    [string]$Goal,
+    [string[]]$CompletedAcs = @(),
+    [string[]]$PendingAcs = @(),
+    [string]$LastToolSummary,
+    [string]$NextAction,
+    [string[]]$Blockers = @(),
+    # SHA of the checkpoint commit this artifact precedes. Recorded on the marker so
+    # Resume can report "Resuming from checkpoint {sha}". May be supplied after the
+    # commit is created, or left blank when writing the artifact BEFORE the commit.
+    [string]$CheckpointSha,
+
+    # --- Steer / Queue: mid-flight course correction (T969) ---
+    # Steer: when -SteerText is supplied, WRITE it to steer.md (overwrite — latest steer wins).
+    #        when -SteerText is empty/absent, READ steer.md, return its body, and DELETE the file
+    #        (one-shot inject consumed by the g-go-code AC-gate poll).
+    # Queue: when -QueueText is supplied, APPEND it as a new queue.md item. when absent, READ the
+    #        pending queue items.
+    [string]$SteerText,
+    [string]$QueueText
 )
 
 $ErrorActionPreference = "Stop"
@@ -391,7 +447,8 @@ function New-Gald3rWorktree {
         [string]$Role,
         [string]$Owner,
         [string]$BaseBranch,
-        [switch]$AllowDirty
+        [switch]$AllowDirty,
+        [string]$StaleBaseAction = "Warn"
     )
 
     if ([string]::IsNullOrWhiteSpace($TaskId)) {
@@ -400,7 +457,32 @@ function New-Gald3rWorktree {
 
     $existing = Find-Gald3rWorktree -Root $Root -RepoRoot $RepoRoot -TaskId $TaskId -Role $Role -Owner $Owner
     if (Test-ValidExistingWorktree -RepoRoot $RepoRoot -Metadata $existing) {
-        return $existing
+        # Stale-base detection: compare the stored base_sha (resolved at creation time) with
+        # the current HEAD of the repo. When the autopilot commits iteration-N results to main,
+        # HEAD advances. Iteration-(N+1) bucket worktrees still carry the session-start SHA as
+        # their base_sha — those are stale and should be recreated so implementers see the
+        # latest Alembic migrations, model files, and router wiring from prior iterations.
+        $currentHead = (Invoke-Git -Repo $RepoRoot -Arguments @("rev-parse", "HEAD")).Trim()
+        $storedBase  = if ($null -ne $existing.PSObject.Properties['base_sha'] -and
+                           -not [string]::IsNullOrWhiteSpace($existing.base_sha)) {
+            $existing.base_sha
+        } else { $null }
+
+        $isStale = ($null -ne $storedBase) -and ($storedBase -ne $currentHead)
+
+        if ($isStale -and $StaleBaseAction -eq "Recreate") {
+            # Remove the stale worktree; fall through to fresh creation below.
+            Remove-Gald3rWorktree -RepoRoot $RepoRoot -Metadata $existing -Apply | Out-Null
+        } elseif ($isStale -and $StaleBaseAction -eq "Warn") {
+            $warnProps = [ordered]@{}
+            foreach ($p in $existing.PSObject.Properties) { $warnProps[$p.Name] = $p.Value }
+            $warnProps["stale_base"]        = $true
+            $warnProps["stale_base_detail"] = "Worktree base $($storedBase.Substring(0, [Math]::Min(8,$storedBase.Length))) predates current HEAD $($currentHead.Substring(0, [Math]::Min(8,$currentHead.Length))). Pass -StaleBaseAction Recreate to auto-refresh for rolling waves."
+            return [pscustomobject]$warnProps
+        } else {
+            # Reuse silently (explicit Reuse, or no base_sha stored on a legacy worktree).
+            return $existing
+        }
     }
 
     $dirty = Get-DirtyStatus -RepoRoot $RepoRoot
@@ -418,6 +500,12 @@ function New-Gald3rWorktree {
     $directory = New-WorktreeDirectoryName -TaskId $TaskId -Role $Role -Owner $Owner -RepoSlug $repoSlug -Suffix $suffix
     $worktreePath = Join-Path $Root $directory
 
+    # Resolve the base ref to a concrete SHA before creating the worktree.
+    # Storing the resolved SHA (not the symbolic ref "HEAD") enables stale-base detection on
+    # subsequent Create calls: if the repo HEAD has advanced since this worktree was branched,
+    # the stored base_sha will differ from the current HEAD and the worktree is stale.
+    $resolvedBaseSha = (Invoke-Git -Repo $RepoRoot -Arguments @("rev-parse", $BaseBranch)).Trim()
+
     Invoke-Git -Repo $RepoRoot -Arguments @("worktree", "add", "-b", $branch, $worktreePath, $BaseBranch) | Out-Null
 
     $metadata = [ordered]@{
@@ -431,7 +519,12 @@ function New-Gald3rWorktree {
         worktree_path = $worktreePath
         worktree_branch = $branch
         base_branch = $BaseBranch
+        base_sha = $resolvedBaseSha
         created_at = (Get-Date).ToUniversalTime().ToString("o")
+        # T967 — session resume fields. Populated by the Checkpoint action; null at
+        # creation time so a fresh worktree has no resume point yet.
+        last_checkpoint_sha = $null
+        continuity_artifact_path = $null
     }
     Write-Metadata -MarkerPath (Join-Path $worktreePath ".gald3r-worktree.json") -Metadata $metadata
     return [pscustomobject]$metadata
@@ -721,12 +814,392 @@ function Invoke-CancelAllForTask {
     return $results
 }
 
+# ---------------------------------------------------------------------------
+# Session resume — continuity artifact + checkpoint (T967)
+# ---------------------------------------------------------------------------
+#
+# The continuity artifact is a structured, on-disk resume summary written into
+# the worktree after each implementation checkpoint. It is intentionally
+# separate from the conversation transcript captured by gald3r_session_capture
+# (which preserves the literal JSONL): the artifact answers "where was I and
+# what is left" so long-horizon work can resume from the last clean state after
+# a crash, OOM, or power loss.
+#
+# Durability (AC5): the artifact is written to a sibling temp file and then
+# atomically renamed over the final path with Move-Item -Force. A kill between
+# the write and the rename leaves the previous good artifact intact; the new one
+# only appears once it is fully written. It is also written BEFORE the checkpoint
+# commit so a crash during the commit still leaves a resumable artifact on disk.
+
+function Format-ContinuityAcList {
+    param([string[]]$Items, [string]$Box)
+
+    if ($null -eq $Items -or $Items.Count -eq 0) {
+        return "_none_"
+    }
+    return ($Items | ForEach-Object { "- [$Box] $_" }) -join [Environment]::NewLine
+}
+
+function Format-ContinuityBullets {
+    param([string[]]$Items)
+
+    if ($null -eq $Items -or $Items.Count -eq 0) {
+        return "_none_"
+    }
+    return ($Items | ForEach-Object { "- $_" }) -join [Environment]::NewLine
+}
+
+function New-ContinuityArtifactBody {
+    param(
+        [string]$TaskId,
+        [string]$Goal,
+        [string[]]$CompletedAcs,
+        [string[]]$PendingAcs,
+        [string]$LastToolSummary,
+        [string]$NextAction,
+        [string[]]$Blockers,
+        [string]$CheckpointSha,
+        [string]$WorktreeBranch
+    )
+
+    $nl = [Environment]::NewLine
+    $stamp = (Get-Date).ToUniversalTime().ToString("o")
+    $goalText = if ([string]::IsNullOrWhiteSpace($Goal)) { "_not recorded_" } else { $Goal }
+    $shaText = if ([string]::IsNullOrWhiteSpace($CheckpointSha)) { "_pending (artifact written before commit)_" } else { $CheckpointSha }
+    $lastTool = if ([string]::IsNullOrWhiteSpace($LastToolSummary)) { "_not recorded_" } else { $LastToolSummary }
+    $next = if ([string]::IsNullOrWhiteSpace($NextAction)) { "_not recorded_" } else { $NextAction }
+
+    $lines = @(
+        "# Continuity Artifact — Task $TaskId",
+        "",
+        "<!-- gald3r session-resume artifact (T967). Structured resume summary, not a transcript. -->",
+        "",
+        "- **Task**: $TaskId",
+        "- **Worktree branch**: $WorktreeBranch",
+        "- **Last checkpoint SHA**: $shaText",
+        "- **Written at**: $stamp",
+        "",
+        "## Goal",
+        "",
+        $goalText,
+        "",
+        "## Completed Acceptance Criteria",
+        "",
+        (Format-ContinuityAcList -Items $CompletedAcs -Box "x"),
+        "",
+        "## Pending Acceptance Criteria",
+        "",
+        (Format-ContinuityAcList -Items $PendingAcs -Box " "),
+        "",
+        "## Last Tool Summary",
+        "",
+        $lastTool,
+        "",
+        "## Next Planned Action",
+        "",
+        $next,
+        "",
+        "## Blockers",
+        "",
+        (Format-ContinuityBullets -Items $Blockers),
+        ""
+    )
+    return ($lines -join $nl)
+}
+
+function Write-ContinuityArtifact {
+    param(
+        [string]$RepoRoot,
+        [object]$Metadata,
+        [string]$Goal,
+        [string[]]$CompletedAcs,
+        [string[]]$PendingAcs,
+        [string]$LastToolSummary,
+        [string]$NextAction,
+        [string[]]$Blockers,
+        [string]$CheckpointSha
+    )
+
+    if ($null -eq $Metadata -or -not $Metadata.gald3r_owned) {
+        throw "Checkpoint requires an existing gald3r-owned worktree (create it first with -Action Create)."
+    }
+    $markerPath = Join-Path $Metadata.worktree_path ".gald3r-worktree.json"
+    if (-not (Test-Path $markerPath)) {
+        throw "Ownership marker missing at '$markerPath' — refusing to write a continuity artifact."
+    }
+
+    $artifactPath = Join-Path $Metadata.worktree_path "continuity_artifact.md"
+    $body = New-ContinuityArtifactBody `
+        -TaskId $Metadata.task_id `
+        -Goal $Goal `
+        -CompletedAcs $CompletedAcs `
+        -PendingAcs $PendingAcs `
+        -LastToolSummary $LastToolSummary `
+        -NextAction $NextAction `
+        -Blockers $Blockers `
+        -CheckpointSha $CheckpointSha `
+        -WorktreeBranch $Metadata.worktree_branch
+
+    # Atomic write (AC5): write to a unique temp file in the same directory, then
+    # Move-Item -Force to swap it over the final path in one rename. Same-volume
+    # rename is atomic; an interrupt before the rename leaves the prior artifact.
+    $tempPath = Join-Path $Metadata.worktree_path (".continuity_artifact.$([guid]::NewGuid().ToString('N')).tmp")
+    try {
+        Set-Content -Path $tempPath -Value $body -Encoding UTF8 -NoNewline
+        Move-Item -Path $tempPath -Destination $artifactPath -Force
+    } finally {
+        if (Test-Path $tempPath) {
+            Remove-Item -Path $tempPath -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    # Update the ownership marker (additive — preserve existing fields) with the
+    # resume pointers (AC2). The marker is the small, fast index Resume reads first.
+    $obj = [ordered]@{}
+    foreach ($p in $Metadata.PSObject.Properties) { $obj[$p.Name] = $p.Value }
+    if (-not [string]::IsNullOrWhiteSpace($CheckpointSha)) {
+        $obj["last_checkpoint_sha"] = $CheckpointSha
+    } elseif (-not $obj.Contains("last_checkpoint_sha")) {
+        $obj["last_checkpoint_sha"] = $null
+    }
+    $obj["continuity_artifact_path"] = $artifactPath
+    $obj["continuity_updated_at"] = (Get-Date).ToUniversalTime().ToString("o")
+    Write-Metadata -MarkerPath $markerPath -Metadata $obj
+
+    return [pscustomobject]@{
+        action                   = "checkpoint"
+        task_id                  = $Metadata.task_id
+        worktree_path            = $Metadata.worktree_path
+        worktree_branch          = $Metadata.worktree_branch
+        continuity_artifact_path = $artifactPath
+        last_checkpoint_sha      = $obj["last_checkpoint_sha"]
+        completed_ac_count       = @($CompletedAcs).Count
+        pending_ac_count         = @($PendingAcs).Count
+    }
+}
+
+function Resume-FromContinuityArtifact {
+    # Locate the worktree for a task, read its continuity artifact, and emit the
+    # resume banner + artifact body so g-go-code --resume can inject it as a
+    # context prefix (AC3/AC4). Read-only — never writes.
+    param(
+        [string]$Root,
+        [string]$RepoRoot,
+        [string]$TaskId,
+        [string]$Role,
+        [string]$Owner
+    )
+
+    if ([string]::IsNullOrWhiteSpace($TaskId)) {
+        throw "-TaskId is required for Resume."
+    }
+
+    $metadata = Find-Gald3rWorktree -Root $Root -RepoRoot $RepoRoot -TaskId $TaskId -Role $Role -Owner $Owner
+    if ($null -eq $metadata) {
+        throw "No gald3r-owned worktree found for task '$TaskId', role '$Role', owner '$Owner' — nothing to resume."
+    }
+
+    $artifactPath = $null
+    if ($null -ne $metadata.PSObject.Properties['continuity_artifact_path'] -and -not [string]::IsNullOrWhiteSpace($metadata.continuity_artifact_path)) {
+        $artifactPath = $metadata.continuity_artifact_path
+    } else {
+        $artifactPath = Join-Path $metadata.worktree_path "continuity_artifact.md"
+    }
+
+    if (-not (Test-Path $artifactPath)) {
+        throw "No continuity artifact found at '$artifactPath' — task '$TaskId' has no checkpoint to resume from."
+    }
+
+    $body = Get-Content -Path $artifactPath -Raw
+
+    # Derive the AC counts for the resume banner (AC4). Prefer the artifact's
+    # checked/unchecked AC lines; fall back to 0 when the section is empty.
+    $completed = ([regex]::Matches($body, '(?m)^- \[x\] ')).Count
+    $remaining = ([regex]::Matches($body, '(?m)^- \[ \] ')).Count
+
+    $sha = if ($null -ne $metadata.PSObject.Properties['last_checkpoint_sha'] -and -not [string]::IsNullOrWhiteSpace($metadata.last_checkpoint_sha)) {
+        $metadata.last_checkpoint_sha
+    } else {
+        "(no commit recorded)"
+    }
+
+    $banner = "Resuming from checkpoint $sha — $completed ACs complete, $remaining remaining"
+
+    return [pscustomobject]@{
+        action                   = "resume"
+        task_id                  = $metadata.task_id
+        worktree_path            = $metadata.worktree_path
+        worktree_branch          = $metadata.worktree_branch
+        last_checkpoint_sha      = $metadata.last_checkpoint_sha
+        continuity_artifact_path = $artifactPath
+        completed_ac_count       = $completed
+        remaining_ac_count       = $remaining
+        banner                   = $banner
+        context_prefix           = $body
+    }
+}
+
+function Invoke-WorktreeSteer {
+    # T969 — write or read+clear steer.md at the worktree root.
+    #   -SteerText present  => WRITE steer.md (overwrite; latest steer wins), action="steer-write".
+    #   -SteerText absent    => READ steer.md, return body, DELETE the file, action="steer-read".
+    #                           When no steer.md exists, returns steered=$false (a no-op poll).
+    param(
+        [string]$Root,
+        [string]$RepoRoot,
+        [string]$TaskId,
+        [string]$Role,
+        [string]$Owner,
+        [string]$SteerText
+    )
+
+    if ([string]::IsNullOrWhiteSpace($TaskId)) {
+        throw "-TaskId is required for Steer."
+    }
+
+    $metadata = Find-Gald3rWorktree -Root $Root -RepoRoot $RepoRoot -TaskId $TaskId -Role $Role -Owner $Owner
+    if ($null -eq $metadata) {
+        throw "No gald3r-owned worktree found for task '$TaskId', role '$Role', owner '$Owner' — cannot steer."
+    }
+
+    $steerPath = Join-Path $metadata.worktree_path "steer.md"
+    $stamp = (Get-Date).ToUniversalTime().ToString("o")
+
+    if (-not [string]::IsNullOrWhiteSpace($SteerText)) {
+        # WRITE mode — atomic temp-file + rename so a poll never reads a half-written file.
+        $nl = [Environment]::NewLine
+        $body = (@(
+            "# Steer — Task $TaskId",
+            "",
+            "<!-- gald3r mid-flight steering prompt (T969). g-go-code injects this at the next AC-gate, logs 'STEERED', then deletes it. -->",
+            "",
+            "- **Written at**: $stamp",
+            "",
+            "## Steering Prompt",
+            "",
+            $SteerText.Trim(),
+            ""
+        ) -join $nl)
+        $tempPath = Join-Path $metadata.worktree_path (".steer.$([guid]::NewGuid().ToString('N')).tmp")
+        try {
+            Set-Content -Path $tempPath -Value $body -Encoding UTF8 -NoNewline
+            Move-Item -Path $tempPath -Destination $steerPath -Force
+        } finally {
+            if (Test-Path $tempPath) { Remove-Item -Path $tempPath -Force -ErrorAction SilentlyContinue }
+        }
+        return [pscustomobject]@{
+            action        = "steer-write"
+            task_id       = $metadata.task_id
+            worktree_path = $metadata.worktree_path
+            steer_path    = $steerPath
+            written_at    = $stamp
+        }
+    }
+
+    # READ + CLEAR mode (the AC-gate poll).
+    if (-not (Test-Path $steerPath)) {
+        return [pscustomobject]@{
+            action        = "steer-read"
+            task_id       = $metadata.task_id
+            worktree_path = $metadata.worktree_path
+            steer_path    = $steerPath
+            steered       = $false
+            steer_prompt  = $null
+        }
+    }
+
+    $raw = Get-Content -Path $steerPath -Raw
+    Remove-Item -Path $steerPath -Force
+    return [pscustomobject]@{
+        action        = "steer-read"
+        task_id       = $metadata.task_id
+        worktree_path = $metadata.worktree_path
+        steer_path    = $steerPath
+        steered       = $true
+        steer_prompt  = $raw
+    }
+}
+
+function Invoke-WorktreeQueue {
+    # T969 — append a follow-up prompt to queue.md, or read the pending queue.
+    #   -QueueText present => APPEND a new "- [ ] {text}" item, action="queue-append".
+    #   -QueueText absent   => READ pending items, action="queue-read".
+    param(
+        [string]$Root,
+        [string]$RepoRoot,
+        [string]$TaskId,
+        [string]$Role,
+        [string]$Owner,
+        [string]$QueueText
+    )
+
+    if ([string]::IsNullOrWhiteSpace($TaskId)) {
+        throw "-TaskId is required for Queue."
+    }
+
+    $metadata = Find-Gald3rWorktree -Root $Root -RepoRoot $RepoRoot -TaskId $TaskId -Role $Role -Owner $Owner
+    if ($null -eq $metadata) {
+        throw "No gald3r-owned worktree found for task '$TaskId', role '$Role', owner '$Owner' — cannot queue."
+    }
+
+    $queuePath = Join-Path $metadata.worktree_path "queue.md"
+    $nl = [Environment]::NewLine
+
+    if (-not [string]::IsNullOrWhiteSpace($QueueText)) {
+        # APPEND mode — create the file with a header on first write, then append one item per call.
+        if (-not (Test-Path $queuePath)) {
+            $header = (@(
+                "# Follow-up Queue — Task $TaskId",
+                "",
+                "<!-- gald3r mid-flight follow-up queue (T969). g-go-code drains these after the main goal is complete. One item per line. -->",
+                ""
+            ) -join $nl)
+            Set-Content -Path $queuePath -Value $header -Encoding UTF8
+        }
+        # Single-line item; collapse internal newlines so each queue entry stays on one row.
+        $item = "- [ ] " + ($QueueText.Trim() -replace '\r?\n', ' ')
+        Add-Content -Path $queuePath -Value $item -Encoding UTF8
+        $pending = @([regex]::Matches((Get-Content -Path $queuePath -Raw), '(?m)^- \[ \] ')).Count
+        return [pscustomobject]@{
+            action          = "queue-append"
+            task_id         = $metadata.task_id
+            worktree_path   = $metadata.worktree_path
+            queue_path      = $queuePath
+            appended_item   = $item
+            pending_count   = $pending
+        }
+    }
+
+    # READ mode.
+    if (-not (Test-Path $queuePath)) {
+        return [pscustomobject]@{
+            action        = "queue-read"
+            task_id       = $metadata.task_id
+            worktree_path = $metadata.worktree_path
+            queue_path    = $queuePath
+            pending_count = 0
+            items         = @()
+        }
+    }
+
+    $body = Get-Content -Path $queuePath -Raw
+    $items = @([regex]::Matches($body, '(?m)^- \[ \] (.+)$') | ForEach-Object { $_.Groups[1].Value })
+    return [pscustomobject]@{
+        action        = "queue-read"
+        task_id       = $metadata.task_id
+        worktree_path = $metadata.worktree_path
+        queue_path    = $queuePath
+        pending_count = $items.Count
+        items         = $items
+    }
+}
+
 $repoRoot = Resolve-RepoRoot -Path $RepoPath
 $resolvedRoot = Get-WorktreeRoot -RepoRoot $repoRoot -RequestedRoot $WorktreeRoot
 
 switch ($Action) {
     "Create" {
-        $result = New-Gald3rWorktree -RepoRoot $repoRoot -Root $resolvedRoot -TaskId $TaskId -Role $Role -Owner $Owner -BaseBranch $BaseBranch -AllowDirty:$AllowDirty
+        $result = New-Gald3rWorktree -RepoRoot $repoRoot -Root $resolvedRoot -TaskId $TaskId -Role $Role -Owner $Owner -BaseBranch $BaseBranch -AllowDirty:$AllowDirty -StaleBaseAction $StaleBaseAction
     }
     "Report" {
         $result = Get-Gald3rWorktreeReport -Root $resolvedRoot -RepoRoot $repoRoot
@@ -766,6 +1239,25 @@ switch ($Action) {
     }
     "CancelAll" {
         $result = Invoke-CancelAllForTask -RepoRoot $repoRoot -Root $resolvedRoot -TaskId $TaskId -GraceSeconds $GraceSeconds -Reason $Reason
+    }
+    "Checkpoint" {
+        if ([string]::IsNullOrWhiteSpace($TaskId)) {
+            throw "-TaskId is required for Checkpoint."
+        }
+        $metadata = Find-Gald3rWorktree -Root $resolvedRoot -RepoRoot $repoRoot -TaskId $TaskId -Role $Role -Owner $Owner
+        if ($null -eq $metadata) {
+            throw "No gald3r-owned worktree found for task '$TaskId', role '$Role', owner '$Owner'. Create it first."
+        }
+        $result = Write-ContinuityArtifact -RepoRoot $repoRoot -Metadata $metadata -Goal $Goal -CompletedAcs $CompletedAcs -PendingAcs $PendingAcs -LastToolSummary $LastToolSummary -NextAction $NextAction -Blockers $Blockers -CheckpointSha $CheckpointSha
+    }
+    "Resume" {
+        $result = Resume-FromContinuityArtifact -Root $resolvedRoot -RepoRoot $repoRoot -TaskId $TaskId -Role $Role -Owner $Owner
+    }
+    "Steer" {
+        $result = Invoke-WorktreeSteer -Root $resolvedRoot -RepoRoot $repoRoot -TaskId $TaskId -Role $Role -Owner $Owner -SteerText $SteerText
+    }
+    "Queue" {
+        $result = Invoke-WorktreeQueue -Root $resolvedRoot -RepoRoot $repoRoot -TaskId $TaskId -Role $Role -Owner $Owner -QueueText $QueueText
     }
 }
 

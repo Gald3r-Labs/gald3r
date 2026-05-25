@@ -98,7 +98,7 @@ Any of these → full task creation workflow (file first, TASKS.md second, YAML,
 
 ## PCAC INBOX Gate
 
-Before task claiming, implementation, verification, planning, status work, or swarm partitioning, first determine whether the current project is a **PCAC participant**. PCAC is active only when `.gald3r/linking/link_topology.md` exists and declares at least one non-empty parent, child, or sibling relationship, or when `.gald3r/PROJECT.md` explicitly declares PCAC project linking relationships. A Workspace-Control manifest (`.gald3r/linking/workspace_manifest.yaml`) and a local `INBOX.md` alone do **not** make a project part of a PCAC group.
+Before task claiming, implementation, verification, planning, status work, or swarm partitioning, first determine whether the current project is a **WPAC participant**. WPAC is configured only when `.gald3r/workspace/topology.md` declares at least one non-empty parent, child, or sibling relationship, or when `.gald3r/PROJECT.md` explicitly declares WPAC project linking relationships. A Workspace-Control manifest (`.gald3r/linking/workspace_manifest.yaml`) and a local `INBOX.md` alone do **not** make a project part of a WPAC group.
 
 If and only if the current project is a PCAC participant, run the re-callable `g-hk-pcac-inbox-check.ps1 -BlockOnConflict` hook when present. If it reports `INBOX CONFLICT GATE` or exits with code `2`, stop and run `@g-pcac-read` before continuing. Exception: `g-medic` L1 triage runs the hook without `-BlockOnConflict`, completes health scoring, records the PCAC conflict severity, then blocks L2-L4 planning/apply work and all claim/implementation/review/planning work until `@g-pcac-read` resolves the conflict. Swarm coordinators rerun the check every 30 minutes and before final summaries only while PCAC is active.
 
@@ -267,7 +267,7 @@ This applies to: `g-mission`, `g-go`, `g-go-code`, `g-go-review`, `g-go-go`, any
 
 Run the following checks (any one positive = controller/PCAC repo):
 1. `.gald3r/linking/workspace_manifest.yaml` exists — this IS a Workspace-Control controller
-2. `.gald3r/linking/link_topology.md` exists with a non-empty `parent:`, `children:`, or `siblings:` block — this IS a PCAC participant
+2. `.gald3r/workspace/topology.md` exists with a non-empty `parent:`, `children:`, or `siblings:` block — this IS a WPAC participant
 3. `.gald3r/TASKS.md` exists AND `.gald3r/tasks/` directory is non-empty — this IS an active gald3r coordination repo
 
 ### Mandatory warning when any check is positive
@@ -329,3 +329,34 @@ If the user reports a bug or describes unexpected behavior without invoking `g-q
 Any of these → experiment workflow:
 `"run experiment"` | `"check gate"` | `"experiment status"` | `"failure autopsy"` |
 `"new experiment"` | `"experiment chain"` | `"run stage"` | `"next experiment"`
+
+## Routing Error Hard Delete (HARD RULE — all agents, all repos)
+
+When a task file is discovered to have been created in the **wrong repository** (routing error), the ONLY correct
+response is **hard deletion**. This rule fires even when no gald3r agent is explicitly active.
+
+**Required action**: `git rm <path>` + immediate commit. No task file, no cancelled stub, no forwarding pointer.
+
+**Why `cancelled` status is FORBIDDEN for routing errors:**
+- Agents reading across repos (especially Claude) interpret `cancelled` as a deliberate decision and propagate
+  the cancellation to related tasks in other repositories.
+- This creates false signal: "we decided not to do this" when the reality is "this was created in the wrong place."
+- A `cancelled` routing stub is worse than having no record — it actively causes harm to downstream agents.
+
+**Why a `moved` or `routed` status is also FORBIDDEN:**
+- Additional status values add complexity without solving the cross-contamination problem.
+- Other agents do not know to ignore `moved` stubs and may still misinterpret them.
+- Clean deletion leaves no ambiguity.
+
+**Correct protocol for routing errors:**
+1. Identify the correct repo where the task should live.
+2. Create the task in the correct repo (with an Agent Notes entry referencing any prototype work done in the wrong repo).
+3. `git rm` the mis-routed task file from the wrong repo and commit with message `chore(tasks): purge T{id} routing error`.
+4. The canonical task in the correct repo is the ONLY record.
+
+| Rationalization | Reality |
+|---|---|
+| "Cancelled preserves history" | History of a mistake is not worth the cross-contamination damage. Delete it. |
+| "I'll add a note so agents know to ignore it" | Agents don't reliably read notes before acting on status. Delete it. |
+| "The user might want to know it was moved" | The Agent Notes in the canonical task explain provenance. Delete the stub. |
+| "A moved status is different from cancelled" | Not to an agent reading across repos at 3am. Delete it. |

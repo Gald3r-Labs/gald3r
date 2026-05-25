@@ -84,7 +84,7 @@ Write `mode: until-empty` in `ACTIVE_MISSION.md` when this flag is active so the
 |---|---|
 | `blast_radius: high` | **SKIP** — log with reason, continue |
 | Task scope exceeds one session | **SPLIT** into subtasks, tackle T{id}a, continue |
-| Cross-repo touches (workspace_repos: [...]) | **Run the Clean Controller Gate on each repo in the touch set first.** If all pass (clean or only owned paths dirty), proceed with the full task. Only skip if a required repo is inaccessible on disk or has unrelated dirty paths that block a safe commit. |
+| Cross-repo touches (workspace_repos: [...]) | **Run the Clean Controller Gate on each repo in the touch set first.** If all pass (clean or only owned paths dirty), proceed with the full task. Only skip if a required repo is inaccessible on disk or has unrelated dirty paths that block a safe commit. Note: `workspace_touch_policy: member_only` is a **write-scope limiter** (changes land in the named member repo) — it is **NOT** a location gate requiring the agent to run from inside the member repo. The controller implements `member_only` tasks by writing to member on-disk paths after Clean Controller Gate passes. (BUG-098) |
 | Design/product judgment required | **SKIP** — log as "needs human decision", continue |
 | Missing prereq infrastructure (e.g., file doesn't exist yet) | **SKIP** — log as "blocked by missing dep", continue |
 

@@ -1,4 +1,4 @@
-Pipeline orchestrator — implement then auto-review: $ARGUMENTS
+﻿Pipeline orchestrator — implement then auto-review: $ARGUMENTS
 
 ## Mode: PIPELINE (Implement → Auto-Review)
 
@@ -60,7 +60,7 @@ graph TD
 
 **The coordinator MUST NEVER ask the user to confirm a plan, select a scope, choose between options, or approve a proposal.** This command is designed for fire-and-forget operation across multi-window workflows and scheduled automation. The user has already expressed intent by typing the command; they are not watching this session.
 
-The **only** valid reasons to stop mid-run are the explicitly documented **hard-gate failures** listed below (PCAC conflict exit-code `2`, dirty orchestration root outside this run's staging allowlist, manifest / `workspace_repos` resolution error on multi-repo work). Any ambiguity that is NOT one of those hard gates is **resolved silently by the auto-plan rules below** and the run proceeds without comment.
+The **only** valid reasons to stop mid-run are the explicitly documented **hard-gate failures** listed below (WPAC conflict exit-code `2`, dirty orchestration root outside this run's staging allowlist, manifest / `workspace_repos` resolution error on multi-repo work). Any ambiguity that is NOT one of those hard gates is **resolved silently by the auto-plan rules below** and the run proceeds without comment.
 
 Asking "Go?" or "Confirm?" or "Which tasks?" or "Conservative or expanded?" is a **violation of this rule**. If you find yourself composing a confirmation question, apply the auto-plan instead and start working.
 
@@ -782,24 +782,24 @@ authoring guidance.
 
 ---
 
-### PCAC Inbox Gate (Only When PCAC Is Configured)
+### WPAC inbox Gate (Only When WPAC is configured)
 
-Before task claiming, implementation, verification, planning, or swarm partitioning, first determine whether this project is a PCAC participant. PCAC is configured only when `.gald3r/linking/link_topology.md` declares at least one parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares PCAC project linking relationships. A Workspace-Control manifest and local `INBOX.md` alone do not make the project a PCAC group member.
+Before task claiming, implementation, verification, planning, or swarm partitioning, first determine whether this project is a WPAC participant. WPAC is configured only when `.gald3r/workspace/topology.md` declares at least one parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares WPAC project linking relationships. A Workspace-Control manifest and local `INBOX.md` alone do not make the project a WPAC group member.
 
-If PCAC is configured, run the re-callable inbox check when the hook exists:
+If WPAC is configured, run the re-callable inbox check when the hook exists:
 
 ```powershell
-$hook = @( ".cursor\hooks\g-hk-pcac-inbox-check.ps1", ".claude\hooks\g-hk-pcac-inbox-check.ps1", ".agent\hooks\g-hk-pcac-inbox-check.ps1", ".codex\hooks\g-hk-pcac-inbox-check.ps1", ".opencode\hooks\g-hk-pcac-inbox-check.ps1" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+$hook = @( ".cursor\hooks\g-hk-wpac-inbox-check.ps1", ".claude\hooks\g-hk-wpac-inbox-check.ps1", ".agent\hooks\g-hk-wpac-inbox-check.ps1", ".codex\hooks\g-hk-wpac-inbox-check.ps1", ".opencode\hooks\g-hk-wpac-inbox-check.ps1" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 if ($hook) { powershell -NoProfile -ExecutionPolicy Bypass -File $hook -ProjectRoot . -BlockOnConflict }
 ```
 
-Installed templates may call the equivalent hook from the active IDE folder. If the check reports `INBOX CONFLICT GATE` or exits with code `2`, stop immediately and run `@g-pcac-read`; do not claim tasks, create worktrees, spawn reviewers, or continue planning until conflicts are resolved. Non-conflict requests, broadcasts, and syncs are advisory and should be surfaced in the session summary. If PCAC is not configured, skip this gate and report `PCAC: not configured / skipped`.
+Installed templates may call the equivalent hook from the active IDE folder. If the check reports `INBOX CONFLICT GATE` or exits with code `2`, stop immediately and run `@g-wpac-read`; do not claim tasks, create worktrees, spawn reviewers, or continue planning until conflicts are resolved. Non-conflict requests, broadcasts, and syncs are advisory and should be surfaced in the session summary. If WPAC is not configured, skip this gate and report `WPAC: not configured / skipped`.
 
 
 ### Gald3r Housekeeping Commit Gate (T531)
 
 <!-- T531-HOUSEKEEPING-GATE -->
-After the PCAC gate is skipped or passes and **before** the Clean Controller Gate hard-blocks the run, run the safety classifier helper at the orchestration root:
+After the WPAC gate is skipped or passes and **before** the Clean Controller Gate hard-blocks the run, run the safety classifier helper at the orchestration root:
 
 ```powershell
 .\scripts\gald3r_housekeeping_commit.ps1 -Mode preflight -Apply -TaskId <id-when-known> -Json
@@ -811,18 +811,18 @@ Behavior:
 - **`safe-gald3r-housekeeping`** -> the helper stages **only** allowlisted controller `.gald3r/` paths via explicit `git add -- <paths>` (never `git add .`), re-checks for drift, and creates a focused `chore(gald3r): preflight gald3r housekeeping` commit. The run continues automatically.
 - **`unsafe-gald3r` / `mixed-dirty` / `conflict` / `drift-detected` / unknown `.gald3r` paths / member-repo `config-fault`** -> the helper exits non-zero, the existing Clean Controller Gate hard-block applies, and the run STOPs with the exact unsafe paths listed.
 
-The helper allowlist covers the safe controller `.gald3r/` coordination surfaces (TASKS.md, BUGS.md, FEATURES.md, PRDS.md, SUBSYSTEMS.md, IDEA_BOARD.md, learned-facts.md, tasks/, bugs/, features/, prds/, subsystems/, reports/, logs/pcac_auto_actions.log, linking/sent_orders/, linking/INBOX.md). The deny list covers `.identity`, `.user_id`, `.project_id`, `.vault_location`, `vault/`, `config/`, `.gald3r-worktree.json`, secret-named files, and unknown `.gald3r/` paths. Member-repo targets (marker-only `.gald3r/`) are refused -- this gate is **controller-only**.
+The helper allowlist covers the safe controller `.gald3r/` coordination surfaces (TASKS.md, BUGS.md, FEATURES.md, PRDS.md, SUBSYSTEMS.md, IDEA_BOARD.md, learned-facts.md, tasks/, bugs/, features/, prds/, subsystems/, reports/, logs/wpac_auto_actions.log, workspace/sent_orders/, workspace/inbox.md). The deny list covers `.identity`, `.user_id`, `.project_id`, `.vault_location`, `vault/`, `config/`, `.gald3r-worktree.json`, secret-named files, and unknown `.gald3r/` paths. Member-repo targets (marker-only `.gald3r/`) are refused -- this gate is **controller-only**.
 
 Re-run the helper in `-Mode post-write -Apply` immediately after coordinator-owned shared `.gald3r` writes (task/bug status writes, review-result writes, sent_orders ledger updates, safe report/log outputs) and before the next major phase so the shared-state dirty window stays short. In `--swarm` flows only the coordinator runs the helper; bucket agents remain handoff producers.
 ### Clean Controller Gate (before claims, worktrees, reconciliation)
 
-After the PCAC gate is skipped or passes:
+After the WPAC gate is skipped or passes:
 
 1. At the **orchestration git root** (the repo from which you run this command — normally the Workspace-Control owner, e.g. `gald3r_dev`): run `git status --short`. If anything is listed **outside** this run's explicit coordinator staging allowlist for the active task and bug IDs, **STOP** here. Do not claim tasks or bugs, create or reuse T170 worktrees, partition swarms, or write coordinator-owned updates to `.gald3r/TASKS.md`, `.gald3r/BUGS.md`, other shared `.gald3r` coordination files, `CHANGELOG.md`, generated Copilot prompts, or parity output until unrelated changes are committed, stashed, or moved to a prior focused commit. Preserve any bucket handoff artifacts already produced and list the paths that blocked progress.
 
 2. **`gald3r_worktree.ps1 -AllowDirty`**: do not use this switch for `g-go`, `g-go-code`, `g-go-review`, or any `--swarm` variant **except** when every dirty path is owned exclusively by the active task/bug scope and a `## Status History` row documents that override. Otherwise clean the checkout first. The same **per-root** `-AllowDirty` discipline applies to every repository included in the touch set below when multi-repo work is in scope.
 
-3. **Member touch-set (v1 — `workspace_repos`)** — The orchestration root is **always** gated. When the active task or bug declares **`workspace_repos:`** with manifest `repository.id` entries, extend the gate to each **other** resolved member root (blast radius follows declared cross-repo scope). Read `.gald3r/linking/workspace_manifest.yaml` when present; map each listed ID (deduplicated) to `repositories[?].local_path`. For each existing path, run `git -C "<path>" rev-parse --show-toplevel` then `git status --short` at that root. Apply the same **explicit coordinator staging allowlist** per root. Skip IDs whose paths are missing while `lifecycle_status` is a planned/bootstrap gap (report only; do not expand the touch set). If the manifest is missing while `workspace_repos` is non-empty, or an ID is unknown under `repositories:`, **STOP** multi-repo coordinator work until manifest or frontmatter is repaired (controller-only queue items whose `workspace_repos` lists only the owner id may proceed once that id resolves).
+3. **Member touch-set (v1 — `workspace_repos`)** — The orchestration root is **always** gated. When the active task or bug declares **`workspace_repos:`** with manifest `repository.id` entries, extend the gate to each **other** resolved member root (blast radius follows declared cross-repo scope). Read `.gald3r/workspace/workspace_manifest.yaml` when present; map each listed ID (deduplicated) to `repositories[?].local_path`. For each existing path, run `git -C "<path>" rev-parse --show-toplevel` then `git status --short` at that root. Apply the same **explicit coordinator staging allowlist** per root. Skip IDs whose paths are missing while `lifecycle_status` is a planned/bootstrap gap (report only; do not expand the touch set). If the manifest is missing while `workspace_repos` is non-empty, or an ID is unknown under `repositories:`, **STOP** multi-repo coordinator work until manifest or frontmatter is repaired (controller-only queue items whose `workspace_repos` lists only the owner id may proceed once that id resolves).
 
 4. **Touch-set expansion (v2 — optional signals)** — Union extra repository roots into the same per-root checks (still **not** a blanket scan of every manifest member):
    - **`extended_touch_repos:`** — optional task/bug YAML list of additional manifest `repository.id` values beyond `workspace_repos`.
@@ -892,13 +892,13 @@ Concrete syntax differences to keep in mind (mirrors `g-rl-00-always` §6):
 - File-exists test: `Test-Path $p` (PS) vs `[ -f "$p" ]` (bash)
 - Pipeline filters: `Where-Object { ... }` (PS) vs `grep` / `awk` / `xargs` (bash)
 
-**Regression canonical (BUG-031 family)** — the PCAC inbox hook lookup snippet that triggered T1144:
+**Regression canonical (BUG-031 family)** — the WPAC inbox hook lookup snippet that triggered T1144:
 
 ```powershell
-$hook = @( ".cursor\hooks\g-hk-pcac-inbox-check.ps1", ".claude\hooks\g-hk-pcac-inbox-check.ps1" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+$hook = @( ".cursor\hooks\g-hk-wpac-inbox-check.ps1", ".claude\hooks\g-hk-wpac-inbox-check.ps1" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 ```
 
-This snippet is PowerShell-only — invoking it via `Bash(...)` produces `syntax error near unexpected token '('` (exit 2). That error is a **tool-routing failure**, NOT a real PCAC conflict or hook-missing state. Re-route through PowerShell and the call succeeds; do not enter an error-driven retry loop.
+This snippet is PowerShell-only — invoking it via `Bash(...)` produces `syntax error near unexpected token '('` (exit 2). That error is a **tool-routing failure**, NOT a real WPAC conflict or hook-missing state. Re-route through PowerShell and the call succeeds; do not enter an error-driven retry loop.
 
 The same router applies to **Phase 2 (review)** below — the reviewer subagent must inherit the route and not re-probe.
 
@@ -1050,7 +1050,7 @@ If `phase1_results` is empty → skip Phase 2:
 
 > **Only runs if Phase 1 marked at least 1 item `[🔍]`.**
 
-Phase 2 is a parallel review lane, not a default global pause. In swarm mode, the coordinator should launch review from the checkpoint and then continue Phase 1 rolling implementation waves for newly runnable items whose dependencies are checkpointed at `[🔍]`. Only block the implementation lane for tasks that declare `requires_verified_dependencies: true`, a review failure that invalidates a downstream checkpoint dependency, a PCAC conflict, Workspace-Control preflight denial, or a repository state that prevents a safe checkpoint.
+Phase 2 is a parallel review lane, not a default global pause. In swarm mode, the coordinator should launch review from the checkpoint and then continue Phase 1 rolling implementation waves for newly runnable items whose dependencies are checkpointed at `[🔍]`. Only block the implementation lane for tasks that declare `requires_verified_dependencies: true`, a review failure that invalidates a downstream checkpoint dependency, a WPAC conflict, Workspace-Control preflight denial, or a repository state that prevents a safe checkpoint.
 
 ### Spawn
 
@@ -1248,9 +1248,9 @@ Want me to push now?
 ---
 
 
-### PCAC Inbox Heartbeats (Swarm / Long Runs)
+### WPAC inbox Heartbeats (Swarm / Long Runs)
 
-For swarm mode or any run lasting more than 30 minutes, the coordinator reruns the PCAC inbox check every 30 minutes and once more before the final summary. If a conflict appears mid-run, pause new claims/spawns/reconciliation, preserve worktrees and partial outputs, and require `@g-pcac-read` before continuing.
+For swarm mode or any run lasting more than 30 minutes, the coordinator reruns the WPAC inbox check every 30 minutes and once more before the final summary. If a conflict appears mid-run, pause new claims/spawns/reconciliation, preserve worktrees and partial outputs, and require `@g-wpac-read` before continuing.
 
 ## Swarm Mode (`--swarm`)
 
@@ -1293,7 +1293,7 @@ Coordinator performs one final shared-write pass for `TASKS.md`, `BUGS.md`, task
 ### Bucket Cancellation Contract (T1123 — external-runner AbortSignal pattern)
 
 The coordinator can abort in-flight bucket agents cleanly — required when a bucket
-times out (`--timeout-minutes`), runs rogue, or the PCAC conflict gate fires mid-run.
+times out (`--timeout-minutes`), runs rogue, or the WPAC conflict gate fires mid-run.
 
 - When a bucket agent is launched in its worktree, the coordinator records the agent's
   PID via `gald3r_worktree.ps1 -Action Run ... -AgentCommand <agent>` (non-blocking;
@@ -1364,10 +1364,10 @@ times out (`--timeout-minutes`), runs rogue, or the PCAC conflict gate fires mid
 
 When `--workspace` is present, the coordinator:
 
-1. Reads `.gald3r/linking/workspace_manifest.yaml` (the canonical Workspace-Control registry).
+1. Reads `.gald3r/workspace/workspace_manifest.yaml` (the canonical Workspace-Control registry).
 2. Resolves the repository set: orchestration controller (`gald3r_dev`) plus every entry under `repositories:` whose `local_path` exists on disk and whose `lifecycle_status` permits work (e.g. excluding `planned`/`bootstrap_gap`/`frozen` archives).
 3. Filters the queue: each runnable task or bug is included only if every entry in its `workspace_repos:` resolves to a manifest member that is (a) locally available, (b) write-permitted by `allowed_write_policy.write_allowed`, and (c) compatible with the task's `workspace_touch_policy`.
-4. Honors all standard ordering rules: Critical → High → Medium → Low, dependencies (with the rolling-pipeline `[🔍]` checkpoint exception unless `requires_verified_dependencies: true`), `[🚨]` skips, stale claim takeovers, PCAC-derived priority floor, and `ai_safe: false` exclusions.
+4. Honors all standard ordering rules: Critical → High → Medium → Low, dependencies (with the rolling-pipeline `[🔍]` checkpoint exception unless `requires_verified_dependencies: true`), `[🚨]` skips, stale claim takeovers, WPAC-derived priority floor, and `ai_safe: false` exclusions.
 5. Logs per-deferral reasons in the session summary. Reasons include: `member-repo path missing`, `lifecycle_status forbids work`, `write_allowed: false`, `unknown repository.id in workspace_repos`, `workspace_touch_policy mismatch`, and `manifest missing or unparseable`.
 
 ### Per-repo clean and touch-set gates
@@ -1387,7 +1387,7 @@ A selected task is permitted to edit a member repository only when ALL of the fo
 1. The member's manifest `repository.id` appears in the task's `workspace_repos:` list.
 2. The task's `workspace_touch_policy` is in the manifest entry's `allowed_write_policy.allowed_touch_policies`.
 3. The manifest entry's `allowed_write_policy.write_allowed` is `true`.
-4. Every dependency, blocker, PCAC inbox, and `[🚨]` check passes for that member root.
+4. Every dependency, blocker, WPAC inbox, and `[🚨]` check passes for that member root.
 5. Per-repo clean check passes (or `-AllowDirty` is documented per-root in the task's `## Status History`).
 6. No member `.gald3r/` control-plane path is targeted (marker-only invariant).
 
@@ -1409,7 +1409,7 @@ Both at the periodic 30-minute heartbeats and at the final summary, `--workspace
 
 ```
 [WORKSPACE] Mode: workspace[+swarm]
-[WORKSPACE] Manifest: .gald3r/linking/workspace_manifest.yaml
+[WORKSPACE] Manifest: .gald3r/workspace/workspace_manifest.yaml
 [WORKSPACE] Considered repos: gald3r_dev, gald3r_template_*, gald3r_throne, ...
 [WORKSPACE] Skipped repos: gald3r_valhalla (lifecycle: frozen_marker_only), external_repo (write_allowed: false)
 [WORKSPACE] Runnable items: {N}    Blocked: {K}    Deferred: {D}
@@ -1421,7 +1421,7 @@ The summary makes it explicit which repos were considered, which were skipped, w
 
 ### Marker-only protection (recap)
 
-Member `.gald3r/` may contain ONLY `.identity` and `PROJECT.md`. `g-skl-workspace`, `g-skl-pcac-spawn`, `g-skl-pcac-adopt`, `g-skl-setup`, and `gald3r_install` all consult `.gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1` before any member `.gald3r/` write. `--workspace` runs do NOT add a bypass; the guard is non-negotiable. Any attempted write to a forbidden member `.gald3r/` path is logged as a blocker and excluded from the run.
+Member `.gald3r/` may contain ONLY `.identity` and `PROJECT.md`. `g-skl-workspace`, `g-skl-WPAC-spawn`, `g-skl-WPAC-adopt`, `g-skl-setup`, and `gald3r_install` all consult `.gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1` before any member `.gald3r/` write. `--workspace` runs do NOT add a bypass; the guard is non-negotiable. Any attempted write to a forbidden member `.gald3r/` path is logged as a blocker and excluded from the run.
 
 ---
 

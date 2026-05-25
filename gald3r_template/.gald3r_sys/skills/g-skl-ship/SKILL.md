@@ -87,6 +87,48 @@ gh release create vX.Y.Z --title "vX.Y.Z -- Bug Fix Sprint" --notes-file <temp_n
 
 ---
 
+### POST-RELEASE — Schema migration sweep (T1441)
+
+Runs as a post-release phase **after the git tag is created (BUMP step 7) and before the
+GitHub release is published (BUMP step 6's `gh release create`)**. When a release ships
+schema changes (new required fields, deprecated/removed fields), existing `.gald3r/` files
+in member projects must be migrated forward so projects are never left partially upgraded.
+
+**Steps:**
+
+1. **Emit the schema-migration notice** (always — even when no schema change shipped, the
+   notice is harmless and idempotent):
+   ```
+   This release may include schema changes. To migrate existing projects forward, run:
+     platform_parity_sync.ps1 -MigrateSchemas -Apply
+   (dry-run first: platform_parity_sync.ps1 -MigrateSchemas)
+   ```
+
+2. **For a gald3r framework release** (this repo is `gald3r_templates` and member repos
+   are accessible on disk), OPTIONALLY auto-run the migration on all registered workspace
+   members. Dry-run first, then apply on confirmation:
+   ```powershell
+   # Dry-run across all members (report only)
+   .\custom_scripts\platform_parity_sync.ps1 -MigrateSchemas
+
+   # Apply after reviewing the dry-run
+   .\custom_scripts\platform_parity_sync.ps1 -MigrateSchemas -Apply
+
+   # Single member only
+   .\custom_scripts\platform_parity_sync.ps1 -MigrateSchemas -Target gald3r_templates -Apply
+   ```
+   The migration engine (`.gald3r_sys/scripts/migrate_schemas.ps1`) never deletes fields:
+   deprecated fields become `deprecated_<name>`, removed fields become `legacy_<name>`, and
+   un-populatable added fields get a `TODO:` marker. It is idempotent — re-running is a no-op.
+
+3. **For a user-project release** (not the gald3r framework itself), emit the notice only —
+   do NOT auto-run migration. The user runs `@g-medic` or the command above when ready.
+
+**Ordering guarantee:** `-MigrateSchemas` must run after `-SyncGaldSys -Sync` so the new
+schema files exist on each member before migration reads them.
+
+---
+
 ### CHANGELOG-ENTRY — Add to [Unreleased] during development
 
 Called automatically at task completion and bug fix closure. Can also be called directly.
