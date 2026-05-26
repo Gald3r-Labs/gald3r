@@ -5,6 +5,14 @@ Implementation-only backlog execution: $ARGUMENTS
 This command runs **coding and bug-fixing** — it does NOT verify. Every completed item is
 marked `[🔍]` (Awaiting Verification) so a **separate agent session** can independently confirm it.
 
+> **Scope is set by the coordinator, not here.** Workspace scope (`--local` / `--workspace <id>`
+> / `--workspace` / the `g_go_default_scope` config default) is resolved by the `g-go` /
+> `g-go-swarm` coordinator at its Auto-Plan Step 1a and handed down as the already-filtered work
+> queue (or explicit task IDs). When `g-go-code` is invoked directly with explicit task IDs, it
+> implements exactly those IDs. When invoked directly with no IDs, treat the scope as **local-only**
+> — `g-go-code` does not re-evaluate `g_go_default_scope`; let `g-go` own the controller-default
+> workspace_all expansion.
+
 ## Model-Tier Selection (`--mode fast|standard|cheap`)
 
 `g-go-code` accepts an optional `--mode` flag in `$ARGUMENTS` that selects the model tier for
@@ -220,6 +228,18 @@ writes (TASKS.md, BUGS.md, task files, CHANGELOG.md, generated prompts, parity o
 
 ---
 
+
+### Step 0 — Workspace Member Clean-Status Preflight (T1431)
+
+Before the WPAC gate / task selection / claim / worktree creation, run the **read-only** workspace
+member clean-status preflight: scan `.gald3r/workspace/workspace_manifest.yaml`, run
+`git -C <path> status --short` on each `autonomous_child` member, and either print
+`Workspace clean -- N members checked` (proceed) or a per-repo dirty-status table asking the user
+to commit/stash first. Never auto-commits or writes. `--skip-member-clean-check` bypasses with a
+printed warning. Additive to the Housekeeping Commit Gate. **Full authoritative algorithm: see
+`g-go.md` Step 0.**
+
+---
 
 ### WPAC inbox Gate (Only When WPAC is configured)
 
@@ -616,7 +636,7 @@ python -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]).read())" ".github/w
 
 In all three cases the rule is identical: **lint the file you just wrote → if it fails, fix it inline and re-lint → only a clean exit 0 advances the loop to the next write.**
 
-**Parity note (AC7)** — this `g-go-code.md` under canonical `gald3r_template/.gald3r_sys/commands/` is the **source of truth** for the `post_write_lint` step. The per-IDE mirrors (`.claude/commands/g-go-code.md`, `.cursor/commands/g-go-code.md`, and the other platform copies) are **propagated later** by `scripts/platform_parity_sync.ps1` — do **not** hand-edit the mirrors. The lint helper `gald3r_post_write_lint.ps1` lives under the same canonical `.gald3r_sys/scripts/` tree and is synced alongside.
+**Parity note (AC7)** — this `g-go-code.md` under canonical `gald3r_template/.gald3r_sys/commands/` is the **source of truth** for the `post_write_lint` step. The per-IDE mirrors (`.claude/commands/g-go-code.md`, `.cursor/commands/g-go-code.md`, and the other platform copies) are **propagated later** by `custom_scripts/platform_parity_sync.ps1` — do **not** hand-edit the mirrors. The lint helper `gald3r_post_write_lint.ps1` lives under the same canonical `.gald3r_sys/scripts/` tree and is synced alongside.
 
 **b2) AC gate** — before moving on, walk every `- [ ]` acceptance criterion in the task spec:
   - Is this criterion now satisfied? Check the actual files, not just intent.
@@ -807,6 +827,90 @@ After the docs check, run the auto-learn extraction for each task moved to `[�
 
 > **Skip silently** when `.gald3r/learned-facts.md` does not exist — note in summary as `🧠 learned-facts.md not found — skipped`.
 > **Manual `/g-learn` still works** as before; this step does not replace it.
+
+### 5b. Skill Authoring (Opt-In, Complexity-Gated) (T1251)
+
+After Auto-Learn captures *facts*, this step optionally captures a *procedure* — authoring a
+new `SKILL.md` when the just-completed task discovered a non-trivial repeatable workflow. This
+closes the procedural-memory loop: the skill library grows through use instead of only by hand.
+Fact capture (5a) is "what I now know"; skill authoring (5b) is "how I'd do this again".
+
+**Runs only after the task is marked `[🔍]`, before Step 6.** It is opt-in and never blocks the
+pipeline — declining or skipping is a normal outcome, not an error.
+
+**AC1 — Complexity gate (ALL evaluated; trigger when ANY ≥1 fires):**
+
+| Signal | How it is measured |
+|--------|--------------------|
+| 5+ distinct file edits | Count `Write` + `Edit`/`StrReplace` calls in this task's b4 Handoff Report `Files Changed` |
+| Error recovery occurred | A post-write lint/syntax check returned `exit 2` and was fixed, OR `Issues Discovered` is non-empty |
+| User course-correction | A `/steer` interrupt (Step 156 flow) was applied during this task |
+| Non-trivial multi-step pattern | Task `complexity_score` ≥ 7 in frontmatter, OR the locked Implementation Plan (Step 0) had ≥4 ordered steps |
+
+If **no** signal fires → skip silently (note `🧩 skill-authoring: not triggered (below complexity gate)`).
+
+**AC6 — Opt-out:** When the gate fires, prompt once: *"This task discovered a reusable
+workflow. Author a draft skill for it? (y/N)"*. In autopilot / non-interactive / swarm runs the
+default is **N** (defer) — record the candidate in the Handoff Report (see AC7) rather than
+writing a file unprompted. Declining is **not** an error and never fails the task.
+
+**AC3 — Synthesis:** When authoring proceeds, synthesize the discovered pattern into gald3r's
+native `SKILL.md` format (the format already defined in `AGENTS.md`). Capture: the trigger
+condition, the ordered procedure, the gotchas hit (from `Issues Discovered`), and a worked
+example. Do **not** copy task-specific identifiers — generalize to the reusable pattern.
+
+**AC4 — Write location (canonical-first):** Write the draft to the canonical source as an
+auto-generated skill, distinguished by the `g-skl-auto-` prefix and `auto_generated: true`
+frontmatter (NOT a subfolder — the skills tree is flat for parity deployment):
+
+```
+.gald3r_sys/skills/g-skl-auto-<slug>/SKILL.md
+```
+
+Frontmatter (gald3r SKILL.md standard + provenance):
+
+```yaml
+---
+name: g-skl-auto-<slug>
+description: <one-line trigger + what it does>
+tags: [auto-generated, <domain-tags>]
+category: auto-generated
+auto_generated: true
+source_task: T<id>
+authored_date: "<YYYY-MM-DD>"
+review_status: draft   # human promotes to `reviewed` to bless it
+---
+```
+
+> Auto-generated skills land as `review_status: draft`. They are usable immediately but flagged
+> for human blessing — surface drafts via `@g-skill-review`.
+
+**AC5 — Cross-platform parity:** Never hand-copy into each IDE platform dir. After writing the
+canonical skill, deployment to `.claude/skills/`, `.cursor/skills/`, `.agent/skills/`, etc. is
+handled by:
+
+```powershell
+custom_scripts/platform_parity_sync.ps1 -SyncGaldSys -Sync
+```
+
+In a single-repo / member-only run where cross-repo propagation is out of scope, deploy only to
+the **local** platform dirs of the active repo and note that ecosystem-wide parity is deferred to
+the next `-SyncGaldSys -Sync`.
+
+**AC7 — Handoff Report event:** Record the outcome as a `[📝]` line in the task's
+`## Handoff Report` (under a `Skills Authored` note), regardless of branch taken:
+
+```markdown
+- [📝] Skill authoring: <one of>
+      authored g-skl-auto-<slug> (review_status: draft)   |
+      candidate deferred (opt-out) — pattern: <summary>    |
+      not triggered (below complexity gate)
+```
+
+Include a one-line summary in the handoff: `📝 1 draft skill authored (g-skl-auto-<slug>)` —
+omit when not triggered.
+
+> **Skill *update*** (improving an existing skill) is out of scope here — creation only.
 
 ### 6. Question & Blocker Collection
 

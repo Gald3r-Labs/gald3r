@@ -11,7 +11,7 @@ Use when:
 
 ## Actions
 
-- **Generate instructions**: run `.\scripts\generate_copilot_instructions.ps1`
+- **Generate instructions**: run `.\.gald3r_sys\skills\g-skl-platform-copilot\scripts\generate_copilot_instructions.ps1`
 - **Suggest command**: `gh copilot suggest --target {shell|git|gh} "{description}"`
 - **Explain command**: `gh copilot explain "{command}"`
 - **Status**: confirm `gh auth status` + Copilot subscription active

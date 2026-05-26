@@ -38,7 +38,7 @@ All Copilot-native customization lives in `.github/`:
 Run after modifying rules, agents, hooks, or commands:
 
 ```powershell
-.\scripts\generate_copilot_instructions.ps1
+.\.gald3r_sys\skills\g-skl-platform-copilot\scripts\generate_copilot_instructions.ps1
 ```
 
 This generates:

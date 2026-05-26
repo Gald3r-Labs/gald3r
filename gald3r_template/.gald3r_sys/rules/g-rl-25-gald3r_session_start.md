@@ -107,6 +107,7 @@ This prevents architectural drift and ensures changes respect subsystem boundari
 - Compare TASKS.md entries to `.gald3r/tasks/**` (T1025 status subfolders: `open/`, `in-progress/`, `awaiting/`, `completed/YYYY/MM/`, `closed/`; v3 source of truth; sequential task IDs)
 - Legacy v2: completed tasks may still be under `.gald3r/phases/phase*/` until migrated
 - Phantom = in TASKS.md but no matching `tasks/task{id}_*.md` (and not found in legacy archive if applicable)
+- **Auto-Triage L0 hand-off** (T1385): when phantom/orphan drift is detected, hand the finding to `g-skl-auto-triage` (kind `spec_defect`). Phase 1 is report-only for `TASKS.md`/`tasks/` — auto-triage will record `needs_attention`/`blocked_by_risk` (coordination state is never auto-edited) and write the audit row to `.gald3r/logs/triage_auto_YYYYMMDD.log`.
 - **Re-work Surface**: for each `[📋]`/pending task, check if its `## Status History` table has a FAIL row as the last entry (a row where the `To` column is `pending` and `Message` starts with `FAIL:`). If so, surface:
   ```
   ⚠️ Re-work: Task {id} previously failed verification on {Timestamp}: {Message}
@@ -138,6 +139,7 @@ This prevents architectural drift and ensures changes respect subsystem boundari
 - Missing entries → flag and offer to add stubs in `subsystems/`
 - For each subsystem in SUBSYSTEMS.md, verify a spec file exists in `subsystems/`
 - Spec files missing `locations:` in frontmatter → flag as incomplete
+- **Auto-Triage L0 hand-off** (T1385): subsystem-spec drift (a spec missing `locations:` frontmatter) is a `spec_defect` candidate. Hand it to `g-skl-auto-triage` with `fix_type=schema_comment`; only the lowest-risk metadata annotation is auto-applied (`risk_score <= auto_triage_risk_threshold`), otherwise it is logged `needs_attention`.
 
 **Step 5: ACTIVE_BACKLOG.md**
 - Older than 26 hours → flag as stale, offer regeneration

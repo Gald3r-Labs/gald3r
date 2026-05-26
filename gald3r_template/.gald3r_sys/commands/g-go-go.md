@@ -168,6 +168,42 @@ After every coordinator-owned shared write, re-run with `-Mode post-write -Apply
 
 ---
 
+## Integration-Branch Detection + Divergence Hard-Stop (T1443 / BUG-099 recurrence prevention)
+
+BUG-099 occurred because the autopilot blindly defaulted to `dev` as its integration/merge
+target even when `dev` was ~143k lines behind the active feature branch. To prevent recurrence,
+`g-go-go` MUST **detect** the correct integration branch at INIT (read-only) before basing any
+worktree on it or auto-merging into it — never hardcode `dev`.
+
+### Detection heuristic (read-only — no checkout/commit/merge side effects)
+
+1. **Prefer the branch the main checkout is currently on** (`git rev-parse --abbrev-ref HEAD`).
+   In normal operation the run integrates into the branch the user is working on.
+2. Otherwise, among the candidate branches (`main`, `dev`, `feature/*` that the current HEAD or
+   the configured target descends from), **prefer the branch that is *ahead*** of the others.
+   Compute ahead/behind with `git rev-list --left-right --count A...B`.
+3. **NEVER select a branch that is strictly *behind* a candidate** (the BUG-099 failure). A
+   stale `dev` is disqualified the moment another candidate is ahead of it.
+4. The `--target-branch <name>` override still applies, but it is validated against the same
+   divergence gate below — an explicit stale target also hard-stops.
+
+### Divergence hard-stop
+
+When the chosen integration target and the active work branch **diverge beyond a configured
+threshold**, HARD-STOP with a clear message instead of blindly merging:
+
+- Threshold default: target is **> 200 commits behind** the source, OR the two branches have
+  diverged (both ahead of their merge-base) by **> 50 commits on the target side**. Configurable
+  via `integration_divergence_max_commits` in `AGENT_CONFIG.md`.
+- A target that cannot fast-forward from the source (would require a merge commit / conflict) is
+  reported by `gald3r_worktree.ps1 -Action MergeToMain` as `merge-blocked` and is **never**
+  force-updated; the autopilot logs `[MERGE-BLOCKED]` as a human action item.
+
+This detection runs once at INIT (read-only). The actual integration is performed only at the
+per-PASS auto-merge step via `gald3r_worktree.ps1 -Action MergeToMain` (FF-only, `-Apply`).
+
+---
+
 ## Clean Controller Gate + Touch-Set v1/v2
 
 Same per-root contract as `g-go --workspace`:
@@ -201,6 +237,7 @@ If any check fails for a member, the autopilot defers that task with a per-repo 
 INIT
   ├─ PCAC inbox gate (HARD STOP on conflict)
   ├─ Housekeeping preflight at orchestration root
+  ├─ Integration-branch detection (T1443 — HARD STOP on excessive divergence; see below)
   ├─ Clean Controller Gate per-root
   ├─ Initialize: iter=0, budget_remaining=12 (or user override)
   ├─ Write run-state marker .gald3r/logs/ggo_run_state.json
@@ -268,6 +305,7 @@ The loop never blocks on `[🔍]` dependencies of newly runnable downstream work
 | Stop reason | Trigger | Action |
 |-------------|---------|--------|
 | **PCAC conflict** | inbox check exit code `2` | halt before next claim |
+| **Stale / divergent integration branch** (T1443/BUG-099) | INIT detection finds candidate integration branches diverge beyond `integration_divergence_max_commits`, or the only available target is strictly behind the active source branch | halt; report the ahead/behind counts and the disqualified target; never blindly default to a stale `dev` |
 | **Unsafe dirty orchestration root** | housekeeping gate returns `unsafe-gald3r` / `mixed-dirty` / `conflict` / `drift-detected` | halt; do not stage |
 | **Unsafe dirty member root** for ALL routed work | every selected member root has unrelated dirty paths | halt with per-root listing |
 | **Marker-only violation** | guard helper rejects member `.gald3r/` write | halt; log file + reason |

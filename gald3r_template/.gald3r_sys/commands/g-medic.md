@@ -29,6 +29,13 @@ Usage:
   @g-medic --dry-run            → report only at any level
   @g-medic --curate             → fragmentation dry-run with human-readable recommendations, `suggested_moves`, and `index_candidates` (default: writes gitignored reports under `.gald3r/reports/`; add `-NoReportFiles` on the script for stdout-only)
   @g-medic --curate --apply -ProposalJson <path> → applies only top-level `moves` after approval; backup + git mv + path patch FEATURES/SUBSYSTEMS/tasks + regen diagrams
+  @g-medic --heal-c023 [--apply]      → backfill missing .gald3r/releases/ files from CHANGELOG (T1436; dry-run default)
+  @g-medic --heal-version [--apply]   → create root VERSION from latest CHANGELOG ## [X.Y.Z] if missing
+  @g-medic --heal-constraints [--apply] → report inheritable framework constraints missing locally (--apply appends adoption-pointer stub)
+  @g-medic --heal-all [--apply]       → run every Phase 1 heal in dependency order (version → c023 → constraints)
+
+Heal paths map to `gald3r_medic_heal.ps1 -Heal <c023|version|constraints|all> [-Apply] [-Json]`.
+Heals are dry-run by default and log to `.gald3r/logs/medic_heal_YYYYMMDD.log` (only with `--apply`).
 
 Dry-run/output rules:
 - `--dry-run` for L1-L4 is read-only: no status changes, no TTL resets, no identity/version writes, no backlog regeneration, no report files, and no member-repo changes.

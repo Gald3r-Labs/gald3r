@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Non-interactive helper for g-skl-tier-setup SETUP and ENABLE operations.
 
@@ -288,12 +288,12 @@ function Invoke-Enable {
     Write-Host "Wrote $written subsystem annotations."
 
     # Run tier sync if available
-    $syncScript = Join-Path $ProjectRoot 'scripts\platform_parity_sync.ps1'
+    $syncScript = Join-Path $ProjectRoot 'custom_scripts\platform_parity_sync.ps1'
     if (Test-Path $syncScript) {
         Write-Host "Running platform_parity_sync.ps1 -TierSync..."
         & $syncScript -TierSync
     } else {
-        Write-Host "WARN: scripts/platform_parity_sync.ps1 not found — tier sync skipped." -ForegroundColor Yellow
+        Write-Host "WARN: custom_scripts/platform_parity_sync.ps1 not found — tier sync skipped." -ForegroundColor Yellow
     }
 }
 

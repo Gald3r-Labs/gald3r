@@ -341,7 +341,7 @@ manual edits with task ownership, not to the Curator.
    - If the merge makes sense, `@g-task-add type=feature title="Merge g-skl-foo into g-skl-bar"`.
    - If not, add the lower-priority skill to `CURATOR_PROTECTED_SKILLS.md`.
 6. For each `[DRIFT]` finding:
-   - Run platform parity sync (`scripts/platform_parity_sync.ps1 -Sync`) to converge copies.
+   - Run platform parity sync (`custom_scripts/platform_parity_sync.ps1 -Sync`) to converge copies.
 7. Re-run `@g-curator --status` after applied changes to confirm.
 
 ---

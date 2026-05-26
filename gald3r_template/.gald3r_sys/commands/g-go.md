@@ -864,6 +864,46 @@ authoring guidance.
 
 ---
 
+### Step 0 — Workspace Member Clean-Status Preflight (T1431, AUTHORITATIVE definition)
+
+**Runs first — before the WPAC inbox gate, task selection, claim, or any worktree creation.**
+This is the canonical Step 0 spec; the other `g-go*` commands reference it. Purpose: surface dirty
+`autonomous_child` member repos **early** so the user resolves them up front, instead of hitting
+the existing Clean Controller Gate / member touch-set block mid-pipeline (post-claim).
+
+**Behavior (read-only — no commits, no writes, no stashes):**
+
+1. If `.gald3r/workspace/workspace_manifest.yaml` is absent, OR no `autonomous_child` members are
+   declared → skip Step 0 silently and proceed to the WPAC gate.
+2. For each manifest member with `workspace_role: autonomous_child` whose `repository.local_path`
+   exists on disk (skip missing paths whose `lifecycle_status` is a planned/bootstrap gap — note
+   them), run `git -C <path> status --short`.
+   - `controlled_member` repos are marker-only with no active development → skip (or list as
+     informational only); never block on them.
+3. **Clean path** — all checked members clean → print `Workspace clean -- N members checked` and
+   proceed to Step 1 (WPAC gate).
+4. **Dirty path** — any member has modified/untracked files → print a compact per-repo status
+   table and ask the user to commit/stash before continuing. Do **NOT** auto-commit, do **NOT**
+   fail silently:
+
+   ```
+   ⚠️  Workspace members have uncommitted changes:
+   | repo id            | path                          | modified | untracked |
+   |--------------------|-------------------------------|----------|-----------|
+   | gald3r_throne      | G:/gald3r_ecosystem/...throne | 3        | 1         |
+   Commit or stash these before continuing, or pass --skip-member-clean-check.
+   ```
+
+5. **`--skip-member-clean-check`** flag → bypass Step 0 with a printed warning and proceed
+   directly to Step 1.
+
+**Additive, not a replacement:** the Gald3r Housekeeping Commit Gate (controller `.gald3r/`
+coordination files) continues to auto-commit safe controller paths exactly as before. Step 0 only
+*reports* member status; it never mutates anything. Target: completes in < 2 s for a 5-10 member
+ecosystem. Uses the same manifest resolution as the v1 member touch-set gate.
+
+---
+
 ### WPAC inbox Gate (Only When WPAC is configured)
 
 Before task claiming, implementation, verification, planning, or swarm partitioning, first determine whether this project is a WPAC participant. WPAC is configured only when `.gald3r/workspace/topology.md` declares at least one parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares WPAC project linking relationships. A Workspace-Control manifest and local `INBOX.md` alone do not make the project a WPAC group member.

@@ -19,6 +19,20 @@ Set `disable_version_check: true` for air-gapped environments.
 
 ---
 
+## Auto-Triage L0 (T1385)
+
+```
+auto_triage_risk_threshold: 2.0
+```
+
+Reactive Medic L0 (`g-skl-auto-triage`) only attempts a bounded auto-fix when a non-code bug's
+computed `risk_score` is `<= auto_triage_risk_threshold`. Phase 1 default is `2.0` (cautious — only
+the lowest-risk schema comments, manifest clarifications, and metadata annotations are auto-fixed).
+Anything above the threshold is logged as `needs_attention` / `blocked_by_risk`. Raising this value
+expands courage (Phase 2); keep it low for unattended runs.
+
+---
+
 ## Active Preset
 
 ```
@@ -172,6 +186,37 @@ Agents read this field before selecting the active preset. Override takes priori
 2. Load the corresponding preset block above
 3. Pass `context_budget_tokens` to `g-skl-context-builder BUILD`
 4. Apply `temperature`, `max_retries`, and `memory_injection_timing` to the session
+
+---
+
+## g-go Default Scope (`g_go_default_scope`)
+
+Controls the scope a bare `@g-go` / `@g-go --swarm` (no `--local` / `--workspace` flag, no
+explicit task IDs) uses when selecting its work queue. Read by the `g-go` / `g-go-swarm`
+coordinator at Step 1a of the Auto-Plan scope filter.
+
+```yaml
+# g_go_default_scope: local_only   # uncomment + set to workspace_all on controller repos
+```
+
+| Value | Bare `@g-go` behavior |
+|-------|-----------------------|
+| `local_only` (default — also the behavior when the key is **absent**) | Scope to **this repo's** tasks only. Items whose `workspace_repos` names other members are deferred. Safe default for member / leaf repos. |
+| `workspace_all` | Scope to **all manifest members** (identical to `@g-go --workspace`). |
+
+**Controller pattern**: Controller repos (e.g. `gald3r_dev`) have no code of their own — a
+bare `@g-go` scoped local-only finds nothing to run. Set `g_go_default_scope: workspace_all`
+in those repos so bare `@g-go` scans the whole workspace by default. Flags still override
+config every time:
+
+| Flag (highest priority) | Effect, regardless of `g_go_default_scope` |
+|-------------------------|--------------------------------------------|
+| `--local` | Force local-only (controller-own tasks only) |
+| `--workspace <id>` / `--workspace <id1,id2>` | Narrow to the named member(s) |
+| `--workspace` (no value) | All members |
+
+See the Step 1a priority table in `g-go.md` / `g-go-swarm.md` for the full resolution order
+(`--local` > `--workspace <id>` > `--workspace` > `g_go_default_scope` > local-only default).
 
 ---
 

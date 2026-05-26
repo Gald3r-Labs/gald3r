@@ -29,6 +29,6 @@ Dry-run only: no files are written. Member repository writes remain disabled unt
 
 ## gald3r_dev Self-Hosting Note
 
-When a task in `gald3r_dev` changes reusable platform/framework files, this command should report the self-hosting parity path: run `scripts/platform_parity_sync.ps1 -SelfHostingRootSource` for dry-run evidence, then `scripts/platform_parity_sync.ps1 -SelfHostingRootSource -Sync` when the active task authorizes propagation. That flow syncs root platform folders, updates `G:/gald3r_ecosystem/gald3r_template_adv`, and delegates to `tier_sync.ps1` for `G:/gald3r_ecosystem/gald3r_template_full` and `G:/gald3r_ecosystem/gald3r_template_slim`.
+When a task in `gald3r_dev` changes reusable platform/framework files, this command should report the self-hosting parity path: run `custom_scripts/platform_parity_sync.ps1 -SelfHostingRootSource` for dry-run evidence, then `custom_scripts/platform_parity_sync.ps1 -SelfHostingRootSource -Sync` when the active task authorizes propagation. That flow syncs root platform folders, updates `G:/gald3r_ecosystem/gald3r_template_adv`, and delegates to `custom_scripts/tier_sync.ps1` for `G:/gald3r_ecosystem/gald3r_template_full` and `G:/gald3r_ecosystem/gald3r_template_slim`.
 
 Dirty repositories are evaluated by overlap with planned writes. Unrelated dirty or untracked paths are warnings; overlapping target paths remain blockers unless explicitly authorized.

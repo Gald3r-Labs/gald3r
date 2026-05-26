@@ -634,10 +634,10 @@ A future apply task must prove all of these before writing a member repo:
 For `gald3r_dev` maintainers implementing Task 184, the concrete dry-run/apply helper is:
 
 ```powershell
-.\scripts\workspace_template_export.ps1
+.\custom_scripts\workspace_template_export.ps1
 ```
 
-The helper uses `uv run python scripts/workspace_template_export.py` to parse the canonical manifest with PyYAML, then plans or applies exports from:
+The helper uses `uv run python custom_scripts/workspace_template_export.py` to parse the canonical manifest with PyYAML, then plans or applies exports from:
 
 - `G:/gald3r_ecosystem/gald3r_template_slim`
 - `G:/gald3r_ecosystem/gald3r_template_full`
@@ -1413,11 +1413,11 @@ Status and report surfaces may embed a compact Workspace-Control snapshot by reu
 
 ### Template Parity Tooling
 
-`platform_parity_sync.ps1`, `platform_parity_check.ps1`, `tier_sync.ps1`, `g-skl-tier-setup`, and `g-skl-template-export` remain the existing parity/export surfaces. `g-skl-workspace` reports how those tools would interact with member repos; it does not change propagation semantics or run scripts.
+`platform_parity_sync.ps1` (run without `-Sync` for a report-only parity check; with `-Sync` to apply), `tier_sync.ps1`, `g-skl-tier-setup`, and `g-skl-template-export` remain the existing parity/export surfaces. `g-skl-workspace` reports how those tools would interact with member repos; it does not change propagation semantics or run scripts.
 
 For the `gald3r_dev` source repository only, edits to core gald3r framework/platform surfaces are self-hosting changes. If a task changes reusable files under `.cursor/`, `.claude/`, `.agent/`, `.codex/`, `.opencode/`, `.copilot/`, `.github/prompts/`, shared rules, skills, commands, agents, hooks, or generated Copilot instructions, completion requires one of:
 
-- Run `scripts/platform_parity_sync.ps1 -SelfHostingRootSource` and, when approved, `scripts/platform_parity_sync.ps1 -SelfHostingRootSource -Sync`. This uses the root `.cursor/` tree as the maintainer source, syncs root platform folders and `G:/gald3r_ecosystem/gald3r_template_adv`, then runs `tier_sync.ps1` so `G:/gald3r_ecosystem/gald3r_template_full` and `G:/gald3r_ecosystem/gald3r_template_slim` receive tier-filtered content.
+- Run `custom_scripts/platform_parity_sync.ps1 -SelfHostingRootSource` and, when approved, `custom_scripts/platform_parity_sync.ps1 -SelfHostingRootSource -Sync`. This uses the root `.cursor/` tree as the maintainer source, syncs root platform folders and `G:/gald3r_ecosystem/gald3r_template_adv`, then runs `custom_scripts/tier_sync.ps1` so `G:/gald3r_ecosystem/gald3r_template_full` and `G:/gald3r_ecosystem/gald3r_template_slim` receive tier-filtered content.
 - Record an explicit root-only exception, e.g. `g-skl-gald3r-export` maintainer tooling, proprietary local skills, or personality content intentionally shipped through `personality_packs/` instead of templates.
 
 `gald3r_dev-only` command wording means the command is executed only from the source/control repository; it does not by itself exempt reusable framework edits from template parity.
@@ -1432,7 +1432,7 @@ Workspace-Control dirty checks are path-scoped. A dirty repository is a hard blo
 
 #### T225 Dirty-State Taxonomy (5-class)
 
-`scripts/workspace_template_export.py` and any future Workspace-Control dirty-state surface classify every dirty entry into one of five canonical classes. The literal strings are stable so tasks/bugs that depend on this surface can `grep` and reference them directly:
+`custom_scripts/workspace_template_export.py` and any future Workspace-Control dirty-state surface classify every dirty entry into one of five canonical classes. The literal strings are stable so tasks/bugs that depend on this surface can `grep` and reference them directly:
 
 | Class | Definition | Disposition |
 |-------|------------|-------------|

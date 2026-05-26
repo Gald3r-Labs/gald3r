@@ -1,0 +1,18 @@
+# Replit project configuration — gald3r deploy scaffold
+# Docs: https://docs.replit.com/programming-ide/configuring-repl
+#
+# gald3r Agent priming (paste into the Replit Agent chat panel at session start):
+#   This project uses gald3r for task management. Tasks are in .gald3r/TASKS.md.
+#   Always reference the active task ID in commits: feat(T{id}): ...
+#   Read .gald3r/CONSTRAINTS.md before making architecture changes.
+
+run = "node bin/install.js && npm start"
+language = "nodejs"
+entrypoint = "index.js"
+
+[nix]
+channel = "stable-24_05"
+
+[deployment]
+run = ["sh", "-c", "npm start"]
+deploymentTarget = "cloudrun"

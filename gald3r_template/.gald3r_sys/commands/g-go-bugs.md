@@ -1,4 +1,4 @@
-﻿Dedicated bug-fix pipeline — reproduce → fix → regression test → adversarial review: $ARGUMENTS
+Dedicated bug-fix pipeline — reproduce → fix → regression test → adversarial review: $ARGUMENTS
 
 ## Mode: BUG-FIX PIPELINE
 
@@ -53,6 +53,18 @@ When `$ARGUMENTS` is empty or contains only severity filters:
 6. Zero runnable bugs → output `[g-go-bugs] No runnable bugs. Nothing to fix.` and exit cleanly
 
 When `$ARGUMENTS` provides explicit bug IDs (`bug:BUG-NNN`), use those exactly.
+
+---
+
+## Step 0 — Workspace Member Clean-Status Preflight (T1431)
+
+Before the WPAC gate / bug-queue build / claim / worktree creation, run the **read-only** workspace
+member clean-status preflight: scan `.gald3r/workspace/workspace_manifest.yaml`, run
+`git -C <path> status --short` on each `autonomous_child` member, and either print
+`Workspace clean -- N members checked` (proceed) or a per-repo dirty-status table asking the user
+to commit/stash first. Never auto-commits or writes. `--skip-member-clean-check` bypasses with a
+printed warning. Additive to the Housekeeping Commit Gate. **Full authoritative algorithm: see
+`g-go.md` Step 0.**
 
 ---
 

@@ -293,12 +293,28 @@ Set-Content $changelogPath ($newLines -join "`n") -NoNewline
 Write-Status "        ✓ CHANGELOG.md updated" "Green"
 
 # 2. Bump VERSION file
-Write-Status "  [2/5] Writing VERSION file: $newVersion..."
+Write-Status "  [2/7] Writing VERSION file: $newVersion..."
 Set-Content $versionPath $newVersion -NoNewline
 Write-Status "        ✓ VERSION updated" "Green"
 
+# 2b. Update .gald3r/.identity gald3r_version= (T1437 auto-increment on release)
+$identityPath = Join-Path $ProjectRoot ".gald3r\.identity"
+if (Test-Path $identityPath) {
+    Write-Status "  [2b]  Updating .gald3r/.identity gald3r_version..."
+    $idContent = Get-Content $identityPath -Raw
+    if ($idContent -match '(?m)^gald3r_version=') {
+        $idUpdated = $idContent -replace '(?m)^gald3r_version=.*$', "gald3r_version=$newVersion"
+        Set-Content $identityPath $idUpdated -NoNewline
+        Write-Status "        ✓ .gald3r/.identity gald3r_version=$newVersion" "Green"
+    } else {
+        Write-Status "        ~ .gald3r/.identity has no gald3r_version= key, skipping" "DarkGray"
+    }
+} else {
+    Write-Status "        ~ No .gald3r/.identity found, skipping" "DarkGray"
+}
+
 # 3. Update README badge
-Write-Status "  [3/5] Updating README badge..."
+Write-Status "  [3/7] Updating README badge..."
 $badgeUpdated = Update-ReadmeBadge $currentVersion $newVersion
 if ($badgeUpdated) {
     Write-Status "        ✓ README badge updated" "Green"
@@ -306,21 +322,49 @@ if ($badgeUpdated) {
     Write-Status "        ~ README badge not found or already current" "DarkGray"
 }
 
+# 3b. Create releases/RELEASE_v{newVersion}.md from CHANGELOG content
+$releasesDir  = Join-Path $ProjectRoot "releases"
+$releaseFile  = Join-Path $releasesDir "RELEASE_v$newVersion.md"
+Write-Status "  [3b]  Creating releases/RELEASE_v$newVersion.md..."
+if (-not (Test-Path $releasesDir)) {
+    New-Item -ItemType Directory -Path $releasesDir -Force | Out-Null
+}
+$prevVersion  = $currentVersion
+$prevFile     = "RELEASE_v$prevVersion.md"
+$releaseNotes = Get-ReleaseNotes $newVersion
+$releaseTitle = if ($Theme) { "Release v$newVersion — $Theme" } else { "Release v$newVersion" }
+$releaseBody  = @"
+# $releaseTitle
+
+> **Released**: $today
+> **Previous release**: [$prevVersion]($prevFile)
+
+---
+
+## Full Changelog
+
+$releaseNotes
+"@
+Set-Content $releaseFile $releaseBody -NoNewline
+Write-Status "        ✓ releases/RELEASE_v$newVersion.md created" "Green"
+
 # 4. Git commit
-Write-Status "  [4/5] Creating release commit..."
+Write-Status "  [4/7] Creating release commit..."
 $commitMsg = if ($Theme) { "release: $tagName -- $Theme" } else { "release: $tagName" }
 git -C $ProjectRoot add CHANGELOG.md VERSION README.md 2>$null
+git -C $ProjectRoot add ".gald3r/.identity" 2>$null
+git -C $ProjectRoot add "releases/RELEASE_v$newVersion.md" 2>$null
 git -C $ProjectRoot commit -m $commitMsg 2>&1 | Out-Null
 Write-Status "        ✓ Committed: '$commitMsg'" "Green"
 
 # 5. Git tag
 if (-not $NoTag) {
-    Write-Status "  [5/5] Creating git tag $tagName..."
+    Write-Status "  [5/7] Creating git tag $tagName..."
     $tagMsg = if ($Theme) { "Release $tagName - $Theme" } else { "Release $tagName" }
     git -C $ProjectRoot tag -a $tagName -m $tagMsg 2>&1 | Out-Null
     Write-Status "        ✓ Tag created: $tagName" "Green"
 } else {
-    Write-Status "  [5/5] Skipping tag (--NoTag)" "DarkGray"
+    Write-Status "  [5/7] Skipping tag (--NoTag)" "DarkGray"
 }
 
 Write-Status ""

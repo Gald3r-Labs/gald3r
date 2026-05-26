@@ -117,6 +117,59 @@ Use `g-skl-res-apply` when:
 
 ---
 
+## WPAC-Aware Routing — `target_repo:` (T1430, canonical reference implementation)
+
+APPLY is the **routing decision point** for the recon → research → apply pipeline. Ingestion
+(`g-skl-recon-*`) and harvest (`g-skl-res-deep`) are always local; routing happens here, driven by
+the `target_repo:` annotation carried on each IDEA_BOARD entry (set by `g-skl-ideas CAPTURE`,
+adjustable in `g-skl-res-review` triage). This is the canonical pattern future WPAC-aware
+artifact-routing commands should follow.
+
+### Resolution algorithm (run once per artifact before any `.gald3r/` write)
+
+1. **Topology gate (hard first check):** if `.gald3r/workspace/topology.md` does NOT exist →
+   route `local`, **ignore** any `target_repo:` value. An unlinked project never dispatches.
+2. Read `target_repo:` from the IDEA_BOARD entry (default `local` when absent).
+3. Resolve the destination per the routing table below, using `topology.md` (parent/sibling
+   paths + role) and, on a controller, `workspace_manifest.yaml` for `repository.id` → path.
+
+### Routing table
+
+```
+Scenario                                   -> Output destination
+----------------------------------------------------------------------
+Unlinked project (no topology.md), any tag -> local only
+WPAC child, target_repo: local             -> local .gald3r/
+WPAC child, target_repo: <parent-id>       -> direct write to parent .gald3r/ (path from topology.md)
+WPAC child, target_repo: <sibling-id>      -> WPAC send-to -> sibling INBOX (never direct-write a sibling)
+WPAC child, target_repo: [A, B]            -> coordinator task in controller + WPAC-order sub-tasks to A, B
+WPAC child, target_repo: workspace         -> single controller task, requires_decomposition: true (no dispatch)
+WPAC controller, any tag                   -> direct write to any target (controller knows all paths)
+```
+
+### Routing rules
+
+- **`local`** → direct write to the current repo's `.gald3r/` (unchanged legacy behavior).
+- **`<single repo_id>`**: if the id resolves to the **parent** (path known from `topology.md`) →
+  direct write to the parent's `.gald3r/`. If it resolves to a **sibling** → do NOT direct-write;
+  emit a `@g-wpac-send-to <sibling-id>` to the sibling's INBOX (siblings own their own `.gald3r/`).
+- **`[multi repo list]`** → create one coordinating task in the controller's `.gald3r/`, then
+  `@g-wpac-order` a sub-task to each listed target id (decomposition is the controller's job).
+- **`workspace`** → create a SINGLE undispatched task in the controller's `.gald3r/` with
+  `requires_decomposition: true`; do not fan out sub-tasks (a human/controller decomposes later).
+- **Controller running APPLY** → it knows every member path from the manifest, so it may
+  direct-write to any resolved target id.
+- **Marker-only guard (g-rl-36):** routing to a `controlled_member` may write only its `.identity`
+  / `PROJECT.md` marker via the sanctioned bootstrap path, or go through the controller — never
+  drop control-plane artifacts directly into a `controlled_member` `.gald3r/`.
+
+### Provenance
+
+Every routed artifact records `routed_from_idea: IDEA-NNN` and `target_repo: <value>` in its
+frontmatter so the routing decision is auditable.
+
+---
+
 ## Operations
 
 ### REVIEW

@@ -25,13 +25,14 @@ Export `G:/gald3r_ecosystem/gald3r_template_full` to a clean, clonable destinati
 Unless `force` argument is given:
 
 ```powershell
-.\scripts\platform_parity_check.ps1
+# Report-only parity gate — omit -Sync so it detects gaps without modifying files.
+.\custom_scripts\platform_parity_sync.ps1
 ```
 
 - Exit 0 → continue  
 - Exit non-zero → **abort**; print:
   > "Parity gaps detected. Fix first:  
-  > `.\scripts\platform_parity_sync.ps1 -Sync`  
+  > `.\custom_scripts\platform_parity_sync.ps1 -Sync`  
   > Then re-run, or use `force` to override."
 
 ### Step 2 — Confirm Destination
@@ -46,16 +47,16 @@ Invoke `export_slim_template_repo.ps1`:
 
 ```powershell
 # Dry-run
-.\scripts\export_slim_template_repo.ps1 -Destination <dest>
+.\custom_scripts\export_slim_template_repo.ps1 -Destination <dest>
 
 # Apply
-.\scripts\export_slim_template_repo.ps1 -Destination <dest> -Apply
+.\custom_scripts\export_slim_template_repo.ps1 -Destination <dest> -Apply
 
 # Apply + root docs overlay
-.\scripts\export_slim_template_repo.ps1 -Destination <dest> -Apply -UseGald3rFullRootDocs
+.\custom_scripts\export_slim_template_repo.ps1 -Destination <dest> -Apply -UseGald3rFullRootDocs
 
 # Force (skip parity)
-.\scripts\export_slim_template_repo.ps1 -Destination <dest> -Apply -Force
+.\custom_scripts\export_slim_template_repo.ps1 -Destination <dest> -Apply -Force
 ```
 
 ### Step 4 — Release Checklist

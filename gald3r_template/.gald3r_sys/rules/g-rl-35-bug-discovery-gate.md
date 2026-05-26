@@ -41,16 +41,44 @@ Fix it in place before marking `[🔍]`.
 ## Step 2B — Pre-Existing Bug (Mandatory Steps)
 
 1. **Create BUG entry** via `g-skl-bugs` REPORT operation → get `BUG-{id}`
-2. **Add annotation** at the bug site (on the line directly above or same line):
+2. **Classify `kind:`** in the bug frontmatter (T1385) — this decides the path in Step 2C:
+   - `code` — a defect in source/logic. Stays on the normal fix path; never auto-triaged.
+   - `spec_defect` — a wrong/ambiguous specification, schema, or rule wording.
+   - `policy_incongruity` — two policies/rules contradict each other.
+   - `design_gap` — a missing design decision (always needs a human).
+3. **Add annotation** at the bug site (on the line directly above or same line). Include `kind:`:
    ```
-   BUG[BUG-{id}]: {description} — see .gald3r/bugs/bug{id}_{slug}.md
+   BUG[BUG-{id}] kind={code|spec_defect|policy_incongruity|design_gap}: {description} — see .gald3r/bugs/bug{id}_{slug}.md
    ```
-3. **Do NOT fix inline** unless the fix is:
+4. **Do NOT fix inline** unless the fix is:
    - 1–3 lines
    - Zero risk of expanding scope
    - Confirmed by code inspection (not guessed)
    If it doesn't meet all three → log and move on
-4. **Notify in session summary**: "Found pre-existing bug BUG-{id}: {title}"
+5. **Notify in session summary**: "Found pre-existing bug BUG-{id}: {title}"
+
+---
+
+## Step 2C — Auto-Triage Non-Code Bugs (T1385, Phase 1 — cautious)
+
+For bugs with `kind != code`, hand off to **`g-skl-auto-triage`** (Medic L0) instead of stopping
+at "logged and forgotten". This is a *cautious* reactive layer: it only attempts the lowest-risk,
+bounded fixes and otherwise records `needs_attention`.
+
+1. Run the triage loop (assess → gate → fix-if-safe → log):
+   ```powershell
+   .gald3r_sys/skills/g-skl-auto-triage/scripts/invoke_triage.ps1 `
+       -BugId "BUG-{id}" -Kind "{spec_defect|policy_incongruity|design_gap}" `
+       -Files @("<absolute_path>") -FixType "{schema_comment|manifest_annotation|command_annotation|rule_annotation|constraint_expire}" `
+       -FixContent "<text>" -ProjectRoot "<repo_root>" -BugFilePath "<absolute_bug_md>"
+   ```
+2. The script writes the outcome to the bug's `triage_status:` / `triage_risk_score:` frontmatter
+   and appends an audit row to `.gald3r/logs/triage_auto_YYYYMMDD.log`.
+3. Outcomes: `auto_resolved` (fix applied), `deferred_verify` (applied, confirm), `needs_attention`
+   (risk too high or fix failed), `blocked_by_risk` (score > `auto_triage_risk_threshold`).
+4. **`code` bugs never enter this path** — they follow Step 2B's normal fix path.
+
+See `g-skl-auto-triage/SKILL.md` for the full risk formula and Phase 1 hard limits.
 
 ---
 

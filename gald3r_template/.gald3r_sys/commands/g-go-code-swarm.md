@@ -1,4 +1,8 @@
-﻿Alias for `@g-go-code --swarm`: $ARGUMENTS
+Alias for `@g-go-code --swarm`: $ARGUMENTS
+
+> **Step 0 — Workspace Member Clean-Status Preflight (T1431):** inherited from `@g-go-code`. The
+> read-only member clean-status preflight runs before task selection. See `g-go.md` Step 0 for the
+> authoritative algorithm.
 
 Runs **implementation only** in swarm mode — partitions the work queue into conflict-safe
 buckets and spawns N parallel agents. Every completed item is marked `[🔍]`.

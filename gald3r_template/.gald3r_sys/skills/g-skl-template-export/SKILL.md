@@ -15,16 +15,16 @@ token_budget: medium
 
 ## Workflow
 
-1. **Optional**: `.\scripts\platform_parity_sync.ps1 -Sync` so root + `G:/gald3r_ecosystem/gald3r_template_full` match.
+1. **Optional**: `.\custom_scripts\platform_parity_sync.ps1 -Sync` so root + `G:/gald3r_ecosystem/gald3r_template_full` match.
 2. **Dry-run** (default — no files written):
    ```powershell
-   .\scripts\export_slim_template_repo.ps1 -Destination 'G:\gald3r'
+   .\custom_scripts\export_slim_template_repo.ps1 -Destination 'G:\gald3r'
    ```
 3. **Apply** copy + write `MAINTAINER_EXPORT.md`:
    ```powershell
-   .\scripts\export_slim_template_repo.ps1 -Destination 'G:\gald3r' -Apply
+   .\custom_scripts\export_slim_template_repo.ps1 -Destination 'G:\gald3r' -Apply
    ```
-4. **Parity gate**: script runs `platform_parity_check.ps1` unless `-SkipParityCheck` or `-Force`.
+4. **Parity gate**: script runs `platform_parity_sync.ps1` (report-only — omit `-Sync`) unless `-SkipParityCheck` or `-Force`.
 5. **Overlay monorepo docs** (optional): `-UseGald3rFullRootDocs` copies root `README.md`, `CHANGELOG.md`, `LICENSE` onto the destination after mirror.
 
 ## Safety

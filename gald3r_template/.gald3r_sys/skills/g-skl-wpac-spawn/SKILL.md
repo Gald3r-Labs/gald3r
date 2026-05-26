@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-wpac-spawn
 description: >
   Spawn a new gald3r project from the current project. Creates the new project folder
@@ -282,7 +282,7 @@ If the current project (or any ancestor) has a `workspace_manifest.yaml` in `.ga
 2. Set `project_type:` per `--type` parameter
 3. Set `wpac_role: child | sibling` per `--child | --sibling` flag
 4. Set `lifecycle_status: active`
-5. Run `scripts/bootstrap_member_gald3r_marker.ps1 -MemberPath <new_path> -MemberId <new_project_name> -Apply`
+5. Run `.gald3r_sys/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1 -MemberPath <new_path> -MemberId <new_project_name> -Apply`
    - This creates `.gald3r/.identity` + `.gald3r/PROJECT.md` as the marker pair
 6. Update `controlled_members:` list in the manifest
 

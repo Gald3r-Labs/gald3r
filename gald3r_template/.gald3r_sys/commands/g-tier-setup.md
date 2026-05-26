@@ -9,7 +9,7 @@ Run this command when you want to adopt the product tier system for your project
 Two operations:
 
 - **SETUP** — first-time wizard. Creates `.gald3r/release_profiles/{tier}.yaml` files, scaffolds `template_{tier}/` directories, writes tier metadata into `.gald3r/.identity`.
-- **ENABLE** — annotates existing subsystem specs with `min_tier:` (using inference heuristics), then runs `scripts/platform_parity_sync.ps1 -TierSync` to populate template directories.
+- **ENABLE** — annotates existing subsystem specs with `min_tier:` (using inference heuristics), then runs `custom_scripts/platform_parity_sync.ps1 -TierSync` to populate template directories.
 
 ## Usage
 
@@ -36,7 +36,7 @@ Two operations:
 4. Prompts once to accept all, abort, or edit line-by-line
 5. Writes `min_tier:` into each subsystem's frontmatter
 6. Appends Activity Log entry to `tier-management` subsystem
-7. Calls `scripts/platform_parity_sync.ps1 -TierSync`
+7. Calls `custom_scripts/platform_parity_sync.ps1 -TierSync`
 
 ## Availability
 
@@ -47,4 +47,4 @@ Ships in `gald3r_template_full` and `gald3r_template_adv` external repos only �
 - `g-skl-tier-setup` — the skill that this command delegates to
 - `g-skl-subsystems` — writes `min_tier:` on new subsystem creation
 - `g-skl-release` — reads `release_profiles/` for CREATE / ASSIGN / PUBLISH
-- `scripts/platform_parity_sync.ps1 -TierSync` — the actual template-directory populator
+- `custom_scripts/platform_parity_sync.ps1 -TierSync` — the actual template-directory populator

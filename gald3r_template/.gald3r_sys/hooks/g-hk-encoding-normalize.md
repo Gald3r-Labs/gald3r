@@ -33,7 +33,11 @@ All processed files are normalized to **LF** regardless of type.
 `.htm`, `.css`, `.scss`, `.sql`, `.toml`, `.ini`, `.cfg`, `.gitattributes`,
 `.gitignore`, `.env`, plus extensionless files under `.gald3r/`.
 
-**Binary files are always skipped.**
+**Binary files are skipped** two ways: (1) by extension — only the text extensions above are
+considered; and (2) by content (T1447) — any file the BOM sniff reads as UTF-8/UTF-8-BOM that
+contains a NUL byte (`0x00`) is treated as binary/invalid-UTF-8 and left byte-identical, so a
+mislabeled binary with a text extension is never lossily rewritten. (UTF-16 files legitimately
+contain NULs and are detected by their BOM, so they still normalize correctly.)
 
 ## Side Effects
 

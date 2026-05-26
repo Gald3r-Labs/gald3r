@@ -88,7 +88,7 @@ In Cursor, VS Code, and JetBrains IDEs with Copilot enabled, Copilot reads:
 gald3r's always-apply rules are automatically compiled into `.github/copilot-instructions.md` by:
 
 ```powershell
-.\scripts\generate_copilot_instructions.ps1
+.\.gald3r_sys\skills\g-skl-platform-copilot\scripts\generate_copilot_instructions.ps1
 ```
 
 Regenerate after any change to `.cursor/rules/g-rl-*.mdc` files.

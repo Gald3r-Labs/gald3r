@@ -1,4 +1,8 @@
-﻿Alias for `@g-go-review --swarm`: $ARGUMENTS
+Alias for `@g-go-review --swarm`: $ARGUMENTS
+
+> **Step 0 — Workspace Member Clean-Status Preflight (T1431):** inherited from `@g-go-review`. The
+> read-only member clean-status preflight runs before review-queue build. See `g-go.md` Step 0 for
+> the authoritative algorithm.
 
 Runs **verification only** in swarm mode — splits the `[🔍]` queue across M parallel
 reviewer agents (round-robin). Includes both **tasks** and **bugs** awaiting verification.

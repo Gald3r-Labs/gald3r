@@ -1,0 +1,16 @@
+# Goose project configuration — gald3r deploy scaffold
+# Docs: https://block.github.io/goose/docs
+# Overrides ~/.config/goose/config.yaml for this project.
+
+profiles:
+  default:
+    # Goose reads GOOSE.md for gald3r project context at session start.
+    instructions: GOOSE.md
+
+# Optional: wire the gald3r Docker MCP server as an extension so Goose can
+# perform task / bug / vault operations directly. Uncomment and adjust the URL
+# once the gald3r MCP backend is running (adv tier).
+# extensions:
+#   - name: gald3r-mcp
+#     type: mcp
+#     url: http://localhost:8092/mcp

@@ -98,7 +98,7 @@ memory_capture_session(
   project_id="<from .gald3r/.project_id>",
   platform="cursor",
   key_decisions="File-level sync replaces dir-level for .copilot/.github to prevent skip-if-exists bug",
-  files_changed="scripts/tier_sync.ps1, G:/gald3r_ecosystem/gald3r_template_full/.copilot/commands/*, G:/gald3r_ecosystem/gald3r_template_adv/.copilot/commands/*"
+  files_changed="custom_scripts/tier_sync.ps1, G:/gald3r_ecosystem/gald3r_template_full/.copilot/commands/*, G:/gald3r_ecosystem/gald3r_template_adv/.copilot/commands/*"
 )
 ```
 

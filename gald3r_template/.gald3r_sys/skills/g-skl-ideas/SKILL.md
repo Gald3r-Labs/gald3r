@@ -35,6 +35,7 @@ token_budget: low
 **Category**: [category]
 **Captured**: YYYY-MM-DD
 **Source**: user | AI | session
+**Target Repo**: local
 
 **Description**:
 [The idea in 1-3 sentences. Specific enough to reconstruct intent later.]
@@ -48,7 +49,25 @@ token_budget: low
 ---
 ```
 
-4. **Confirm and continue**: `💡 Captured as IDEA-NNN: {title}` — then resume current work immediately
+#### `target_repo:` — WPAC-aware routing annotation (T1430)
+
+The optional **Target Repo** field controls where the idea's downstream artifacts
+(tasks/specs) land when promoted. It is set at capture time and may be changed during
+`g-skl-res-review` triage. Supported values:
+
+| Value | Meaning |
+|-------|---------|
+| `local` (default) | Promote into the current repo's `.gald3r/` |
+| `<repo_id>` | A single `repository.id` from `workspace_manifest.yaml` / topology |
+| `[repo_id, repo_id]` | Multi-repo list → controller decomposes + dispatches |
+| `workspace` | Controller-managed: one undispatched task with `requires_decomposition: true` |
+
+- **`--target-repo <value>` flag** sets it non-interactively: `@g-idea-capture "..." --target-repo gald3r_throne`.
+- When **WPAC is active** (`.gald3r/workspace/topology.md` present) and no flag is given, prompt once: *"Route this idea to a specific repo? (default: local)"*.
+- **`--local` flag** (mirrors the `g-vocab-add` convention) forces `local` even inside a workspace — skips the prompt.
+- **Unlinked project (no `topology.md`)** → silently store `local`; never prompt, ignore any supplied `--target-repo` value (routing collapses to local downstream — see `g-skl-res-apply`).
+
+4. **Confirm and continue**: `💡 Captured as IDEA-NNN: {title}` (append `→ {target_repo}` when not `local`) — then resume current work immediately
 
 ---
 

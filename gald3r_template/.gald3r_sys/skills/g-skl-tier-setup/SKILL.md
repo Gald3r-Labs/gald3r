@@ -154,7 +154,7 @@ Updated:
 
 Next:
   Run @g-tier-setup ENABLE to map existing subsystems to tiers,
-  then run scripts/platform_parity_sync.ps1 -TierSync to populate template directories.
+  then run custom_scripts/platform_parity_sync.ps1 -TierSync to populate template directories.
 ```
 
 **REPAIR note**: If `.gald3r/release_profiles/` already has tier YAMLs, SETUP refuses by default and tells the user to edit the YAMLs directly, run `@g-tier-setup SETUP --force` to overwrite (destructive — warn first), or run `@g-tier-setup ENABLE` if they just need to annotate subsystems.
@@ -227,7 +227,7 @@ Append a row to the `tier-management` subsystem's activity log (and `onboarding-
 ```
 
 **Step 7 — Call tier sync**
-Run `scripts/platform_parity_sync.ps1 -TierSync` as a child process. This populates `template_{tier}/` directories based on subsystem mappings. If the sync script is missing (uncommon — it ships with 082-3), emit a warning but do not fail: `Tier sync skipped: scripts/platform_parity_sync.ps1 not found (expected from T082-3).`
+Run `custom_scripts/platform_parity_sync.ps1 -TierSync` as a child process. This populates `template_{tier}/` directories based on subsystem mappings. If the sync script is missing (uncommon — it ships with 082-3), emit a warning but do not fail: `Tier sync skipped: custom_scripts/platform_parity_sync.ps1 not found (expected from T082-3).`
 
 **Step 8 — Confirmation output**
 ```
@@ -295,7 +295,7 @@ Updated:
 
 Next:
   Run @g-tier-setup ENABLE to map existing subsystems to tiers,
-  then run scripts/platform_parity_sync.ps1 -TierSync to populate template directories.
+  then run custom_scripts/platform_parity_sync.ps1 -TierSync to populate template directories.
 ```
 
 Then:
@@ -410,14 +410,14 @@ Inference defaults match this table: `docker` signals → `docker` tier; `api-ke
 - **`g-skl-subsystems`** — writes `min_tier:` in new subsystem specs at CREATE. SETUP does not overwrite subsystem specs; that is ENABLE's job.
 - **`g-skl-release`** — reads `release_profiles/*.yaml` for CREATE/ASSIGN/PUBLISH. Must have tiers configured first.
 - **`g-skl-tasks`** — derives task tier badge from subsystem `min_tier:` (082-5). Badges only render after ENABLE runs.
-- **`scripts/platform_parity_sync.ps1 -TierSync`** — the actual file mover. SETUP scaffolds empty template dirs; ENABLE populates them via the sync script.
+- **`custom_scripts/platform_parity_sync.ps1 -TierSync`** — the actual file mover. SETUP scaffolds empty template dirs; ENABLE populates them via the sync script.
 - **`g-skl-setup`** — the first-run gald3r installer. Does NOT call this skill — it seeds a slim project. Users who want tiering run `@g-tier-setup SETUP` as a separate opt-in.
 
 ---
 
 ## What this skill does NOT do
 
-- Does not populate `template_{tier}/` directories with actual skill/rule/command files — that is `scripts/platform_parity_sync.ps1 -TierSync`
+- Does not populate `template_{tier}/` directories with actual skill/rule/command files — that is `custom_scripts/platform_parity_sync.ps1 -TierSync`
 - Does not deploy tiers to sibling repos — that is `g-skl-release` SHIP (and PUBLISH)
 - Does not modify `G:/gald3r_ecosystem/gald3r_template_slim` — see AC-7 in Task 083: slim installs are pre-configured by gald3r
 - Does not enforce tier boundaries on new code — see C-018 tier boundary constraint (pending, Task 082-4 dependency)

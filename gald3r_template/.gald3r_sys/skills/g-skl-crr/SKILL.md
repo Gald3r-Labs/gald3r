@@ -252,12 +252,20 @@ Your job:
    - priority: high | medium | low
    - subsystems: [relevant subsystem names]
    - source: {url}
+   - target_repo: pass through the IDEA_BOARD entry's "Target Repo" value (default `local`) — T1430
    - Write .gald3r/tasks/task{N}_{slug}.md with full Objective + AC + Implementation Notes
 4. Update .gald3r/TASKS.md — add each new task row
 
+> **WPAC-aware routing (T1430):** Phase 3 does NOT itself dispatch cross-repo. It only carries
+> `target_repo:` through from each IDEA-HARVEST entry onto the created task's frontmatter. Actual
+> routing (parent direct-write / sibling INBOX send-to / multi-repo decomposition / controller
+> `requires_decomposition`) is performed by `g-skl-res-apply` per its routing table, OR — for a
+> controller — by the standard WPAC dispatch commands. If `.gald3r/workspace/topology.md` is
+> absent, `target_repo:` is forced to `local` and tasks are created in the local repo only.
+
 Return a JSON summary:
 {
-  "tasks_created": [{"id": N, "title": "...", "idea_ref": "REDACTED-HARVEST-NNN"}, ...],
+  "tasks_created": [{"id": N, "title": "...", "idea_ref": "REDACTED-HARVEST-NNN", "target_repo": "local"}, ...],
   "tasks_parked": [{"idea_ref": "REDACTED-HARVEST-NNN", "reason": "..."}, ...],
   "next_task_id": N
 }

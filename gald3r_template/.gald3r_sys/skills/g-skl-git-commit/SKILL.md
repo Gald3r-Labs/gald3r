@@ -111,7 +111,7 @@ Before every commit, run through these checks. An optional `pre-commit` hook (`g
 | Check | What to look for |
 |-------|-----------------|
 | **gald3r sync drift** | `.gald3r/TASKS.md` modified but individual `tasks/` files not staged (or vice versa) |
-| **platform parity** | IDE config files modified in one target but not propagated (run `scripts/platform_parity_check.ps1`) |
+| **platform parity** | IDE config files modified in one target but not propagated (run `custom_scripts/platform_parity_sync.ps1` report-only — omit `-Sync`) |
 | **CHANGELOG/release sync (C-023)** | `CHANGELOG.md` staged with new `## [x.x.x]` version headers that have no matching `.gald3r/releases/` file |
 
 ### CHANGELOG/Release Sync Check (C-023)
@@ -147,7 +147,25 @@ Use `scripts/gald3r_worktree.ps1` for agent-owned isolated checkouts in the gald
 
 # Create or reuse a task worktree outside the active checkout
 .\scripts\gald3r_worktree.ps1 -Action Create -TaskId 170 -Role code -Owner cursor
+
+# Integration merge: fast-forward a task's code branch into the target (default dev), then
+# delete code+review branches and the worktree. Dry-run by default; -Apply to write. (T1443)
+.\scripts\gald3r_worktree.ps1 -Action MergeToMain -TaskId 170 -TargetBranch dev          # dry-run plan
+.\scripts\gald3r_worktree.ps1 -Action MergeToMain -TaskId 170 -TargetBranch dev -Apply   # FF-merge + cleanup
+.\scripts\gald3r_worktree.ps1 -Action MergeToMain -SourceBranch feature/x -TargetBranch main -Json
 ```
+
+### Worktree actions (`-Action`)
+
+`Create` | `Report` | `Remove` | `Cleanup` | `Run` | `Cancel` | `CancelAll` | `Checkpoint` | `Resume` | `Steer` | `Queue` | `LockReport` | `Keep` | **`MergeToMain`**
+
+- **`MergeToMain` (T1443 / BUG-099 recurrence prevention)**: fast-forward the task's code branch
+  (resolved from worktree metadata, or `-SourceBranch`) into `-TargetBranch` (default `dev`).
+  **FF-only** — a target that cannot fast-forward is returned `merge-blocked` and is **never**
+  force-updated. Dry-run by default (`would-merge` / `merge-blocked` / `noop` plan, read-only);
+  `-Apply` performs the merge then deletes the code + review branches and the worktree. Refuses
+  with `merge-skipped-dirty` if the main checkout has uncommitted paths. `-Json` for autopilot
+  consumption. This is the helper that `g-go-go`'s per-PASS auto-merge step invokes.
 
 - Default root is `$env:GALD3R_WORKTREE_ROOT` when set; otherwise `<repo-parent>/.gald3r-worktrees/<repo-name>`.
 - Branches use `gald3r/{task_id}/{role}/{repo_slug}/{owner}-{suffix}`.

@@ -46,7 +46,7 @@
 #>
 
 param(
-    [ValidateSet("Create", "Report", "Remove", "Cleanup", "Run", "Cancel", "CancelAll", "Checkpoint", "Resume", "Steer", "Queue", "LockReport", "Keep")]
+    [ValidateSet("Create", "Report", "Remove", "Cleanup", "Run", "Cancel", "CancelAll", "Checkpoint", "Resume", "Steer", "Queue", "LockReport", "Keep", "MergeToMain")]
     [string]$Action = "Report",
 
     [string]$RepoPath = ".",
@@ -54,6 +54,12 @@ param(
     [string]$Role = "agent",
     [string]$Owner = $env:USERNAME,
     [string]$BaseBranch = "HEAD",
+
+    # MergeToMain (T1443): integration merge target + optional explicit source branch.
+    # TargetBranch defaults to "dev" (B+C pattern). When SourceBranch is omitted, the
+    # task's code worktree branch is resolved from worktree metadata.
+    [string]$TargetBranch = "dev",
+    [string]$SourceBranch,
     [string]$WorktreeRoot = $env:GALD3R_WORKTREE_ROOT,
     [string]$TaskRoot,
     [int]$StaleHours = 24,
@@ -693,6 +699,152 @@ function Invoke-Gald3rWorktreeCleanup {
         }
     }
     return $results
+}
+
+# ---------------------------------------------------------------------------
+# Integration merge (MergeToMain) — T1443 / BUG-099 recurrence prevention
+# ---------------------------------------------------------------------------
+# Fast-forward a task's code branch into an integration target (default "dev"),
+# then delete the code + review branches and the worktree. Dry-run by default;
+# only writes/merges when -Apply is passed (mirrors the Cleanup contract). The
+# merge is FF-ONLY: a target that cannot fast-forward is reported as
+# merge-blocked and is NEVER force-updated.
+
+function Get-AheadBehind {
+    # Returns @{ ahead = <commits in A not in B>; behind = <commits in B not in A> }
+    # for A relative to B, via `git rev-list --left-right --count A...B`.
+    param([string]$RepoRoot, [string]$RefA, [string]$RefB)
+    $out = (Invoke-Git -Repo $RepoRoot -Arguments @("rev-list", "--left-right", "--count", "$RefA...$RefB")).Trim()
+    $parts = $out -split "\s+"
+    return @{ ahead = [int]$parts[0]; behind = [int]$parts[1] }
+}
+
+function Invoke-Gald3rMergeToMain {
+    param(
+        [string]$RepoRoot,
+        [string]$Root,
+        [string]$TaskId,
+        [string]$Role,
+        [string]$Owner,
+        [string]$SourceBranch,
+        [string]$TargetBranch,
+        [switch]$Apply
+    )
+
+    # 1. Resolve the source (code) branch: explicit -SourceBranch wins; otherwise
+    #    resolve from the task's worktree metadata.
+    $metadata = $null
+    if ([string]::IsNullOrWhiteSpace($SourceBranch)) {
+        if ([string]::IsNullOrWhiteSpace($TaskId)) {
+            throw "MergeToMain requires either -SourceBranch or -TaskId (to resolve the code worktree branch)."
+        }
+        $metadata = Find-Gald3rWorktree -Root $Root -RepoRoot $RepoRoot -TaskId $TaskId -Role $Role -Owner $Owner
+        if ($null -eq $metadata) {
+            throw "No gald3r-owned worktree found for task '$TaskId', role '$Role', owner '$Owner'. Pass -SourceBranch explicitly."
+        }
+        $SourceBranch = $metadata.worktree_branch
+    }
+
+    $mode = if ($Apply) { "apply" } else { "dry-run" }
+    $result = [ordered]@{
+        action  = "MergeToMain"
+        mode    = $mode
+        source  = $SourceBranch
+        target  = $TargetBranch
+        status  = $null
+        message = $null
+    }
+
+    # 2. Both branches must exist.
+    if (-not (Test-BranchExists -RepoRoot $RepoRoot -BranchName $SourceBranch)) {
+        $result.status = "not-found"; $result.message = "source branch '$SourceBranch' does not exist"
+        return [pscustomobject]$result
+    }
+    if (-not (Test-BranchExists -RepoRoot $RepoRoot -BranchName $TargetBranch)) {
+        # g-go-go contract: missing target branch is merge-blocked, not an error.
+        $result.status = "merge-blocked"; $result.message = "target branch '$TargetBranch' does not exist"
+        return [pscustomobject]$result
+    }
+
+    # 3. FF-ability: target must be an ancestor of source (i.e. target is strictly
+    #    behind-or-equal). Read-only check; no checkout side effects.
+    $ab = Get-AheadBehind -RepoRoot $RepoRoot -RefA $SourceBranch -RefB $TargetBranch
+    $result.source_ahead_of_target = $ab.ahead
+    $result.target_ahead_of_source = $ab.behind
+    $ffPossible = $false
+    & git -C $RepoRoot merge-base --is-ancestor $TargetBranch $SourceBranch *> $null
+    if ($LASTEXITCODE -eq 0) { $ffPossible = $true }
+
+    if (-not $ffPossible) {
+        $result.status = "merge-blocked"
+        $result.message = "target '$TargetBranch' is $($ab.behind) commit(s) ahead of source; fast-forward not possible (would require a merge commit / conflict resolution) — not forcing"
+        return [pscustomobject]$result
+    }
+    if ($ab.ahead -eq 0) {
+        $result.status = "noop"; $result.message = "target '$TargetBranch' already contains source '$SourceBranch' (nothing to merge)"
+        # Already merged: still safe to clean up branches/worktree under -Apply.
+    }
+
+    if (-not $Apply) {
+        if ($result.status -ne "noop") {
+            $result.status = "would-merge"
+            $result.message = "would fast-forward '$TargetBranch' to '$SourceBranch' (+$($ab.ahead) commit(s)), then delete code+review branches and worktree"
+        }
+        return [pscustomobject]$result
+    }
+
+    # 4. APPLY: refuse if the main checkout has unrelated dirty paths.
+    $dirty = Get-DirtyStatus -RepoRoot $RepoRoot
+    if ($dirty.Count -gt 0) {
+        $result.status = "merge-skipped-dirty"
+        $result.message = "main checkout has $($dirty.Count) uncommitted path(s); refusing to merge"
+        return [pscustomobject]$result
+    }
+
+    # 5. Fast-forward the target ref to source. If TargetBranch is the current
+    #    branch, use merge --ff-only; otherwise update the ref via fetch (FF-safe,
+    #    never forces) so we do not switch the user's checkout.
+    $currentBranch = (Invoke-Git -Repo $RepoRoot -Arguments @("rev-parse", "--abbrev-ref", "HEAD")).Trim()
+    if ($result.status -ne "noop") {
+        try {
+            if ($currentBranch -eq $TargetBranch) {
+                Invoke-Git -Repo $RepoRoot -Arguments @("merge", "--ff-only", $SourceBranch) | Out-Null
+            } else {
+                # `git fetch . src:dst` updates dst to src only when it is a fast-forward.
+                Invoke-Git -Repo $RepoRoot -Arguments @("fetch", ".", "$SourceBranch`:$TargetBranch") | Out-Null
+            }
+        } catch {
+            $result.status = "merge-blocked"; $result.message = "fast-forward merge failed: $($_.Exception.Message)"
+            return [pscustomobject]$result
+        }
+    }
+
+    # 6. Delete code + review branches and the worktree (best-effort; merge already landed).
+    $deleted = @()
+    # Remove the worktree first (frees the branch checkout) if we resolved one.
+    if ($null -ne $metadata) {
+        try { Remove-Gald3rWorktree -RepoRoot $RepoRoot -Metadata $metadata -Apply:$true | Out-Null } catch {}
+    }
+    foreach ($b in @($SourceBranch)) {
+        if ($b -ne $TargetBranch -and (Test-BranchExists -RepoRoot $RepoRoot -BranchName $b)) {
+            try { Invoke-Git -Repo $RepoRoot -Arguments @("branch", "-D", $b) | Out-Null; $deleted += $b } catch {}
+        }
+    }
+    # Sibling review branch: same path with /review/ role segment, if present.
+    if ($SourceBranch -match "^gald3r/([^/]+)/[^/]+/(.+)$") {
+        $reviewBranch = "gald3r/$($Matches[1])/review/$($Matches[2])"
+        if ((Test-BranchExists -RepoRoot $RepoRoot -BranchName $reviewBranch)) {
+            try { Invoke-Git -Repo $RepoRoot -Arguments @("branch", "-D", $reviewBranch) | Out-Null; $deleted += $reviewBranch } catch {}
+        }
+    }
+    $result.deleted_branches = $deleted
+    if ($result.status -ne "noop") {
+        $result.status = "merged"
+        $result.message = "fast-forwarded '$TargetBranch' to '$SourceBranch'; deleted $($deleted.Count) branch(es) + worktree"
+    } else {
+        $result.message += "; cleaned up $($deleted.Count) branch(es) + worktree"
+    }
+    return [pscustomobject]$result
 }
 
 # ---------------------------------------------------------------------------
@@ -1593,6 +1745,10 @@ switch ($Action) {
         # T1059 - coordinator conflict detection. Re-read all active swarm lock
         # manifests and flag files claimed by more than one bucket (WARN, not BLOCK).
         $result = Get-SwarmLockConflictReport -RepoRoot $repoRoot
+    }
+    "MergeToMain" {
+        # T1443 - integration merge. FF-only; dry-run by default, -Apply to write.
+        $result = Invoke-Gald3rMergeToMain -RepoRoot $repoRoot -Root $resolvedRoot -TaskId $TaskId -Role $Role -Owner $Owner -SourceBranch $SourceBranch -TargetBranch $TargetBranch -Apply:$Apply
     }
 }
 

@@ -1,4 +1,9 @@
-﻿Alias for `@g-go --swarm`: $ARGUMENTS
+Alias for `@g-go --swarm`: $ARGUMENTS
+
+> **Step 0 — Workspace Member Clean-Status Preflight (T1431):** inherited from `@g-go`. The
+> read-only member clean-status preflight (manifest scan + `git status --short` per
+> `autonomous_child` member, dirty-table prompt, `--skip-member-clean-check` bypass) runs before
+> task selection. See `g-go.md` Step 0 for the authoritative algorithm.
 
 ### ⛔ NO-PROMPT RULE — READ AND ENFORCE BEFORE DOING ANYTHING ELSE
 

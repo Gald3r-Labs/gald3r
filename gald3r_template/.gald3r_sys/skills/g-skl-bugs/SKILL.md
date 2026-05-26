@@ -98,6 +98,9 @@ id: NNN
 title: 'Bug Title'
 severity: critical | high | medium | low
 status: open
+# Bug kind (T1385 auto-triage L0): code = normal fix path (never auto-triaged);
+# spec_defect | design_gap | policy_incongruity = candidates for g-skl-auto-triage.
+kind: code | spec_defect | design_gap | policy_incongruity
 source: development | testing | production | user_reported
 subsystems: [affected-subsystems]
 file: 'path/to/file.ext'
@@ -107,6 +110,10 @@ prd_reference: null
 # Auto-task bridge (T1114): populated when REPORT auto-creates a fix task
 fix_task_id: null
 auto_task_created_at: ''
+# Auto-triage L0 (T1385): set by g-skl-auto-triage on a non-code bug.
+# triage_status: not_attempted | auto_resolved | needs_attention | blocked_by_risk | deferred_verify
+triage_status: not_attempted
+triage_risk_score: null
 # Optional workspace-control routing; omit for current-repo-only bugs:
 workspace_repos:
   - gald3r_dev

@@ -52,6 +52,48 @@ token_budget: high
 - For any count above 25, include either the complete ID/file list inline or a named report artifact path containing the complete list. Compressed ranges are acceptable only as an additional convenience, never as the only evidence.
 - `--curate` is a special curation workflow: by default it writes gitignored proposal/report files for human review; pass the script-level `-NoReportFiles` option when the user requests a no-disk-side-effect dry run.
 
+### Heal operations (`--heal-cNNN`, T1436)
+
+When L1 triage detects a **structural gap** matching a known framework constraint/feature (e.g.
+a repo that predates C-023 release files), the corresponding heal path backfills it. Heals are
+**dry-run by default**; pass `--apply` to write. Every operation is logged to
+`.gald3r/logs/medic_heal_YYYYMMDD.log` (only when `--apply`). Runner:
+`.gald3r_sys/skills/g-skl-medic/scripts/gald3r_medic_heal.ps1`.
+
+```
+@g-medic --heal-c023 --dry-run     # plan release-file backfill from CHANGELOG (no writes)
+@g-medic --heal-c023 --apply       # create missing .gald3r/releases/ files
+@g-medic --heal-version --apply    # create root VERSION from latest CHANGELOG ## [X.Y.Z]
+@g-medic --heal-constraints        # report inheritable framework constraints missing locally
+@g-medic --heal-all --dry-run      # consolidated plan for all known structural gaps
+@g-medic --heal-all --apply        # run every Phase 1 heal in dependency order
+```
+
+| Flag | What it heals | Mechanism |
+|------|---------------|-----------|
+| `--heal-c023` | Missing `.gald3r/releases/RELEASE_*` files | Delegates to `g-skl-release/scripts/backfill_release_files.ps1` |
+| `--heal-version` | Missing root `VERSION` file | Derives from latest CHANGELOG versioned header |
+| `--heal-constraints` | Inheritable framework constraints absent locally | Reports gap; `--apply` appends an adoption-pointer stub (cautious: never injects full bodies, never creates CONSTRAINTS.md) |
+| `--heal-all` | All of the above | Runs in dependency order: version → c023 → constraints |
+
+Direct invocation: `gald3r_medic_heal.ps1 -ProjectRoot <path> -Heal c023|version|constraints|all [-Apply] [-Json]`.
+
+> **Safety:** heals never touch workspace member marker-only `.gald3r/` trees, never delete,
+> and the constraints heal is deliberately cautious (pointer stub only). Pass `-Json` for
+> CI/agent consumption (structured result with per-heal `status`/`message`/`files`).
+
+#### Heal test cases (AC: per-heal verification)
+
+| # | Case | Expected |
+|---|------|----------|
+| H1 | `-Heal version` on a repo with VERSION present | `status: ok`, "VERSION already present", no write |
+| H2 | `-Heal version` on a repo missing VERSION but with a CHANGELOG `## [X.Y.Z]` | dry-run plans `VERSION (X.Y.Z)`; `--apply` writes it |
+| H3 | `-Heal c023` on a repo with releases in sync | "0 release file(s) would be backfilled" |
+| H4 | `-Heal c023 --apply` on a repo with CHANGELOG versions lacking release files | creates `release{NNN}_v{X-Y-Z}.md` (delegated) |
+| H5 | `-Heal constraints` when inheritable C-NNN missing locally | reports the missing ID list; `--apply` appends a pointer stub |
+| H6 | `-Heal all -Json` | clean JSON with three result objects, no console-log leakage |
+| H7 | any heal `--apply` | a row appended to `.gald3r/logs/medic_heal_YYYYMMDD.log` |
+
 ### Curation mode (`--curate`, Task 517)
 
 **Default (dry-run)**: runs `.gald3r_sys/skills/g-skl-medic/scripts/gald3r_medic_curate.ps1` — counts feature/subsystem sprawl (recursive subsystem count), runs hierarchy sync helpers with `-WarnOnly`, adds a **fragmentation** section (duplicate `feat-NNN` hits in `FEATURES.md`, subsystem specs on disk not indexed in `SUBSYSTEMS.md` via sync JSON), and writes a human report plus `medic_curate_proposal_<stamp>.json` under `.gald3r/reports/` (gitignored). The proposal keeps top-level `moves` empty for safety, but now includes non-binding `suggested_moves` and `index_candidates` with source, target, risk/confidence, and rationale so the reviewer has concrete candidates to approve/edit/reject.

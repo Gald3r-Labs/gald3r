@@ -105,6 +105,20 @@ function Invoke-NormalizeFile {
         if ($bytes.Length -eq 0) { return $false }
 
         $encoding = Get-BomEncoding $bytes
+
+        # Binary/invalid-content guard (T1447): a NUL byte (0x00) in a file the BOM sniff
+        # treats as UTF-8/UTF-8-BOM (NOT UTF-16, which legitimately contains NULs) means the
+        # file is really binary or invalid UTF-8 despite its text extension. Decoding it via
+        # UTF8.GetString would silently replace bytes with U+FFFD (irreversible corruption).
+        # Leave it byte-identical.
+        if (($encoding -eq 'UTF8' -or $encoding -eq 'UTF8-BOM') -and ($bytes -contains 0x00)) {
+            if ($Scan -and -not $Quiet) {
+                Write-Host ("  skip-binary: {0} (NUL byte in non-UTF16 file)" -f `
+                    [System.IO.Path]::GetFileName($Path)) -ForegroundColor DarkGray
+            }
+            return $false
+        }
+
         $hasCrlf  = ($bytes -contains 0x0D)
         $isPs     = Test-IsPowerShellFile $Path
 

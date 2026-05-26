@@ -113,6 +113,19 @@ suggestions_adopted: 0
 - `idea` → posts to IDEA_BOARD via `g-skl-ideas CAPTURE`
 - `skip` → log as skipped; available in HARVEST_REVIEW later
 
+**Step 6a — `target_repo:` triage (WPAC-aware, T1430).** This triage step is the canonical
+place to set or change where a promoted idea's artifacts will land. When
+`.gald3r/workspace/topology.md` is present, for each suggestion routed to `idea`/`feature`:
+
+> Surface the current `target_repo:` (default `local`) and ask: *"Route to which repo?
+> (local / `<repo_id>` / list / workspace)"*.
+
+- Persist the chosen value onto the IDEA_BOARD entry's **Target Repo** field (passed through to
+  `g-skl-ideas CAPTURE`), so `g-skl-res-apply` can route per its routing table.
+- Valid values mirror `g-skl-ideas`: `local`, `<repo_id>`, `[repo_id, repo_id]`, `workspace`.
+- **No `topology.md`** → skip this prompt entirely; `target_repo:` stays `local`.
+- Do NOT route here — review only *annotates*; actual dispatch happens at `g-skl-res-apply` APPLY.
+
 **Step 7 — Finalize dedup entry** in `_recon_index.yaml`:
 ```yaml
 - slug: {slug}

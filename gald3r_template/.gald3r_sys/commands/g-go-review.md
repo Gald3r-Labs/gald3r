@@ -6,8 +6,28 @@ Verification-only backlog review: $ARGUMENTS
 > If you implemented any of these tasks in this session, **skip them** (leave `[🔍]`).
 > Self-review defeats the purpose of this gate.
 
+> **Scope is set by the coordinator, not here.** Workspace scope (`--local` / `--workspace <id>`
+> / `--workspace` / the `g_go_default_scope` config default) is resolved by the `g-go` /
+> `g-go-swarm` coordinator at its Auto-Plan Step 1a and handed down as the already-filtered review
+> queue (or explicit task IDs). When `g-go-review` is invoked directly with explicit task IDs, it
+> reviews exactly those `[🔍]` IDs. When invoked directly with no IDs, treat the scope as
+> **local-only** — `g-go-review` does not re-evaluate `g_go_default_scope`; let `g-go` own the
+> controller-default workspace_all expansion.
+
 ---
 
+
+### Step 0 — Workspace Member Clean-Status Preflight (T1431)
+
+Before the WPAC gate / review-queue build / claim / review-worktree creation, run the **read-only**
+workspace member clean-status preflight: scan `.gald3r/workspace/workspace_manifest.yaml`, run
+`git -C <path> status --short` on each `autonomous_child` member, and either print
+`Workspace clean -- N members checked` (proceed) or a per-repo dirty-status table asking the user
+to commit/stash first. Never auto-commits or writes. `--skip-member-clean-check` bypasses with a
+printed warning. Additive to the Housekeeping Commit Gate. **Full authoritative algorithm: see
+`g-go.md` Step 0.**
+
+---
 
 ### WPAC inbox Gate (Only When WPAC is configured)
 
@@ -243,6 +263,15 @@ For each `[🕵️]` task claimed by this verifier:
   5. **Waivers** — a High finding is honoured as waived only when its line carries a non-empty `# nosec: <≥4-word justification>` or `# security-exempt: <reason>` annotation. Critical findings are NEVER waivable from inside Step S.
   6. **Doc-only short-circuit** — Step S is intentionally skipped when changed files match `^(\*.md|docs/.*|CHANGELOG\.md|README\.md|LICENSE|\.gitignore)$`. The skip is recorded in the review note as `Step S SKIPPED — doc-only diff`.
   7. **Idempotency** — re-running Step S overwrites `threat_model.md` but never overwrites a timestamped `security_report_*.md`. Multiple runs accumulate; the latest report's verdict is the gate verdict for this review pass.
+
+**Step E — Encoding CI scan (T1448, optional/non-blocking)** — after Step S and before (c), reviewers MAY run the encoding-normalize hook in scan mode as a lightweight CI encoding check over the candidate's changed files:
+
+```powershell
+# Reports (exit 1) if any changed text file needs encoding normalization; writes nothing.
+.gald3r_sys/hooks/g-hk-encoding-normalize.ps1 -Scan
+```
+
+This surfaces stray BOMs / CRLF / UTF-16 drift before they reach the integration branch. It is **advisory by default** — a non-clean scan is recorded in the review note (`Step E: N file(s) need encoding normalization`) and is informational, not an automatic FAIL (the pre-commit hook fixes these on commit). Projects that want it enforced can treat a non-zero scan as a FAIL via `encoding_scan_enforced: true` in `AGENT_CONFIG.md`.
 
 **c) Score PASS or FAIL per criterion**
 **d) Bug check during review** — if you encounter a bug not covered by the task's ACs:

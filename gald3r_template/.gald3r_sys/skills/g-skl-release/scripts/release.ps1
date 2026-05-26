@@ -27,7 +27,7 @@
     Skip the parity gate (logs a warning but proceeds).
 
 .PARAMETER SkipParityCheck
-    Do not invoke platform_parity_check.ps1.
+    Do not invoke platform_parity_sync.ps1 (report-only parity gate).
 
 .EXAMPLE
     .\scripts\release.ps1 -Version 1.1.0 -Destination G:\gald3r_ecosystem\gald3r
@@ -62,13 +62,16 @@ Write-Host "  Mode        : $(if ($Apply) { 'APPLY' } else { 'DRY-RUN' })" -Fore
 Write-Host ""
 
 # --- Step 1: Parity gate ---
-$ParityScript = Join-Path $RepoRoot "custom_scripts\platform_parity_check.ps1"
+# Run platform_parity_sync.ps1 in report-only mode (no -Sync): it detects parity
+# gaps without modifying files and exits non-zero (1) when any gap is found, which
+# is what gates the release here.
+$ParityScript = Join-Path $RepoRoot "custom_scripts\platform_parity_sync.ps1"
 if (-not $SkipParityCheck -and -not $Force) {
     if (-not (Test-Path $ParityScript)) {
         Write-Warning "Parity check script not found at $ParityScript — skipping (use -Force to suppress this warning)"
     }
     else {
-        Write-Host "Step 1: Running platform parity check..." -ForegroundColor Cyan
+        Write-Host "Step 1: Running platform parity check (report-only)..." -ForegroundColor Cyan
         & $ParityScript
         if ($LASTEXITCODE -ne 0) {
             Write-Host ""

@@ -129,7 +129,7 @@ Cursor is the **canonical source** for gald3r. All content originates here.
 | commands/ | ✅ | ✅ | ✅ |
 | hooks/ | ✅ | ✅ | ✅ |
 
-Run `.\scripts\platform_parity_sync.ps1` to propagate changes to all 11 other targets.
+Run `.\custom_scripts\platform_parity_sync.ps1` to propagate changes to all 11 other targets.
 
 ---
 
@@ -179,7 +179,7 @@ After each fresh crawl: read `research/platforms/cursor/*.md`, update sections 1
 
 1. **Rules must use `.mdc` extension** — Cursor only auto-loads rules with `.mdc`. Other platforms use `.md`. The parity sync handles extension mapping automatically.
 2. **Skills folder structure** — Each skill must be in its own subfolder: `.cursor/skills/my-skill/SKILL.md`. A loose `.md` file in `skills/` root is NOT picked up.
-3. **Canonical framework source** — Edit `gald3r_templates/gald3r_template/.gald3r_sys/` (and `gald3r_templates/.cursor/` for maintainer IDE trees), then run `gald3r_templates/scripts/platform_parity_sync.ps1 -SyncGaldSys -Sync`. Do not hand-edit `gald3r_dev/.gald3r_sys/` or tier `gald3r_template_*/gald3r_template/` copies.
+3. **Canonical framework source** — Edit `gald3r_templates/gald3r_template/.gald3r_sys/` (and `gald3r_templates/.cursor/` for maintainer IDE trees), then run `gald3r_templates/custom_scripts/platform_parity_sync.ps1 -SyncGaldSys -Sync`. Do not hand-edit `gald3r_dev/.gald3r_sys/` or tier `gald3r_template_*/gald3r_template/` copies.
 4. **MCP timeout** — Default Cursor MCP timeout is 60s. For long-running tools, set `mcp.server.timeout: 600000` in Cursor settings.json.
 5. **Proprietary skills stay in `.cursor/` only** — Never propagate business-specific or proprietary skills to `G:/gald3r_ecosystem/gald3r_template_full`. C-009 exemption applies.
 

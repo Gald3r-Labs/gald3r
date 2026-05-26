@@ -125,6 +125,12 @@ This keeps recon writes **file-first** (C-001) and avoids the cost of re-embeddi
 | `--force` | false | Skip dedup check entirely (equivalent to `--max-age-days 0`) |
 | `--dry-run` | false | Print planned writes without touching the filesystem |
 
+> **WPAC routing note (T1430):** harvest/analysis is **always local** — `g-skl-res-deep` performs
+> no cross-repo routing. The `target_repo:` annotation that controls where promoted artifacts land
+> is set later, at **review time** (`g-skl-res-review` triage) or **capture time**
+> (`g-skl-ideas CAPTURE --target-repo`), and acted on by `g-skl-res-apply`. Nothing changes in the
+> ingestion/harvest behavior here.
+
 ---
 
 ## Operation: ANALYZE

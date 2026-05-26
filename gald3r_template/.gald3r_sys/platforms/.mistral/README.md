@@ -8,7 +8,7 @@ sync tooling.
 
 Authoritative install + customization guide: **`g-skl-platform-mistral`** (.gald3r_sys/skills/g-skl-platform-mistral/SKILL.md).
 
-> **Status (T1207 → T1277):** the platform skill and capabilities-registry entry
-> are in place. The full per-platform deploy payload (instructions guide + config
-> files such as hooks/settings/conventions) is tracked as a follow-up in **T1277**.
-> Until then this README is the placeholder that keeps the scaffold git-tracked.
+> **Status (T1277 — complete):** the full per-platform deploy payload is authored.
+> See **`mistral_instructions.md`** in this directory for the deploy guide (folder layout, config files,
+> conventions, and the T1277 AC6 gitignore decision). The config files this platform
+> consumes are shipped alongside it.

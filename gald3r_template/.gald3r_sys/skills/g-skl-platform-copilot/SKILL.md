@@ -284,6 +284,6 @@ MCP check (optional):
 
 **Common install failures**:
 - `copilot-instructions.md` missing → run `.\scripts\generate_copilot_instructions.ps1`
-- Commands count low → run `.\scripts\platform_parity_sync.ps1 -Sync`
+- Commands count low → run `.\custom_scripts\platform_parity_sync.ps1 -Sync`
 - Skills not loading in VS Code → ensure `.claude/skills/` exists (not just `.cursor/skills/`)
 - Hooks not firing → verify `.github/hooks/*.json` is valid JSON and `version: 1` is set
