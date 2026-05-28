@@ -1,4 +1,4 @@
-﻿# Starting a New Project with Gald3r
+# Starting a New Project with Gald3r
 
 These instructions are for developers beginning a **brand-new project** and want gald3r
 set up from the start.
@@ -84,3 +84,4 @@ recognizes the rules/config files in the project root.
 ---
 
 *Full documentation: [README.md](./README.md) | [CHANGELOG.md](./CHANGELOG.md)*
+
