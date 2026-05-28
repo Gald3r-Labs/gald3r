@@ -10,6 +10,10 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **`platforms/` folder with 23 ready-to-deploy platform templates (T1521).** Replaces the cancelled 23-separate-repos plan (T1513/T1514). Each `platforms/<name>/` contains a full built platform template (hooks, rules, skills, commands, agents) plus a brief README explaining install steps and tier label. `platforms/README.md` is a comparison matrix with tier badges. Produced by `platform_parity_sync.ps1 -SyncToGald3r` in the gald3r_templates pipeline.
+- **Platform Support section in README with tier matrix (T1515).** New top-level `## Platform Support (23 AI Coding Tools)` section listing all 23 platforms with shields.io tier badges (Tier 1 = green, Tier 2 = yellow, Tier 3 = orange), tier definitions, install steps, and per-platform folder links. Tier distribution: 8 Tier 1 (Claude Code, Cline, OpenAI Codex, GitHub Copilot, Cursor, opencode.ai, Roo Code, Windsurf), 10 Tier 2 (Aider, Augment, Gemini, Goose, Junie, Kiro, Kiro CLI, OpenHands, Replit AI, Warp), 5 Tier 3 (Antigravity, Mistral, OpenClaw, Qwen, SubQ).
+- "6-IDE parity" feature bullet updated to "23-platform parity" with full list.
+- `What's Included` table updated: `IDE Platforms | 6 | ...` row replaced with `Platforms | 23 | See Platform Support` cross-link.
 - `docs/PLUGINS.md`: plugin author guide covering skill pack structure, distribution, naming guidelines, and licensing options for third-party extensions.
 - README "Plugins & Skill Packs" section with naming guideline and licensing clarification (plugins are separate works, any license allowed).
 - NOTICE clarified with plain-language license summary and plugin naming guideline.
