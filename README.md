@@ -55,7 +55,7 @@ You finish a feature and ask the same agent to verify it. It passes everything �
 
 **Architectural constraints** — Rules agents must follow, loaded at every session start. Not suggestions. If an agent's action would violate a constraint, it must flag the conflict before proceeding.
 
-**6-IDE parity** — Cursor, Claude Code, Gemini, Codex, OpenCode, and GitHub Copilot. Same agents, same skills, same memory, same task state. Switch IDEs mid-task and pick up exactly where you left off.
+**23-platform parity** — Cursor, Claude Code, GitHub Copilot, OpenAI Codex, Windsurf, opencode.ai, Cline, Roo Code, plus 15 more (Aider, Augment, Goose, Warp, OpenHands, Kiro, Kiro CLI, JetBrains Junie, Replit AI, Google Gemini, Google Antigravity, Mistral, OpenClaw, Qwen, SubQ). Same agents, same skills, same memory, same task state. Switch tools mid-task and pick up exactly where you left off. See [Platform Support](#platform-support-23-ai-coding-tools) for the full matrix and tier labels.
 
 ---
 
@@ -71,7 +71,54 @@ You finish a feature and ask the same agent to verify it. It passes everything �
 | **Commands** | 89 | Full `@g-*` command surface — task management, bug management, feature pipeline, release management, recon, research, code quality, vault, multi-repo, ideas, constraints, subsystems, swarm, and maintenance |
 | **Hooks** | 12 | Session start, agent complete, pre-commit, pre-push, PCAC inbox check, vault operations |
 | **Rules** | 12 | Always-apply: documentation, git workflow, error reporting, task completion gates, TODO/stub lifecycle, bug discovery |
-| **IDE Platforms** | 6 | Cursor, Claude Code, Gemini, Codex, OpenCode, GitHub Copilot |
+| **Platforms** | 23 | See [Platform Support](#platform-support-23-ai-coding-tools) below — Tier 1 fully supported (8), Tier 2 community supported (10), Tier 3 experimental (5) |
+
+## Platform Support (23 AI Coding Tools)
+
+gald3r ships 23 ready-to-deploy platform templates under [`platforms/`](platforms/). Pick the folder matching your AI coding tool, copy its contents into your project root, and you're up and running. Each subfolder has its own brief README with platform-specific install notes. The full comparison matrix lives at [`platforms/README.md`](platforms/README.md).
+
+### How to install a platform template
+
+1. Browse the [`platforms/`](platforms/) folder and find your AI coding tool.
+2. Copy the contents of `platforms/<name>/` into your project root.
+3. Restart your IDE / agent so it picks up the new configuration.
+4. Read that folder's `README.md` for any platform-specific notes.
+
+### Tier definitions
+
+- **Tier 1 — Fully Supported**: Tested by gald3r maintainers on every release. Bugs filed against this tier block releases.
+- **Tier 2 — Community Supported**: Tested by the community; maintainer review on a best-effort basis; PRs welcome.
+- **Tier 3 — Experimental**: Scaffold available; may have structural issues, missing features, or untested edge cases.
+
+### Platform matrix
+
+| Platform | Tier | Folder | Status |
+|----------|------|--------|--------|
+| Claude Code | Tier 1 | [`claude/`](platforms/claude/) | ![Tier 1](https://img.shields.io/badge/Tier_1-Fully_Supported-green) |
+| Cline | Tier 1 | [`cline/`](platforms/cline/) | ![Tier 1](https://img.shields.io/badge/Tier_1-Fully_Supported-green) |
+| OpenAI Codex | Tier 1 | [`codex/`](platforms/codex/) | ![Tier 1](https://img.shields.io/badge/Tier_1-Fully_Supported-green) |
+| GitHub Copilot | Tier 1 | [`copilot/`](platforms/copilot/) | ![Tier 1](https://img.shields.io/badge/Tier_1-Fully_Supported-green) |
+| Cursor | Tier 1 | [`cursor/`](platforms/cursor/) | ![Tier 1](https://img.shields.io/badge/Tier_1-Fully_Supported-green) |
+| opencode.ai | Tier 1 | [`opencode/`](platforms/opencode/) | ![Tier 1](https://img.shields.io/badge/Tier_1-Fully_Supported-green) |
+| Roo Code | Tier 1 | [`roo/`](platforms/roo/) | ![Tier 1](https://img.shields.io/badge/Tier_1-Fully_Supported-green) |
+| Windsurf | Tier 1 | [`windsurf/`](platforms/windsurf/) | ![Tier 1](https://img.shields.io/badge/Tier_1-Fully_Supported-green) |
+| Aider | Tier 2 | [`aider/`](platforms/aider/) | ![Tier 2](https://img.shields.io/badge/Tier_2-Community_Supported-yellow) |
+| Augment Code | Tier 2 | [`augment/`](platforms/augment/) | ![Tier 2](https://img.shields.io/badge/Tier_2-Community_Supported-yellow) |
+| Google Gemini | Tier 2 | [`gemini/`](platforms/gemini/) | ![Tier 2](https://img.shields.io/badge/Tier_2-Community_Supported-yellow) |
+| Goose | Tier 2 | [`goose/`](platforms/goose/) | ![Tier 2](https://img.shields.io/badge/Tier_2-Community_Supported-yellow) |
+| JetBrains Junie | Tier 2 | [`junie/`](platforms/junie/) | ![Tier 2](https://img.shields.io/badge/Tier_2-Community_Supported-yellow) |
+| Kiro | Tier 2 | [`kiro/`](platforms/kiro/) | ![Tier 2](https://img.shields.io/badge/Tier_2-Community_Supported-yellow) |
+| Kiro CLI | Tier 2 | [`kiro-cli/`](platforms/kiro-cli/) | ![Tier 2](https://img.shields.io/badge/Tier_2-Community_Supported-yellow) |
+| OpenHands | Tier 2 | [`openhands/`](platforms/openhands/) | ![Tier 2](https://img.shields.io/badge/Tier_2-Community_Supported-yellow) |
+| Replit AI | Tier 2 | [`replit/`](platforms/replit/) | ![Tier 2](https://img.shields.io/badge/Tier_2-Community_Supported-yellow) |
+| Warp | Tier 2 | [`warp/`](platforms/warp/) | ![Tier 2](https://img.shields.io/badge/Tier_2-Community_Supported-yellow) |
+| Google Antigravity | Tier 3 | [`antigravity/`](platforms/antigravity/) | ![Tier 3](https://img.shields.io/badge/Tier_3-Experimental-orange) |
+| Mistral | Tier 3 | [`mistral/`](platforms/mistral/) | ![Tier 3](https://img.shields.io/badge/Tier_3-Experimental-orange) |
+| OpenClaw | Tier 3 | [`openclaw/`](platforms/openclaw/) | ![Tier 3](https://img.shields.io/badge/Tier_3-Experimental-orange) |
+| Qwen Code | Tier 3 | [`qwen/`](platforms/qwen/) | ![Tier 3](https://img.shields.io/badge/Tier_3-Experimental-orange) |
+| SubQ | Tier 3 | [`subq/`](platforms/subq/) | ![Tier 3](https://img.shields.io/badge/Tier_3-Experimental-orange) |
+
+Don't see your tool? [Open an issue](https://github.com/wrm3/gald3r/issues) — tier-3 scaffolds are easy to bring up; just need someone to confirm it boots in your editor.
 
 ### Agents
 
