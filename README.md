@@ -2,12 +2,12 @@
   <img src="logo/gald3r-logo.png" alt="Gald3r" width="400" />
 </p>
 
-<h1 align="center">Gald3r -- AI Dev Framework for 26 AI Coding Tools</h1>
+<h1 align="center">Gald3r -- AI Dev Framework for 28 AI Coding Tools</h1>
 
 <p align="center">
   File-based memory, task management, and agent orchestration that works across
   Cursor, Claude Code, Copilot, Windsurf, Cline, Roo, Codex, Aider, Kilo Code, Deep Code,
-  Hermes, OpenHands, Gemini, OpenCode, and 12 more.
+  Hermes, CodeBuddy, AstrBot, OpenHands, Gemini, OpenCode, and 12 more.
 </p>
 
 <p align="center">
@@ -34,7 +34,7 @@ Everything is plain markdown files in your repo. No server, no database, no Dock
 
 ---
 
-## Platform Support (26 AI Coding Tools) {#platform-support}
+## Platform Support (28 AI Coding Tools) {#platform-support}
 
 Pick your tool and open its folder -- each contains a complete, ready-to-deploy gald3r setup.
 
@@ -52,6 +52,7 @@ Pick your tool and open its folder -- each contains a complete, ready-to-deploy 
 | ![Cline](https://img.shields.io/badge/Cline-Tier_1-green) | [cline/](./cline/) | Copy `cline/` contents to project root |
 | ![Roo Code](https://img.shields.io/badge/Roo_Code-Tier_1-green) | [roo/](./roo/) | Copy `roo/` contents to project root |
 | ![Codex CLI](https://img.shields.io/badge/Codex_CLI-Tier_1-green) | [codex/](./codex/) | Copy `codex/` contents to project root |
+| ![CodeBuddy](https://img.shields.io/badge/CodeBuddy_(Tencent)-Tier_1-green) | [codebuddy/](./codebuddy/) | Copy `codebuddy/` contents to project root |
 
 ### Tier 2 -- Community Supported
 
@@ -84,6 +85,7 @@ Pick your tool and open its folder -- each contains a complete, ready-to-deploy 
 | ![SubQ](https://img.shields.io/badge/SubQ-Tier_3-orange) | [subq/](./subq/) | Copy `subq/` contents to project root |
 | ![Deep Code](https://img.shields.io/badge/Deep_Code_(DeepSeek)-Tier_3-orange) | [deepcode/](./deepcode/) | Copy `deepcode/` contents to project root |
 | ![Hermes](https://img.shields.io/badge/Hermes_(Nous_Research)-Tier_3-orange) | [hermes/](./hermes/) | Copy `hermes/` contents to project root |
+| ![AstrBot](https://img.shields.io/badge/AstrBot-Tier_3-orange) | [astrbot/](./astrbot/) | Upload skills .zip via WebUI |
 
 ---
 
