@@ -21,6 +21,7 @@ Find your tool in the list below and note the folder name:
 | Cline | cline/ | Tier 1 |
 | Roo Code | oo/ | Tier 1 |
 | Codex CLI | codex/ | Tier 1 |
+| CodeBuddy (Tencent) | codebuddy/ | Tier 1 |
 | Aider | ider/ | Tier 2 |
 | Augment | ugment/ | Tier 2 |
 | Goose | goose/ | Tier 2 |
@@ -36,6 +37,10 @@ Find your tool in the list below and note the folder name:
 | OpenClaw | openclaw/ | Tier 3 |
 | Qwen | qwen/ | Tier 3 |
 | SubQ | subq/ | Tier 3 |
+| Kilo Code | kilo-code/ | Tier 2 |
+| Deep Code (DeepSeek) | deepcode/ | Tier 3 |
+| Hermes (Nous Research) | hermes/ | Tier 3 |
+| AstrBot | astrbot/ | Tier 3 |
 
 ---
 
