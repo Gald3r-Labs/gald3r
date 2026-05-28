@@ -1,0 +1,14 @@
+# Warp Drive workflow — gald3r task-scoped commit
+# Docs: https://docs.warp.dev/features/warp-drive/workflows
+# Import into Warp Drive; fill in the task id and message arguments.
+name: gald3r commit
+command: |
+  git commit -m "feat(T{{task_id}}): {{message}}"
+description: Create a gald3r task-scoped commit (feat/fix with task reference).
+arguments:
+  - name: task_id
+    description: gald3r task id (e.g. 1042)
+  - name: message
+    description: Short imperative commit description
+tags:
+  - gald3r

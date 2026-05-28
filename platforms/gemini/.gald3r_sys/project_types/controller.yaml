@@ -1,0 +1,77 @@
+name: controller
+display_name: "Gald3r Ecosystem Controller"
+description: "The WPAC controller — owns the workspace manifest, task backlog, and ecosystem coordination plane."
+version: "1.0.0"
+
+required_folders:
+  - tasks/
+  - tasks/open/
+  - tasks/completed/
+  - bugs/
+  - config/
+  - features/
+  - releases/
+  - subsystems/
+  - linking/
+  - linking/sent_orders/
+  - linking/peers/
+  - logs/
+  - reports/
+  - specifications_collection/
+  - experiments/
+  - tracking/
+
+required_files:
+  - TASKS.md
+  - BUGS.md
+  - PLAN.md
+  - PROJECT.md
+  - CONSTRAINTS.md
+  - SUBSYSTEMS.md
+  - FEATURES.md
+  - config/AGENT_CONFIG.md
+  - config/SPRINT.md
+  - linking/INBOX.md
+  - tracking/IDEA_BOARD.md
+
+optional_files:
+  - config/HEARTBEAT.md
+  - config/KPI_DEFINITIONS.md
+  - experiments/EXPERIMENTS.md
+  - experiments/SELF_EVOLUTION.md
+
+default_constraints:
+  - C-001  # Docker never touches vault
+  - C-009  # 10-target propagation
+  - C-021  # No AI co-author footers
+
+default_subsystems: []
+
+gitignore_additions:
+  - ".gald3r/logs/*.log"
+  - ".gald3r/.user_id"
+  - ".gald3r-quarantine/"
+  - ".gald3r-worktree.json"
+
+identity_fields:
+  wpac_role: controller
+  project_type: controller
+
+features:
+  task_tracking: true
+  bug_tracking: true
+  release_management: true
+  git_workflow: gitflow-lite
+  branch_protection_level: standard
+  graduation_tier: single
+  wpac_role: controller
+
+badge: "🎛️"
+color: "#4A90D9"
+
+marketplace:
+  author: "gald3r"
+  homepage: "https://github.com/gald3r/gald3r"
+  license: "MIT"
+  tags: [ecosystem, controller, wpac]
+  min_gald3r_version: "1.6.0"

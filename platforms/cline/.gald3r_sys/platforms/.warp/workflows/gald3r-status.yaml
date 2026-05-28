@@ -1,0 +1,9 @@
+# Warp Drive workflow — gald3r status
+# Docs: https://docs.warp.dev/features/warp-drive/workflows
+# Import into Warp Drive or run the command directly.
+name: gald3r status
+command: |
+  grep -E '\[(🔄|📋|🔍)\]' .gald3r/TASKS.md
+description: Show active, pending, and awaiting-review gald3r tasks for this project.
+tags:
+  - gald3r

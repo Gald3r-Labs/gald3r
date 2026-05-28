@@ -1,0 +1,21 @@
+{
+    "mcpServers": {
+      "gald3r_docker": {
+        "url": "http://localhost:8092/mcp",
+        "transport": "streamable-http"
+      },
+      "chrome-devtools": {
+        "command": "npx",
+        "args": ["chrome-devtools-mcp@latest"]
+      }
+    },
+    "env": {
+      "CLAUDE_CODE_EXPERIMENTAL_AGENTS_TEAMS": "true"
+    },
+    "permissions": {
+      "defaultMode": "bypassPermissions"
+    },
+    "enableAllProjectMcpServers": true,
+    "enabledMcpjsonServers": []
+  }
+  

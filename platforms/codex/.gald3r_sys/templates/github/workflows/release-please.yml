@@ -1,0 +1,30 @@
+# release-please — optional auto-changelog / version-bump workflow (T1305)
+#
+# Uses Conventional Commits (which gald3r already enforces) to auto-generate
+# CHANGELOG entries and version bumps via a release PR. OPT-IN: copy this file
+# to .github/workflows/ and copy release-please-config.json + a
+# .release-please-manifest.json to the repo root, then enable Actions.
+#
+# Coexists with the manual `@g-ship` / g-rl-26 CHANGELOG flow — pick ONE mode
+# per repo (see g-skl-ship "Choosing a changelog mode", T1306). Part of the
+# optional GitHub Integration Bundle (project_type=software_development).
+
+name: release-please
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          # Drives versioning + CHANGELOG from Conventional Commits.
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

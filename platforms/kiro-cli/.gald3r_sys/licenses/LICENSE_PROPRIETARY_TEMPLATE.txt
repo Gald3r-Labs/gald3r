@@ -1,0 +1,19 @@
+PROPRIETARY AND CONFIDENTIAL
+
+Copyright (c) 2025-2026 Warren R. Martel III. All rights reserved.
+
+This software and its source code are the confidential and proprietary
+information of Warren R. Martel III ("Licensor"). No part of this
+software may be reproduced, distributed, transmitted, displayed,
+published, sublicensed, or used in any form or by any means, electronic
+or mechanical, without the express prior written consent of the Licensor.
+
+Unauthorized reproduction or distribution of this software, or any
+portion of it, may result in severe civil and criminal penalties and
+will be prosecuted to the maximum extent possible under the law.
+
+This software is part of the gald3r ecosystem. The "gald3r" name and
+associated logos are trademarks of Warren R. Martel III. Use of these
+trademarks without express written consent is prohibited.
+
+For licensing inquiries, contact: Warren R. Martel III

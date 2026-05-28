@@ -1,0 +1,7 @@
+# Qwen Code configuration — gald3r deploy scaffold
+# Docs: https://github.com/QwenLM/qwen-code
+# Do NOT place API keys here — use environment variables.
+
+model: qwen-max
+max_tokens: 8192
+instructions: .qwen/instructions.md

@@ -1,0 +1,57 @@
+schema_id: TASKS-md
+schema_version: v1
+gald3r_rel_version: "1.6.0"
+description: >-
+  Schema for the .gald3r/TASKS.md active task index. TASKS.md is a markdown
+  document (NOT YAML frontmatter) consisting of a status legend followed by
+  task rows. Rows may be rendered as a markdown table OR as status-bucketed
+  bullet lists; both formats are valid and this schema describes the expected
+  structural sections rather than a flat field set.
+applies_to: ".gald3r/TASKS.md"
+
+unknown_fields: allow
+
+# Document-level structural rules (markdown, not frontmatter).
+structure:
+  document_type: markdown
+  top_level_heading:
+    required: true
+    description: "An H1 title, e.g. '# TASKS.md — {PROJECT_NAME}'."
+  legend_section:
+    required: true
+    description: >-
+      A status legend mapping each status emoji/label to its meaning. Must
+      enumerate the status markers used by task rows (e.g. [📋] pending,
+      [🔄] in-progress, [🔍] awaiting-verification, [✅] completed, etc.).
+    rule: "Every status marker that appears in a task row MUST be defined in the legend."
+  task_rows:
+    required: true
+    description: >-
+      Task entries. Two interchangeable representations are accepted.
+    accepted_formats:
+      - format: table
+        description: >-
+          A markdown table whose columns include at minimum: ID, status
+          marker, title, priority. Additional columns (type, dependencies,
+          workspace_repos, etc.) are permitted (unknown_fields: allow).
+        required_columns: [id, status, title, priority]
+      - format: bullet
+        description: >-
+          Status-bucketed bullet lists, one bucket per status, where each
+          bullet encodes the task ID, status marker, and title.
+    row_rules:
+      - "Each task row MUST carry a task ID that matches a file in .gald3r/tasks/**."
+      - "Each task row MUST carry a status marker defined in the legend."
+      - "The ID space is sequential and unique across the index."
+
+cross_reference:
+  description: >-
+    TASKS.md is an index; the source of truth for full task metadata is the
+    per-task file under .gald3r/tasks/**. g-medic validates that every TASKS.md
+    row resolves to exactly one task file and vice versa (sync check).
+  validates_against: task-file
+
+migration_notes:
+  v1:
+    added: [legend_section, task_rows]
+    note: "Initial versioned schema. Codifies the dual table/bullet row format and the legend requirement."
