@@ -1,0 +1,26 @@
+---
+name: gald3r-conventions
+description: "gald3r framework conventions for this project"
+alwaysApply: true
+---
+
+# gald3r Project Conventions
+
+## Task Management
+- Tasks: .gald3r/TASKS.md and .gald3r/tasks/
+- Bugs: .gald3r/BUGS.md and .gald3r/bugs/
+- Plan: .gald3r/PLAN.md
+- Constraints: .gald3r/CONSTRAINTS.md (always check before completing any task)
+
+## Commit Format
+`
+feat(scope): description
+
+Task: #NNN
+`
+
+## Status Emoji
+- [📋] pending
+- [🔄] in progress
+- [🔍] awaiting verification
+- [✅] done

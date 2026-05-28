@@ -2,12 +2,12 @@
   <img src="logo/gald3r-logo.png" alt="Gald3r" width="400" />
 </p>
 
-<h1 align="center">Gald3r -- AI Dev Framework for 28 AI Coding Tools</h1>
+<h1 align="center">Gald3r -- AI Dev Framework for 31 AI Coding Tools</h1>
 
 <p align="center">
   File-based memory, task management, and agent orchestration that works across
   Cursor, Claude Code, Copilot, Windsurf, Cline, Roo, Codex, Aider, Kilo Code, Deep Code,
-  Hermes, CodeBuddy, AstrBot, OpenHands, Gemini, OpenCode, and 12 more.
+  Hermes, CodeBuddy, AstrBot, OpenHands, Gemini, OpenCode, and 15 more.
 </p>
 
 <p align="center">
@@ -34,7 +34,7 @@ Everything is plain markdown files in your repo. No server, no database, no Dock
 
 ---
 
-## Platform Support (28 AI Coding Tools) {#platform-support}
+## Platform Support (31 AI Coding Tools) {#platform-support}
 
 Pick your tool and open its folder -- each contains a complete, ready-to-deploy gald3r setup.
 
@@ -86,6 +86,9 @@ Pick your tool and open its folder -- each contains a complete, ready-to-deploy 
 | ![Deep Code](https://img.shields.io/badge/Deep_Code_(DeepSeek)-Tier_3-orange) | [deepcode/](./deepcode/) | Copy `deepcode/` contents to project root |
 | ![Hermes](https://img.shields.io/badge/Hermes_(Nous_Research)-Tier_3-orange) | [hermes/](./hermes/) | Copy `hermes/` contents to project root |
 | ![AstrBot](https://img.shields.io/badge/AstrBot-Tier_3-orange) | [astrbot/](./astrbot/) | Upload skills .zip via WebUI |
+| ![Amp Code](https://img.shields.io/badge/Amp_Code_(Sourcegraph)-Tier_1-green) | [amp/](./amp/) | Copy `amp/` contents to project root |
+| ![Continue](https://img.shields.io/badge/Continue-Tier_1-green) | [continue/](./continue/) | Copy `continue/` contents to project root |
+| ![Void Editor](https://img.shields.io/badge/Void_Editor-Tier_3-orange) | [void/](./void/) | Copy `void/` contents to project root |
 
 ---
 

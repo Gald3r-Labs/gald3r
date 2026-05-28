@@ -22,6 +22,8 @@ Find your tool in the list below and note the folder name:
 | Roo Code | oo/ | Tier 1 |
 | Codex CLI | codex/ | Tier 1 |
 | CodeBuddy (Tencent) | codebuddy/ | Tier 1 |
+| Amp Code (Sourcegraph) | amp/ | Tier 1 |
+| Continue | continue/ | Tier 1 |
 | Aider | ider/ | Tier 2 |
 | Augment | ugment/ | Tier 2 |
 | Goose | goose/ | Tier 2 |
@@ -41,6 +43,7 @@ Find your tool in the list below and note the folder name:
 | Deep Code (DeepSeek) | deepcode/ | Tier 3 |
 | Hermes (Nous Research) | hermes/ | Tier 3 |
 | AstrBot | astrbot/ | Tier 3 |
+| Void Editor | void/ | Tier 3 |
 
 ---
 
