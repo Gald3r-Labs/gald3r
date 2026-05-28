@@ -1,0 +1,15 @@
+# Anthropic Agent SDK Integration Requirements
+
+# Core dependencies
+anthropic>=0.40.0           # Anthropic Agent SDK (check for latest beta version)
+pydantic>=2.0.0             # Data validation and schema
+python-dotenv>=1.0.0        # Environment variable management
+psutil>=5.9.0               # System resource monitoring (for health checks)
+
+# Optional but recommended
+requests>=2.31.0            # HTTP requests for plugin integration
+typing-extensions>=4.8.0    # Enhanced type hints for Python <3.11
+
+# Development/Testing
+pytest>=7.4.0               # Testing framework
+pytest-cov>=4.1.0           # Coverage reporting

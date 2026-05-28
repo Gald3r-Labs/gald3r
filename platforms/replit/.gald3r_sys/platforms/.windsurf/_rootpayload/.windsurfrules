@@ -1,0 +1,24 @@
+# gald3r Project Rules (Windsurf — Cascade)
+
+> Windsurf Cascade auto-injects this file. Edit the canonical copy under
+> .gald3r_sys/platforms/.windsurf/ — not the installed copy. Keep under ~8K tokens.
+
+## Task Management
+- All work is tracked in .gald3r/TASKS.md.
+- Read the active task in .gald3r/tasks/task{id}_*.md before implementing.
+- Reference the task ID in commits: feat(T{id}): description | fix(BUG-{id}): description.
+
+## Architecture
+- Read .gald3r/CONSTRAINTS.md before architectural decisions.
+- Subsystem boundaries are in .gald3r/SUBSYSTEMS.md.
+
+## Bug Protocol
+- Pre-existing bugs: document in .gald3r/BUGS.md — never silently ignore.
+
+## Skills
+- gald3r skills live in the root skills/ directory. Reference a skill by name
+  (e.g. @g-skl-tasks) in Cascade prompts.
+
+## Code Standards
+- No bare TODO comments — use TODO[TASK-{id}->TASK-{new_id}] and file a follow-up task.
+- Match the conventions already present in the file you are editing.

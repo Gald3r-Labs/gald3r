@@ -1,0 +1,89 @@
+# gald3r-branch-check — optional GitHub Action (T1296)
+#
+# Enforces gald3r conventions on every pull request:
+#   1. Branch name follows gald3r/{task_id}/{role}/{repo_slug}/{owner}-{suffix}
+#      OR is an allowed exception (main, develop, hotfix/*, release/*).
+#   2. Commit messages follow Conventional Commits.
+#   3. Soft-warns (does NOT fail) when the PR body references a task ID that
+#      isn't found in .gald3r/tasks/ — the task may live on another branch.
+#
+# INSTALL: copy this file to .github/workflows/ in your repo, then add
+# "gald3r-branch-check" to the required status checks for `main`
+# (see .gald3r/config/branch_protection.md). Part of the optional GitHub
+# Integration Bundle (project_type=software_development).
+
+name: gald3r-branch-check
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  branch-name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate branch name
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          allowed='^(main|develop|hotfix/.+|release/.+)$'
+          gald3r='^gald3r/[^/]+/[^/]+/[^/]+/[^/]+$'
+          if [[ "$HEAD_REF" =~ $allowed ]] || [[ "$HEAD_REF" =~ $gald3r ]]; then
+            echo "✅ branch '$HEAD_REF' matches an allowed pattern"
+          else
+            echo "::error::branch '$HEAD_REF' does not match gald3r/{task_id}/{role}/{repo_slug}/{owner}-{suffix} or an allowed exception (main, develop, hotfix/*, release/*)"
+            exit 1
+          fi
+
+  conventional-commits:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate commit messages (Conventional Commits)
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          # Conventional Commits subject: type(scope)?!: description
+          pattern='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|phase)(\([a-z0-9._/-]+\))?!?: .+'
+          fail=0
+          while IFS= read -r subject; do
+            # allow merge commits
+            if [[ "$subject" =~ ^Merge ]]; then continue; fi
+            if [[ ! "$subject" =~ $pattern ]]; then
+              echo "::error::non-conventional commit subject: $subject"
+              fail=1
+            fi
+          done < <(git log --format=%s "${BASE_SHA}..${HEAD_SHA}")
+          if [[ "$fail" -ne 0 ]]; then exit 1; fi
+          echo "✅ all commit subjects follow Conventional Commits"
+
+  task-ref:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Soft-check PR references a known task
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -euo pipefail
+          # Look for a Task: #NNNN or T NNNN reference in the PR body.
+          tid="$(printf '%s' "$PR_BODY" | grep -oiE 'T(ask:? *#?)? *[0-9]{1,5}' | grep -oE '[0-9]{1,5}' | head -1 || true)"
+          if [[ -z "$tid" ]]; then
+            echo "::warning::PR body does not reference a task ID (Task: #NNNN). Non-blocking."
+            exit 0
+          fi
+          if ls .gald3r/tasks/**/task${tid}_*.md >/dev/null 2>&1 || \
+             find .gald3r/tasks -name "task${tid}_*.md" 2>/dev/null | grep -q .; then
+            echo "✅ task T${tid} found in .gald3r/tasks/"
+          else
+            echo "::warning::task T${tid} not found in this branch's .gald3r/tasks/ — it may live on another branch. Non-blocking."
+          fi

@@ -1,0 +1,39 @@
+schema_id: feature-file
+schema_version: v1
+gald3r_rel_version: "1.6.0"
+description: "Schema for individual feature/PRD files under .gald3r/features/*.md (YAML frontmatter)."
+applies_to: ".gald3r/features/*.md"
+
+unknown_fields: allow
+
+required:
+  id:
+    type: string
+    description: "Feature identifier."
+  title:
+    type: string
+    min_length: 5
+    description: "Feature title."
+  status:
+    type: enum
+    values: [staging, specced, committed, shipped]
+    description: "Feature staging lifecycle status."
+
+optional:
+  priority:
+    type: enum
+    values: [critical, high, medium, low]
+  harvest_source:
+    type: string
+    description: "Where the feature idea originated, if harvested."
+  gald3r_rel_version:
+    type: string
+    auto_populate: current_framework_version
+  schema_version:
+    type: string
+    auto_populate: current_schema_version
+
+migration_notes:
+  v1:
+    added: [id, title, status]
+    note: "Initial versioned schema."
