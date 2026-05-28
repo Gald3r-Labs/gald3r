@@ -2,12 +2,12 @@
   <img src="logo/gald3r-logo.png" alt="Gald3r" width="400" />
 </p>
 
-<h1 align="center">Gald3r -- AI Dev Framework for 31 AI Coding Tools</h1>
+<h1 align="center">Gald3r -- AI Dev Framework for 34 AI Coding Tools</h1>
 
 <p align="center">
   File-based memory, task management, and agent orchestration that works across
   Cursor, Claude Code, Copilot, Windsurf, Cline, Roo, Codex, Aider, Kilo Code, Deep Code,
-  Hermes, CodeBuddy, AstrBot, OpenHands, Gemini, OpenCode, and 15 more.
+  Hermes, CodeBuddy, AstrBot, OpenHands, Gemini, OpenCode, and 18 more.
 </p>
 
 <p align="center">
@@ -34,7 +34,7 @@ Everything is plain markdown files in your repo. No server, no database, no Dock
 
 ---
 
-## Platform Support (31 AI Coding Tools) {#platform-support}
+## Platform Support (34 AI Coding Tools) {#platform-support}
 
 Pick your tool and open its folder -- each contains a complete, ready-to-deploy gald3r setup.
 
@@ -89,6 +89,9 @@ Pick your tool and open its folder -- each contains a complete, ready-to-deploy 
 | ![Amp Code](https://img.shields.io/badge/Amp_Code_(Sourcegraph)-Tier_1-green) | [amp/](./amp/) | Copy `amp/` contents to project root |
 | ![Continue](https://img.shields.io/badge/Continue-Tier_1-green) | [continue/](./continue/) | Copy `continue/` contents to project root |
 | ![Void Editor](https://img.shields.io/badge/Void_Editor-Tier_3-orange) | [void/](./void/) | Copy `void/` contents to project root |
+| ![Kimi Code](https://img.shields.io/badge/Kimi_Code_(Moonshot)-Tier_1-green) | [kimi/](./kimi/) | Copy `kimi/` contents to project root |
+| ![TRAE](https://img.shields.io/badge/TRAE_(ByteDance)-Tier_1-green) | [trae/](./trae/) | Copy `trae/` contents to project root |
+| ![Qoder](https://img.shields.io/badge/Qoder_(Alibaba)-Tier_2-yellow) | [qoder/](./qoder/) | Copy `qoder/` contents to project root |
 
 ---
 

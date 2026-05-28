@@ -24,6 +24,8 @@ Find your tool in the list below and note the folder name:
 | CodeBuddy (Tencent) | codebuddy/ | Tier 1 |
 | Amp Code (Sourcegraph) | amp/ | Tier 1 |
 | Continue | continue/ | Tier 1 |
+| Kimi Code (Moonshot AI) | kimi/ | Tier 1 |
+| TRAE (ByteDance) | trae/ | Tier 1 |
 | Aider | ider/ | Tier 2 |
 | Augment | ugment/ | Tier 2 |
 | Goose | goose/ | Tier 2 |
@@ -40,6 +42,7 @@ Find your tool in the list below and note the folder name:
 | Qwen | qwen/ | Tier 3 |
 | SubQ | subq/ | Tier 3 |
 | Kilo Code | kilo-code/ | Tier 2 |
+| Qoder (Alibaba) | qoder/ | Tier 2 |
 | Deep Code (DeepSeek) | deepcode/ | Tier 3 |
 | Hermes (Nous Research) | hermes/ | Tier 3 |
 | AstrBot | astrbot/ | Tier 3 |
