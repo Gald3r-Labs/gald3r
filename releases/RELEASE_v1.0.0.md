@@ -1,5 +1,3 @@
-# Release v1.0.0
-
 > **Released**: 2026-03-28
 > **Previous release**: *(first release)*
 

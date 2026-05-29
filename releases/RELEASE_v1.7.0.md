@@ -1,5 +1,3 @@
-# Release v1.7.0 — Workspace Distribution + Swarm Fix + 34-Platform Sweep
-
 **Released:** 2026-05-28
 **Version:** 1.7.0
 **Type:** Minor — new features, no breaking changes
