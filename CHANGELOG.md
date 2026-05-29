@@ -55,6 +55,32 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.5.2] - 2026-05-21 (HTML/JSON/TOON Output, Memory Compression, Vocab)
+
+### Added
+
+- **HTML output + theme system** (`g-skl-html-output`, `--html` flag): human-facing reports (`@g-status`, `@g-review`, QA reports) render as self-contained themed HTML. Three built-in themes: `gald3r-dark` (default), `gald3r-light`, `gald3r-mocha`. Coordination files stay markdown.
+- **JSON output mode** (`g-skl-json-output`, `--json` flag): a structured `{gald3r_version, generated_at, command, schema, data}` envelope for scripting, CI gates, and dashboards.
+- **TOON output mode** (`g-skl-toon-output`, `--toon` flag): Token-Oriented Object Notation -- a compact, lossless, LLM-friendly tabular format (about 40% smaller than JSON).
+- **Theme editor** (`g-skl-theme-editor`, `@g-theme-edit`): file-first editor for creating and editing gald3r HTML themes, with import/export of `:root` token blocks.
+- **Memory compression** (`g-skl-compress-memory`, `@g-compress-memory`): compact session memory and learned-facts entries to reduce context bloat while preserving key insights.
+- **Vocabulary management** (`@g-vocab-add`, `@g-vocab-list`, `@g-vocab-search`): define project-specific abbreviations that agents read at session start.
+- **Skill review** (`@g-skill-review`): list, review, and selectively promote auto-proposed skill drafts; human approval required before promotion.
+- **Auto-skill generation** (`--propose-skill` on `@g-go-review`): optionally drafts a `SKILL.md` after a PASS verdict when a novel, generalizable pattern is found. Off by default.
+- **`@g-mission` improvements**: `resume --budget N`, drain-queue scan order, a 75% context checkpoint threshold, mandatory split for oversized tasks, cross-repo task fix in `--until-empty`, and an autonomous push gate.
+
+---
+
+## [1.5.1] - 2026-05-18
+
+### Added
+
+- `docs/PLUGINS.md`: plugin author guide covering skill pack structure, distribution, and naming guidelines for third-party extensions.
+- README "Plugins & Skill Packs" section with a naming guideline (plugins are separate works).
+- NOTICE clarified with the plugin naming guideline.
+
+---
+
 ## [1.5.0] - 2026-05-10 (Maestro Harvest)
 
 ### Added
