@@ -42,12 +42,6 @@ field so harvested patterns carry IP provenance from capture through apply.
 
 ---
 
-## Full Change List
-
-See [CHANGELOG.md](../CHANGELOG.md) `## [1.5.0]` for the complete detailed list.
-
----
-
 ## Install / Upgrade
 
 Pick your platform folder and copy its contents to your project root:
