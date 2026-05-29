@@ -8,6 +8,10 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+---
+
+## [1.7.0] - 2026-05-28 (Workspace Distribution + Swarm Fix + 34-Platform Sweep)
+
 ### Changed
 
 - **Public-face restructure (T1522)**: The 23 ready-to-deploy platform templates moved from `platforms/<name>/` to `<name>/` directly at repo root. The standalone `platforms/README.md` matrix was removed (the platform comparison matrix lives in the main `README.md` per T1515). Removed internal/build artifacts that polluted the public view: `.cursor/`, `.claude/`, `.agent/`, `.codex/`, `.opencode/`, `.copilot/`, `.gald3r/`, `gald3r_template/`, `docs/`, `scripts/`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `GUARDRAILS.md`, `.claudeignore`, `.cursorignore`, `opencode.json`. Added `instructions_new_project.md` + `instructions_existing_project.md` covering the two audiences. The hero `README.md` was rewritten as a discovery-first document (no internal-tool references).
