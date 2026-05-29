@@ -1,0 +1,33 @@
+{
+  "$comment": [
+    "gald3r REFERENCE TEMPLATE for Roo Code project-level MCP config (.roo/mcp.json).",
+    "Schema doc-verified at docs.roocode.com /features/mcp/using-mcp-in-roo (2026-05-27).",
+    "This is an ANNOTATED, DISABLED template — NOT a live server set. Every server below has",
+    "\"disabled\": true so Roo will not attempt to connect to placeholder endpoints.",
+    "To activate: pick a server, fill in real command/args/url, set \"disabled\": false,",
+    "and replace placeholder env/header values. Project .roo/mcp.json takes precedence over the",
+    "global mcp_settings.json on name collision. Do NOT commit secrets — use env references.",
+    "STDIO fields: command (req), args, env, cwd, alwaysAllow, disabled, timeout, watchPaths, disabledTools.",
+    "Remote fields: type ('sse'|'streamable-http', req), url (req), headers, alwaysAllow, disabled, timeout, disabledTools."
+  ],
+  "mcpServers": {
+    "gald3r-example-stdio": {
+      "command": "node",
+      "args": ["path/to/your/mcp-server.js"],
+      "env": {
+        "API_KEY": "${env:YOUR_API_KEY}"
+      },
+      "alwaysAllow": [],
+      "disabled": true
+    },
+    "gald3r-example-remote": {
+      "type": "streamable-http",
+      "url": "https://your-mcp-server.example.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${env:YOUR_TOKEN}"
+      },
+      "alwaysAllow": [],
+      "disabled": true
+    }
+  }
+}

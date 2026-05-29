@@ -1,0 +1,21 @@
+# Aider configuration — gald3r deploy scaffold
+# Docs: https://aider.chat/docs/config/aider_conf.html
+# Installed to the project root by the gald3r installer.
+
+# Model used by Aider. Set to a current model; aider validates the string against
+# its own model registry, so do not pin a model that has rotated out. Override per
+# your provider / subscription.
+model: <your-model>
+
+# Disable auto-commits so commits follow gald3r task-scoped discipline:
+#   feat(T{id}): description   |   fix(BUG-{id}): description
+auto-commits: false
+
+# Persistent read-only context: gald3r control-plane files Aider should always see
+# but never edit. Aider does NOT auto-discover CONVENTIONS.md by filename — it is
+# pinned here (or with /read-only CONVENTIONS.md, or `aider --read CONVENTIONS.md`).
+# Keep this list small: every read: file consumes the context token budget each turn.
+read:
+  - CONVENTIONS.md
+  - .gald3r/PROJECT.md
+  - .gald3r/CONSTRAINTS.md
