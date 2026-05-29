@@ -51,12 +51,6 @@ loop when it halts without an authorized reason.
 
 ---
 
-## Full Change List
-
-See [CHANGELOG.md](../CHANGELOG.md) `## [1.6.0]` for the complete detailed list.
-
----
-
 ## Install / Upgrade
 
 From v1.5.x, run in your project:
