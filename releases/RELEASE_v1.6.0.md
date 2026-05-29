@@ -1,7 +1,5 @@
-# Release v1.6.0 — WPAC v1.6, Schema System, Ship Skill, Encoding Normalization
-
 > **Released**: 2026-05-25
-> **Previous release**: [v1.5.0](RELEASE_v1.5.0.md)
+> **Previous release**: [v1.5.2](RELEASE_v1.5.2.md)
 
 ---
 

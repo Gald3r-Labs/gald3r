@@ -1,5 +1,3 @@
-# Release v1.2.0 -- DX Standardization + FEATURES Pipeline
-
 > **Released**: 2026-04-11
 > **Previous release**: [v1.0.0](RELEASE_v1.0.0.md)
 

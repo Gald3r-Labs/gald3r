@@ -1,5 +1,3 @@
-# Release v1.5.0 -- Maestro Harvest
-
 > **Released**: 2026-05-10
 > **Previous release**: [v1.4.0](RELEASE_v1.4.0.md)
 

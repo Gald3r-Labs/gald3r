@@ -1,5 +1,3 @@
-# Release v1.2.1
-
 > **Released**: 2026-04-14
 > **Previous release**: [v1.2.0](RELEASE_v1.2.0.md)
 
