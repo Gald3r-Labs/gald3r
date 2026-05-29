@@ -1,0 +1,27 @@
+# .continue/config.yaml — gald3r project configuration for Continue
+# Docs: https://docs.continue.dev/reference/config-yaml
+
+models:
+  - name: Claude Sonnet
+    provider: anthropic
+    model: claude-sonnet-4-5
+    roles: [chat, edit, apply]
+
+  - name: Claude Haiku (fast)
+    provider: anthropic
+    model: claude-haiku-4-5
+    roles: [autocomplete]
+
+# Rules are auto-loaded from .continue/rules/*.md
+# See .continue/rules/gald3r.md for project conventions
+
+context:
+  - provider: code
+  - provider: docs
+  - provider: diff
+  - provider: terminal
+  - provider: problems
+
+# MCP tool integration
+experimental:
+  modelContextProtocolServers: []

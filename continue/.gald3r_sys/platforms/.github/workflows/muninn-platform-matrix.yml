@@ -1,0 +1,110 @@
+# gald3r_muninn — Platform Matrix CI (T1193 / T1160 follow-up)
+#
+# Runs the Python AST indexer + SQLite graph store + 6 MCP tools smoke
+# test on Linux and macOS to close the Linux/macOS legs of the T1160
+# platform matrix. Windows is already verified locally; this workflow
+# documents and enforces that the pure-Python + pure-JS implementation
+# behaves identically on the other two platforms.
+#
+# Parent epic: T1147 — gald3r_muninn clean-room rewrite of GitNexus.
+# Source AC: T1193 in .gald3r/tasks/open/task1193_muninn_linux_macos_ci_matrix.md
+name: muninn-platform-matrix
+
+on:
+  push:
+    branches: [dev, main]
+    paths:
+      - "docker/gald3r/tools/plugins/muninn/**"
+      - ".github/workflows/muninn-platform-matrix.yml"
+  pull_request:
+    paths:
+      - "docker/gald3r/tools/plugins/muninn/**"
+      - ".github/workflows/muninn-platform-matrix.yml"
+  workflow_dispatch:
+
+jobs:
+  python-smoke:
+    name: Python smoke (${{ matrix.os }} / py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install pytest
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pytest pytest-asyncio
+
+      - name: Run muninn full test suite
+        # Covers test_python_indexer.py (T1154), test_store.py (T1156),
+        # test_plugin.py (T1157), and test_platform_smoke.py (T1160).
+        # JUnit XML written for the artifact upload below.
+        run: |
+          python -m pytest docker/gald3r/tools/plugins/muninn/tests/ \
+            --junit-xml=test-results-python-${{ matrix.os }}-${{ matrix.python-version }}.xml \
+            -v
+
+      - name: Upload pytest results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-results-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: test-results-python-*.xml
+          retention-days: 30
+
+  typescript-smoke:
+    name: TypeScript indexer smoke (${{ matrix.os }} / node${{ matrix.node-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        node-version: ["18", "20", "22"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install TS indexer deps (typescript only)
+        # The TS indexer has exactly one runtime dep (typescript). Tests
+        # use node:test / node:assert from stdlib — no test deps.
+        run: |
+          cd docker/gald3r/tools/plugins/muninn
+          npm install --no-save
+
+      - name: Run ts_indexer test suite
+        # T1155 sub-task — covers `.ts/.tsx/.js/.jsx/.mjs/.cjs` AST
+        # parsing on the matrix node versions.
+        run: |
+          cd docker/gald3r/tools/plugins/muninn
+          node --test tests/ts_indexer.test.js
+
+  matrix-summary:
+    name: Platform matrix summary
+    needs: [python-smoke, typescript-smoke]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Report matrix verdict
+        run: |
+          echo "=== gald3r_muninn platform matrix verdict ==="
+          echo "Python smoke: ${{ needs.python-smoke.result }}"
+          echo "TypeScript smoke: ${{ needs.typescript-smoke.result }}"
+          if [ "${{ needs.python-smoke.result }}" != "success" ] || \
+             [ "${{ needs.typescript-smoke.result }}" != "success" ]; then
+            echo "::error::Platform matrix FAILED — see job logs above."
+            exit 1
+          fi
+          echo "Platform matrix: PASS across Linux + macOS for Python 3.10/3.11/3.12 and Node 18/20/22."

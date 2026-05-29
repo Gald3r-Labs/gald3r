@@ -1,0 +1,4 @@
+# .gald3r_sys/ — paths that must never be committed in installable template repos.
+# Controller (gald3r_dev) may keep a local copy; SyncGaldSys skips and purges this folder elsewhere.
+
+.understand-anything/

@@ -1,0 +1,18 @@
+{REPO_NAME}
+Copyright 2025-2026 Warren R. Martel III. All rights reserved.
+
+This software is licensed under the Fair Source License, version 1.1, with
+Apache License 2.0 as the Future License (FSL-1.1-Apache). See the LICENSE
+file for the full license text.
+
+Each version released under FSL-1.1-Apache automatically becomes available
+under the Apache License, Version 2.0, on the second anniversary of the date
+of its initial release.
+
+The "gald3r" name, logo, and associated marks are trademarks of Warren R.
+Martel III. The license grants no rights in these trademarks. See the
+Trademarks section of the LICENSE for permitted descriptive uses.
+
+For commercial licensing inquiries (e.g., terms that remove the Competing
+Use restriction, OEM embedding rights, or perpetual Apache 2.0 grants on
+current versions), contact: Warren R. Martel III

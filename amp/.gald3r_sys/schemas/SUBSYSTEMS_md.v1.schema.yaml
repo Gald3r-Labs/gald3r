@@ -1,0 +1,32 @@
+schema_id: SUBSYSTEMS-md
+schema_version: v1
+gald3r_rel_version: "1.6.0"
+description: >-
+  Schema for .gald3r/SUBSYSTEMS.md, the subsystem registry and interconnection
+  graph (markdown document with a registry table and a mermaid graph).
+applies_to: ".gald3r/SUBSYSTEMS.md"
+
+unknown_fields: allow
+
+structure:
+  document_type: markdown
+  top_level_heading:
+    required: true
+  registry_section:
+    required: true
+    description: "Registry of subsystems. Each registered subsystem SHOULD have a spec file under .gald3r/subsystems/."
+  graph_section:
+    required: false
+    description: "A mermaid interconnection graph of subsystem dependencies."
+
+required:
+  - top_level_heading
+  - registry_section
+
+cross_reference:
+  validates_against: subsystem-file
+
+migration_notes:
+  v1:
+    added: [top_level_heading, registry_section]
+    note: "Initial versioned schema."

@@ -1,0 +1,32 @@
+# .aiderignore — gald3r deploy scaffold
+# Docs: https://aider.chat/docs/usage/conventions.html
+# gitignore-style syntax. Excludes paths from aider's repo map and context so the
+# token budget stays focused on source. Installed to the project root by the gald3r
+# installer.
+
+# Aider's own generated transcript / history (never gald3r content)
+.aider.chat.history.md
+.aider.input.history
+.aider.tags.cache.v*/
+
+# gald3r runtime state that aider should not pull into context
+.gald3r/logs/
+.gald3r/reports/
+.gald3r/muninn/
+.gald3r/archive/
+
+# Dependency / virtual-env trees
+.venv/
+node_modules/
+__pycache__/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Secrets — never expose to the model
+.env
+.env.*
+*.key
+*.pem

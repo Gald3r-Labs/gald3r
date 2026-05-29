@@ -1,0 +1,118 @@
+#:schema https://developers.openai.com/codex/config-schema.json
+
+# gald3r - Codex Project Configuration
+# This file configures OpenAI Codex for the gald3r task management system.
+
+model = "gpt-5-codex"
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+web_search = "cached"
+model_reasoning_effort = "high"
+personality = "pragmatic"
+
+[windows]
+sandbox = "elevated"
+
+[sandbox_workspace_write]
+network_access = true
+writable_roots = []
+
+[features]
+multi_agent = true
+shell_tool = true
+shell_snapshot = true
+undo = true
+
+# ---------------------------------------------------------------------------
+# Skills - only the 17 gald3r core skills that actually exist in .codex/skills/
+# ---------------------------------------------------------------------------
+
+[[skills.config]]
+path = ".codex/skills/g-skl-bugs"
+enabled = true
+
+[[skills.config]]
+path = ".codex/skills/g-skl-code-review"
+enabled = true
+
+[[skills.config]]
+path = ".codex/skills/g-skl-dependency-graph"
+enabled = true
+
+[[skills.config]]
+path = ".codex/skills/g-skl-git-commit"
+enabled = true
+
+[[skills.config]]
+path = ".codex/skills/g-skl-ideas"
+enabled = true
+
+[[skills.config]]
+path = ".codex/skills/g-skl-medkit"
+enabled = true
+
+[[skills.config]]
+path = ".codex/skills/g-skl-plan"
+enabled = true
+
+[[skills.config]]
+path = ".codex/skills/g-skl-project"
+enabled = true
+
+[[skills.config]]
+path = ".codex/skills/g-skl-qa"
+enabled = true
+
+[[skills.config]]
+path = ".codex/skills/g-skl-review"
+enabled = true
+
+[[skills.config]]
+path = ".codex/skills/g-skl-setup"
+enabled = true
+
+[[skills.config]]
+path = ".codex/skills/g-skl-status"
+enabled = true
+
+[[skills.config]]
+path = ".codex/skills/g-skl-subsystems"
+enabled = true
+
+[[skills.config]]
+path = ".codex/skills/g-skl-swot-review"
+enabled = true
+
+[[skills.config]]
+path = ".codex/skills/g-skl-tasks"
+enabled = true
+
+[[skills.config]]
+path = ".codex/skills/g-skl-verify-ladder"
+enabled = true
+
+# ---------------------------------------------------------------------------
+# Agent Roles (Codex multi-agent configuration)
+# ---------------------------------------------------------------------------
+
+[agents]
+max_threads = 6
+max_depth = 2
+
+[agents.task-manager]
+description = "Manages gald3r task lifecycle - creates, updates, completes tasks in .gald3r/. Handles TASKS.md sync, task file creation, status transitions, and sequential numbering."
+
+[agents.planner]
+description = "Creates and manages PRDs, PLAN.md, scope validation, and project planning."
+
+[agents.qa-engineer]
+description = "Tracks bugs in .gald3r/BUGS.md, classifies severity, documents fixes, and manages quality processes."
+
+[agents.code-reviewer]
+description = "Performs comprehensive code reviews covering security, performance, maintainability, and best practices."
+
+[agents.infrastructure]
+description = "Manages project file organization, folder structure, scope boundaries, and subsystem registry."
+
+[agents.verifier]
+description = "Verifies completed tasks by reviewing evidence of completion and cross-checking acceptance criteria. Never verifies tasks it implemented."

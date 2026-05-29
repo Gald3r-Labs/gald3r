@@ -1,0 +1,73 @@
+name: Bug Report
+description: Report a bug in gald3r
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug! Please fill out the details below.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which part of gald3r is affected?
+      options:
+        - MCP Server (Docker)
+        - Task Management (.gald3r/)
+        - Rules / Agents / Skills
+        - gald3r_install
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: ide
+    attributes:
+      label: IDE
+      description: Which IDE are you using?
+      options:
+        - Cursor
+        - Claude Code
+        - Gemini
+        - Codex
+        - OpenCode
+        - N/A
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened? What did you expect?
+      placeholder: |
+        Steps to reproduce:
+        1. ...
+        2. ...
+
+        Expected: ...
+        Actual: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Error Output
+      description: Paste any relevant logs or error messages
+      render: shell
+
+  - type: input
+    id: version
+    attributes:
+      label: gald3r Version
+      placeholder: "1.0.0"
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      placeholder: "Windows 11 / macOS 15 / Ubuntu 24.04"
