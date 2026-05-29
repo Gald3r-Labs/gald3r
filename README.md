@@ -24,9 +24,9 @@ Gald3r is a framework that runs **inside your AI coding tool** -- not alongside 
 Drop the template for your tool into your project root, and your AI assistant gains:
 
 - **Persistent memory** across sessions (tasks, bugs, plans, constraints)
-- **22 specialized agents** (code reviewer, QA engineer, task manager, etc.)
+- **13 specialized agents** (code reviewer, QA engineer, task manager, platformer, etc.)
 - **100+ skills** for common dev workflows
-- **149 commands** invoked directly in chat (`@g-status`, `@g-go`, `@g-medic`)
+- **178 commands** invoked directly in chat (`@g-status`, `@g-go`, `@g-medic`)
 - **Hooks** that fire on IDE events (session start, file write, commit)
 - **Cross-platform parity** -- the same framework, tuned per tool
 
@@ -107,9 +107,9 @@ Pick your tool and open its folder -- each contains a complete, ready-to-deploy 
 
 Every platform folder contains the same gald3r core, tuned for that tool:
 
-- **Agents** -- 22 specialized AI roles (code reviewer, QA, task manager, infrastructure, etc.)
+- **Agents** -- 13 specialized AI roles (code reviewer, QA, task manager, infrastructure, platformer, etc.)
 - **Skills** -- 100+ reusable workflows invoked by agents and commands
-- **Commands** -- 149 chat commands (`@g-go`, `@g-status`, `@g-medic`, `@g-task-new`, ...)
+- **Commands** -- 178 chat commands (`@g-go`, `@g-status`, `@g-medic`, `@g-task-new`, ...)
 - **Rules** -- Persistent behavioral standards loaded every session
 - **Hooks** -- Event-driven automation (pre-commit, session-start, file-write)
 - **Task system** -- File-based `.gald3r/` folder tracks tasks, bugs, plans, constraints
