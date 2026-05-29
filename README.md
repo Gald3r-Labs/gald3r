@@ -120,7 +120,7 @@ Every platform folder contains the same gald3r core, tuned for that tool:
 
 See [releases/](./releases/) for release notes and [CHANGELOG.md](./CHANGELOG.md) for full history.
 
-Latest: **v1.6.0** -- WPAC Workspace-Control Architecture
+Latest: **v1.7.0** -- Workspace Distribution + Swarm Fix + 34-Platform Sweep
 
 ---
 
