@@ -2,7 +2,7 @@
 
 Per-release snapshot files for this project.
 
-Each file captures the complete changelog delta, highlights, and migration notes for one shipped version. Files accumulate across releases — browse here to catch up on what changed in any specific version without reading the full `CHANGELOG.md`.
+Each file captures the complete changelog delta, highlights, and migration notes for one shipped version. Files accumulate across releases -- browse here to catch up on what changed in any specific version without reading the full `CHANGELOG.md`.
 
 | File | Version | Date |
 |------|---------|------|

@@ -15,7 +15,7 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - **Public-face restructure (T1522)**: The 23 ready-to-deploy platform templates moved from `platforms/<name>/` to `<name>/` directly at repo root. The standalone `platforms/README.md` matrix was removed (the platform comparison matrix lives in the main `README.md` per T1515). Removed internal/build artifacts that polluted the public view: `.cursor/`, `.claude/`, `.agent/`, `.codex/`, `.opencode/`, `.copilot/`, `.gald3r/`, `gald3r_template/`, `docs/`, `scripts/`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `GUARDRAILS.md`, `.claudeignore`, `.cursorignore`, `opencode.json`. Added `instructions_new_project.md` + `instructions_existing_project.md` covering the two audiences. The hero `README.md` was rewritten as a discovery-first document (no internal-tool references).
-- **Per-platform README templates fixed (T1522 iter 2)**: Original 23 platform READMEs (`cursor/`, `claude/`, etc.) updated for the new flat layout — install instruction says `Copy the contents of <name>/` (not `platforms/<name>/`); cross-links use `../README.md` and `../CHANGELOG.md` (not `../../`); removed the stale `Platform comparison matrix` link (matrix now lives in main `README.md`). The 11 newer platform READMEs (T1523/T1524/T1525 — `amp/`, `astrbot/`, `codebuddy/`, `continue/`, `deepcode/`, `hermes/`, `kilo-code/`, `kimi/`, `qoder/`, `trae/`, `void/`) were authored with the correct flat-layout patterns from the start and were not touched in this commit.
+- **Per-platform README templates fixed (T1522 iter 2)**: Original 23 platform READMEs (`cursor/`, `claude/`, etc.) updated for the new flat layout -- install instruction says `Copy the contents of <name>/` (not `platforms/<name>/`); cross-links use `../README.md` and `../CHANGELOG.md` (not `../../`); removed the stale `Platform comparison matrix` link (matrix now lives in main `README.md`). The 11 newer platform READMEs (T1523/T1524/T1525 -- `amp/`, `astrbot/`, `codebuddy/`, `continue/`, `deepcode/`, `hermes/`, `kilo-code/`, `kimi/`, `qoder/`, `trae/`, `void/`) were authored with the correct flat-layout patterns from the start and were not touched in this commit.
 
 ### Added
 
@@ -47,7 +47,7 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 - **GitHub Copilot support** (`.copilot/`): 6th IDE added to the parity set. Full command surface (89 commands) deployed to `.copilot/commands/`. gald3r now supports Cursor, Claude Code, Gemini, Codex, OpenCode, and GitHub Copilot.
 - **Recon suite** (`g-skl-recon-repo`, `g-skl-recon-url`, `g-skl-recon-docs`, `g-skl-recon-yt`, `g-skl-recon-file`): unified research/reconnaissance skill family. Replaces the separate `g-skl-reverse-spec`, `g-skl-ingest-docs`, `g-skl-ingest-url`, `g-skl-ingest-youtube`, and `g-skl-harvest` skills with a consistent `recon-*` namespace. Each produces a structured recon report for human review before any writes occur.
-- **Research review/apply suite** (`g-skl-res-review`, `g-skl-res-deep`, `g-skl-res-apply`): three-step workflow — review a recon report, deep-dive on specific findings, then apply approved findings into `.gald3r/features/` staging. Replaces `g-skl-harvest-intake`.
+- **Research review/apply suite** (`g-skl-res-review`, `g-skl-res-deep`, `g-skl-res-apply`): three-step workflow -- review a recon report, deep-dive on specific findings, then apply approved findings into `.gald3r/features/` staging. Replaces `g-skl-harvest-intake`.
 - **Release management skill** (`g-skl-release`, `@g-release-new`, `@g-release-assign`, `@g-release-status`, `@g-release-accelerate`, `@g-release-publish`): full release lifecycle from planning to publishing. Manages `.gald3r/releases/` and `.gald3r/RELEASES.md`.
 - **Platform skills** (`g-skl-platform-cursor`, `g-skl-platform-claude`, `g-skl-platform-gemini`, `g-skl-platform-codex`, `g-skl-platform-opencode`, `g-skl-platform-copilot`): per-IDE platform reference skills for understanding each IDE's agent model, permission system, and tool surface.
 - **Medic skill** (`g-skl-medic`, `@g-medic`): targeted surgical repair for a specific `.gald3r/` file or subsystem, complementing `g-skl-medkit` (which does full-project health checks).
@@ -85,8 +85,8 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- **PCAC Spawn skill** (`g-skl-pcac-spawn`, `@g-pcac-spawn`): spawn a new gald3r project from the current one — creates the project folder in the ecosystem root, installs gald3r (matching current project's install style), seeds it with an optional description/features/code, runs subsystem discovery, and registers bidirectional PCAC topology links in both projects. Supports `--sibling`, `--child`, `--parent`, and `--dry-run`.
-- **PCAC Send-To skill** (`g-skl-pcac-send-to`, `@g-pcac-send-to`): transfer files, features, specs, ideas, bugs, or code from the current project to any related project in the topology. Lighter-weight than `g-skl-pcac-move` — works with freshly spawned projects, writes an INBOX notification in the destination, and logs provenance in the source vault. Supports `--type features|code|ideas|bugs|docs|spec`, `--delete-source`, and `--dry-run`.
+- **PCAC Spawn skill** (`g-skl-pcac-spawn`, `@g-pcac-spawn`): spawn a new gald3r project from the current one -- creates the project folder in the ecosystem root, installs gald3r (matching current project's install style), seeds it with an optional description/features/code, runs subsystem discovery, and registers bidirectional PCAC topology links in both projects. Supports `--sibling`, `--child`, `--parent`, and `--dry-run`.
+- **PCAC Send-To skill** (`g-skl-pcac-send-to`, `@g-pcac-send-to`): transfer files, features, specs, ideas, bugs, or code from the current project to any related project in the topology. Lighter-weight than `g-skl-pcac-move` -- works with freshly spawned projects, writes an INBOX notification in the destination, and logs provenance in the source vault. Supports `--type features|code|ideas|bugs|docs|spec`, `--delete-source`, and `--dry-run`.
 - Both skills deployed across all 5 IDE trees (`.cursor`, `.claude`, `.agent`, `.codex`, `.opencode`) with full parity.
 
 ---
@@ -97,7 +97,7 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 - **Feature pipeline** (`g-skl-features`, `FEATURES.md`, `.gald3r/features/`): structured staging layer between idea capture and task creation. Features move through `staging → specced → committed → shipped`. Only reach the TASKS.md backlog when explicitly promoted via `@g-feat-promote`. Prevents backlog pollution and keeps implementation intent explicit.
 - **Reverse-spec skill** (`g-skl-reverse-spec`, `@g-reverse-spec`): deep 5-pass analysis of any external repository. Produces a structured harvest report in `research/harvests/{slug}/` with skeleton, module map, feature scan, deep dives, and synthesis passes. Human reviews and marks features `[✅] approved` before APPLY writes to `.gald3r/features/`.
-- **Harvest intake skill** (`g-skl-harvest-intake`, `@g-harvest-intake`): processes approved harvest output into `.gald3r/features/` staging entries. Deduplicates against existing staging features — appends a Collected Approach rather than creating a duplicate.
+- **Harvest intake skill** (`g-skl-harvest-intake`, `@g-harvest-intake`): processes approved harvest output into `.gald3r/features/` staging entries. Deduplicates against existing staging features -- appends a Collected Approach rather than creating a duplicate.
 - **Subsystem graph skill** (`g-skl-subsystem-graph`, `@g-subsystem-graph`): generates a visual Mermaid dependency graph of all registered subsystems with dependency annotations.
 - **IDE CLI skills** (`g-skl-cli-cursor`, `g-skl-cli-claude`, `g-skl-cli-gemini`, `g-skl-cli-opencode`): dedicated reference skills for headless and terminal-first operation of each supported IDE. Cover agent mode, Cloud Agent handoff, API mode, session continuation, MCP config, checkpointing, and multi-agent patterns.
 - **Granular task commands** (`@g-task-add`, `@g-task-upd`, `@g-task-del`): fine-grained task operations to supplement the existing `@g-task-new` and `@g-task-update` commands.
@@ -109,11 +109,11 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- `g-go-verify` renamed to `@g-go-review` — clearer intent (this is the review/verification phase, not a QA pass). Old command name removed from all IDE directories.
-- `g-skl-cursor-cli`, `g-skl-claude-cli`, `g-skl-gemini-cli`, `g-skl-opencode-cli` renamed to `g-skl-cli-cursor`, `g-skl-cli-claude`, `g-skl-cli-gemini`, `g-skl-cli-opencode` — consistent `g-skl-cli-*` namespace pattern. Old skill directories removed.
+- `g-go-verify` renamed to `@g-go-review` -- clearer intent (this is the review/verification phase, not a QA pass). Old command name removed from all IDE directories.
+- `g-skl-cursor-cli`, `g-skl-claude-cli`, `g-skl-gemini-cli`, `g-skl-opencode-cli` renamed to `g-skl-cli-cursor`, `g-skl-cli-claude`, `g-skl-cli-gemini`, `g-skl-cli-opencode` -- consistent `g-skl-cli-*` namespace pattern. Old skill directories removed.
 - `g-skl-plan` updated: `features/` replaces `prds/` as the primary deliverable directory. PRD concepts live inside feature spec files.
 - `g-skl-harvest` updated: `APPLY` operation now calls `g-skl-features COLLECT` to dedup against existing staging features instead of creating tasks directly.
-- `g-skl-medkit` updated: detects projects with `prds/` folder and no `features/` folder — offers migration path to 1.2.0 feature pipeline.
+- `g-skl-medkit` updated: detects projects with `prds/` folder and no `features/` folder -- offers migration path to 1.2.0 feature pipeline.
 - README: updated component counts (Skills: 39 → 47, Commands: 52 → 76, Skill Packs: 6 → 7), added Feature Pipeline section, updated directory tree to show `features/`, updated all skill and command references.
 
 ### Removed
@@ -141,7 +141,7 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 - **URL ingestion** (`g-skl-ingest-url`): one-time article and page capture into the vault with frontmatter and deduplication by source URL.
 - **YouTube transcript ingestion** (`g-skl-ingest-youtube`): offline transcript extraction via yt-dlp. Stores in `research/videos/` with full frontmatter compliance.
 - **Vault management skill** (`g-skl-vault`): unified vault operations including Obsidian compatibility tools, MOC rebuild, frontmatter linting, and GitHub repo summaries.
-- **Continual learning skill** (`g-skl-learn`): agents self-report insights to vault memory files after each session. No external services required — file-only persistence.
+- **Continual learning skill** (`g-skl-learn`): agents self-report insights to vault memory files after each session. No external services required -- file-only persistence.
 - **Health and repair skill** (`g-skl-medkit`): single skill that detects what a `.gald3r/` directory needs (version migration, structural repair, or routine maintenance) and performs it. Replaces the separate g-cleanup, g-grooming, and g-upgrade skills.
 - **Platform crawl skill** (`g-platform-crawl`): dedicated skill for crawling Cursor, Claude Code, Gemini, and other platform documentation with configurable targets.
 - **Dependency graph** (`g-skl-dependency-graph`): auto-generates `.gald3r/DEPENDENCY_GRAPH.md` from task file dependencies. Shows blocked and blocking relationships.
@@ -153,7 +153,7 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 - `g-go-code` now requires a Status History entry before marking any item `[🔍]`. The b3 step is mandatory.
 - `g-go-review` FAIL path now counts FAIL rows in Status History to determine whether to reset to `[📋]` or escalate to `[🚨]`.
-- `g-go-code` skips `[🚨]` items entirely — logs them in the Skipped section as Requires-User-Attention.
+- `g-go-code` skips `[🚨]` items entirely -- logs them in the Skipped section as Requires-User-Attention.
 - Session start protocol (step 2) now surfaces re-work tasks when the last Status History entry is a FAIL.
 - `g-skl-tasks` and `g-skl-bugs` templates include Status History section. Every status transition appends a row.
 
