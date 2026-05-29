@@ -28,6 +28,57 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.6.0] - 2026-05-25 (WPAC v1.6, Schema System, Ship Skill)
+
+### Added
+
+- **Schema enforcement system**: every `.gald3r/` file now carries version provenance, validated against 15 versioned schema definitions. A read-only session-start probe flags drift in under a second, and a data-preserving migration engine (`migrate_schemas.ps1`) upgrades older files in place. `g-medic` gained an L1 validation layer that auto-fixes common schema gaps.
+- **Semantic versioning and release management** (`g-skl-ship`, `@g-ship`): promotes the CHANGELOG `[Unreleased]` section to a versioned release -- bumps `VERSION`, tags the release, and can publish. Task and bug completion feed CHANGELOG entries automatically.
+- **Dedicated bug-fix pipeline** (`@g-go-bugs`, `@g-go-bugs-swarm`): an autopilot built only for bugs -- reproduce, fix, regression test, adversarial review -- working through the backlog in severity order (critical first).
+- **Encoding normalization** (`g-hk-encoding-normalize`): pre-commit and stop-event hook that normalizes line endings and BOM policy, with a content-aware guard that leaves real binary files untouched. Ships with a `.gitattributes` scaffold and a one-command git-hooks installer so fresh installs are protected by default.
+- **Cross-project promotion lifecycle** (`@g-wpac-promote`): workspace members can graduate from a lightweight controlled member to a fully independent autonomous child via a formal, dry-run-first lifecycle instead of hand-editing files.
+- **Swarm file-lock manifests**: parallel `g-go --swarm` runs declare file locks so agents never edit the same files; overlapping buckets raise a lock conflict.
+- **Profile-aware core skills**: `g-go`, `g-go-code`, `g-go-review`, and `@g-status` read a configurable `workflow_profile` instead of hardcoded status strings.
+- **Context-aware autopilot**: `g-go-go` shrinks its parallel batch size under context pressure instead of stopping mid-run, with a stop-detection guard that resumes a stalled loop.
+
+### Changed
+
+- `@g-update` reconciles the gald3r version stamp in every consumer install on sync.
+- PCAC terminology renamed to WPAC (Workspace Project-Aware Coordination) across the command suite.
+
+### Fixed
+
+- Cross-platform file corruption from an early coordination transition cleaned up across all framework trees; a reusable cleanup script was added.
+- Several PowerShell hook parse and compatibility issues resolved.
+- Root `VERSION` file and `.gald3r/releases/` history now created and backfilled by both setup and `@g-update`.
+- Context Budget and Conflict Pattern hard rules restored to the core enforcement ruleset.
+
+---
+
+## [1.5.0] - 2026-05-10 (Maestro Harvest)
+
+### Added
+
+- **Security scanning** (`g-skl-security-scan`): a two-phase SAST scanner. A fast, free regex pass surfaces candidates across 12 vulnerability categories (hardcoded credentials, SQL injection, eval/exec, weak crypto, path traversal, CORS wildcards, and more), then a focused LLM pass analyzes only the flagged batches. Complements `g-skl-code-review`.
+- **Dynamic context assembly** (`g-skl-context-builder`): builds a token-budgeted context block on the fly from live `.gald3r/` state -- active tasks, constraints, relevant subsystems, and recent memory.
+- **Engineering-team delegation** (`g-skl-delegate`): task-brief templates, code-review request templates, quality-gate checklists, and clean handoff protocols.
+- **More coding-agent runtimes**: `g-skl-cli-jcode` (jcode Rust agent -- millisecond startup, local embeddings via Ollama) and `g-skl-comfyui` (local GPU image/video generation via ComfyUI, zero cloud cost).
+- **Code-graph context prep**: `g-go-code` can query a code graph (`g-skl-graphify`) for cheaper architecture lookups, with graceful fallback to grep-based prep.
+- **External backlog intake** (`@g-triage`): turns unstructured input (emails, Slack, meeting notes) into routed gald3r items behind a hard human-approval gate.
+- **Mid-flight control** (`@g-steer`, `@g-queue`): course-correct or queue work onto an in-progress worktree session; `@g-go-code --resume` adds crash recovery via checkpoint artifacts.
+- **Harness tuning guide** (`AGENT_CONFIG.md`): documents context budgets, temperature presets, and retry configuration.
+- **Recon provenance**: harvested patterns carry a similarity-risk field from capture through apply.
+
+### Changed
+
+- README component counts and platform parity updated for the 1.5 line.
+
+### Fixed
+
+- Session-start and lint hook compatibility issues on PowerShell resolved.
+
+---
+
 ## [1.4.0] - 2026-04-14
 
 ### Added
