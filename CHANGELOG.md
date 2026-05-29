@@ -26,19 +26,6 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 - README "Plugins & Skill Packs" section with naming guideline and licensing clarification (plugins are separate works, any license allowed).
 - NOTICE clarified with plain-language license summary and plugin naming guideline.
 
-### Changed
-
-- **License changed from MIT to Fair Source License 1.1 with Apache 2.0 future grant (FSL-1.1-Apache).**
-  - gald3r remains source-available and free to use, modify, and redistribute for any purpose except a Competing Use (offering gald3r itself as a commercial product or service that substitutes for, or substantially duplicates, gald3r).
-  - Individual, internal, and commercial downstream use (using gald3r to build your own products and services) is fully permitted.
-  - Plugin and skill pack authors retain full rights to their own work under any license.
-  - Each version automatically converts to Apache 2.0 on its second anniversary, providing a rolling transition to fully open source.
-  - See LICENSE for the full license text and README.md for a plain-language summary.
-- README: License badge updated from `License-MIT` to `License-FSL-1.1-Apache`.
-- Repository history was reset as part of the license transition. Previous MIT-licensed history is available in the pre-reset backup branch on the maintainer's local clone.
-
-### Removed
-
 ---
 
 ## [1.4.0] - 2026-04-14
