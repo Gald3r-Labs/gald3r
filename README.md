@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo/gald3r_logo_big.png" alt="Gald3r" width="400" />
+  <img src="logo/Gald3r_Logo_Big.jpg" alt="Gald3r" width="400" />
 </p>
 
 <h1 align="center">Gald3r -- AI Dev Framework for 34 AI Coding Tools</h1>
