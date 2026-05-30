@@ -107,13 +107,13 @@ Pick your tool and open its folder -- each contains a complete, ready-to-deploy 
 ## What's Inside Each Template
 
 Every platform folder contains the same gald3r core, tuned for that tool. The full
-component reference below documents what ships in the box as of **v1.7.0**.
+component reference below documents what ships in the box as of **v1.8.0**.
 
 | Component | Count | What it is |
 |---|---|---|
 | Agents | 13 | Specialized AI roles with their own focus and trigger phrases |
 | Skills | 110 | Reusable workflows invoked by agents and commands |
-| Commands | 178 | Chat commands you type directly (`@g-go`, `@g-status`, ...) |
+| Commands | 179 | Chat commands you type directly (`@g-go`, `@g-status`, ...) |
 | Hooks | 27 | Event-driven automation (session start, pre-commit, file write) |
 | Rules | 14 | Persistent behavioral standards loaded every session |
 | Task system | -- | File-based `.gald3r/` folder for tasks, bugs, plans, constraints |
@@ -144,7 +144,7 @@ or explicitly via the matching command.
 
 ---
 
-## Commands (178)
+## Commands (179)
 
 Type these directly in your AI chat. Commands are grouped by purpose. Common aliases
 are noted in parentheses.
@@ -563,7 +563,7 @@ for the advanced tier; the core framework needs none of it.
 
 See [releases/](./releases/) for release notes and [CHANGELOG.md](./CHANGELOG.md) for full history.
 
-Latest: **v1.7.0** -- Workspace Distribution + Swarm Fix + 34-Platform Sweep
+Latest: **v1.8.0** -- Wiki Launch + GitHub Discussions + Test Harness + 35-Platform Sweep
 
 ---
 
