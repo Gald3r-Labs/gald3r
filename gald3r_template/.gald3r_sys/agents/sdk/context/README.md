@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [AGENT_ORCHESTRATION]
+---
+
 # Context Storage and Persistence System
 
 **Part of Task 052: Anthropic Agent SDK Integration**

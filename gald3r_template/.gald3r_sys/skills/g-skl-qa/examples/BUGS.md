@@ -1,4 +1,5 @@
 ---
+subsystem_memberships: [BUG_AND_QUALITY]
 gald3r_rel_version: "1.6.0"
 schema_version: "BUGS-md-v1"
 ---

@@ -264,7 +264,7 @@ print(f"lines_found={len(keys)}\nfirst={keys[0] if keys else 'none'}")
 
 ### context-mode MCP (External Integration)
 
-Context-mode MCP (github.com/mksglu/context-mode, 12K stars) provides:
+Context-mode MCP provides:
 - 315KB → ~5KB tool output compression via content-addressed truncation
 - FTS5/BM25 SQLite session continuity (context survives compaction)
 - 14-platform support
@@ -295,7 +295,7 @@ Add this to `.cursor/mcp.json` under `mcpServers` to enable context compression 
 | Grep results (50 matches) | ~8KB | ~0.5KB | ~94% |
 | Git log (100 commits) | ~15KB | ~0.8KB | ~95% |
 
-Source: context-mode upstream benchmarks (mksglu/context-mode README, May 2026).
+Source: context-mode upstream benchmarks (/context-mode README, May 2026).
 
 ---
 

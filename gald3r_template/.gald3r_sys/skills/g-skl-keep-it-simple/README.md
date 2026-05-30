@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [AGENT_ORCHESTRATION]
+---
+
 # g-skl-keep-it-simple — Terse Mode
 
 A user-invoked toggle that silences gald3r's response ceremony for a

@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [BUG_AND_QUALITY]
+---
+
 # gald3r Code Reviewer - Implementation Rules
 
 This document contains detailed implementation rules for performing comprehensive code reviews.

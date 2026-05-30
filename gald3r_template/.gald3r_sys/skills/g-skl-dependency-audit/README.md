@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [SECURITY_AND_COMPLIANCE, BUG_AND_QUALITY]
+---
+
 # g-skl-dependency-audit
 **Skill file**: `SKILL.md`
 

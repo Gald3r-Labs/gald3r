@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [MEMORY_AND_KNOWLEDGE, VAULT_AND_RESEARCH]
+---
+
 # GitHub Summary Templates
 
 Use these templates when tracked repos or gists are mirrored into `repos_location` and summarized into the vault.

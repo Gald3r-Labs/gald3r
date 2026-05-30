@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [PROJECT_IDENTITY_SETUP]
+---
+
 # g-skl-subsystems
 
 > Human-facing companion to `SKILL.md`. The LLM agent reads `SKILL.md`; this

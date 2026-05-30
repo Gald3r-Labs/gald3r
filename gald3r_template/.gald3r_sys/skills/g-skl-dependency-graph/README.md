@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [TASK_MANAGEMENT]
+---
+
 # g-skl-dependency-graph
 **Skill file**: `SKILL.md`
 

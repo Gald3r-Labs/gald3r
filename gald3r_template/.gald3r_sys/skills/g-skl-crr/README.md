@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [VAULT_AND_RESEARCH, AGENT_ORCHESTRATION]
+---
+
 # g-skl-crr
 **Skill file**: `SKILL.md`
 

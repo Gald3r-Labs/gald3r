@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [BUG_AND_QUALITY, SECURITY_AND_COMPLIANCE]
+---
+
 # g-skl-security-scan
 **Skill file**: `SKILL.md`
 

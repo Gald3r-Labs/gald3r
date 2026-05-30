@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [BUG_AND_QUALITY]
+---
+
 # Cursor Rules and Skills Integration - QA
 
 ## Overview

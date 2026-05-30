@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [UI_AND_OUTPUT]
+---
+
 # g-skl-comfyui
 **Skill file**: `SKILL.md`
 

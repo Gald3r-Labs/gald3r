@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [AGENT_ORCHESTRATION]
+---
+
 # Curator Rubric — Five-Dimension Scoring Reference
 
 Each `SKILL.md` is scored 1 (worst) → 5 (best) on each of the five rubric dimensions.

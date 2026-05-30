@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [UI_AND_OUTPUT]
+---
+
 # g-skl-html-output
 **Skill file**: `SKILL.md`
 

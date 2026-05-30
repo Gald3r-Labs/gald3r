@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [PROJECT_IDENTITY_SETUP, AGENT_ORCHESTRATION]
+---
+
 # Parity Exclusion List
 
 Files and directories listed here are **intentionally local** to specific projects

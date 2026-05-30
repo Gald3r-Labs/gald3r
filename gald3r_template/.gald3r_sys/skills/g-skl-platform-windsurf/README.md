@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [PLATFORM_INTEGRATION]
+---
+
 # g-skl-platform-windsurf
 **Skill file**: `SKILL.md`
 

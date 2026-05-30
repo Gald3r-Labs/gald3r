@@ -2,6 +2,7 @@
 name: g-skl-platform-cline
 description: Authoritative reference for Cline (VS Code extension) customization in gald3r projects. Covers .clinerules layout, custom instructions, memory banks, and gald3r install verification.
 docs_url: https://docs.cline.bot
+last_doc_scan: 2026-05-20
 crawl_max_age_days: 14
 vault_doc_path: research/platforms/cline/
 vault_docs_url: https://github.com/clinebot/cline

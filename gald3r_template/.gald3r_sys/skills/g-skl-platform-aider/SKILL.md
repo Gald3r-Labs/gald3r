@@ -5,6 +5,7 @@ crawl_max_age_days: 14
 vault_doc_path: research/platforms/aider/
 vault_docs_url: https://aider.chat/docs
 docs_url: https://aider.chat/docs
+last_doc_scan: 2026-05-20
 token_budget: low
 capability_status:
   hooks: ❌      # no lifecycle-event system; lint-cmd/test-cmd/auto-commit are not a hook bus

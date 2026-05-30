@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [RELEASE_AND_VERSIONING]
+---
+
 # g-skl-release
 **Skill file**: `SKILL.md`
 

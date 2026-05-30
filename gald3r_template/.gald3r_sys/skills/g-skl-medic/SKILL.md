@@ -275,6 +275,10 @@ Write new `gald3r_version` to `.gald3r/.identity`. Append to `.gald3r/reports/UP
 
 - **TTL Check**: for each `in-progress` task: `now > claim_expires_at`? → reset to `pending`
 - **Verification Timeout**: `[🔍]` for > 8h → reset to `pending`; > 4h → flag only
+- **Platform Doc Freshness** (T1520): if `.gald3r/PLATFORM_STATUS.md` exists, parse the `Last Doc Scan` column for each platform row and compare against the `crawl_max_age_days` threshold (default `7`). Treat overdue platforms as a soft warning (⚠️), not a hard failure. Report format:
+  - All fresh → `Platform docs: ✅ all N platforms fresh`
+  - Any stale → `Platform docs: ⚠️ M of N platforms overdue — run @g-platform-scan`
+  Pure read of one file; never writes. If `PLATFORM_STATUS.md` does not exist, skip the check silently (no warning).
 - **Health Score**:
   ```
   base  = (completed / total_non_cancelled_non_paused) × 100
@@ -285,6 +289,7 @@ Write new `gald3r_version` to `.gald3r/.identity`. Append to `.gald3r/reports/UP
   -20   per open PCAC `INBOX.md` CONFLICT item (L1 continues, L2-L4 blocked until `@g-pcac-read`)
   -3    per active MCP server over 10 (see L1-K)
   -1    per MCP server flagged [ELEVATED] by Agent Shield (see L1-K)
+  -10   if ANY platform overdue for doc re-crawl (T1520) — capped at -10 regardless of count
   final = max(0, base − penalties)
   Healthy: ≥80 | Degraded: 50-79 | Critical: <50
   ```

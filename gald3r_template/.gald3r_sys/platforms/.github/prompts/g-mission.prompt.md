@@ -484,4 +484,3 @@ Claude Code uses `/goal` for this pattern. In Cursor, `@g-mission` is the equiva
 - Spec: see `.gald3r/tasks/` for T{id} once created
 - Config: `.gald3r/config/ACTIVE_MISSION.md`
 - Depends on: `@g-goal`, `@g-go-go`, `@g-go`
-- Inspired by: Claude Code `/goal`, Cursor `babysit` skill pattern

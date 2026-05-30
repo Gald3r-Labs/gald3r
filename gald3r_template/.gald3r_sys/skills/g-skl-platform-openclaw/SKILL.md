@@ -23,18 +23,18 @@ subsystem_memberships: [PLATFORM_INTEGRATION]
 
 # g-skl-platform-openclaw
 
-Activate for: setting up gald3r with OpenClaw, authoring `SOUL.md`, understanding OpenClaw's caveman-compatible workspace skill pattern, or verifying OpenClaw gald3r integration.
+Activate for: setting up gald3r with OpenClaw, authoring `SOUL.md`, understanding OpenClaw's convention-based workspace skill pattern, or verifying OpenClaw gald3r integration.
 
 ---
 
 ## 1. Platform Overview
 
-**OpenClaw** is a caveman-ecosystem-compatible AI coding agent that uses `SOUL.md` as its primary project context file. It follows the caveman pattern (single source + CI generation) and is designed for workspace-level skill discovery.
+**OpenClaw** is a SOUL.md-based AI coding agent that uses `SOUL.md` as its primary project context file. It follows a single-source + CI-generation pattern and is designed for workspace-level skill discovery.
 
 - **SOUL.md**: Project identity and context file (analogous to AGENTS.md / CLAUDE.md)
-- **Workspace skills**: Reads from `skills/` at project root (caveman-compatible)
+- **Workspace skills**: Reads from `skills/` at project root (convention-compatible)
 - **Config**: Minimal — SOUL.md + skills/ directory
-- **Ecosystem**: Part of the caveman-derived agent ecosystem
+- **Ecosystem**: Part of the lightweight-agent ecosystem
 
 **gald3r target tier**: workspace `skills/` reader.
 

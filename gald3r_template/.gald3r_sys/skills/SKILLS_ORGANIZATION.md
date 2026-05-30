@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [PROJECT_IDENTITY_SETUP]
+---
+
 # Cursor Skills Organization Guide
 
 ## Overview

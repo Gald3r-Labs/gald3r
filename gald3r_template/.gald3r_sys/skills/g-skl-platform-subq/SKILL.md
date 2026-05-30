@@ -8,6 +8,7 @@ task: T868
 created: 2026-05-09
 token_budget: low
 docs_url: https://subq.ai   # marketing/announcement only — NO public CLI config docs (private beta); CLI docs_url unknown/none yet
+last_doc_scan: 2026-05-20
 capability_status:
   hooks: ❓        # no documented hook system; gald3r .ps1 hooks presumed not to run
   rules: ❓        # no documented .mdc/rules mechanism

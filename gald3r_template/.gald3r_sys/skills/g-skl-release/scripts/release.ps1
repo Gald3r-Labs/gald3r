@@ -50,7 +50,16 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$RepoRoot = (Get-Item $PSScriptRoot).Parent.FullName
+$ScriptsDir = $PSScriptRoot
+$SkillRoot = Split-Path $ScriptsDir -Parent
+# Resolve gald3r_templates repo root (skill lives under gald3r_template/.gald3r_sys/...)
+$RepoRoot = $SkillRoot
+for ($i = 0; $i -lt 6; $i++) {
+    if (Test-Path (Join-Path $RepoRoot "custom_scripts\platform_parity_sync.ps1")) { break }
+    $parent = Split-Path $RepoRoot -Parent
+    if ($parent -eq $RepoRoot) { break }
+    $RepoRoot = $parent
+}
 $EcosystemRoot = Split-Path $RepoRoot -Parent
 $TemplateSrc = Join-Path $EcosystemRoot "gald3r_template_full"
 

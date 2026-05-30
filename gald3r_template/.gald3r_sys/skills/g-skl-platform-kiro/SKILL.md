@@ -5,6 +5,7 @@ crawl_max_age_days: 7
 vault_doc_path: research/platforms/kiro/
 vault_docs_url: https://kiro.dev/docs
 docs_url: https://kiro.dev/docs
+last_doc_scan: 2026-05-20
 capability_status:
   hooks: ⚠️       # native JSON hooks (.kiro/hooks/*.json) but file-event, not session/tool-lifecycle
   rules: ⚠️       # steering files (.kiro/steering/*.md); no per-rule glob scoping

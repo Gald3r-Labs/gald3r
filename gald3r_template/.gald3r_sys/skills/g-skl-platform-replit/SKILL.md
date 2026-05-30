@@ -5,6 +5,7 @@ crawl_max_age_days: 14
 vault_doc_path: research/platforms/replit/
 vault_docs_url: https://docs.replit.com/replitai/replit-dot-md
 docs_url: https://docs.replit.com/replitai/replit-dot-md
+last_doc_scan: 2026-05-20
 capability_status:
   hooks: ❌      # no native lifecycle-hook config; Linux container + g-hk-*.ps1 PowerShell mismatch
   rules: ⚠️      # replit.md single instruction blob; no .mdc / no glob scoping; Agent self-rewrites it

@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [UI_AND_OUTPUT]
+---
+
 # g-skl-theme-editor
 **Skill file**: `SKILL.md`
 

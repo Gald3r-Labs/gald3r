@@ -2,6 +2,7 @@
 name: g-skl-platform-gemini
 description: Authoritative reference for Gemini CLI (Google) customization in gald3r projects. Covers .gemini/ native config, GEMINI.md memory, the gald3r .agent/ install tree, custom TOML commands, MCP, and install verification.
 docs_url: https://github.com/google-gemini/gemini-cli
+last_doc_scan: 2026-05-20
 crawl_max_age_days: 7
 vault_doc_path: research/platforms/gemini/
 vault_docs_url: https://github.com/google-gemini/gemini-cli

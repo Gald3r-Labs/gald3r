@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [BUG_AND_QUALITY]
+---
+
 ### Bug ID: BUG-006
 - **Title**: Application crashes on data save
 - **Severity**: Critical

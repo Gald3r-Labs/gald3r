@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [BUG_AND_QUALITY]
+---
+
 # Security Review Checklist
 
 Comprehensive security vulnerabilities to check during code review.

@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [MEMORY_AND_KNOWLEDGE, VAULT_AND_RESEARCH]
+---
+
 # g-skl-vault
 **Skill file**: `SKILL.md`
 

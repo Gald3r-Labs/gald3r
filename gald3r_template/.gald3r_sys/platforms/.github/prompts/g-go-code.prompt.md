@@ -64,7 +64,7 @@ Allowed implementation readiness checks are limited to smoke/unit-style evidence
 
 The output may include a review handoff and checkpoint SHA. It must not perform the review. Use `g-go` / `g-go --swarm` for implement-plus-auto-review, or `g-go-review` / `g-go-review --swarm` for review-only.
 
-## Completion Signal Contract (T1175 — Sandcastle pattern)
+## Completion Signal Contract (T1175)
 
 `g-go-code` MUST NOT mark a task `[🔍]` (Awaiting Verification) based on "agent feels done" or "end of turn" heuristics. A **completion signal** is a structured, file-grounded artifact set that the next-stage reviewer can verify cold without re-reading the implementer's reasoning.
 
@@ -81,7 +81,7 @@ A valid completion signal consists of **all** of the following — every item is
 
 **Why this matters**: the next agent (`g-go-review` or any reviewer) reads the task file cold and uses these artifacts as the authoritative ground-truth for the work claimed complete. Missing signal pieces are the root cause of the "passed review but actually broken" failure mode.
 
-## Iteration and Timeout Limits (T1175 — Sandcastle pattern)
+## Iteration and Timeout Limits (T1175)
 
 `g-go-code` accepts dual stop-conditions in `$ARGUMENTS`. **Whichever limit hits first stops the run cleanly**; the limit is not a hard kill — it is a soft "no new claims, finish what's in flight, write the summary" boundary.
 

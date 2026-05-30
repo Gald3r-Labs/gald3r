@@ -149,10 +149,10 @@ Use `scripts/gald3r_worktree.ps1` for agent-owned isolated checkouts in the gald
 # Create or reuse a task worktree outside the active checkout
 .\scripts\gald3r_worktree.ps1 -Action Create -TaskId 170 -Role code -Owner cursor
 
-# Integration merge: fast-forward a task's code branch into the target (default dev), then
+# Integration merge: fast-forward a task's code branch into the target (default main), then
 # delete code+review branches and the worktree. Dry-run by default; -Apply to write. (T1443)
-.\scripts\gald3r_worktree.ps1 -Action MergeToMain -TaskId 170 -TargetBranch dev          # dry-run plan
-.\scripts\gald3r_worktree.ps1 -Action MergeToMain -TaskId 170 -TargetBranch dev -Apply   # FF-merge + cleanup
+.\scripts\gald3r_worktree.ps1 -Action MergeToMain -TaskId 170                            # dry-run plan (target main)
+.\scripts\gald3r_worktree.ps1 -Action MergeToMain -TaskId 170 -Apply                     # FF-merge + cleanup
 .\scripts\gald3r_worktree.ps1 -Action MergeToMain -SourceBranch feature/x -TargetBranch main -Json
 ```
 
@@ -161,7 +161,7 @@ Use `scripts/gald3r_worktree.ps1` for agent-owned isolated checkouts in the gald
 `Create` | `Report` | `Remove` | `Cleanup` | `Run` | `Cancel` | `CancelAll` | `Checkpoint` | `Resume` | `Steer` | `Queue` | `LockReport` | `Keep` | **`MergeToMain`**
 
 - **`MergeToMain` (T1443 / BUG-099 recurrence prevention)**: fast-forward the task's code branch
-  (resolved from worktree metadata, or `-SourceBranch`) into `-TargetBranch` (default `dev`).
+  (resolved from worktree metadata, or `-SourceBranch`) into `-TargetBranch` (default `main`).
   **FF-only** — a target that cannot fast-forward is returned `merge-blocked` and is **never**
   force-updated. Dry-run by default (`would-merge` / `merge-blocked` / `noop` plan, read-only);
   `-Apply` performs the merge then deletes the code + review branches and the worktree. Refuses

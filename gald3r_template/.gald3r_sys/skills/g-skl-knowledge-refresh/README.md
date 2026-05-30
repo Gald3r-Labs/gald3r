@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [MEMORY_AND_KNOWLEDGE, VAULT_AND_RESEARCH]
+---
+
 # g-skl-knowledge-refresh
 **Skill file**: `SKILL.md`
 

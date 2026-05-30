@@ -72,7 +72,6 @@ When creating a NEW component file, before writing any content:
 1. **Determine the subsystem group** — check `PRODUCT_SYSTEMS.md` `defined_groups:` or use the table above
 2. **Include the tag in the template** — do not create the file skeleton without the tag
 3. **After creation**: offer to run `aggregate_subsystems.ps1` to update `PRODUCT_SYSTEMS.md`
-4. **For skills and commands**: remind user to run `platform_parity_sync.ps1 -Sync` to propagate to all IDE targets
 
 ## Quick-reference: use creation commands
 

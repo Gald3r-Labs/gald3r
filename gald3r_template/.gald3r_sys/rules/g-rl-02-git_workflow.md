@@ -63,11 +63,23 @@ If `git status` shows ANY of these as staged or untracked-to-be-added:
 3. Verify `.gitignore` still contains the entry
 4. Warn the user that a protected file was almost committed
 
-## Branch Naming
-- Feature: `feature/{task-id}-brief-description`
-- Bug fix: `fix/{bug-id}-brief-description`
-- Release: `release/v{major}.{minor}.{patch}`
-- Gald3r agent worktree: `gald3r/{task_id}/{role}/{repo_slug}/{owner}-{suffix}`
+## Branch Model (feature-branches-only — NO long-lived `dev`/`test`)
+
+gald3r uses a **single permanent branch (`main`) plus short-lived feature branches.** There is
+**no long-lived `dev` or `test` branch**, and no `dev` -> `main` promotion dance. Long-lived
+parallel branches were the root cause of repeated history-loss incidents (divergent merges,
+`reset --hard` to resolve conflicts) and are retired.
+
+- **`main`** — the only permanent branch. Always shippable.
+- **`feature/{task-id}-brief-description`** — short-lived; branch off `main`, merge back to `main`, delete.
+- **`fix/{bug-id}-brief-description`** — short-lived bug-fix branch; same lifecycle.
+- **`release/v{major}.{minor}.{patch}`** — optional short-lived release-staging branch; merges to `main`.
+- **Gald3r agent worktree**: `gald3r/{task_id}/{role}/{repo_slug}/{owner}-{suffix}` (ephemeral).
+
+**Forbidden**: creating or pushing to a long-lived `dev` or `test` branch; `git push origin dev`;
+resolving `dev`/`main` divergence with `reset --hard`. Staging of work-in-progress happens on
+feature branches (or, for the distribution pipeline, in staged *folders*), never on a parallel
+long-lived integration branch.
 
 ## Worktree Isolation
 

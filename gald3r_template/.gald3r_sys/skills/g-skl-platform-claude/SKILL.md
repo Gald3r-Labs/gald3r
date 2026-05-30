@@ -2,6 +2,7 @@
 name: g-skl-platform-claude
 description: Authoritative reference for Claude Code customization in gald3r projects. Covers .claude/ folder layout, CLAUDE.md, agents, skills, commands, hooks (hooks.json format), MCP, and install verification.
 docs_url: https://docs.anthropic.com/en/docs/claude-code
+last_doc_scan: 2026-05-20
 crawl_max_age_days: 7
 vault_doc_path: research/platforms/claude-code/
 vault_docs_url: https://docs.anthropic.com/en/docs/claude-code/overview
@@ -133,7 +134,7 @@ Reference example hooks (under `.claude/hooks/`, each with a companion `hook.md`
 
 ### Hook Companion `hook.md` Pattern (T1171)
 
-Every gald3r hook script (`.claude/hooks/g-hk-*.ps1`) has a companion `hook.md` self-description file at the same path. Pattern harvested from OpenClaw Hooks Crash Course (V18 — Bdr7afGhh4I, 2026-05-13).
+Every gald3r hook script (`.claude/hooks/g-hk-*.ps1`) has a companion `hook.md` self-description file at the same path.
 
 **Why**: a `hook.md` is both human documentation AND a runtime context payload. When a hook fires under PreToolUse (or any other event), the harness SHOULD inject the matching `hook.md` content as `additional_context` so the agent knows what the hook just did and why a tool call was blocked / allowed / rewritten.
 

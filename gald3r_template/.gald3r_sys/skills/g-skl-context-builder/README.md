@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [MEMORY_AND_KNOWLEDGE, TASK_MANAGEMENT]
+---
+
 # g-skl-context-builder
 **Skill file**: `SKILL.md`
 

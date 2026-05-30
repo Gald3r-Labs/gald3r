@@ -60,7 +60,7 @@ Asking "Continue?" "Which next?" "Looks like X — proceed?" mid-run is a **viol
 | Review independence | one fresh reviewer agent per implementation checkpoint | non-overrideable |
 | Backend dependency | file-first; `gald3r_valhalla` optional | tasks declaring backend dependency in their YAML are deferred when backend down |
 | Verification retry ceiling | 3 FAIL cycles → `[🚨]` (T047) | non-overrideable |
-| Auto-merge target | `dev` (B+C pattern — Bot handles dev, Contributor controls main) | `g-go-go --target-branch main` to ship PASS items directly to main |
+| Auto-merge target | `main` (feature-branches-only model — NO `dev` branch; see `g-rl-02`) | `g-go-go --target-branch <branch>` to merge PASS items to a different branch |
 | Auto-merge behavior | enabled by default after every PASS verdict | `g-go-go --no-auto-merge` to preserve old `[MERGE-BLOCKED]` behavior |
 | Repo scope filter | (none — global scope across all manifest members) | `g-go-go --repos <repo_id>[,<repo_id>...]` to scope autopilot to tasks whose `workspace_repos:` contains at least one of the listed IDs. Skipped tasks (not in scope) are NOT marked failed — they're left for the next run. Budget counter only counts iterations that execute in-scope tasks. Example: `g-go-go --repos gald3r_agent --budget 3` runs only `gald3r_agent` tasks. |
 | Context-aware throttle | **on** (default) | `g-go-go --no-context-aware` to disable throttling and allow full N under all context levels. See "Context-Aware Throttle (BUG-107 Fix Direction #3)" below. |
@@ -71,7 +71,7 @@ Asking "Continue?" "Which next?" "Looks like X — proceed?" mid-run is a **viol
 
 When `--repos <repo_id>` is supplied, the autopilot's runnable-queue scan filters to tasks where `workspace_repos:` contains at least one of the requested ids. The 6-condition member-auth check applies normally to each surviving candidate. Non-matching tasks are NOT marked failed — they're silently deferred to a future run.
 
-Multiple repos can be comma-separated: `--repos gald3r_agent,gald3r_throne`. Auto-merge target remains `dev` per the B+C pattern unless `--target-branch` overrides.
+Multiple repos can be comma-separated: `--repos gald3r_agent,gald3r_throne`. Auto-merge target is `main` (feature-branches-only model — there is no `dev` branch) unless `--target-branch` overrides.
 
 Budget accounting: the iteration counter (`iter`) only increments when at least one in-scope task is actually attempted (claimed and run through Phase 1/Phase 2). Iterations that find an empty in-scope queue (because all remaining work is out-of-scope or blocked) terminate the run with the standard "no runnable work" hard stop — they do NOT burn budget on no-ops.
 
@@ -176,21 +176,21 @@ After every coordinator-owned shared write, re-run with `-Mode post-write -Apply
 
 ## Integration-Branch Detection + Divergence Hard-Stop (T1443 / BUG-099 recurrence prevention)
 
-BUG-099 occurred because the autopilot blindly defaulted to `dev` as its integration/merge
-target even when `dev` was ~143k lines behind the active feature branch. To prevent recurrence,
-`g-go-go` MUST **detect** the correct integration branch at INIT (read-only) before basing any
-worktree on it or auto-merging into it — never hardcode `dev`.
+BUG-099 occurred because the autopilot blindly defaulted to a long-lived `dev` integration
+branch even when it was ~143k lines behind the active feature branch. The `dev`/`test` model is
+now retired (see `g-rl-02-git_workflow` — feature-branches-only). The integration target is
+**`main`**. The detection + divergence guard below is retained to prevent any stale-target
+recurrence.
 
 ### Detection heuristic (read-only — no checkout/commit/merge side effects)
 
-1. **Prefer the branch the main checkout is currently on** (`git rev-parse --abbrev-ref HEAD`).
-   In normal operation the run integrates into the branch the user is working on.
-2. Otherwise, among the candidate branches (`main`, `dev`, `feature/*` that the current HEAD or
-   the configured target descends from), **prefer the branch that is *ahead*** of the others.
-   Compute ahead/behind with `git rev-list --left-right --count A...B`.
-3. **NEVER select a branch that is strictly *behind* a candidate** (the BUG-099 failure). A
-   stale `dev` is disqualified the moment another candidate is ahead of it.
-4. The `--target-branch <name>` override still applies, but it is validated against the same
+1. **Default integration target is `main`** — the single permanent branch.
+2. **Prefer the branch the main checkout is currently on** when it is a `feature/*` or `fix/*`
+   branch actively being integrated (`git rev-parse --abbrev-ref HEAD`); otherwise use `main`.
+3. **NEVER select a branch that is strictly *behind* a candidate** (the BUG-099 failure):
+   compute ahead/behind with `git rev-list --left-right --count A...B` and disqualify a target
+   that is behind the active source branch.
+4. The `--target-branch <name>` override still applies, but is validated against the same
    divergence gate below — an explicit stale target also hard-stops.
 
 ### Divergence hard-stop
@@ -433,7 +433,7 @@ Want me to push now?
 | **Dependency resolution includes archive (MANDATORY)** — when checking condition 4 (all dependencies resolved), if a dependency task file is NOT found in `.gald3r/tasks/task{id}_*.md`, ALSO check `.gald3r/archive/tasks/*/task{id}_*.md`. A task found in the archive with `status: completed` (or `status: verified`) counts as a fully satisfied dependency. Never treat a missing-in-active-tasks dependency as unresolved without first checking the archive. Marking a task as blocked because a dep "file not found" when that dep lives in the archive is a spec violation equivalent to a complexity-aversion stop. | Prevents archived completed deps from silently blocking downstream chains |
 | **Controller-only fallback** — when all workspace member repos block, retry `source_only`/`docs_only` tasks before stopping | Never stop while controller-only work remains |
 | **`--repos` filter (T1152)** — when `--repos <ids>` is supplied, runnable-queue scan filters to tasks whose `workspace_repos:` intersects the requested ids; out-of-scope tasks are silently deferred (NOT marked failed); budget counter only increments on iterations that execute in-scope tasks; controller-only fallback is disabled while `--repos` is active | Lets the autopilot be scoped to one or more member repos (e.g. `--repos gald3r_agent`) without burning the budget on unrelated tasks; preserves the deferred-task safety of pre-T1152 behavior |
-| **Auto-merge member repo branches on PASS (MANDATORY)** -- after the review-result commit for each PASS item, run `gald3r_worktree.ps1 -Action MergeToMain -RepoPath <member_path> -TaskId {id} -TargetBranch dev -Apply` in dependency order (lowest ID first); default target is `dev` (B+C pattern — Bot handles dev, Contributor controls main); override with `--target-branch main` to ship directly to main; on success the helper FF-merges the code branch into `dev` (or override target) and deletes both code + review branches and worktree folders; log `[AUTO-MERGED→dev]` in session summary; on merge-blocked (conflict), missing target branch, or member-dirty: preserve branch, log `[MERGE-BLOCKED]` / `[MERGE-SKIPPED-DIRTY]` as human action item (fallback, not default); pass `--no-auto-merge` to skip entirely and use old `[MERGE-BLOCKED]` behavior; never run auto-merge for FAIL items | Eliminates manual branch merge ceremony after every autopilot run — B+C pattern keeps human in control of dev→main promotion |
+| **Auto-merge member repo branches on PASS (MANDATORY)** -- after the review-result commit for each PASS item, run `gald3r_worktree.ps1 -Action MergeToMain -RepoPath <member_path> -TaskId {id} -TargetBranch main -Apply` in dependency order (lowest ID first); default target is `main` (feature-branches-only model — NO `dev` branch, see `g-rl-02`); override with `--target-branch <branch>` for a custom target; on success the helper FF-merges the feature branch into `main` (or override target) and deletes both code + review branches and worktree folders; log `[AUTO-MERGED→main]` in session summary; on merge-blocked (conflict), missing target branch, or member-dirty: preserve branch, log `[MERGE-BLOCKED]` / `[MERGE-SKIPPED-DIRTY]` as human action item (fallback, not default); pass `--no-auto-merge` to skip entirely and use old `[MERGE-BLOCKED]` behavior; never run auto-merge for FAIL items | Eliminates manual branch merge ceremony after every autopilot run — feature branches merge straight to `main` |
 | Autopilot composes existing safe primitives — never bypasses any gate | One command, same safety contract |
 | Implementation agents NEVER self-verify their own work | Adversarial independence preserved across all loop iterations |
 | Hard stops emit final summaries and exit cleanly | Stops are not failures; they are the safety boundary |
@@ -461,9 +461,9 @@ Want me to push now?
 @g-go-go tasks 220, 222, 223
 @g-go-go bugs-only
 @g-go-go subsystem multiple-ide-platform-parity
-@g-go-go --target-branch main           # ship PASS items directly to main instead of dev
+@g-go-go --target-branch main           # default: PASS items merge to main (feature-branches-only model)
 @g-go-go --no-auto-merge                # disable auto-merge; reviewer leaves [MERGE-BLOCKED] for human
-@g-go-go --target-branch staging        # merge to a custom branch instead of dev
+@g-go-go --target-branch staging        # merge to a custom branch instead of main
 @g-go-go --repos gald3r_agent --budget 3   # scope autopilot to gald3r_agent tasks only
 @g-go-go --repos gald3r_agent,gald3r_throne # scope autopilot to two specific member repos
 @g-go-go --no-context-aware              # disable context-aware throttle (full N at all context levels)

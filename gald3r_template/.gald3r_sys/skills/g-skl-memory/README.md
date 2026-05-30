@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [MEMORY_AND_KNOWLEDGE]
+---
+
 # g-skl-memory
 
 > Human-facing companion to `SKILL.md`. The LLM agent reads `SKILL.md`; this
@@ -44,9 +48,9 @@ memory_capture_insight(
 
 ```
 memory_capture_session(
-  summary="Implemented T1043, T1045, T1046 caveman-harvest tasks. "
+  summary="Implemented T1043, T1045, T1046 skills-lock-harvest tasks. "
           "T1042 deferred (ai_safe:false). T1044 pilot scope only.",
-  topics=["caveman-harvest","skills-lock","installer","parity-sync"]
+  topics=["skills-lock-harvest","skills-lock","installer","parity-sync"]
 )
 ```
 

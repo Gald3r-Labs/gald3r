@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [PROJECT_IDENTITY_SETUP]
+---
+
 # g-skl-features
 **Skill file**: `SKILL.md`
 

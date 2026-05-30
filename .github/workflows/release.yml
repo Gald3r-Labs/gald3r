@@ -35,33 +35,10 @@ jobs:
           echo "Release notes extracted for v$VERSION"
           cat release_notes.txt
 
-      - name: Create release archive
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          # Package the template directories (what users actually copy into their projects)
-          zip -r "gald3r-template-v${VERSION}.zip" \
-            .cursor/ \
-            .claude/ \
-            .agent/ \
-            .codex/ \
-            .opencode/ \
-            .gald3r/ \
-            AGENTS.md \
-            CLAUDE.md \
-            GEMINI.md \
-            README.md \
-            CHANGELOG.md \
-            LICENSE \
-            -x "*.git*" \
-            -x "*__pycache__*" \
-            -x "*.pyc"
-          echo "Archive created: gald3r-template-v${VERSION}.zip"
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: "gald3r v${{ steps.version.outputs.version }}"
           body_path: release_notes.txt
-          files: "gald3r-template-v${{ steps.version.outputs.version }}.zip"
           draft: false
           prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') }}

@@ -259,3 +259,40 @@ constraint was previously enforced by rule text only and appeared in no constrai
 `N CHANGELOG version(s) missing release file - run @g-release-sync`. `@g-update` runs the
 release backfill on the upgrade path. `g-medic --heal-c023` (T1436) remediates structurally.
 
+---
+
+### C-041: public-release-destructive-git-gate
+
+**Status**: active
+**Established**: 2026-05-29
+**Scope**: inheritable
+**Rationale**: Force-push and hard reset on public release repos destroy audit history and can resurrect suppressed internal content.
+
+**Applies to**: Public-tier repositories, `@g-release-publish`, `graduate_to_public.ps1`, `release_gald3r_public.ps1`.
+
+**Enforcement**: Release scripts refuse `git reset --hard` and `git push --force` unless `-ForceConfirmed` with interactive YES. History scrub requires `-ConfirmScrub`.
+
+---
+
+### C-042: public-release-content-scrub
+
+**Status**: active
+**Established**: 2026-05-29
+**Scope**: inheritable
+**Rationale**: Internal-only CHANGELOG and docs must not ship to public consumers.
+
+**Applies to**: All graduation paths before public publish.
+
+**Enforcement**: `scrub_public_tree.ps1` runs in `graduate_to_public.ps1` (both scrub and carry modes).
+
+---
+
+### C-043: public-repo-main-only
+
+**Status**: active
+**Established**: 2026-05-29
+**Scope**: inheritable
+**Rationale**: Public repos must use a single release branch (`main`) and sanctioned graduation scripts.
+
+**Enforcement**: `pre_release_audit.ps1` branch check; `release_gald3r_public.ps1` blocks non-main.
+

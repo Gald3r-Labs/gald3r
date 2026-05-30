@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [VAULT_AND_RESEARCH]
+---
+
 # g-skl-recon-repo
 **Skill file**: `SKILL.md`
 

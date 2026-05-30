@@ -5,6 +5,7 @@ crawl_max_age_days: 14
 vault_doc_path: research/platforms/kiro-cli/
 vault_docs_url: https://kiro.dev/docs/cli
 docs_url: https://kiro.dev/docs/cli
+last_doc_scan: 2026-05-20
 capability_status:
   hooks: ⚠️       # native lifecycle hooks (agentSpawn/userPromptSubmit/preToolUse/postToolUse/stop) in agent JSON; per-agent wiring + STDIN payload differ from Cursor
   rules: ⚠️       # steering files (.kiro/steering/*.md), no per-rule glob scoping

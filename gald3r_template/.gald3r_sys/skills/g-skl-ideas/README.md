@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [PROJECT_IDENTITY_SETUP, VAULT_AND_RESEARCH]
+---
+
 # g-skl-ideas
 **Skill file**: `SKILL.md`
 

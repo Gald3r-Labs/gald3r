@@ -5,6 +5,7 @@ crawl_max_age_days: 14
 vault_doc_path: research/platforms/goose/
 vault_docs_url: https://block.github.io/goose/docs
 docs_url: https://block.github.io/goose/docs
+last_doc_scan: 2026-05-20
 capability_status:
   hooks: ❌      # no native lifecycle-hook config; g-hk-*.ps1 do not auto-fire
   rules: ⚠️      # .goosehints single instruction blob; no .mdc / no glob scoping
