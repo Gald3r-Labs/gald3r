@@ -8,6 +8,9 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- **BUG-099 safety fix**: All platform scaffold `gald3r_worktree.ps1` scripts and `development.yaml` files defaulted `TargetBranch`/`default_branch` to `dev` instead of `main`. This caused new projects created from any platform template to target a long-lived `dev` branch for worktree merges — a data-loss trap. Flipped 78 files (44 worktree scripts + 34 development.yaml) to `main`. Affects all 34+ platform scaffolds.
+
 ---
 
 ## [1.7.0] - 2026-05-28 (Workspace Distribution + Swarm Fix + 34-Platform Sweep)
