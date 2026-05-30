@@ -94,3 +94,9 @@ temp_scripts/*
 .gald3r/logs/*.log
 !.gald3r/logs/.gitkeep
 
+# MAINTAINER-ONLY — never ships to public repo (BUG-123 IP leak class)
+personality_packs/
+**/personality_packs/
+.gald3r_sys/personality_packs/
+gald3r_template/.gald3r_sys/personality_packs/
+
