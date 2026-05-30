@@ -56,9 +56,9 @@ param(
     [string]$BaseBranch = "HEAD",
 
     # MergeToMain (T1443): integration merge target + optional explicit source branch.
-    # TargetBranch defaults to "dev" (B+C pattern). When SourceBranch is omitted, the
+    # TargetBranch defaults to "main" (feature-branches-only; see g-rl-02). When SourceBranch is omitted, the
     # task's code worktree branch is resolved from worktree metadata.
-    [string]$TargetBranch = "dev",
+    [string]$TargetBranch = "main",
     [string]$SourceBranch,
     [string]$WorktreeRoot = $env:GALD3R_WORKTREE_ROOT,
     [string]$TaskRoot,
@@ -704,7 +704,7 @@ function Invoke-Gald3rWorktreeCleanup {
 # ---------------------------------------------------------------------------
 # Integration merge (MergeToMain) — T1443 / BUG-099 recurrence prevention
 # ---------------------------------------------------------------------------
-# Fast-forward a task's code branch into an integration target (default "dev"),
+# Fast-forward a task's code branch into an integration target (default "main"),
 # then delete the code + review branches and the worktree. Dry-run by default;
 # only writes/merges when -Apply is passed (mirrors the Cleanup contract). The
 # merge is FF-ONLY: a target that cannot fast-forward is reported as

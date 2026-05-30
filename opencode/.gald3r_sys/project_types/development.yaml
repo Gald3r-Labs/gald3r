@@ -72,7 +72,7 @@ color: "#2C3E50"
 # (See .gald3r/config/AGENT_CONFIG.md — Git Workflow Config section)
 agent_config_defaults:
   branch_protection_level: standard
-  default_branch: dev
+  default_branch: main
   pr_required_for_main: true
   pr_required_for_dev: false
   graduation_tier: single
