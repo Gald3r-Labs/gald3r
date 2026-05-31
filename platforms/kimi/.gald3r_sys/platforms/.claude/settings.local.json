@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cp \"G:/gald3r_ecosystem/gald3r_dev/.claude/rules/star_wars_personality.md\" \"G:/gald3r_ecosystem/gald3r_dev/.agent/rules/star_wars_personality.md\")",
+      "Bash(cp \"G:/gald3r_ecosystem/gald3r_dev/.claude/rules/star_wars_personality.md\" \"G:/gald3r_ecosystem/gald3r_dev/.codex/rules/star_wars_personality.md\")",
+      "Bash(cp \"G:/gald3r_ecosystem/gald3r_dev/.claude/rules/star_wars_personality.md\" \"G:/gald3r_ecosystem/gald3r_dev/.opencode/rules/star_wars_personality.md\")",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/g-hk-pcac-inbox-check.ps1 -ProjectRoot . -BlockOnConflict)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-pcac-inbox-check.ps1 -ProjectRoot . -BlockOnConflict)",
+      "Bash(npx gitnexus*)"
+    ],
+    "defaultMode": "bypassPermissions"
+  }
+}

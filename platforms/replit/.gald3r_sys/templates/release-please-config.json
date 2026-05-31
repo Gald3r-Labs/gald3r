@@ -1,0 +1,21 @@
+{
+  "$comment": "gald3r release-please config template (T1305). Copy to repo root alongside a .release-please-manifest.json (e.g. {\".\": \"0.0.0\"}). Conventional Commit types map to Keep-a-Changelog sections, matching gald3r's CHANGELOG format (g-rl-26). Adjust release-type per project language.",
+  "release-type": "simple",
+  "include-component-in-tag": false,
+  "changelog-sections": [
+    { "type": "feat", "section": "Added" },
+    { "type": "fix", "section": "Fixed" },
+    { "type": "refactor", "section": "Changed" },
+    { "type": "perf", "section": "Changed" },
+    { "type": "docs", "section": "Documentation", "hidden": false },
+    { "type": "chore", "section": "Changed", "hidden": true },
+    { "type": "test", "section": "Changed", "hidden": true },
+    { "type": "build", "section": "Changed", "hidden": true },
+    { "type": "ci", "section": "Changed", "hidden": true }
+  ],
+  "packages": {
+    ".": {
+      "changelog-path": "CHANGELOG.md"
+    }
+  }
+}

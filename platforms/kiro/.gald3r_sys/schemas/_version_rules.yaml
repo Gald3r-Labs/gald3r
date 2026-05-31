@@ -1,0 +1,21 @@
+# .gald3r_sys/schemas/_version_rules.yaml
+gald3r_rel_version: "1.6.0"
+schema_version: "version-rules-v1"
+rules:
+  file_older_than_system:
+    action: migrate
+    description: "File schema version < current system schema version"
+    g_medic_behavior: auto_fix_with_report
+  file_matches_system:
+    action: validate_only
+    description: "File schema version == current system schema version"
+    g_medic_behavior: validate_report_violations
+  file_newer_than_system:
+    action: warn_only
+    description: "File schema version > current system schema version"
+    g_medic_behavior: surface_update_recommendation
+    message: "File uses schema {file_schema} but installed gald3r supports {system_schema}. Consider: @g-update"
+  file_unversioned:
+    action: treat_as_v0
+    description: "File has no schema_version field -- pre-schema era"
+    g_medic_behavior: migrate_from_v0

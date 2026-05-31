@@ -1,0 +1,8 @@
+# Mistral Vibe configuration — gald3r deploy scaffold
+# Docs: https://docs.mistral.ai/capabilities/code_generation
+# Do NOT place API keys here — use environment variables.
+
+model: codestral-latest
+instructions: .mistral/instructions.md
+max_tokens: 4096
+temperature: 0.1

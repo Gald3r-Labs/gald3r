@@ -1,0 +1,89 @@
+# _test tier CI workflow template (T1419)
+# Copy to: {project}_test/.github/workflows/ci-test.yml
+#
+# Purpose: Integration tests + build validation on release candidates.
+# Runs: on every push to main (only graduates land here).
+
+name: CI — Test Tier
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version being tested (e.g. 1.7.0)"
+        required: false
+
+jobs:
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+
+      - name: Install deps
+        run: |
+          pip install uv
+          uv sync
+
+      - name: Run integration tests
+        run: uv run pytest tests/integration -v --tb=long
+
+  build-artifact:
+    name: Build Release Artifact
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+
+      - name: Install deps
+        run: |
+          pip install uv
+          uv sync
+
+      - name: Build
+        run: uv build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifact-${{ github.sha }}
+          path: dist/
+          retention-days: 30
+
+  smoke-tests:
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    needs: build-artifact
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-artifact-${{ github.sha }}
+          path: dist/
+
+      - name: Install built artifact and smoke test
+        run: |
+          pip install dist/*.whl
+          python -c "import gald3r; print('Import OK')"   # adjust to your project
+
+  notify-test-result:
+    name: Notify Test Result
+    runs-on: ubuntu-latest
+    needs: [integration-tests, build-artifact, smoke-tests]
+    if: always()
+    steps:
+      - name: Post result summary
+        run: |
+          echo "## Test Tier CI Result" >> $GITHUB_STEP_SUMMARY
+          echo "- Integration: ${{ needs.integration-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Build: ${{ needs.build-artifact.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Smoke: ${{ needs.smoke-tests.result }}" >> $GITHUB_STEP_SUMMARY

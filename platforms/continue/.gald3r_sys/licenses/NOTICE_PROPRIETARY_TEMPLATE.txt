@@ -1,0 +1,13 @@
+{REPO_NAME}
+Copyright 2025-2026 Warren R. Martel III. All rights reserved.
+
+PROPRIETARY AND CONFIDENTIAL.
+
+This repository is private and confidential. Its source, contents, and
+configuration are not licensed for public use, distribution, modification,
+or sublicensing. See the LICENSE file for the full proprietary terms.
+
+This software is part of the gald3r ecosystem. The "gald3r" name, logo,
+and associated marks are trademarks of Warren R. Martel III.
+
+For licensing inquiries, contact: Warren R. Martel III
