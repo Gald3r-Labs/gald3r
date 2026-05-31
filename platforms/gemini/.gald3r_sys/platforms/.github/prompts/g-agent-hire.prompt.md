@@ -5,7 +5,7 @@ new agents land with quality, uniqueness, and parity baked in — rather
 than being added ad hoc with overlap, unclear ownership, or trigger-phrase
 collisions.
 
-Inspired by REDACTED-PATTERN's Nolan specialist pattern (REDACTED-HARVEST-111). The
+Inspired by myPKA's Nolan specialist pattern (IDEA-HARVEST-111). The
 command is interactive at the REVIEW phase by design — humans approve
 the contract before any IDE-target file is written.
 
@@ -27,7 +27,7 @@ Calls `@g-skl-res-review` (or `@g-res-review`) to analyze 2-3 reference
 implementations of the requested agent role.
 
 - Pull candidates from: vault `research/recon/`, prior gald3r harvests
-  (REDACTED-HARVEST-* in `IDEA_BOARD.md`), and — if `--reference` was passed
+  (IDEA-HARVEST-* in `IDEA_BOARD.md`), and — if `--reference` was passed
   — the user-supplied reference repo or URL.
 - Output: a `research_note` summarizing how 2-3 best-in-class
   implementations of this role behave (responsibilities, trigger phrases,
@@ -120,7 +120,7 @@ Only runs after explicit user approval in Phase 3. Actions:
 
 ## Related
 
-- T1017 — original task spec (REDACTED-HARVEST-111, REDACTED-PATTERN Nolan specialist
+- T1017 — original task spec (IDEA-HARVEST-111, myPKA Nolan specialist
   pattern).
 - T1172a — `token_budget:` ordinal bands (re-used here for the
   agent's "Estimated context impact").

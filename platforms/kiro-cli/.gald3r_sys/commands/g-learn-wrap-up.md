@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [MEMORY_AND_KNOWLEDGE]
 ---
 # g-learn-wrap-up

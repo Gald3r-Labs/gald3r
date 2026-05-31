@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-platform-roo
 description: Authoritative reference for Roo Code (VS Code extension) customization in gald3r projects. Covers .roo/rules/, mode-specific rules, custom modes (.roomodes), slash commands, MCP, and gald3r install verification.
 docs_url: https://docs.roocode.com
@@ -121,5 +121,5 @@ Honest status vs. the Cursor reference (`g-skl-platform-cursor`). Full detail in
   `.roorules-architect` / `.clinerules` (root single-file legacy), NOT the modern `.roo/rules/`,
   `.roo/commands/`, `.roo/mcp.json`, or `.roomodes`. Roo still reads the legacy form (deploy works),
   but does not use the modern layout — a follow-up modernization item.
-- **❓ Docs freshness**: `last_doc_scan: never`. Spec claims are from a manual 2026-05-26 doc crawl,
+- **❓ Docs freshness**: `last_doc_scan: 2026-05-20 Spec claims are from a manual 2026-05-26 doc crawl,
   not a `@g-platform-scan-docs roo` run.

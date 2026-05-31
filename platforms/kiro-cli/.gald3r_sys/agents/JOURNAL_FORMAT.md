@@ -2,7 +2,7 @@
 
 Each gald3r agent has a private, git-tracked journal at
 `{platform}/agents/{slug}/journal/` for durable, **offline** cross-session
-learning (REDACTED-PATTERN pattern). Journals supplement `.gald3r/learned-facts.md` with
+learning (myPKA pattern). Journals supplement `.gald3r/learned-facts.md` with
 per-agent-role specificity. No Docker, no database — plain markdown.
 
 ## When entries are written

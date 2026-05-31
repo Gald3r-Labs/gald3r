@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
 Workspace-Control dispatcher: $ARGUMENTS

@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [SECURITY_AND_COMPLIANCE]
 ---
 # @g-git-sanity — Pre-commit sanity check

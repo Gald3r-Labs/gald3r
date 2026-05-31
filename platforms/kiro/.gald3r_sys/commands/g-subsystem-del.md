@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 ---
 Deprecate a subsystem. Activates **g-skl-subsystems** → DEPRECATE SUBSYSTEM operation.

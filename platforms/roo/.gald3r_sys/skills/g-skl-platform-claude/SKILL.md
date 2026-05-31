@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-platform-claude
 description: Authoritative reference for Claude Code customization in gald3r projects. Covers .claude/ folder layout, CLAUDE.md, agents, skills, commands, hooks (hooks.json format), MCP, and install verification.
 docs_url: https://docs.anthropic.com/en/docs/claude-code

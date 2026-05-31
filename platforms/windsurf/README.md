@@ -1,4 +1,4 @@
-# Windsurf Platform Template
+﻿# Windsurf Platform Template
 
 **Tier 1 - Fully Supported**
 

@@ -1,4 +1,4 @@
----
+﻿---
 name: g-release-cut
 description: Accept a release proposal (or create one directly), cut a git tag locally, and commit the RELEASE_vX.Y.Z.md file. Does NOT push to remote.
 subsystem_memberships: [RELEASE_AND_VERSIONING]

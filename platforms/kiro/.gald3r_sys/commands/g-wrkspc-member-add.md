@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
 Add a Workspace-Control member to the manifest: $ARGUMENTS

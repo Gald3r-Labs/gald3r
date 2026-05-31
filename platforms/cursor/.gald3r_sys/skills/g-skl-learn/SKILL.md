@@ -31,7 +31,7 @@ This skill covers **chat-mode sessions** where hooks don't fire.
 |-------|------|---------|
 | Project | `.gald3r/learned-facts.md` | Project-specific facts, decisions, gotchas |
 | Global | `{vault_location}/projects/{project_name}/memory.md` | Cross-project user prefs, patterns, style |
-| Agent role | `{platform}/agents/{slug}/journal/YYYY-MM-DD-{task-ref}-{slug}.md` | Durable learning specific to ONE agent role (REDACTED-PATTERN pattern, T1010) |
+| Agent role | `{platform}/agents/{slug}/journal/YYYY-MM-DD-{task-ref}-{slug}.md` | Durable learning specific to ONE agent role (myPKA pattern, T1010) |
 
 When an insight is **specific to a single agent role** (e.g. "the code reviewer should always check X first"), write it to that agent's journal **in addition to** `learned-facts.md` — see the `CAPTURE_JOURNAL` operation. Project-wide facts go to `learned-facts.md` only.
 
@@ -126,7 +126,7 @@ Triggered by `/g-learn global`.
 
 Triggered by `/g-learn evolve`.
 
-**Purpose:** Mine task failure trajectories from Status History FAIL rows, cluster recurring patterns, and propose new micro-rules or skill amendments for human review. Inspired by REDACTED-PROJECT (arXiv 2603.17187): feeding failure trajectories into an LLM evolver achieves 32% accuracy improvement.
+**Purpose:** Mine task failure trajectories from Status History FAIL rows, cluster recurring patterns, and propose new micro-rules or skill amendments for human review. Inspired by MetaClaw (arXiv 2603.17187): feeding failure trajectories into an LLM evolver achieves 32% accuracy improvement.
 
 **No changes are made without explicit human approval.** This operation is analysis + proposal only.
 

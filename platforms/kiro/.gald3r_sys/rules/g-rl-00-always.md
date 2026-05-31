@@ -1,4 +1,4 @@
-﻿---
+---
 description:
 globs:
 alwaysApply: true

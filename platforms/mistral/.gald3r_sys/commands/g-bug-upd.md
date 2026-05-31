@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [BUG_AND_QUALITY]
 ---
 Update a bug record. Activates **g-skl-bugs** → UPDATE BUG operation.

@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-wpac-adopt
 description: Register another project as a child of the current project. Creates or updates workspace/topology.md on both sides when the target is locally accessible.
 token_budget: low

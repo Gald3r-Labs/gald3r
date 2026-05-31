@@ -1,4 +1,4 @@
-# JetBrains Junie Platform Template
+﻿# JetBrains Junie Platform Template
 
 **Tier 2 - Community Supported**
 

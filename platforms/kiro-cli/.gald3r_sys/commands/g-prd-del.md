@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [RELEASE_AND_VERSIONING]
 ---
 Archive a PRD (soft-delete). Activates **g-skl-prds** → ARCHIVE operation.

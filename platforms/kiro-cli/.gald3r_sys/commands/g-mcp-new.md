@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
 Scaffold a new gald3r MCP plugin from the `_template/` directory and stage a

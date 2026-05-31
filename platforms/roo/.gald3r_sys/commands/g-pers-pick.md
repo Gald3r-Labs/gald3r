@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
 # g-pers-pick — Switch to a personality pack

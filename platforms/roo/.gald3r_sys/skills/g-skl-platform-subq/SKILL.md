@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-platform-subq
 version: 0.1.0
 status: stub

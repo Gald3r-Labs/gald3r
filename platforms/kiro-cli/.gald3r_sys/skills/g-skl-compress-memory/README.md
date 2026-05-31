@@ -2,7 +2,7 @@
 
 Compress the **non-gald3r** parts of memory files (`AGENTS.md`, `CLAUDE.md`, vault `*memory*.md`)
 to reduce per-session token overhead — while never touching the gald3r install-managed section,
-code blocks, or URLs. Inspired by [REDACTED-PROJECT](https://github.com/REDACTED-AUTHOR/caveman)
+code blocks, or URLs. Inspired by [caveman-compress](https://github.com/JuliusBrussee/caveman)
 (~46% on CLAUDE.md); the gald3r variant is marker-aware and **dry-run by default**.
 
 ## Quick start

@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-platform-replit
 description: Authoritative reference for Replit Agent (cloud IDE) customization in gald3r projects. Covers replit.md Agent instructions, .replit/replit.nix env config, MCP integration, and cloud-IDE constraints for web-based development.
 crawl_max_age_days: 14

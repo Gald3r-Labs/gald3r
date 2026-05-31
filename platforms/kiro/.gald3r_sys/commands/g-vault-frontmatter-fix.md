@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [VAULT_AND_RESEARCH]
 ---
 Retrofit Obsidian frontmatter onto vault notes missing it: $ARGUMENTS

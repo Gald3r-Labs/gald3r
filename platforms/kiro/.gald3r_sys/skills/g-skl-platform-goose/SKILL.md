@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-platform-goose
 description: Authoritative reference for Goose (Block) AI agent customization in gald3r projects. Covers .goose/ config, instructions files, extensions, and gald3r install verification.
 crawl_max_age_days: 14
@@ -150,6 +150,6 @@ node bin/install.js --list --target .
 | Rules | ⚠️ | No `.mdc`, no `alwaysApply:`/`globs:` scoping. Rules collapse into one `.goosehints` blob (all-or-nothing). |
 | Skills | ⚠️ | Native Skills extension uses the same `SKILL.md` format ✅ but discovers `.agents/skills/` (not gald3r's `skills/`) and is gated on the extension being enabled. ❓ not install-tested. |
 | MCP | ✅ | First-class — extensions ARE MCP servers; `~/.config/goose/config.yaml`. Strongest gald3r surface. |
-| Docs freshness | ❓ | `last_doc_scan: never` — run `@g-platform-scan-docs goose`. |
+| Docs freshness | ❓ | `last_doc_scan: 2026-05-20 — run `@g-platform-scan-docs goose`. |
 
 See `PLATFORM_SPEC.md` (this folder) for the full 9-section assessment and verification evidence.

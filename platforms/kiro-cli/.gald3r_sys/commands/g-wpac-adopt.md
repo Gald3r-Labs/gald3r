@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
 Register a child project under this project: $ARGUMENTS

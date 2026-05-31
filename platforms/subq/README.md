@@ -1,4 +1,4 @@
-# SubQ Platform Template
+﻿# SubQ Platform Template
 
 **Tier 3 - Experimental**
 

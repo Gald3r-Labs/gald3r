@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [SECURITY_AND_COMPLIANCE]
 ---
 # @g-git-push — Pre-push gate (regular vs release)

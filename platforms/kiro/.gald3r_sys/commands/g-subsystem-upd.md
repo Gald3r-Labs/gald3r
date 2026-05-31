@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 ---
 Update an existing subsystem spec. Activates **g-skl-subsystems** → UPDATE SUBSYSTEM operation.

@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-setup
 description: Initialize gald3r in a project — folder structure and template files for task management.
 token_budget: medium
@@ -229,7 +229,7 @@ The template (`assets/gitattributes-lfs.template`) covers: `.psd .ai .fbx .obj
    
    Update SUBSYSTEMS.md with the index table, sub-features table, integrations table, and mermaid interconnection graph.
 
-8. **Write skills lock file** (T1043 / REDACTED-HARVEST-136):
+8. **Write skills lock file** (T1043 / IDEA-HARVEST-136):
    After platform skill directories are placed (whether by `gald3r_install` MCP, by `bin/install.js`, or manually), write `gald3r-skills-lock.json` at project root via:
    ```powershell
    .\scripts\gald3r_skills_lock.ps1 -Action WRITE -ProjectPath . -Tier <slim|full|adv>

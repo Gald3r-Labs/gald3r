@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
 Validate Workspace-Control manifest and routing metadata: $ARGUMENTS

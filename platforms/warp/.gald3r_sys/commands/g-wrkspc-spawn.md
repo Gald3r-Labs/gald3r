@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
 Spawn a new local Workspace-Control member project: $ARGUMENTS

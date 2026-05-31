@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [BUG_AND_QUALITY]
 ---
 > **Deprecated**: Use `@g-bug-add` instead. This alias is kept for backward compatibility.

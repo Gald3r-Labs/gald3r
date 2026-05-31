@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [TASK_MANAGEMENT]
 ---
 Archive terminal task history into `.gald3r/archive/` while keeping `TASKS.md` as an active working index.

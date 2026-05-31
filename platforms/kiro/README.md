@@ -1,4 +1,4 @@
-# Kiro Platform Template
+﻿# Kiro Platform Template
 
 **Tier 2 - Community Supported**
 

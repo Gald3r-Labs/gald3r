@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [BUG_AND_QUALITY]
 ---
 List and review auto-proposed skill drafts, then promote or discard: $ARGUMENTS

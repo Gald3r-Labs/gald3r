@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [RELEASE_AND_VERSIONING]
 ---
 Create a new PRD. Activates **g-skl-prds** → CREATE operation.

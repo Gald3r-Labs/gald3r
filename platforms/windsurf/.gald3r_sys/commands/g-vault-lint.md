@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [VAULT_AND_RESEARCH]
 ---
 Lint the vault: $ARGUMENTS

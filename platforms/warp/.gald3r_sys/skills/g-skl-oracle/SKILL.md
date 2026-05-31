@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-oracle
 description: >
   Execute Oracle Database queries and operations via gald3r_valhalla MCP tools.

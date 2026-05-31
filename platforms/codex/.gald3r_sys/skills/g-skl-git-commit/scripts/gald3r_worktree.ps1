@@ -7,7 +7,7 @@
     The helper can create, detect/reuse, report, remove, and clean up gald3r-owned
     worktrees without nesting them inside the active repository checkout.
 
-    Cancellation (T1123 — external-runner AbortSignal pattern):
+    Cancellation (T1123 — sandcastle AbortSignal pattern):
       Run        - launch an agent subprocess inside an existing worktree and
                    record its PID on the ownership marker (non-blocking; -Wait to block).
       Cancel     - terminate the agent recorded on one worktree (graceful, then a
@@ -56,9 +56,9 @@ param(
     [string]$BaseBranch = "HEAD",
 
     # MergeToMain (T1443): integration merge target + optional explicit source branch.
-    # TargetBranch defaults to "main" (feature-branches-only; see g-rl-02). When SourceBranch is omitted, the
+    # TargetBranch defaults to "dev" (B+C pattern). When SourceBranch is omitted, the
     # task's code worktree branch is resolved from worktree metadata.
-    [string]$TargetBranch = "main",
+    [string]$TargetBranch = "dev",
     [string]$SourceBranch,
     [string]$WorktreeRoot = $env:GALD3R_WORKTREE_ROOT,
     [string]$TaskRoot,
@@ -704,7 +704,7 @@ function Invoke-Gald3rWorktreeCleanup {
 # ---------------------------------------------------------------------------
 # Integration merge (MergeToMain) — T1443 / BUG-099 recurrence prevention
 # ---------------------------------------------------------------------------
-# Fast-forward a task's code branch into an integration target (default "main"),
+# Fast-forward a task's code branch into an integration target (default "dev"),
 # then delete the code + review branches and the worktree. Dry-run by default;
 # only writes/merges when -Apply is passed (mirrors the Cleanup contract). The
 # merge is FF-ONLY: a target that cannot fast-forward is reported as
@@ -848,7 +848,7 @@ function Invoke-Gald3rMergeToMain {
 }
 
 # ---------------------------------------------------------------------------
-# Cancellation signal threading (T1123 — external-runner AbortSignal pattern)
+# Cancellation signal threading (T1123 — sandcastle AbortSignal pattern)
 # ---------------------------------------------------------------------------
 
 function Test-IsWindows {

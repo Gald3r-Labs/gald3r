@@ -1,4 +1,4 @@
-﻿---
+---
 description: "Workspace member .gald3r/ policy — autonomous_child repos own full .gald3r/; controlled_member repos keep marker-only (.identity + PROJECT.md); controller direct-write is the WPAC coordination path"
 globs:
 alwaysApply: true

@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
 Plan a Workspace-Control sync dry-run: $ARGUMENTS

@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-platform-codex
 description: Authoritative reference for OpenAI Codex CLI customization in gald3r projects. Covers .codex/ folder layout, config.toml, approval/sandbox policy, skills registration, MCP, and install verification.
 docs_url: https://developers.openai.com/codex

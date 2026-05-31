@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-platform-copilot
 description: Authoritative reference for GitHub Copilot customization in gald3r projects. Covers the .github/ vs .copilot/ split, all supported primitives, Phase 1 capabilities, hooks JSON format, agent authoring, and install verification. Reference implementation for g-skl-platform-* family.
 crawl_max_age_days: 7

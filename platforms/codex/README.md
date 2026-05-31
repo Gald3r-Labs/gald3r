@@ -1,4 +1,4 @@
-# OpenAI Codex Platform Template
+﻿# OpenAI Codex Platform Template
 
 **Tier 1 - Fully Supported**
 

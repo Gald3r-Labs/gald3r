@@ -56,7 +56,9 @@ Crawl the platform's official docs and diff against the last crawl.
 3. Diff against the previous crawl snapshot. Surface changed sections:
    `These sections changed since last scan — review for gald3r compatibility impact`.
 4. Update `last_doc_scan` (today) in `PLATFORM_STATUS.md` and the platform SKILL's
-   `last_doc_scan:` field. **[deferred — T146x: per-platform diff heuristics]**
+   `last_doc_scan:` field across all 4 SKILL.md copy locations.
+   **Implemented (T1518)** via `custom_scripts/scan_platform_docs.ps1`.
+   Diff heuristics (changed-section surfacing) remain a future enhancement.
 
 ### SCAN_ALL
 
@@ -107,6 +109,10 @@ Given a `SCAN_DOCS` result, propose specific config changes to gald3r's platform
 ## Wiring
 
 - Agent owner: `g-agnt-platformer`.
-- Commands: `@g-platform-check`, `@g-platform-scan-docs`, `@g-platform-status`.
-- Script: `custom_scripts/check_platform_status.ps1` (CHECK / status-read entry point).
-- Medic: g-medic L2 calls `g-skl-platform-monitor CHECK <current-platform>` for platform health.
+- Commands: `@g-platform-check`, `@g-platform-scan` (T1518), `@g-platform-status`.
+- Scripts:
+  - `custom_scripts/check_platform_status.ps1` — CHECK / status-read entry point
+  - `custom_scripts/scan_platform_docs.ps1` — SCAN_DOCS / SCAN_ALL implementation (T1518)
+  - `custom_scripts/backfill_last_doc_scan.ps1` — one-time backfill utility (T1519)
+- Medic: g-medic L1 reads `PLATFORM_STATUS.md` for doc freshness summary (T1520).
+- Session start: Step 9b surfaces stale platform count from PLATFORM_STATUS.md (T1520).

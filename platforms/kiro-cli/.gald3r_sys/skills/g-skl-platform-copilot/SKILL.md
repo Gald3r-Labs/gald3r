@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-platform-copilot
 description: Authoritative reference for GitHub Copilot customization in gald3r projects. Covers the .github/ vs .copilot/ split, all supported primitives, Phase 1 capabilities, hooks JSON format, agent authoring, and install verification. Reference implementation for g-skl-platform-* family.
 crawl_max_age_days: 7
@@ -11,7 +11,7 @@ capability_status:
   skills: ❓      # agent-skills concept exists; .claude/skills/ auto-discovery unverified
   commands: ❌    # no native gald3r command execution; .copilot/commands/ are reference docs only
   mcp: ⚠️        # supported but config path differs per surface (VS Code / CLI / GitHub.com)
-last_doc_scan: never
+last_doc_scan: 2026-05-20
 token_budget: low
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
@@ -231,7 +231,7 @@ this skill folder for the full 9-section spec and verification evidence. Capabil
 | Agents | ⚠️ | Named, **manually invoked** custom agents on cloud/CLI only; VS Code uses chat modes. No ambient persona auto-loading like Cursor. |
 | Hooks | ⚠️ | JSON-wrapped (`"type":"command"` + `bash`/`powershell` keys), cloud/CLI only, **VS Code preview**, and a newer/volatile API. Different event names than Claude's `hooks.json` (`stop` → `agentStop`). |
 | MCP | ⚠️ | Supported, but config path differs per surface (`.vscode/mcp.json`, `~/.copilot/mcp-config.json`, GitHub.com settings) — not single-path portable. |
-| Doc freshness | ❌ | `last_doc_scan: never` — capability ratings are provisional until `@g-platform-scan-docs copilot` records dated evidence. |
+| Doc freshness | ❌ | `last_doc_scan: 2026-05-20 — capability ratings are provisional until `@g-platform-scan-docs copilot` records dated evidence. |
 
 **Biggest honest gaps**: (1) no executable command system, (2) unverified skills discovery across
 surfaces, (3) hooks are new/JSON-only and not uniformly available (strong on CLI/cloud, weak/preview

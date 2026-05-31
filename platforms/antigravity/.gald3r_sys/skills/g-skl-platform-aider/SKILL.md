@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-platform-aider
 description: Authoritative reference for Aider (terminal AI coding tool) customization in gald3r projects. Covers .aider.conf.yml, CONVENTIONS.md, model config, and gald3r install verification.
 crawl_max_age_days: 14

@@ -1,6 +1,6 @@
 ﻿---
 name: g-skl-compress-memory
-description: Compress the NON-gald3r sections of AGENTS.md/CLAUDE.md (and *memory*.md) to cut token overhead, while strictly preserving the install-managed gald3r SECTION ranges, code blocks, and URLs. Dry-run by default; apply only after confirmation. Inspired by REDACTED-PROJECT (T1053).
+description: Compress the NON-gald3r sections of AGENTS.md/CLAUDE.md (and *memory*.md) to cut token overhead, while strictly preserving the install-managed gald3r SECTION ranges, code blocks, and URLs. Dry-run by default; apply only after confirmation. Inspired by caveman-compress (T1053).
 token_budget: low
 skill_trust_level: core
 allowed-tools: [Read, Edit, Bash]

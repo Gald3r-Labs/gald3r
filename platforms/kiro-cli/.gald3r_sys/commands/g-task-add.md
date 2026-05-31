@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [TASK_MANAGEMENT]
 ---
 Create a new task. Activates **g-skl-tasks** → CREATE TASK operation.

@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 ---
 **⚠️ DEPRECATED**: `@g-medkit` has been renamed to `@g-medic`.

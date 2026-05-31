@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [AGENT_ORCHESTRATION]
 ---
 # g-agnt-marketing — AI Growth & Distribution Agent

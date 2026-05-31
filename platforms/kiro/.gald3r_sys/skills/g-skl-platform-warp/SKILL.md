@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-platform-warp
 description: Authoritative reference for Warp AI terminal customization in gald3r projects. Covers Warp Drive workflows, AI agent mode, project Rules (AGENTS.md/WARP.md), MCP, and gald3r integration patterns.
 docs_url: https://docs.warp.dev
@@ -148,4 +148,4 @@ on-disk commands, lifecycle hooks.** Clean fits: **project Rules** and **MCP**. 
 `PLATFORM_SPEC.md` for the full 9-section assessment and verification evidence.
 
 No live install test was run; findings rest on a 2026-05-26 doc scan of https://docs.warp.dev.
-`last_doc_scan: never` — run `@g-platform-scan-docs warp` to confirm and refresh.
+`last_doc_scan: 2026-05-20 — run `@g-platform-scan-docs warp` to confirm and refresh.

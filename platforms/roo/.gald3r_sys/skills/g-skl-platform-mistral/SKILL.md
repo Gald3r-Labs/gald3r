@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-platform-mistral
 description: Authoritative reference for Mistral Vibe CLI coding agent customization in gald3r projects. Covers the .vibe/ config tree, AGENTS.md instructions, Agent-Skills SKILL.md, MCP servers, and honest capability boundaries.
 crawl_max_age_days: 14

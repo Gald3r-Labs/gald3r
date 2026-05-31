@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
 # g-skill-pack-del — Remove a skill pack or individual skill

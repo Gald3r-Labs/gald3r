@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [TASK_MANAGEMENT]
 ---
 Validate TASKS.md matches tasks/ files. Activates **g-tasks** → SYNC CHECK operation.

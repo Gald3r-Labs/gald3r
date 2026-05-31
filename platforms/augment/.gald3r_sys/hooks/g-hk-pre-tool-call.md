@@ -1,8 +1,8 @@
 # Hook: g-hk-pre-tool-call
 
-Shell output compression hook (T1106, REDACTED-HARVEST-191). Compresses large
+Shell output compression hook (T1106, IDEA-HARVEST-191). Compresses large
 accumulated terminal output to cut context bloat in shell-heavy sessions.
-Community pattern (REDACTED-AUTHOR/REDACTED-PROJECT) reports 60-90% token reduction.
+Community pattern (0xNyk/awesome-hermes-agent) reports 60-90% token reduction.
 
 ## Fires On
 
@@ -43,6 +43,6 @@ lines. N is read from `.gald3r/config/AGENT_CONFIG.md` field
 ## Related Tasks
 
 - T1106 — Add pre_tool_call shell output compression hook (this hook).
-- REDACTED-HARVEST-191 — source pattern (REDACTED-PROJECT).
-- Related: REDACTED-HARVEST-177 (/compress command), REDACTED-HARVEST-166 (JSONL logging).
+- IDEA-HARVEST-191 — source pattern (awesome-hermes-agent).
+- Related: IDEA-HARVEST-177 (/compress command), IDEA-HARVEST-166 (JSONL logging).
 - Config: `.gald3r/config/AGENT_CONFIG.md` field `pre_tool_call_compress_lines`.

@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [RELEASE_AND_VERSIONING]
 ---
 Assign tasks to a release. Activates **g-skl-release** → ASSIGN operation.

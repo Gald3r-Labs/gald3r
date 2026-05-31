@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-platform-junie
 description: Authoritative reference for JetBrains Junie (AI coding plugin) customization in gald3r projects. Covers .junie/guidelines.md, custom instructions, and gald3r install verification.
 crawl_max_age_days: 14

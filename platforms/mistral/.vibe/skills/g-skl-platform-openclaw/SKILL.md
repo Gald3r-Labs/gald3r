@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-platform-openclaw
 description: Authoritative reference for OpenClaw AI agent customization in gald3r projects. Covers the SOUL.md persona pattern, workspace skill conventions, and the OpenClaw hooks/MCP/commands surface.
 docs_url: https://docs.openclaw.ai
@@ -10,7 +10,7 @@ docs_url_secondary:
 crawl_max_age_days: 14
 vault_doc_path: research/platforms/openclaw/
 vault_docs_url: https://github.com/openclaw/openclaw
-last_doc_scan: never
+last_doc_scan: 2026-05-20
 capability_status:
   hooks: "⚠️"      # native hooks exist (HOOK.md + handler.ts, openclaw.json) but gald3r .ps1 payload non-portable
   rules: "❌"      # no native rules/.mdc mechanism; guidance folds into SOUL.md/AGENTS.md
@@ -130,4 +130,4 @@ Full detail + verification evidence in **`PLATFORM_SPEC.md`** (this directory). 
 | Commands | ⚠️ | Native slash commands (`/new`, `/reset`) + CLI exist; gald3r `g-*.md` command files are **not** ingested as executable commands |
 | Agents | ⚠️ | OpenClaw is itself an agent runtime, but does not discover gald3r `g-agnt-*.md` files; personas come from `SOUL.md`/`AGENTS.md`/`IDENTITY.md` |
 | MCP | ⚠️ | First-class (`mcp.servers` in `openclaw.json`, stdio/SSE/streamable-http), but gald3r MCP server definitions are not auto-imported — re-declare via `openclaw mcp set` |
-| Docs freshness | ❓ | `last_doc_scan: never` — **needs `@g-platform-scan-docs openclaw`** to confirm exact SKILL.md frontmatter fields honored, full hook event list, and whether a project-local `.openclaw/` is supported. All findings are public-doc-derived and **install-unverified**. |
+| Docs freshness | ❓ | `last_doc_scan: 2026-05-20 — **needs `@g-platform-scan-docs openclaw`** to confirm exact SKILL.md frontmatter fields honored, full hook event list, and whether a project-local `.openclaw/` is supported. All findings are public-doc-derived and **install-unverified**. |

@@ -1,6 +1,13 @@
+// .kilo/kilo.jsonc — gald3r project configuration for Kilo Code
+// Docs: https://kilo.ai/docs/getting-started/settings
 {
   "$schema": "https://app.kilo.ai/config.json",
   "instructions": [".kilo/rules/*.md"],
   "agents": [".kilo/agents/*.md"],
+  "permission": {
+    "bash": "ask",
+    "read": "allow",
+    "edit": "allow"
+  },
   "mcpServers": {}
 }

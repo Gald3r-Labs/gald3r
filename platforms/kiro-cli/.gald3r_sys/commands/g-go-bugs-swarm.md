@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [BUG_AND_QUALITY]
 ---
 Parallel bug-fix swarm — coordinate multiple bug fixes simultaneously: $ARGUMENTS

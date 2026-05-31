@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [TASK_MANAGEMENT]
 ---
 Alias for `@g-go --swarm`: $ARGUMENTS

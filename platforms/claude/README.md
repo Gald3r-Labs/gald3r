@@ -1,4 +1,4 @@
-# Claude Code Platform Template
+﻿# Claude Code Platform Template
 
 **Tier 1 - Fully Supported**
 

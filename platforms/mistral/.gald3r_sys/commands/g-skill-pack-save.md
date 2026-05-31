@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
 # g-skill-pack-save — Save an evolved skill back to the skill pack registry

@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 ---
 Initialize the gald3r system: $ARGUMENTS

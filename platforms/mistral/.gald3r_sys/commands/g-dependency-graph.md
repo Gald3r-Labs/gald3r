@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [BUG_AND_QUALITY]
 ---
 Activate `g-skl-dependency-graph` to generate or refresh dependency graphs for tasks and/or subsystems.

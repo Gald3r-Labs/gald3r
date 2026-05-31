@@ -25,6 +25,7 @@ param(
     [string[]]$Platforms = @(),         # platform list e.g. cursor,claude (prompted if blank)
     [switch]$DryRun,                    # show plan without writing anything
     [switch]$Force,                     # skip confirmation prompts
+    [switch]$WipeTarget,                # wipe platform prefix dirs before reinstalling (for clean rebuilds)
 
     # ── Session mode params (mirrors old setup_dev_env.ps1) ───────────────────
     [string]$Platform = "",             # auto | cursor | claude | agent | codex | opencode | copilot | all
@@ -66,30 +67,32 @@ if (-not $isInstallerMode -and $Platform -eq "") {
 # Note: CLAUDE.md / AGENTS.md / GEMINI.md / opencode.json / .github are handled
 # separately by the $platformFiles merge loop (installer mode) and are NOT listed here.
 $allPlatforms = [ordered]@{
-    cursor   = @{ prefix = ".cursor";    cats = @("skills","agents","commands"); rootFiles = @();                                           label = "Cursor IDE" }
-    claude   = @{ prefix = ".claude";    cats = @("skills","agents","commands"); rootFiles = @();                                           label = "Claude Code" }
-    agent    = @{ prefix = ".agent";     cats = @("skills","agents","commands"); rootFiles = @();                                           label = "Gemini / Antigravity (gald3r tree)" }
-    codex    = @{ prefix = ".codex";     cats = @("skills");                     rootFiles = @();                                           label = "OpenAI Codex CLI" }
-    opencode = @{ prefix = ".opencode";  cats = @("skills","agents","commands"); rootFiles = @();                                           label = "OpenCode (sst.dev)" }
-    copilot  = @{ prefix = ".copilot";   cats = @("commands");                   rootFiles = @();                                           label = "GitHub Copilot" }
-    windsurf = @{ prefix = ".windsurf";  cats = @("skills");                     rootFiles = @(".windsurfrules");                           label = "Windsurf" }
-    cline    = @{ prefix = ".cline";     cats = @();                             rootFiles = @();                                           label = "Cline" }
-    roo      = @{ prefix = ".roo";       cats = @("rules","commands");           rootFiles = @(".roomodes");                                label = "Roo Code" }
-    kiro     = @{ prefix = ".kiro";      cats = @();                             rootFiles = @();                                           label = "Kiro" }
-    kiro_cli = @{ prefix = ".kiro-cli";  cats = @();                             rootFiles = @();                                           label = "Kiro CLI" }
-    augment  = @{ prefix = ".augment";   cats = @();                             rootFiles = @(".augment-guidelines");                      label = "Augment Code" }
-    aider    = @{ prefix = ".aider";     cats = @();                             rootFiles = @(".aider.conf.yml","CONVENTIONS.md",".aiderignore"); label = "Aider" }
-    goose    = @{ prefix = ".goose";     cats = @();                             rootFiles = @(".goosehints");                              label = "Goose (Block)" }
-    warp     = @{ prefix = ".warp";      cats = @();                             rootFiles = @("WARP.md");                                  label = "Warp Terminal" }
-    openhands= @{ prefix = ".openhands"; cats = @();                             rootFiles = @();                                           label = "OpenHands" }
-    replit   = @{ prefix = ".replit";    cats = @();                             rootFiles = @("replit.md",".replit","replit.nix");        label = "Replit Agent" }
-    junie    = @{ prefix = ".junie";     cats = @();                             rootFiles = @();                                           label = "JetBrains Junie" }
-    mistral  = @{ prefix = ".vibe";      cats = @();                             rootFiles = @();                                           label = "Mistral Vibe" }
-    openclaw = @{ prefix = ".openclaw";  cats = @();                             rootFiles = @("SOUL.md","openclaw_instructions.md");      label = "OpenClaw" }
-    qwen     = @{ prefix = ".qwen";      cats = @();                             rootFiles = @();                                           label = "Qwen Code" }
-    subq     = @{ prefix = ".subq";      cats = @();                             rootFiles = @();                                           label = "SubQ" }
-    gemini   = @{ prefix = ".gemini";    cats = @();                             rootFiles = @();                                           label = "Gemini CLI (native)" }
-    antigravity = @{ prefix = ".antigravity"; cats = @();                        rootFiles = @();                                           label = "Antigravity" }
+    # cats = dirs created inside prefix; "rules" = gets rules/ with .mdc/.md extension translation
+    # rootFiles = files deployed to project ROOT (sourced from _rootpayload/ in scaffold)
+    cursor      = @{ prefix = ".cursor";    cats = @("skills","agents","commands","rules"); rootFiles = @();                                                label = "Cursor IDE" }
+    claude      = @{ prefix = ".claude";    cats = @("skills","agents","commands","rules"); rootFiles = @();                                                label = "Claude Code" }
+    agent       = @{ prefix = ".agent";     cats = @("skills","agents","commands","rules"); rootFiles = @();                                                label = "Gemini / Antigravity (gald3r tree)" }
+    codex       = @{ prefix = ".codex";     cats = @("skills");                              rootFiles = @();                                                label = "OpenAI Codex CLI" }
+    opencode    = @{ prefix = ".opencode";  cats = @("skills","agents","commands");          rootFiles = @();                                                label = "OpenCode (sst.dev)" }
+    copilot     = @{ prefix = ".copilot";   cats = @("commands");                            rootFiles = @();                                                label = "GitHub Copilot" }
+    windsurf    = @{ prefix = ".windsurf";  cats = @("rules","workflows");                   rootFiles = @(".windsurfrules");                                 label = "Windsurf" }
+    cline       = @{ prefix = ".cline";     cats = @();                                      rootFiles = @();                                                label = "Cline" }
+    roo         = @{ prefix = ".roo";       cats = @("rules","commands");                    rootFiles = @(".roomodes",".roorules",".roorules-architect");     label = "Roo Code" }
+    kiro        = @{ prefix = ".kiro";      cats = @("steering");                            rootFiles = @();                                                label = "Kiro" }
+    kiro_cli    = @{ prefix = ".kiro-cli";  cats = @("steering");                            rootFiles = @();                                                label = "Kiro CLI" }
+    augment     = @{ prefix = ".augment";   cats = @("rules");                               rootFiles = @(".augment-guidelines");                            label = "Augment Code" }
+    aider       = @{ prefix = ".aider";     cats = @();                                      rootFiles = @(".aider.conf.yml","CONVENTIONS.md",".aiderignore"); label = "Aider" }
+    goose       = @{ prefix = ".goose";     cats = @();                                      rootFiles = @(".goosehints");                                    label = "Goose (Block)" }
+    warp        = @{ prefix = ".warp";      cats = @();                                      rootFiles = @("WARP.md");                                        label = "Warp Terminal" }
+    openhands   = @{ prefix = ".openhands"; cats = @("skills","microagents");                rootFiles = @();                                                label = "OpenHands" }
+    replit      = @{ prefix = ".replit-gald3r"; cats = @();                                  rootFiles = @("replit.md",".replit","replit.nix");               label = "Replit Agent" }
+    junie       = @{ prefix = ".junie";     cats = @("mcp");                                 rootFiles = @();                                                label = "JetBrains Junie" }
+    mistral     = @{ prefix = ".vibe";      cats = @("agents");                              rootFiles = @();                                                label = "Mistral Vibe" }
+    openclaw    = @{ prefix = ".openclaw";  cats = @();                                      rootFiles = @("SOUL.md","openclaw_instructions.md");              label = "OpenClaw" }
+    qwen        = @{ prefix = ".qwen";      cats = @("commands");                            rootFiles = @("QWEN.md");                                        label = "Qwen Code" }
+    subq        = @{ prefix = ".subq";      cats = @();                                      rootFiles = @();                                                label = "SubQ" }
+    gemini      = @{ prefix = ".gemini";    cats = @("commands");                            rootFiles = @("GEMINI.md");                                      label = "Gemini CLI (native)" }
+    antigravity = @{ prefix = ".agents";    cats = @("skills");                              rootFiles = @();                                                label = "Antigravity (agy)" }
 }
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -193,10 +196,13 @@ if (-not $isInstallerMode) {
         }
 
         # rootFiles: project-root files this platform reads. Source from the platform
-        # payload (.gald3r_sys/platforms/<prefix>/); skip silently when source absent.
+        # payload (.gald3r_sys/platforms/<prefix>/_rootpayload/); skip silently when source absent.
+        # Files live in _rootpayload/ so robocopy of the main scaffold dir doesn't also deploy them
+        # into the prefix dir — they only land at project root via this explicit copy.
+        $rootPayloadSrc = Join-Path $scaffoldSrc "_rootpayload"
         if ($plat.rootFiles) {
             foreach ($rf in $plat.rootFiles) {
-                $rfSrc = Join-Path $scaffoldSrc $rf
+                $rfSrc = if (Test-Path (Join-Path $rootPayloadSrc $rf)) { Join-Path $rootPayloadSrc $rf } else { Join-Path $scaffoldSrc $rf }
                 $rfDst = Join-Path $projectRoot $rf
                 if (Test-Path $rfSrc) {
                     if ($rf -match "^g-" -or -not (Test-Path $rfDst)) {
@@ -311,12 +317,18 @@ function Deploy-PlatformDirs {
         $plat = $allPlatforms[$platKey]
         $platDst = Join-Path $TargetPath $plat.prefix
         Write-Host "    $platKey scaffold..." -ForegroundColor DarkGray
+
+        # WipeTarget: remove old prefix dir entirely before reinstalling so stale cats are cleaned
+        if ($WipeTarget -and (Test-Path $platDst)) {
+            Remove-Item $platDst -Recurse -Force
+        }
         New-Item -ItemType Directory -Force $platDst | Out-Null
 
         # Phase 1: scaffold - use robocopy for speed
         $scaffoldSrc = Join-Path $SysRoot "platforms\$($plat.prefix)"
         if (Test-Path $scaffoldSrc) {
-            robocopy $scaffoldSrc $platDst /E /NJH /NJS /NFL /NDL /NC /NS /NP /XO 2>$null | Out-Null
+            # /XD _rootpayload: exclude the _rootpayload/ subdir (rootFile payloads go to project root, not prefix dir)
+            robocopy $scaffoldSrc $platDst /E /NJH /NJS /NFL /NDL /NC /NS /NP /XO /XD "_rootpayload" 2>$null | Out-Null
         }
 
         # Phase 2: universal content - use robocopy for speed
@@ -332,8 +344,10 @@ function Deploy-PlatformDirs {
         }
 
         # Rules (with extension translation - must be done file-by-file)
+        # Only deploy rules if this platform explicitly lists "rules" in its cats.
+        # Platforms that don't support a rules/ dir (aider, goose, warp, etc.) get skipped.
         $rulesSrc = Join-Path $SysRoot "rules"
-        if (Test-Path $rulesSrc) {
+        if (("rules" -in $plat.cats) -and (Test-Path $rulesSrc)) {
             Write-Host "    $platKey/rules..." -ForegroundColor DarkGray
             $rulesDst = Join-Path $platDst "rules"
             New-Item -ItemType Directory -Force $rulesDst | Out-Null
@@ -348,11 +362,12 @@ function Deploy-PlatformDirs {
         }
 
         # rootFiles: files this platform reads from the PROJECT ROOT (not under the
-        # prefix dir). Source from the platform payload (.gald3r_sys/platforms/<prefix>/);
-        # skip silently when a source is absent (payload not yet shipped for that file).
+        # prefix dir). Source from _rootpayload/ subdir inside the platform scaffold;
+        # falls back to scaffold root for backwards compat. Skip silently when absent.
+        $rootPayloadSrc = Join-Path $scaffoldSrc "_rootpayload"
         if ($plat.rootFiles) {
             foreach ($rf in $plat.rootFiles) {
-                $rfSrc = Join-Path $scaffoldSrc $rf
+                $rfSrc = if (Test-Path (Join-Path $rootPayloadSrc $rf)) { Join-Path $rootPayloadSrc $rf } else { Join-Path $scaffoldSrc $rf }
                 $rfDst = Join-Path $TargetPath $rf
                 if (Test-Path $rfSrc) {
                     if ($rf -match "^g-" -or -not (Test-Path $rfDst)) {

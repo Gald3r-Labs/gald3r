@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
 Generate .github/CODEOWNERS from subsystem owners: $ARGUMENTS

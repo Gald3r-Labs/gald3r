@@ -47,8 +47,7 @@ The only on-disk files relevant to Replit + gald3r are:
 ├── AGENTS.md            ← also honored by Replit Agent (cross-tool instruction file convention).
 ├── .replit              ← Repl config (TOML): run command, language, entrypoint, [nix], [deployment]
 ├── replit.nix           ← Nix environment definition (system packages / toolchain)
-├── .gald3r/             ← gald3r project state (works on disk in the container, but see §6/§9 caveats)
-└── .replit-gald3r/      ← gald3r internal platform metadata (PLATFORM_SPEC.md, docs); NOT a Replit native dir
+└── .gald3r/             ← gald3r project state (works on disk in the container, but see §6/§9 caveats)
 ```
 
 - **gald3r writes**: `replit.md` (and/or `AGENTS.md`) with task conventions; the `.gald3r/` state

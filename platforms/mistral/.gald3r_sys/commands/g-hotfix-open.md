@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [BUG_AND_QUALITY]
 ---
 Open an urgent hotfix branch + task from the latest release tag: $ARGUMENTS

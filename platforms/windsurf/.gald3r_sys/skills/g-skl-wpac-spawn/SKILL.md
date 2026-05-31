@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-wpac-spawn
 description: >
   Spawn a new gald3r project from the current project. Creates the new project folder

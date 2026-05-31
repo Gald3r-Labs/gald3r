@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [TASK_MANAGEMENT]
 ---
 One-shot proposal generation: produces a complete proposal package from a short description.
@@ -15,7 +15,7 @@ Accepts a feature description and generates a self-contained **proposal document
 `docs/proposals/YYYYMMDD_HHMMSS_Cursor_PROPOSAL_<slug>.md` covering everything needed
 for human approval before any `.gald3r/` writes occur.
 
-Inspired by the REDACTED-PROJECT `/propose` pattern — one command, one file, full context.
+Inspired by the OpenSpec `/propose` pattern — one command, one file, full context.
 
 ---
 

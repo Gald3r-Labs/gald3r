@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Read/write/verify gald3r-skills-lock.json (T1043 / REDACTED-HARVEST-136).
+    Read/write/verify gald3r-skills-lock.json (T1043 / IDEA-HARVEST-136).
 
 .DESCRIPTION
     Lock-file management for installed gald3r projects. Mirrors the caveman

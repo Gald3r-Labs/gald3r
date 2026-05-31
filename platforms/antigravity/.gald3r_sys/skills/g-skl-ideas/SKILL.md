@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-ideas
 description: Own and manage IDEA_BOARD.md — capture ideas instantly, review the board, promote to tasks, and run proactive codebase scans for improvement opportunities.
 token_budget: low

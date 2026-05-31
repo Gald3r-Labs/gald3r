@@ -1,4 +1,4 @@
-﻿---
+---
 description: Documentation file placement and naming standards
 globs:
 alwaysApply: true

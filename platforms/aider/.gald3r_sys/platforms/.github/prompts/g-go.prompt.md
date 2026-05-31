@@ -85,7 +85,7 @@ Supported template variables (resolved at coordinator dispatch time, never insid
 | `{{TASK_TITLE}}` | `title:` field of the task YAML frontmatter | `Sandcastle g-go pipeline patterns` |
 | `{{SKILL_PATH}}` | Absolute path to the active gald3r skill folder for the dispatch role | `.claude/skills/g-skl-tasks` |
 | `{{BRANCH_NAME}}` | Worktree branch from `gald3r_worktree.ps1 -Action Create -Json` output | `gald3r/1175/code/gald3r_dev/autopilot-iter9` |
-| `{{TASK_FILE}}` | Path to the active task file under `.gald3r/tasks/**` | `.gald3r/tasks/open/task1175_external-runner_g_go_pipeline_patterns.md` |
+| `{{TASK_FILE}}` | Path to the active task file under `.gald3r/tasks/**` | `.gald3r/tasks/open/task1175_sandcastle_g_go_pipeline_patterns.md` |
 | `{{WORKTREE_PATH}}` | Absolute worktree path from the helper JSON | `G:/gald3r_ecosystem/.gald3r-worktrees/gald3r_dev/1175-code-autopilot-iter9` |
 | `{{MODE}}` | Resolved model tier (`fast` | `standard` | task `preferred_model:` override) | `standard` |
 | `{{COORDINATOR_AGENT}}` | Slug of the coordinator agent for audit trail | `autopilot-iter9` |

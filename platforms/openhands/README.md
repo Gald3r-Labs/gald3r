@@ -1,4 +1,4 @@
-# OpenHands Platform Template
+﻿# OpenHands Platform Template
 
 **Tier 2 - Community Supported**
 

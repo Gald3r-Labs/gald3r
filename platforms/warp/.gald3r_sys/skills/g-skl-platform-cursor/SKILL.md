@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-platform-cursor
 description: Authoritative reference for Cursor IDE customization in gald3r projects. Covers .cursor/ folder layout, all supported primitives (rules/skills/agents/commands/hooks/MCP), parity tiers, vault doc location, crawl freshness gate, and install verification.
 crawl_max_age_days: 7
@@ -92,7 +92,7 @@ Activate for: setting up Cursor in a gald3r project, authoring rules/skills/agen
 
 ## 3a. Hook capabilities (T600)
 
-T600 / `feat-106` extends gald3r's hook layer with four contract-level features harvested from REDACTED-PROJECT, plus a 6-event worktree lifecycle. **Design-of-record:** [`docs/20260506_000000_Cursor_T600_HOOK_SYSTEM_EXTENSIONS.md`](../../../docs/20260506_000000_Cursor_T600_HOOK_SYSTEM_EXTENSIONS.md).
+T600 / `feat-106` extends gald3r's hook layer with four contract-level features harvested from OpenHarness, plus a 6-event worktree lifecycle. **Design-of-record:** [`docs/20260506_000000_Cursor_T600_HOOK_SYSTEM_EXTENSIONS.md`](../../../docs/20260506_000000_Cursor_T600_HOOK_SYSTEM_EXTENSIONS.md).
 
 | Feature | What it adds | Reference |
 |---|---|---|

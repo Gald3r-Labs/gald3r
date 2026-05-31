@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-monitor
 description: >
   Manage scheduled content monitors for YouTube playlists, docs sites, GitHub repos,

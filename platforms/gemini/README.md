@@ -1,4 +1,4 @@
-# Google Gemini Platform Template
+﻿# Google Gemini Platform Template
 
 **Tier 2 - Community Supported**
 

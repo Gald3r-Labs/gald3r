@@ -1,4 +1,4 @@
-﻿---
+---
 description: Rally task tracking — search, create, update, and comment on team tickets via the Rally REST API. Use when the user asks to log work, post updates to Rally, move tickets, add comments, or check the kanban board.
 alwaysApply: false
 subsystem_memberships: [WORKSPACE_COORDINATION]

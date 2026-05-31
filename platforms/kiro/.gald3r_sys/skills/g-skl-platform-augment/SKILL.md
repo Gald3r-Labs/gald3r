@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-platform-augment
 description: Authoritative reference for Augment Code (VS Code + JetBrains + auggie CLI) customization in gald3r projects. Covers .augment-guidelines, .augment/rules/, the Context Engine, MCP, and gald3r install verification.
 crawl_max_age_days: 14
@@ -8,7 +8,7 @@ docs_url: https://docs.augmentcode.com
 docs_url_secondary:
   - https://docs.augmentcode.com/setup-augment/guidelines
   - https://www.augmentcode.com/mcp
-last_doc_scan: never
+last_doc_scan: 2026-05-20
 capability_status:
   hooks: "❌ no native hook system (no lifecycle events / hooks.json)"
   rules: "✅ .augment/rules/*.md (always/auto/manual types) + root .augment-guidelines; .md not .mdc"
@@ -123,6 +123,6 @@ See `PLATFORM_SPEC.md` §9 for the full assessment. Summary of features that do 
 | Rules (`g-rl-*`) | ✅ | Works via `.augment/rules/*.md` + `.augment-guidelines`. Per-file `globs:` scoping unverified (❓). |
 | MCP | ⚠️ | Supported, but settings-driven — no confirmed repo-tracked config file, so not fully captured by a repo install. |
 
-**Honesty**: `last_doc_scan: never`. Ratings derive from a brief May-2026 doc check + the existing
+**Honesty**: `last_doc_scan: 2026-05-20 Ratings derive from a brief May-2026 doc check + the existing
 skill, not a full `@g-platform-scan-docs augment` crawl. No `.augment/` config exists in this repo
 to install-test. Promote `❓`/`⚠️` → `✅` only with evidence recorded in `PLATFORM_SPEC.md`.

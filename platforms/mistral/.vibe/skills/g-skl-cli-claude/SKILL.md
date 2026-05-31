@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-cli-claude
 description: Claude Code CLI (claude command) — headless flags, session continuation, MCP config, permissions, multi-agent via Agent SDK, and overnight/CI best practices.
 token_budget: low

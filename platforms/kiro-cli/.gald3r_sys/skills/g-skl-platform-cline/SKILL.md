@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-platform-cline
 description: Authoritative reference for Cline (VS Code extension) customization in gald3r projects. Covers .clinerules layout, custom instructions, memory banks, and gald3r install verification.
 docs_url: https://docs.cline.bot
@@ -117,6 +117,6 @@ Honest gap list vs. the Cursor reference. See `PLATFORM_SPEC.md` §9 for full de
 **Cline's standout strength is MCP** (in-editor marketplace, stdio + remote servers) — on par with
 or ahead of the Cursor reference.
 
-> **Verification status**: `last_doc_scan: never`. Ratings authored from prior knowledge + existing
+> **Verification status**: `last_doc_scan: 2026-05-20 Ratings authored from prior knowledge + existing
 > SKILL.md; no `.clinerules` config in this repo to inspect. Re-verify via `@g-platform-scan-docs
 > cline` before promoting any `⚠️`/`❌` rating.

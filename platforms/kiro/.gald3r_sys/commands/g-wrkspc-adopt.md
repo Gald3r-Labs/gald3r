@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
 Adopt an existing gald3r project into Workspace-Control: $ARGUMENTS

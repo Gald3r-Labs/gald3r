@@ -1,4 +1,4 @@
-# Replit AI Platform Template
+﻿# Replit AI Platform Template
 
 **Tier 2 - Community Supported**
 

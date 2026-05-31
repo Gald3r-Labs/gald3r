@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [RELEASE_AND_VERSIONING]
 ---
 Accelerate a release. Activates **g-skl-release** → ACCELERATE operation.

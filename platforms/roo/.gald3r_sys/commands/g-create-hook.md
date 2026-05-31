@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
 Scaffold a new gald3r hook script + companion `hook.md` self-description in one step.

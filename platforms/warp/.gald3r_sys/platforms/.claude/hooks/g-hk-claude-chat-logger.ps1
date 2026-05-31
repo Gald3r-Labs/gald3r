@@ -1,4 +1,4 @@
-﻿# g-hk-claude-chat-logger.ps1 — Claude Code Stop hook for chat logging (BUG-091)
+# g-hk-claude-chat-logger.ps1 — Claude Code Stop hook for chat logging (BUG-091)
 #
 # Mirrors the Cursor logging flow (g-hk-agent-complete.ps1 -> g-hk-cursor-chat-logger.py)
 # for Claude Code. Claude fires the "Stop" event with a JSON payload on stdin that

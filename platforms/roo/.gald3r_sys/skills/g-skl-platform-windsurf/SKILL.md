@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-platform-windsurf
 description: Authoritative reference for Windsurf IDE customization in gald3r projects. Covers .windsurfrules layout, Cascade agent integration, rules format, and gald3r install verification.
 crawl_max_age_days: 14

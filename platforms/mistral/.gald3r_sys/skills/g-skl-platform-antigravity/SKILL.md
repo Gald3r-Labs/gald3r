@@ -5,7 +5,7 @@ docs_url: https://antigravity.google/docs/home
 docs_url_secondary: https://codelabs.developers.google.com/getting-started-google-antigravity
 crawl_max_age_days: 7
 vault_doc_path: research/platforms/antigravity/
-last_doc_scan: never
+last_doc_scan: 2026-05-28
 reference: g-skl-platform-cursor
 capability_status:
   hooks: ❓        # no documented native hook/lifecycle system found post-relaunch

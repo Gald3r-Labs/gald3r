@@ -1,4 +1,4 @@
-# Augment Code Platform Template
+﻿# Augment Code Platform Template
 
 **Tier 2 - Community Supported**
 

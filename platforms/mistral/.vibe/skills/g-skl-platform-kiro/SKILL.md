@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-platform-kiro
 description: Authoritative reference for Kiro IDE (Amazon) customization in gald3r projects. Covers .kiro/steering/ layout, spec-driven development, hooks, and gald3r install verification.
 crawl_max_age_days: 7
@@ -122,5 +122,5 @@ Honest status — see `PLATFORM_SPEC.md` §9 for full detail.
 | Rules | ⚠️ | Steering provides persistent context but **no per-rule glob scoping** (`.mdc` `alwaysApply`/`globs` degrade to whole-file steering). |
 | MCP | ✅ | `.kiro/settings/mcp.json` (doc-verified). Timeout behavior ❓. |
 | No top-level instruction file | n/a | Kiro uses steering, not `AGENTS.md`/`CLAUDE.md` — gald3r writes `.kiro/steering/gald3r.md`. |
-| Doc freshness | ❓ | `last_doc_scan: never` — folder/format facts from May-2026 manual doc read; run `@g-platform-scan-docs kiro` to confirm. |
+| Doc freshness | ❓ | `last_doc_scan: 2026-05-20 — folder/format facts from May-2026 manual doc read; run `@g-platform-scan-docs kiro` to confirm. |
 | Install/runtime | ❓ | `node bin/install.js --only kiro` and live IDE behavior not exercised here. |

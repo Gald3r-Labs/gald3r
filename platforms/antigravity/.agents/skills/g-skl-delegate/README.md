@@ -5,7 +5,7 @@
 
 ## What it does
 
-Engineering team delegation workflow skill — REDACTED-AUTHOR (YC president) delegation patterns adapted for AI agent orchestration. Task briefs, code review request templates, quality gates, and handoff protocols.
+Engineering team delegation workflow skill — Gary Tan (YC president) delegation patterns adapted for AI agent orchestration. Task briefs, code review request templates, quality gates, and handoff protocols.
 
 ## When to use
 

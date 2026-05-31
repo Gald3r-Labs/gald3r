@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-graphify
 description: >
   Build and query a code graph representation of the codebase for 71x fewer tokens

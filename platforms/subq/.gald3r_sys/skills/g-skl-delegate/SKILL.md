@@ -1,13 +1,13 @@
 ﻿---
 name: g-skl-delegate
-description: Engineering team delegation workflow skill — REDACTED-AUTHOR (YC president) delegation patterns adapted for AI agent orchestration. Task briefs, code review request templates, quality gates, and handoff protocols.
+description: Engineering team delegation workflow skill — Gary Tan (YC president) delegation patterns adapted for AI agent orchestration. Task briefs, code review request templates, quality gates, and handoff protocols.
 token_budget: medium
 subsystem_memberships: [AGENT_ORCHESTRATION]
 ---
 
 # g-skl-delegate — Engineering Team Delegation Workflow
 
-Encodes REDACTED-AUTHOR's (YC president, ex-Palantir, Posterous founder) delegation patterns for treating AI agents as a full engineering team. Pairs with `g-go` (coordinator), `g-go-code` (executor), and `g-go-review` (reviewer).
+Encodes Gary Tan's (YC president, ex-Palantir, Posterous founder) delegation patterns for treating AI agents as a full engineering team. Pairs with `g-go` (coordinator), `g-go-code` (executor), and `g-go-review` (reviewer).
 
 ## When to Use
 
@@ -30,7 +30,7 @@ These roles map to gald3r's `g-go` pipeline:
 | **Reviewer** | `@g-go-review` | Independent adversarial review — never reviews work they wrote |
 | **Coordinator** | `@g-go` | Routes tasks, reconciles results, writes shared state |
 
-**Hard rule (REDACTED-AUTHOR principle)**: Never have the same agent implement AND review. The reviewer must be a fresh session with no implementation context.
+**Hard rule (Gary Tan principle)**: Never have the same agent implement AND review. The reviewer must be a fresh session with no implementation context.
 
 ---
 
@@ -251,6 +251,6 @@ Coordinator (g-go):
 Session notes from delegation pattern experiments: `{vault_location}/projects/{project}/decisions/`
 
 Original source context:
-- REDACTED-AUTHOR: "How to Make Claude Code Your AI Engineering Team" (YC, 2026)
+- Gary Tan: "How to Make Claude Code Your AI Engineering Team" (YC, 2026)
 - "How to Build Claude Agent Teams That Feel Illegal" (multi-agent coordination)
 - Aligns with: Anthropic multi-agent guidance, OpenSwarm F-002 pure routing orchestrator

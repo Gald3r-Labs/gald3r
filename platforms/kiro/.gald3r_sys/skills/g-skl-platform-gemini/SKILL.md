@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-platform-gemini
 description: Authoritative reference for Gemini CLI (Google) customization in gald3r projects. Covers .gemini/ native config, GEMINI.md memory, the gald3r .agent/ install tree, custom TOML commands, MCP, and install verification.
 docs_url: https://github.com/google-gemini/gemini-cli
@@ -158,7 +158,7 @@ full assessment. The features below do **not** work the way they do on Cursor:
    executable** as slash commands; no TOML emitter exists yet.
 6. **`.gemini/` vs `.agent/` split** — the only files Gemini reads natively are `GEMINI.md` and
    `.gemini/`. The whole `.agent/` tree is portability scaffolding.
-7. **SCAN_DOCS not yet run ❓** — `last_doc_scan: never`. Confirm exact `settings.json` keys,
+7. **SCAN_DOCS not yet run ❓** — `last_doc_scan: 2026-05-20 Confirm exact `settings.json` keys,
    built-in slash-command list, and extension API via `@g-platform-scan-docs gemini`.
 
 ---

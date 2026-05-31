@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [RELEASE_AND_VERSIONING]
 ---
 Open a Draft GitHub PR for the active task: $ARGUMENTS

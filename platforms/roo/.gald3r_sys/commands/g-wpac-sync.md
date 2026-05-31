@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
 Initiate or respond to a sibling contract sync: $ARGUMENTS

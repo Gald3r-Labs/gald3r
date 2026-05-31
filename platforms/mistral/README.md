@@ -1,4 +1,4 @@
-# Mistral Platform Template
+﻿# Mistral Platform Template
 
 **Tier 3 - Experimental**
 

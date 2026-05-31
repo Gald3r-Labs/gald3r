@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
 Send files, features, specs, ideas, or code to a related project in the ecosystem: $ARGUMENTS

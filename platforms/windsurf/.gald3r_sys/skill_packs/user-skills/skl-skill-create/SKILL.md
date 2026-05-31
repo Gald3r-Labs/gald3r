@@ -60,7 +60,7 @@ skill-name/
     └── helper.sh
 ```
 
-### Dual-file split (T1044 / REDACTED-HARVEST-137)
+### Dual-file split (T1044 / IDEA-HARVEST-137)
 
 Every new gald3r `g-skl-*` skill ships **both** files. They have different audiences and content rules:
 

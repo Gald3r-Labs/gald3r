@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-agnt-pcac-coordinator
 description: >
   Cross-project coordination agent. Use when orchestrating parent/child/sibling

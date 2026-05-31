@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [RELEASE_AND_VERSIONING]
 ---
 Stage a new feature. Activates **g-skl-features** → STAGE operation.

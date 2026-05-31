@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-platform-kiro-cli
 description: Authoritative reference for Kiro CLI (Amazon's terminal agent, the Q Developer CLI rebrand) customization in gald3r projects. Covers .kiro/steering/, JSON custom agents, lifecycle hooks, slash commands, MCP, and gald3r install verification. Distinct from Kiro IDE (g-skl-platform-kiro).
 crawl_max_age_days: 14

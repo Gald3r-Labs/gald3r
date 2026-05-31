@@ -1,4 +1,4 @@
-# Goose Platform Template
+﻿# Goose Platform Template
 
 **Tier 2 - Community Supported**
 

@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [UI_AND_OUTPUT]
 ---
 Open the gald3r theme editor: $ARGUMENTS

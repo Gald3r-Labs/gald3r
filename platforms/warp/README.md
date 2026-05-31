@@ -1,4 +1,4 @@
-# Warp Platform Template
+﻿# Warp Platform Template
 
 **Tier 2 - Community Supported**
 

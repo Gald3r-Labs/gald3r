@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-swot-review
 description: >-
   Automated SWOT analysis for the current project phase. Reviews progress,

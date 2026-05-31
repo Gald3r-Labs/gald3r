@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [TASK_MANAGEMENT]
 ---
 Implementation-only backlog execution: $ARGUMENTS
@@ -92,7 +92,7 @@ A valid completion signal consists of **all** of the following — every item is
 
 **Why this matters**: the next agent (`g-go-review` or any reviewer) reads the task file cold and uses these artifacts as the authoritative ground-truth for the work claimed complete. Missing signal pieces are the root cause of the "passed review but actually broken" failure mode.
 
-## Journal Capture on Novel Pattern (T1010 — REDACTED-PATTERN pattern)
+## Journal Capture on Novel Pattern (T1010 — myPKA pattern)
 
 After a task reaches `[🔍]`, IF the implementation surfaced a **novel pattern,
 decision rule, or anti-pattern** worth remembering for next time, write **one**

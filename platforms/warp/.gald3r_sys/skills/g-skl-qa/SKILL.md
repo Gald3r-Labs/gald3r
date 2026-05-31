@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-qa
 description: Track bugs, QA, and fixes in .gald3r/. For bug reports, issues, quality, fixes, QA workflows.
 token_budget: medium

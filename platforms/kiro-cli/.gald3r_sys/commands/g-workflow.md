@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [UI_AND_OUTPUT]
 ---
 Score complexity and expand tasks or plan sprints. Activates **g-tasks** → EXPAND or SPRINT PLAN.

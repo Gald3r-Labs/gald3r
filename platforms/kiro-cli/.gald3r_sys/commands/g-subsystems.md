@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 ---
 List and check the subsystem registry. Activates **g-skl-subsystems**.

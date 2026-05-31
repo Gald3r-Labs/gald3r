@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [TASK_MANAGEMENT]
 ---
 Pipeline orchestrator — implement then auto-review: $ARGUMENTS
@@ -107,7 +107,7 @@ Supported template variables (resolved at coordinator dispatch time, never insid
 | `{{TASK_TITLE}}` | `title:` field of the task YAML frontmatter | `Sandcastle g-go pipeline patterns` |
 | `{{SKILL_PATH}}` | Absolute path to the active gald3r skill folder for the dispatch role | `.claude/skills/g-skl-tasks` |
 | `{{BRANCH_NAME}}` | Worktree branch from `gald3r_worktree.ps1 -Action Create -Json` output | `gald3r/1175/code/gald3r_dev/autopilot-iter9` |
-| `{{TASK_FILE}}` | Path to the active task file under `.gald3r/tasks/**` | `.gald3r/tasks/open/task1175_external-runner_g_go_pipeline_patterns.md` |
+| `{{TASK_FILE}}` | Path to the active task file under `.gald3r/tasks/**` | `.gald3r/tasks/open/task1175_sandcastle_g_go_pipeline_patterns.md` |
 | `{{WORKTREE_PATH}}` | Absolute worktree path from the helper JSON | `G:/gald3r_ecosystem/.gald3r-worktrees/gald3r_dev/1175-code-autopilot-iter9` |
 | `{{MODE}}` | Resolved model tier (`fast` | `standard` | task `preferred_model:` override) | `standard` |
 | `{{COORDINATOR_AGENT}}` | Slug of the coordinator agent for audit trail | `autopilot-iter9` |
@@ -262,7 +262,7 @@ current iteration's task or while a hard-gate blocker is unresolved.
 ### `--completion-signal <tag>` override flag (future orchestrator)
 
 A future external orchestrator may want to use a different signal tag (for
-example, when integrating with external-runner-style `<promise>COMPLETE</promise>`
+example, when integrating with sandcastle-style `<promise>COMPLETE</promise>`
 pipelines or when one shell wraps multiple gald3r runs in a parent loop that
 needs distinct signals per child). The flag is reserved as:
 
@@ -276,7 +276,7 @@ emit the supplied tag instead of the default. The current gald3r implementation
 documents the convention only — no PowerShell orchestrator currently parses
 this flag, since the "iteration loop" of `g-go` is the agent itself rather
 than a wrapping process. The flag becomes load-bearing once `gald3r_agent`
-or a external-runner-style external runner takes over the loop role.
+or a sandcastle-style external runner takes over the loop role.
 
 ### Why a tag, not a file
 
@@ -365,14 +365,14 @@ not re-execute the commands.
 
 The current gald3r implementation documents the convention only — the
 expander itself becomes load-bearing when an external runner
-(`gald3r_agent` or external-runner-style wrapper) takes over the prompt
+(`gald3r_agent` or sandcastle-style wrapper) takes over the prompt
 dispatch role. Today, when `g-go` IS the agent, the agent SHOULD
 interpret `!\`...\`` expressions itself by running the command via the
 shell tool and substituting the output into its own working context.
 
 ### Source
 
-REDACTED-HARVEST-215 — REDACTED-AUTHOR/external-runner prompt-file expansion syntax.
+IDEA-HARVEST-215 — mattpocock/sandcastle prompt-file expansion syntax.
 
 
 ## Structured Review Verdict (T1120 — Sandcastle Output.object pattern)
@@ -477,7 +477,7 @@ summary.)
 
 ### Source
 
-REDACTED-HARVEST-216 — REDACTED-AUTHOR/external-runner `Output.object()` Zod-validated
+IDEA-HARVEST-216 — mattpocock/sandcastle `Output.object()` Zod-validated
 structured extraction pattern.
 
 
@@ -485,7 +485,7 @@ structured extraction pattern.
 ## Named Workflow Templates (T1121 — Sandcastle 5-template taxonomy)
 
 gald3r ships five named workflow templates that map almost perfectly to
-external-runner's published taxonomy. Naming the patterns makes their
+sandcastle's published taxonomy. Naming the patterns makes their
 intent discoverable and lets users pick the right one with a single
 flag instead of memorizing flag combinations.
 
@@ -504,7 +504,7 @@ documented composition of existing flags, NOT new orchestration logic.
 This keeps the underlying behavior auditable in terms of the flag
 contract while making the pattern discoverable.
 
-Source: REDACTED-HARVEST-217 — REDACTED-AUTHOR/external-runner 5-template taxonomy.
+Source: IDEA-HARVEST-217 — mattpocock/sandcastle 5-template taxonomy.
 
 ### Template definitions
 
@@ -651,7 +651,7 @@ not individual commands.
   unambiguously instead of "g-go --swarm --review (which is also
   sometimes called swarm-with-review)".
 - **Future external runner alignment** — when `gald3r_agent` or a
-  external-runner-style external runner takes over orchestration, the
+  sandcastle-style external runner takes over orchestration, the
   template names become the stable user-facing surface; the flag
   compositions become implementation detail of the runner.
 
@@ -718,9 +718,9 @@ and Phase 2 below.
 
 `--shared-sandbox` is an **opt-in** flag that keeps the **same `code` worktree alive across
 Phase 1 and Phase 2** instead of spinning up a separate reviewer worktree. This mirrors
-external-runner's `createSandbox()` multi-run pattern: the sandbox is created once, dependencies
+sandcastle's `createSandbox()` multi-run pattern: the sandbox is created once, dependencies
 are installed once, commits accumulate on a single branch, and a second `run()` (the review
-pass) sees the same filesystem/git state without re-cloning. (REDACTED-HARVEST-214 — REDACTED-AUTHOR/external-runner.)
+pass) sees the same filesystem/git state without re-cloning. (IDEA-HARVEST-214 — mattpocock/sandcastle.)
 
 ### Lifecycle contract
 
@@ -1446,7 +1446,7 @@ Coordinator claims each review bucket as `[🕵️]` before spawning reviewers, 
 Each reviewer produces a result payload only: PASS/FAIL, evidence, proposed Status History rows, and any fix-forward patch if explicitly authorized. Reviewers do not write `TASKS.md`, `BUGS.md`, task/bug files, changelog/docs, generated prompts, parity output, or commits.
 Coordinator performs one final shared-write pass for `TASKS.md`, `BUGS.md`, task/bug files, changelog/docs updates, generated prompts, parity sync output, final staging, and the review-result commit. The coordinator commits PASS, FAIL, and mixed review verdicts by default after status writes, unless a narrow non-commit blocker applies.
 
-### Bucket Cancellation Contract (T1123 — external-runner AbortSignal pattern)
+### Bucket Cancellation Contract (T1123 — sandcastle AbortSignal pattern)
 
 The coordinator can abort in-flight bucket agents cleanly — required when a bucket
 times out (`--timeout-minutes`), runs rogue, or the WPAC conflict gate fires mid-run.

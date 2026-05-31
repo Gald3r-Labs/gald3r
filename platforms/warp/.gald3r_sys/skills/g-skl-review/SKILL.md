@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-review
 description: Code review for security, quality, performance, reusability; structured report with severity and actions.
 token_budget: medium

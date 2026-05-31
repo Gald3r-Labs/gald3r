@@ -1,4 +1,4 @@
----
+﻿---
 description: "Git workflow conventions — commit message format and branch standards"
 globs:
 alwaysApply: false

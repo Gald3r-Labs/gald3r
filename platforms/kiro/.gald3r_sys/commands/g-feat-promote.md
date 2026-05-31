@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [RELEASE_AND_VERSIONING]
 ---
 Promote a specced feature to committed — triggers interactive task creation. Activates **g-skl-features** → PROMOTE operation.

@@ -1,4 +1,4 @@
-# Cursor Platform Template
+﻿# Cursor Platform Template
 
 **Tier 1 - Fully Supported**
 

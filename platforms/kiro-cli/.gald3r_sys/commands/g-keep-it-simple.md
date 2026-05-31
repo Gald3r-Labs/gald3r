@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [MEMORY_AND_KNOWLEDGE]
 ---
 Toggle terse mode on or off: $ARGUMENTS

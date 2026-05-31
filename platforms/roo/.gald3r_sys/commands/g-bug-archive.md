@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [BUG_AND_QUALITY]
 ---
 Archive terminal bug history into `.gald3r/archive/` while keeping `BUGS.md` as an active quality index.

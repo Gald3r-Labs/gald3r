@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-platform-augment
 description: Authoritative reference for Augment Code (VS Code + JetBrains + auggie CLI) customization in gald3r projects. Covers .augment-guidelines, .augment/rules/, the Context Engine, MCP, and gald3r install verification.
 crawl_max_age_days: 14

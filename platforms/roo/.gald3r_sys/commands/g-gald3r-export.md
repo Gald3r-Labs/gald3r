@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [RELEASE_AND_VERSIONING]
 ---
 # @g-skl-gald3r-export — Export gald3r template to clonable repo

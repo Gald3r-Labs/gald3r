@@ -1,4 +1,4 @@
-# Cline Platform Template
+﻿# Cline Platform Template
 
 **Tier 1 - Fully Supported**
 

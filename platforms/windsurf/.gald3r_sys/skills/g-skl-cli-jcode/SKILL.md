@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-cli-jcode
 description: jcode CLI platform skill — Rust-based coding agent with 14ms startup (245x faster than Claude Code), local embeddings, multi-session, MIT licensed. Use for low-overhead local tasks, batch loops, and resource-constrained environments.
 token_budget: low
@@ -7,7 +7,7 @@ subsystem_memberships: [PLATFORM_INTEGRATION]
 
 # g-skl-cli-jcode — jcode Rust Coding Agent
 
-Reference: [REDACTED-PROJECT](https://REDACTED-PROJECT) | 4,827 ⭐ | MIT | Rust
+Reference: [github.com/1jehuang/jcode](https://github.com/1jehuang/jcode) | 4,827 ⭐ | MIT | Rust
 
 ## What is jcode?
 
@@ -50,11 +50,11 @@ jcode --version
 
 ```bash
 # Linux/macOS
-curl -sSL https://REDACTED-PROJECT/releases/latest/download/jcode-$(uname -s | tr '[:upper:]' '[:lower:]')-x86_64.tar.gz | tar xz
+curl -sSL https://github.com/1jehuang/jcode/releases/latest/download/jcode-$(uname -s | tr '[:upper:]' '[:lower:]')-x86_64.tar.gz | tar xz
 sudo mv jcode /usr/local/bin/
 
 # Windows (PowerShell)
-$url = "https://REDACTED-PROJECT/releases/latest/download/jcode-windows-x86_64.zip"
+$url = "https://github.com/1jehuang/jcode/releases/latest/download/jcode-windows-x86_64.zip"
 Invoke-WebRequest -Uri $url -OutFile jcode.zip
 Expand-Archive jcode.zip -DestinationPath .
 Move-Item jcode.exe $env:USERPROFILE\bin\jcode.exe
@@ -252,4 +252,4 @@ done
 Once `@g-recon-docs` is run for `jcode`, full docs will be at:
 `{vault_location}/research/platforms/jcode/`
 
-Source: `REDACTED-PROJECT` — ingested via REDACTED-HARVEST-001.
+Source: `github.com/1jehuang/jcode` — ingested via IDEA-HARVEST-001.

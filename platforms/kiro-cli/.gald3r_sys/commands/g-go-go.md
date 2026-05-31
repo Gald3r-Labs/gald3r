@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [TASK_MANAGEMENT]
 ---
 Maximal workspace swarm autopilot — rolling implement/review until a hard stop: $ARGUMENTS

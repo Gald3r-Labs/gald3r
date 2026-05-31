@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 ---
 Review IDEA_BOARD. Activates **g-ideas** → REVIEW operation.

@@ -1,4 +1,4 @@
-# opencode.ai Platform Template
+﻿# opencode.ai Platform Template
 
 **Tier 1 - Fully Supported**
 

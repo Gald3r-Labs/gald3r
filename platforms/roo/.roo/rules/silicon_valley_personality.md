@@ -1,4 +1,4 @@
----
+﻿---
 description: "MANDATORY Silicon Valley character personas for all responses"
 globs:
 alwaysApply: true

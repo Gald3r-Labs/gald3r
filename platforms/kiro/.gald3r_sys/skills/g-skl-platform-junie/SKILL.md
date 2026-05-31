@@ -1,11 +1,11 @@
-﻿---
+---
 name: g-skl-platform-junie
 description: Authoritative reference for JetBrains Junie (AI coding plugin) customization in gald3r projects. Covers .junie/guidelines.md, custom instructions, and gald3r install verification.
 crawl_max_age_days: 14
 vault_doc_path: research/platforms/junie/
 vault_docs_url: https://junie.jetbrains.com/docs
 docs_url: https://junie.jetbrains.com/docs
-last_doc_scan: never
+last_doc_scan: 2026-05-20
 capability_status:
   hooks: "❌ no lifecycle-hook system; Action Allowlist is approval gating, not a hook bus"
   rules: "⚠️ no rules folder; always-apply via .junie/AGENTS.md guidelines (legacy .junie/guidelines.md), injected into every task"
@@ -138,4 +138,4 @@ decision tree in `g-skl-platform-cursor/SKILL.md`, each capability is (a) common
 | MCP servers | ✅ native `.junie/mcp/mcp.json` | (a)/(b) strong fit |
 | Persistent guidelines / memory | ⚠️ single guidelines file | (a)/(b) strong fit, injected into every task |
 
-**Strong fits**: MCP and persistent guidelines. **Hard gaps**: rules folder, file-defined agents, skill discovery, extensible commands, lifecycle hooks. `last_doc_scan: never` — run `@g-platform-scan-docs junie` to verify on the current Junie release.
+**Strong fits**: MCP and persistent guidelines. **Hard gaps**: rules folder, file-defined agents, skill discovery, extensible commands, lifecycle hooks. `last_doc_scan: 2026-05-20 — run `@g-platform-scan-docs junie` to verify on the current Junie release.

@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [BUG_AND_QUALITY]
 ---
 Report a new bug. Activates **g-skl-bugs** → REPORT BUG operation.

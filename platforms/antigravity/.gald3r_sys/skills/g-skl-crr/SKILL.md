@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-crr
 description: Clean-Room Rewrite pipeline. Orchestrates 4 phases via independent background subagents — harvest a source repo, write all findings to IDEA_BOARD (mandatory), triage tasks, and produce a gald3r-native clean-room implementation spec.
 triggers:
@@ -107,7 +107,7 @@ Before spawning any subagents:
 
 1. **Resolve vault location**: read `.gald3r/.identity`, extract `vault_location=`
 2. **Check for existing recon**: if `{vault}/research/recon/{slug}/05_synthesis.md` exists → prompt `[CRR] Recon already exists for {slug}. Using cached synthesis — skip to Phase 2? (or pass RESUME to re-analyze)`
-3. **Get current REDACTED-HARVEST-NNN**: run `Select-String -Path ".gald3r/IDEA_BOARD.md" -Pattern "REDACTED-HARVEST-(\d+)"` → take max → store as `idea_start_num`
+3. **Get current IDEA-HARVEST-NNN**: run `Select-String -Path ".gald3r/IDEA_BOARD.md" -Pattern "IDEA-HARVEST-(\d+)"` → take max → store as `idea_start_num`
 4. **Get current task count**: scan `tasks/` for highest id → store as `task_start_id`
 5. **Load target subsystem** (if provided): read `.gald3r/subsystems/{target_subsystem}.md`
 6. **Log**: `[CRR] Starting pipeline for {url} | slug={slug} | idea_start={idea_start_num} | task_start={task_start_id}`
@@ -185,7 +185,7 @@ Extract ALL findings:
 ### 2b. Number entries
 
 ```powershell
-$max = (Select-String -Path ".gald3r/IDEA_BOARD.md" -Pattern "REDACTED-HARVEST-(\d+)" |
+$max = (Select-String -Path ".gald3r/IDEA_BOARD.md" -Pattern "IDEA-HARVEST-(\d+)" |
     ForEach-Object { [int]($_.Matches[0].Groups[1].Value) } |
     Measure-Object -Maximum).Maximum
 $next = if ($max) { $max + 1 } else { 1 }
@@ -201,7 +201,7 @@ Append a batch block using `StrReplace` (never overwrite):
 
 ---
 
-### REDACTED-HARVEST-{NNN}
+### IDEA-HARVEST-{NNN}
 **Title**: {idea title}
 **Source**: {file/section in recon where this was found}
 **Priority**: high|medium|low
@@ -209,7 +209,7 @@ Append a batch block using `StrReplace` (never overwrite):
 **Summary**: {2-3 sentences: what gald3r could adopt and why, or why it's a skip}
 **Action**: [Task candidate — pending Phase 3] OR [IDEA_BOARD capture] OR [SKIP — {reason}]
 
-### REDACTED-HARVEST-{NNN+1}
+### IDEA-HARVEST-{NNN+1}
 ...
 ```
 
@@ -218,9 +218,9 @@ Append a batch block using `StrReplace` (never overwrite):
 Store:
 - `idea_batch_start` = `$next`
 - `idea_batch_end` = last written number
-- `immediate_candidates` = list of REDACTED-HARVEST-NNN entries with Action: `[Task candidate]`
+- `immediate_candidates` = list of IDEA-HARVEST-NNN entries with Action: `[Task candidate]`
 
-Log: `[CRR] Phase 2 complete — wrote REDACTED-HARVEST-{idea_batch_start} through {idea_batch_end}. Immediate task candidates: {count}`
+Log: `[CRR] Phase 2 complete — wrote IDEA-HARVEST-{idea_batch_start} through {idea_batch_end}. Immediate task candidates: {count}`
 
 **If `--ideas-only` flag was set:** commit the IDEA_BOARD write and stop here. Print summary and exit.
 
@@ -236,12 +236,12 @@ You are the Phase 3 Task Triage agent for g-crr.
 Source repo: {url}
 Slug: {slug}
 Recon path: {vault}/research/recon/{slug}/
-IDEA_BOARD candidates: REDACTED-HARVEST-{idea_batch_start} through {idea_batch_end}
+IDEA_BOARD candidates: IDEA-HARVEST-{idea_batch_start} through {idea_batch_end}
 
 Read and follow the skill at: .claude/skills/g-skl-tasks/SKILL.md
 
 Your job:
-1. Read .gald3r/IDEA_BOARD.md — find all REDACTED-HARVEST-{NNN} entries from this batch
+1. Read .gald3r/IDEA_BOARD.md — find all IDEA-HARVEST-{NNN} entries from this batch
    that have Action: "[Task candidate — pending Phase 3]"
 2. For each candidate, decide: IMMEDIATE task (implement now) or PARK (stays on IDEA_BOARD)
    - IMMEDIATE criteria: clear AC, no major architectural unknowns, additive (not replacement), high/medium priority
@@ -266,8 +266,8 @@ Your job:
 
 Return a JSON summary:
 {
-  "tasks_created": [{"id": N, "title": "...", "idea_ref": "REDACTED-HARVEST-NNN", "target_repo": "local"}, ...],
-  "tasks_parked": [{"idea_ref": "REDACTED-HARVEST-NNN", "reason": "..."}, ...],
+  "tasks_created": [{"id": N, "title": "...", "idea_ref": "IDEA-HARVEST-NNN", "target_repo": "local"}, ...],
+  "tasks_parked": [{"idea_ref": "IDEA-HARVEST-NNN", "reason": "..."}, ...],
   "next_task_id": N
 }
 ```
@@ -356,7 +356,7 @@ git add ".gald3r/TASKS.md"
 git add ".gald3r/tasks/task*.md"
 
 # Commit
-$msg = "feat(crr): {slug} harvest — REDACTED-HARVEST-{start}..{end}, T{task_ids_csv}`n`nClean-room rewrite pipeline via g-crr.`nSource: {url} ({license})`nPhase 1: {feature_count} features analyzed`nPhase 2: {idea_count} IDEA_BOARD entries`nPhase 3: {task3_count} immediate tasks created`nPhase 4: CRR spec task T{crr_task_id}"
+$msg = "feat(crr): {slug} harvest — IDEA-HARVEST-{start}..{end}, T{task_ids_csv}`n`nClean-room rewrite pipeline via g-crr.`nSource: {url} ({license})`nPhase 1: {feature_count} features analyzed`nPhase 2: {idea_count} IDEA_BOARD entries`nPhase 3: {task3_count} immediate tasks created`nPhase 4: CRR spec task T{crr_task_id}"
 git commit -m $msg
 ```
 
@@ -373,7 +373,7 @@ Phase 1 — Harvest
   Recon: {vault}/research/recon/{slug}/
 
 Phase 2 — IDEA_BOARD
-  Entries written: REDACTED-HARVEST-{start} → {end} ({count} entries)
+  Entries written: IDEA-HARVEST-{start} → {end} ({count} entries)
   Immediate candidates: {N}
 
 Phase 3 — Task triage
@@ -402,7 +402,7 @@ Next steps:
 [CRR] Status for {slug}
   Recon path: {vault}/research/recon/{slug}/
   Passes complete: {list}
-  IDEA_BOARD entries: REDACTED-HARVEST-{start}..{end} (or "none yet")
+  IDEA_BOARD entries: IDEA-HARVEST-{start}..{end} (or "none yet")
   Tasks created: T{ids} (or "none yet")
   CRR spec task: T{id} (or "none yet")
   Last phase: {1|2|3|4|none}

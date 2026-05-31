@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-platform-kiro
 description: Authoritative reference for Kiro IDE (Amazon) customization in gald3r projects. Covers .kiro/steering/ layout, spec-driven development, hooks, and gald3r install verification.
 crawl_max_age_days: 7

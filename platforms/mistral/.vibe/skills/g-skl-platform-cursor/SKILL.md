@@ -1,11 +1,11 @@
-﻿---
+---
 name: g-skl-platform-cursor
 description: Authoritative reference for Cursor IDE customization in gald3r projects. Covers .cursor/ folder layout, all supported primitives (rules/skills/agents/commands/hooks/MCP), parity tiers, vault doc location, crawl freshness gate, and install verification.
 crawl_max_age_days: 7
 vault_doc_path: research/platforms/cursor/
 vault_docs_url: https://docs.cursor.com
 docs_url: https://docs.cursor.com
-last_doc_scan: never
+last_doc_scan: 2026-05-20
 reference_implementation: true
 capability_status:
   hooks: "✅ native hooks.json (sessionStart/stop/beforeShellExecution/preToolUse) — verified"
@@ -92,7 +92,7 @@ Activate for: setting up Cursor in a gald3r project, authoring rules/skills/agen
 
 ## 3a. Hook capabilities (T600)
 
-T600 / `feat-106` extends gald3r's hook layer with four contract-level features harvested from REDACTED-PROJECT, plus a 6-event worktree lifecycle. **Design-of-record:** [`docs/20260506_000000_Cursor_T600_HOOK_SYSTEM_EXTENSIONS.md`](../../../docs/20260506_000000_Cursor_T600_HOOK_SYSTEM_EXTENSIONS.md).
+T600 / `feat-106` extends gald3r's hook layer with four contract-level features harvested from OpenHarness, plus a 6-event worktree lifecycle. **Design-of-record:** [`docs/20260506_000000_Cursor_T600_HOOK_SYSTEM_EXTENSIONS.md`](../../../docs/20260506_000000_Cursor_T600_HOOK_SYSTEM_EXTENSIONS.md).
 
 | Feature | What it adds | Reference |
 |---|---|---|
@@ -248,7 +248,7 @@ Verified capability (see PLATFORM_SPEC.md §10 Verification Evidence):
 | Skills | ✅ | 110 folder-per-skill `SKILL.md` |
 | Commands | ✅ | 174 `@g-*` command markdown files |
 | MCP | ✅ | mechanism verified; server set per-machine |
-| Docs freshness | ❓ | `last_doc_scan: never` — pending SCAN_DOCS |
+| Docs freshness | ❓ | `last_doc_scan: 2026-05-20 — pending SCAN_DOCS |
 
 **Overall cursor platform score: ≥95%** (the single open item is docs-freshness verification via
 `@g-platform-scan-docs cursor`, not a capability gap).
@@ -265,7 +265,7 @@ that feeds `PLATFORM_STATUS.md` — full detail in PLATFORM_SPEC.md §9):
    `$env:GALD3R_HOOK_BYPASS=1` only after the T600 patch is propagated from `.claude/hooks/`.
 3. **MCP server set ❓** — config mechanism verified ✅; concrete server list is machine-specific
    (no `.cursor/mcp.json` committed), untested in CI.
-4. **SCAN_DOCS not yet run** — `last_doc_scan: never`; doc-derived claims should be confirmed by a
+4. **SCAN_DOCS not yet run** — `last_doc_scan: 2026-05-20 doc-derived claims should be confirmed by a
    future `@g-platform-scan-docs cursor` crawl of https://docs.cursor.com.
 
 > **Note (verified correction):** `hooks.json` is at `.cursor/hooks.json` (the `.cursor/` root),

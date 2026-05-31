@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-platform-kiro-cli
 description: Authoritative reference for Kiro CLI (Amazon's terminal agent, the Q Developer CLI rebrand) customization in gald3r projects. Covers .kiro/steering/, JSON custom agents, lifecycle hooks, slash commands, MCP, and gald3r install verification. Distinct from Kiro IDE (g-skl-platform-kiro).
 crawl_max_age_days: 14
@@ -46,7 +46,7 @@ exist in a project, **`.kiro/` wins**.
 config is CLI-specific and NOT interchangeable with the IDE skill.
 
 > **Full capability assessment**: see `PLATFORM_SPEC.md` (9 sections, doc-verified May 2026,
-> not install-tested — `last_doc_scan: never`).
+> not install-tested — `last_doc_scan: 2026-05-20
 
 ---
 
@@ -151,6 +151,6 @@ Honest status — see `PLATFORM_SPEC.md` §9 for full detail. Legend: ✅ workin
 4. **Hooks ⚠️** — lifecycle taxonomy maps to Cursor, but hooks are declared **per-agent-config JSON** and receive **JSON via STDIN** (not the PowerShell envelope); adapter required; deny semantics ❓.
 5. **Rules ⚠️** — steering has no `alwaysApply`/`globs` per-rule scoping; `.mdc` rules degrade to whole-file always-injected steering.
 6. **No top-level instruction file** — uses steering, not `AGENTS.md`/`CLAUDE.md`; gald3r writes `.kiro/steering/gald3r.md`.
-7. **SCAN_DOCS not run (❓)** — `last_doc_scan: never`. Confirm exact agent-config dir paths, custom slash-command mechanism, hook field names + deny semantics, MCP timeout, and non-interactive flags via `@g-platform-scan-docs kiro-cli`.
+7. **SCAN_DOCS not run (❓)** — `last_doc_scan: 2026-05-20 Confirm exact agent-config dir paths, custom slash-command mechanism, hook field names + deny semantics, MCP timeout, and non-interactive flags via `@g-platform-scan-docs kiro-cli`.
 
 **MCP ✅** is the strongest area (Q Developer CLI lineage; `.kiro/settings/mcp.json` doc-verified).

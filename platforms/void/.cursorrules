@@ -1,15 +1,30 @@
-# gald3r Project Conventions
+# gald3r Project Rules — Void Editor
+# Void is an open-source VS Code fork that reads .cursorrules for AI project guidance.
+# Docs: https://voideditor.com
+
+## Project Context
+
+This project uses the gald3r framework for AI-assisted development.
 
 ## Task Management
-- Tasks: .gald3r/TASKS.md and .gald3r/tasks/
-- Bugs: .gald3r/BUGS.md and .gald3r/bugs/
-- Plan: .gald3r/PLAN.md
-- Constraints: .gald3r/CONSTRAINTS.md (check before completing any task)
 
-## Commit Format
-feat(scope): description
+- Tasks tracked in `.gald3r/TASKS.md` and `.gald3r/tasks/`
+- Status: [📋] pending | [🔄] in-progress | [🔍] awaiting review | [✅] complete
+- Reference active tasks before making changes
 
-Task: #NNN
+## Code Conventions
 
-## Status Emoji
-[📋] pending | [🔄] in progress | [🔍] awaiting verification | [✅] done
+- Commit format: `type(scope): description` (feat, fix, chore, docs, refactor, test)
+- No AI co-author footers in commits (C-021)
+- All documentation goes in `docs/` — not project root
+
+## Architecture
+
+- Read `.gald3r/SUBSYSTEMS.md` before modifying core systems
+- Check `.gald3r/CONSTRAINTS.md` for active project constraints
+- Bug discovery: log pre-existing bugs in `.gald3r/BUGS.md`, fix current-task bugs inline
+
+## Privacy Note
+
+Void sends prompts directly to your model provider — no proprietary backend.
+Configure your provider in `.vscode/settings.json`.

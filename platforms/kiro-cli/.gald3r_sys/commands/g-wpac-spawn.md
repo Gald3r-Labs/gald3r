@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
 Spawn a new gald3r project from this project with full setup and WPAC topology linking: $ARGUMENTS

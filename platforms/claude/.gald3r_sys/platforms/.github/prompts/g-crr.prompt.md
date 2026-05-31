@@ -24,7 +24,7 @@ Activates **g-skl-crr**. Full pipeline: deep harvest → mandatory IDEA_BOARD wr
 | Phase | Agent | Output |
 |-------|-------|--------|
 | 1 — Harvest | background subagent | vault note + 5-pass recon report |
-| 2 — IDEA_BOARD | coordinator write | REDACTED-HARVEST-NNN entries (mandatory, never skipped) |
+| 2 — IDEA_BOARD | coordinator write | IDEA-HARVEST-NNN entries (mandatory, never skipped) |
 | 3 — Task triage | background subagent | task files for immediate candidates |
 | 4 — CRR spec | background subagent | master clean-room rewrite task (like T1187) |
 

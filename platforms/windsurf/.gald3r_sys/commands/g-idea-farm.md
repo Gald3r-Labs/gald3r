@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 ---
 Scan codebase for improvement ideas. Activates **g-ideas** → FARM operation.

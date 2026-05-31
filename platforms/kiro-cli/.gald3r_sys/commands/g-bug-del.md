@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [BUG_AND_QUALITY]
 ---
 Close/archive a bug record. Activates **g-skl-bugs** → CLOSE BUG operation.

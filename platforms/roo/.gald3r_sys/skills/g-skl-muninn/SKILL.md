@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-muninn
 description: >
   gald3r_muninn MCP — query the local codebase knowledge graph for impact

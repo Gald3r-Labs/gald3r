@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-platform-qwen
 description: Authoritative reference for Qwen Code (Alibaba CLI coding agent, a Gemini CLI fork) customization in gald3r projects. Covers .qwen/settings.json, QWEN.md context, custom commands, MCP, and gald3r install verification.
 docs_url: https://qwenlm.github.io/qwen-code-docs/

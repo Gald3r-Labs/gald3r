@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [AGENT_ORCHESTRATION]
 ---
 # Think in Code — Context Reduction Pattern (g-rl-37)

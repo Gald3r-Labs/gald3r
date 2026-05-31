@@ -1,7 +1,7 @@
 ﻿# @subsystems: PROJECT_IDENTITY_SETUP
 <#
 .SYNOPSIS
-    Pre-tool-call shell output compression hook (T1106, REDACTED-HARVEST-191).
+    Pre-tool-call shell output compression hook (T1106, IDEA-HARVEST-191).
 
 .DESCRIPTION
     Fires under the PreToolUse / preToolUse event. Inspects the incoming tool

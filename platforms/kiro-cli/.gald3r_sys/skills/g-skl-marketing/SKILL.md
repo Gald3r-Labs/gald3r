@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-marketing
 description: >
   AI-powered marketing system for gald3r projects. Deploys specialized

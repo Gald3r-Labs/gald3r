@@ -1,4 +1,4 @@
-﻿---
+---
 description: "Session start protocol — quick sync validation and context display"
 globs:
 alwaysApply: true
@@ -70,7 +70,7 @@ Vocab loading (WPAC-aware):
 5. Skip silently if both files are absent or have no entries.
 Manage with `@g-vocab-add` / `@g-vocab-list` / `@g-vocab-search`.
 
-## Agent Journal Read (T1010 — REDACTED-PATTERN pattern)
+## Agent Journal Read (T1010 — myPKA pattern)
 
 When acting as a specific gald3r agent role, read that role's recent journal **before starting work**:
 

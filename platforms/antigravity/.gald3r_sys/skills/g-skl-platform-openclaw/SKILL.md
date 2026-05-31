@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-platform-openclaw
 description: Authoritative reference for OpenClaw AI agent customization in gald3r projects. Covers the SOUL.md persona pattern, workspace skill conventions, and the OpenClaw hooks/MCP/commands surface.
 docs_url: https://docs.openclaw.ai

@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [RELEASE_AND_VERSIONING]
 ---
 Update a staging feature doc. Activates **g-skl-features** → UPDATE FEATURE operation.

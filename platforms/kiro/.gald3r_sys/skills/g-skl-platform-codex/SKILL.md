@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-platform-codex
 description: Authoritative reference for OpenAI Codex CLI customization in gald3r projects. Covers .codex/ folder layout, config.toml, approval/sandbox policy, skills registration, MCP, and install verification.
 docs_url: https://developers.openai.com/codex
@@ -173,7 +173,7 @@ Capability summary (see `PLATFORM_SPEC.md` for full evidence and disposition):
 - **Skills ⚠️** — supported but require explicit `[[skills.config]]` registration; only 17 core skills shipped (not the full ~90).
 - **MCP ⚠️** — protocol supported and config-declared, but the exact `config.toml` table key is ❓ unverified and no servers are currently declared in this repo's config.
 
-**Docs freshness**: `last_doc_scan: never`. Run `@g-platform-scan-docs codex`
+**Docs freshness**: `last_doc_scan: 2026-05-20 Run `@g-platform-scan-docs codex`
 (crawl `https://developers.openai.com/codex` + the config-schema URL) to verify the MCP key,
 `AGENTS.md` merge precedence, and the approval/sandbox policy enumerations, then upgrade `⚠️`/`❓`
 cells to `✅` with evidence.

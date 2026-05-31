@@ -1,4 +1,4 @@
-# GitHub Copilot Platform Template
+﻿# GitHub Copilot Platform Template
 
 **Tier 1 - Fully Supported**
 

@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-browser-use
 description: >
   Production browser harness for agentic web tasks requiring persistent sessions,

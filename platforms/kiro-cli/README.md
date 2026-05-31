@@ -1,4 +1,4 @@
-# Kiro CLI Platform Template
+﻿# Kiro CLI Platform Template
 
 **Tier 2 - Community Supported**
 

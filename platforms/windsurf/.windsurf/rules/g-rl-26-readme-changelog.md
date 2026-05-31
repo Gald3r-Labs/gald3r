@@ -1,4 +1,4 @@
----
+﻿---
 description: Agents must update CHANGELOG.md and README.md when completing user-facing feature tasks
 globs: ["**/*.md", "**/*.mdc", "**/*.ps1", "**/*.json"]
 alwaysApply: true

@@ -1,4 +1,4 @@
-# Google Antigravity Platform Template
+﻿# Google Antigravity Platform Template
 
 **Tier 3 - Experimental**
 

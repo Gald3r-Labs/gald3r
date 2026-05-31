@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-platform-opencode
 description: Authoritative reference for OpenCode (sst/opencode) customization in gald3r projects. Covers .opencode/ folder layout, opencode.json config, native skills discovery (.opencode/skills/ + .claude/skills/), AGENTS.md/CLAUDE.md instructions, JS/TS plugin hooks, MCP, and install verification.
 crawl_max_age_days: 7

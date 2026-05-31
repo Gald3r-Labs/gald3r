@@ -1,4 +1,4 @@
----
+﻿---
 name: gald3r-code-reviewer
 description: Use when reviewing code, performing security audits, checking code quality, running @g-code-review, or after any significant implementation. Activate proactively after completing features or when the user says "review this", "check for security issues", or "is this code good?".
 model: inherit

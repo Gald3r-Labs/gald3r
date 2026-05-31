@@ -3,7 +3,7 @@
     Capture Claude Code session JSONL from a worktree to the host for cross-sandbox resume.
 
 .DESCRIPTION
-    Implements Task 1124 (external-runner-pattern session capture). After a g-go iteration runs
+    Implements Task 1124 (sandcastle-pattern session capture). After a g-go iteration runs
     inside an agent worktree/sandbox, the active Claude Code session transcript lives under
     the worktree's encoded project folder. This helper:
 

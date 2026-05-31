@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [RELEASE_AND_VERSIONING]
 ---
 Update a PRD field. Activates **g-skl-prds** → UPDATE operation.

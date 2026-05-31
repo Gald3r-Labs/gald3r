@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-res-apply
 version: 1.4
 description: >

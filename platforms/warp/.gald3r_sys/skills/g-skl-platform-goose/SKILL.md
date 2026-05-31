@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-platform-goose
 description: Authoritative reference for Goose (Block) AI agent customization in gald3r projects. Covers .goose/ config, instructions files, extensions, and gald3r install verification.
 crawl_max_age_days: 14

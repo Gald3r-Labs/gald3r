@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 ---
 Set, view, or clear a persistent session goal that locks the agent on target across iterations: $ARGUMENTS

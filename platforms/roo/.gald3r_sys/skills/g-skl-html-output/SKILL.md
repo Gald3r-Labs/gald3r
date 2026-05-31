@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-html-output
 description: Render human-facing reports (status, review, backlog) as themed HTML using docs/templates/ + docs/themes/. Operations RENDER, CHOOSE_THEME, VALIDATE, EXPORT. Invoked by --html flag commands (T1318). Never used for coordination files (TASKS.md, BUGS.md, task specs) which are always markdown.
 token_budget: low

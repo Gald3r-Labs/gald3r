@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 ---
 Add a new subsystem to the registry. Activates **g-skl-subsystems** → CREATE SUBSYSTEM SPEC operation.

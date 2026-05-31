@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-platform-openhands
 description: Authoritative reference for OpenHands (All Hands AI, formerly OpenDevin) AI agent customization in gald3r projects. Covers AGENTS.md context, .agents/skills/ + .openhands/microagents, MCP via mcp_tools, Docker sandbox integration, and gald3r install verification.
 docs_url: https://docs.openhands.dev

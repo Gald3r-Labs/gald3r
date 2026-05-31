@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [RELEASE_AND_VERSIONING]
 ---
 Revise a released PRD. Activates **g-skl-prds** → REVISE operation.

@@ -1,4 +1,4 @@
-# Roo Code Platform Template
+﻿# Roo Code Platform Template
 
 **Tier 1 - Fully Supported**
 

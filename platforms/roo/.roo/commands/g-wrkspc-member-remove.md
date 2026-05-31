@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
 Remove or retire a Workspace-Control member from the manifest: $ARGUMENTS

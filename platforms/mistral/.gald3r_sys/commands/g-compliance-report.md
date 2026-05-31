@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [SECURITY_AND_COMPLIANCE]
 ---
 Activate the g-skl-compliance skill and run a REPORT operation: $ARGUMENTS

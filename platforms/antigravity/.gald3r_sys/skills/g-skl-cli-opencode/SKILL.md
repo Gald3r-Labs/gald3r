@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-cli-opencode
 description: OpenCode CLI (opencode command) — stub. OpenCode is an emerging AI coding tool from sst.dev. Full documentation pending stable release.
 token_budget: low

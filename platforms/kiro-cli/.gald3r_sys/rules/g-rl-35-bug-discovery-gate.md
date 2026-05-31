@@ -1,4 +1,4 @@
-﻿---
+---
 description: "Bug-discovery gate — bugs found during implementation are never silently ignored: current-task bugs fixed inline, pre-existing bugs logged with BUG[BUG-{id}] comment"
 globs:
 alwaysApply: true

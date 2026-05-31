@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-platform-qwen
 description: Authoritative reference for Qwen Code (Alibaba CLI coding agent, a Gemini CLI fork) customization in gald3r projects. Covers .qwen/settings.json, QWEN.md context, custom commands, MCP, and gald3r install verification.
 docs_url: https://qwenlm.github.io/qwen-code-docs/
@@ -12,7 +12,7 @@ capability_status:
   skills: "❌ no native skills discovery; instruction-file reference only"
   commands: "⚠️ native custom commands in .qwen/commands/, but gald3r g-* emitted as .md, not executable"
   mcp: "✅ first-class mcpServers in .qwen/settings.json (doc-verified)"
-last_doc_scan: never
+last_doc_scan: 2026-05-20
 reference: g-skl-platform-cursor
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---

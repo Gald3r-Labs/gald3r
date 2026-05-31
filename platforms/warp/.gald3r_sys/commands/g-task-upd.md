@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [TASK_MANAGEMENT]
 ---
 Update task status or fields. Activates **g-skl-tasks** → UPDATE STATUS operation.

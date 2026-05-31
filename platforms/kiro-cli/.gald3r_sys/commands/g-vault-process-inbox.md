@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [VAULT_AND_RESEARCH]
 ---
 Process the vault raw/ inbox: $ARGUMENTS

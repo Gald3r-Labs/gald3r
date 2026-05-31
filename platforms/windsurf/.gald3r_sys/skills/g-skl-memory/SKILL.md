@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-memory
 description: >
   Capture structured insights, session summaries, and search cross-session agent memory

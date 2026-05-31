@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-platform-windsurf
 description: Authoritative reference for Windsurf IDE customization in gald3r projects. Covers .windsurfrules layout, Cascade agent integration, rules format, and gald3r install verification.
 crawl_max_age_days: 14
@@ -13,8 +13,8 @@ capability_status:
   skills: ❌     # no native skills discovery; rule-text summaries only
   commands: ⚠️   # no native command runtime; Cascade workflows are a manual, non-mapped analog
   mcp: ⚠️        # supported via ~/.codeium/windsurf/mcp_config.json (Windsurf-specific path)
-  docs_fresh: ❌ # last_doc_scan: never — no crawl performed
-last_doc_scan: never
+  docs_fresh: ❌ # last_doc_scan: 2026-05-20 — no crawl performed
+last_doc_scan: 2026-05-20
 ---
 
 # g-skl-platform-windsurf
@@ -112,6 +112,6 @@ Cursor primitives have **no native equivalent**. See `PLATFORM_SPEC.md` (this fo
 **Windsurf-only superset**: Cascade maintains an auto-generated **memory** store under
 `~/.codeium/windsurf/memories/` that Cursor lacks. It is Cascade-managed, not gald3r-authored.
 
-> **Honesty note**: `last_doc_scan: never`. Ratings are authored from prior Windsurf knowledge +
+> **Honesty note**: `last_doc_scan: 2026-05-20 Ratings are authored from prior Windsurf knowledge +
 > the existing deploy scaffold, NOT a fresh crawl. Promote `❓`/`⚠️` only with dated evidence after
 > `@g-platform-scan-docs windsurf`.

@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [RELEASE_AND_VERSIONING]
 ---
 Create a new release. Activates **g-skl-release** → CREATE operation.

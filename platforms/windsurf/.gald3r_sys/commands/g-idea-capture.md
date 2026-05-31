@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 ---
 Capture an idea to IDEA_BOARD.md. Activates **g-ideas** → CAPTURE operation.

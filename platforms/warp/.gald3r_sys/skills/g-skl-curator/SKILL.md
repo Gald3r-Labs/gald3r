@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-curator
 description: >
   Autonomous skill library curator — grades every SKILL.md against a structured rubric

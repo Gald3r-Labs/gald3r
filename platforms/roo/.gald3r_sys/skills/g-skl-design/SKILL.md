@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-design
 description: >
   UI/UX design engineering skill — transforms functional AI output into stunning, production-grade

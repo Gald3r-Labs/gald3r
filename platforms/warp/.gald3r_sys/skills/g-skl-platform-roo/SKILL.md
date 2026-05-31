@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-platform-roo
 description: Authoritative reference for Roo Code (VS Code extension) customization in gald3r projects. Covers .roo/rules/, mode-specific rules, custom modes (.roomodes), slash commands, MCP, and gald3r install verification.
 docs_url: https://docs.roocode.com

@@ -1,4 +1,4 @@
----
+﻿---
 name: gald3r-infrastructure
 description: Use when organizing project files, setting up folder structure, managing scope boundaries, preventing over-engineering, updating SUBSYSTEMS.md or subsystem specs, or when files are being placed in wrong locations. Activate on "organize files", "project structure", "where should this go", "subsystem", or when gald3r system templates need updating.
 model: inherit

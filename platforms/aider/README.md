@@ -1,4 +1,4 @@
-# Aider Platform Template
+﻿# Aider Platform Template
 
 **Tier 2 - Community Supported**
 

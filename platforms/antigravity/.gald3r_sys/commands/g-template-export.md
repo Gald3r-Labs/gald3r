@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [RELEASE_AND_VERSIONING]
 ---
 # g-template-export — Slim template export (gald3r_dev maintainers)

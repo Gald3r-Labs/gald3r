@@ -1,4 +1,4 @@
----
+﻿---
 description: "Ambient enforcement guardrails — always active regardless of which agent is loaded"
 globs:
 alwaysApply: true

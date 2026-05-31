@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-ship
 description: >
   Semantic versioning and release management for gald3r projects.
