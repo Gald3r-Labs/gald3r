@@ -1,0 +1,95 @@
+name: Bug Report
+description: Report a bug in gald3r
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. The more detail you provide, the faster we can fix it.
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: AI Platform / IDE
+      description: Which AI coding platform or IDE are you using gald3r with?
+      options:
+        - Cursor
+        - Claude Code (CLI)
+        - GitHub Copilot
+        - Kiro (Amazon)
+        - Windsurf
+        - Cline (VS Code)
+        - Roo Code
+        - Aider
+        - Augment Code
+        - Gemini CLI
+        - OpenCode (sst.dev)
+        - Codex CLI (OpenAI)
+        - Goose (Block)
+        - JetBrains Junie
+        - Warp Terminal
+        - OpenHands / OpenDevin
+        - Replit Agent
+        - Mistral Vibe
+        - Qwen Code
+        - Multiple platforms
+        - Other (describe below)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: gald3r Component
+      description: Which part of gald3r is broken?
+      options:
+        - Task Management (.gald3r/ / TASKS.md)
+        - Commands (g-go, g-mission, g-task-add, etc.)
+        - Skills (g-skl-*)
+        - Agents (g-agnt-*)
+        - Rules (g-rl-*)
+        - Hooks
+        - Platform parity / sync scripts
+        - gald3r_install / setup
+        - WPAC / Workspace-Control
+        - MCP / Valhalla backend
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Clear description of the bug. Include steps to reproduce.
+      placeholder: "Steps to reproduce:\n1. Run @g-...\n2. ...\n\nExpected: ...\nActual: ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Output / Logs
+      description: Paste any relevant error messages, agent output, or logs
+      render: shell
+
+  - type: input
+    id: version
+    attributes:
+      label: gald3r Version
+      description: Check your .gald3r/.identity file for gald3r_version
+      placeholder: "1.7.0"
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      placeholder: "Windows 11 / macOS 15 / Ubuntu 24.04"
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Anything else that might help
