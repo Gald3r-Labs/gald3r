@@ -1,0 +1,71 @@
+# Project Type Schema — gald3r (T1417)
+#
+# Every project type definition (built-in or user-authored) must conform to this schema.
+# Built-in types live in .gald3r_sys/project_types/.
+# User-authored types live in .gald3r/config/project_types/.
+#
+# At install/init time, gald3r resolves the type in this order:
+#   1. .gald3r/config/project_types/{type_name}.yaml  (user override wins)
+#   2. .gald3r_sys/project_types/{type_name}.yaml     (built-in fallback)
+#   3. Unknown type → error with helpful message listing known types
+
+# ── Required fields ───────────────────────────────────────────────────────────
+
+name: string                    # Machine identifier: lowercase, underscores only. Must be unique.
+display_name: string            # Human-readable label shown in @g-status, @g-setup output.
+description: string             # One-sentence description of this project type.
+version: string                 # SemVer of this type definition (e.g. "1.0.0").
+
+# ── Folder scaffold ───────────────────────────────────────────────────────────
+
+required_folders: []            # List of .gald3r/ subpaths that MUST exist after @g-setup.
+                                # Example: [tasks/, bugs/, config/]
+optional_folders: []            # Scaffold these if not present, but do not enforce.
+
+# ── File scaffold ─────────────────────────────────────────────────────────────
+
+required_files: []              # .gald3r/ relative paths that MUST exist (stubs written if absent).
+optional_files: []              # Write stubs if missing; do not error if absent.
+
+# ── Defaults injected at setup ────────────────────────────────────────────────
+
+default_constraints: []         # Constraint IDs or inline constraint objects to pre-populate.
+default_subsystems: []          # Subsystem names to pre-register in SUBSYSTEMS.md.
+gitignore_additions: []         # Lines appended to .gitignore (inside the gald3r section).
+identity_fields: {}             # Extra key=value pairs written to .gald3r/.identity at setup.
+
+# ── Behavior flags ────────────────────────────────────────────────────────────
+
+# Controls what gald3r features are active for projects of this type.
+features:
+  task_tracking: true           # TASKS.md, tasks/ folder active
+  bug_tracking: true            # BUGS.md, bugs/ folder active
+  release_management: false     # RELEASES.md, releases/ folder, @g-ship
+  git_workflow: none            # none | gitflow-lite | trunk | custom
+  branch_protection_level: simple   # simple | standard | strict
+  graduation_tier: single       # single | dual | triple (T1419)
+  wpac_role: autonomous_child   # controller | autonomous_child | controlled_member | standalone
+
+# ── Tier model (T1419) ────────────────────────────────────────────────────────
+# Only applies when graduation_tier is dual or triple.
+tier:
+  profile: single               # single | dual | triple
+  current_tier: dev             # dev | test | public (which tier THIS repo IS)
+  dev_to_test_history: squash-to-release-tag   # carry | squash-to-release-tag
+  # test_to_public_history is always "scrub" — non-configurable for security
+
+# ── Display ───────────────────────────────────────────────────────────────────
+
+badge: ""                       # Emoji shown next to project name in @g-status output.
+color: ""                       # Hex color for HTML report headers (optional).
+
+# ── Marketplace (Phase 2) ─────────────────────────────────────────────────────
+
+# These fields are unused in Phase 1 (file-based types only) but reserved for
+# the plugin marketplace packaging format (T1417 Phase 2).
+marketplace:
+  author: ""
+  homepage: ""
+  license: ""
+  tags: []
+  min_gald3r_version: ""

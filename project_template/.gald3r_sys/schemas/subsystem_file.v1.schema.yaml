@@ -1,0 +1,34 @@
+schema_id: subsystem-file
+schema_version: v1
+gald3r_rel_version: "1.10.0"
+description: "Schema for individual subsystem spec files under .gald3r/subsystems/*.md (YAML frontmatter + markdown body)."
+applies_to: ".gald3r/subsystems/*.md"
+
+unknown_fields: allow
+
+required:
+  name:
+    type: string
+    description: "Subsystem name (matches the SUBSYSTEMS.md registry entry)."
+  locations:
+    type: list
+    description: "Paths (relative or absolute) that make up this subsystem's boundary."
+
+optional:
+  owner:
+    type: string
+    description: "Owning team/role (used for CODEOWNERS generation)."
+  dependencies:
+    type: list
+    description: "Other subsystem names this subsystem depends on."
+  gald3r_rel_version:
+    type: string
+    auto_populate: current_framework_version
+  schema_version:
+    type: string
+    auto_populate: current_schema_version
+
+migration_notes:
+  v1:
+    added: [name, locations]
+    note: "Initial versioned schema."

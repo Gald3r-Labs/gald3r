@@ -1,0 +1,70 @@
+name: Question / Help
+description: Ask a question or get help using gald3r
+title: "[Question]: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Not sure how something works? Ask here. For faster answers, check the [wiki](https://github.com/wrm3/gald3r/wiki) first.
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: AI Platform / IDE
+      description: Which platform are you using?
+      options:
+        - Cursor
+        - Claude Code (CLI)
+        - GitHub Copilot
+        - Kiro (Amazon)
+        - Windsurf
+        - Cline (VS Code)
+        - Roo Code
+        - Aider
+        - Augment Code
+        - Gemini CLI
+        - OpenCode (sst.dev)
+        - Codex CLI (OpenAI)
+        - Goose (Block)
+        - JetBrains Junie
+        - Warp Terminal
+        - OpenHands / OpenDevin
+        - Replit Agent
+        - Mistral Vibe
+        - Qwen Code
+        - Multiple / Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: topic
+    attributes:
+      label: Topic
+      description: What is your question about?
+      options:
+        - Installation / Setup
+        - gald3r commands (g-go, g-task-add, etc.)
+        - Skills (g-skl-*)
+        - Task management / .gald3r/ folder
+        - WPAC / multi-repo setup
+        - Platform integration
+        - MCP / Valhalla
+        - Upgrading gald3r
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: What would you like to know? Be as specific as possible.
+    validations:
+      required: true
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: What have you already tried?
+      description: Links to docs you read, commands you ran, etc.

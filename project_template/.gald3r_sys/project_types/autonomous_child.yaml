@@ -1,0 +1,69 @@
+name: autonomous_child
+display_name: "Autonomous Child Repository"
+description: "A WPAC-linked repository that manages its own full .gald3r/ (tasks, bugs, planning) while remaining coordinated by a controller."
+version: "1.0.0"
+
+required_folders:
+  - tasks/
+  - tasks/open/
+  - tasks/completed/
+  - bugs/
+  - config/
+  - subsystems/
+  - linking/
+  - logs/
+
+required_files:
+  - TASKS.md
+  - BUGS.md
+  - PROJECT.md
+  - SUBSYSTEMS.md
+  - linking/INBOX.md
+  - .identity
+
+optional_folders:
+  - features/
+  - releases/
+  - specifications_collection/
+  - experiments/
+  - tracking/
+
+optional_files:
+  - PLAN.md
+  - CONSTRAINTS.md
+  - FEATURES.md
+  - config/AGENT_CONFIG.md
+  - linking/sent_orders/
+  - tracking/IDEA_BOARD.md
+
+default_constraints: []
+
+default_subsystems: []
+
+gitignore_additions:
+  - ".gald3r/logs/*.log"
+  - ".gald3r/.user_id"
+  - ".gald3r-worktree.json"
+
+identity_fields:
+  wpac_role: autonomous_child
+  project_type: autonomous_child
+
+features:
+  task_tracking: true
+  bug_tracking: true
+  release_management: false
+  git_workflow: gitflow-lite
+  branch_protection_level: simple
+  graduation_tier: single
+  wpac_role: autonomous_child
+
+badge: "🤖"
+color: "#7B68EE"
+
+marketplace:
+  author: "gald3r"
+  homepage: "https://github.com/gald3r/gald3r"
+  license: "MIT"
+  tags: [ecosystem, wpac, autonomous]
+  min_gald3r_version: "1.6.0"

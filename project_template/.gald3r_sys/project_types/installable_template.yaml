@@ -1,0 +1,59 @@
+name: installable_template
+display_name: "Installable Template Repository"
+description: "A clonable gald3r template repository. Its .gald3r/ folder contains product artifacts (template files to install), NOT live coordination state."
+version: "1.0.0"
+
+# SPECIAL EXCEPTION (enforced by check_member_repo_gald3r_guard.ps1):
+# template_directory_exception — all paths within template repos are allowed.
+# This is the ONLY repository type where .gald3r/ can contain tasks/, bugs/,
+# TASKS.md, etc. as TEMPLATE CONTENT (not live state).
+
+required_folders:
+  - .gald3r/     # Template source — the installer copies this to target projects
+
+required_files:
+  - README.md
+  - .gitignore
+
+optional_folders:
+  - .cursor/
+  - .claude/
+  - .agent/
+  - .codex/
+  - .opencode/
+  - .copilot/
+  - scripts/
+
+optional_files:
+  - CHANGELOG.md
+  - AGENTS.md
+  - CLAUDE.md
+
+default_constraints: []
+
+default_subsystems: []
+
+gitignore_additions: []
+
+identity_fields:
+  wpac_role: installable_template
+  project_type: installable_template
+
+features:
+  task_tracking: false         # Templates don't track their own tasks as live state
+  bug_tracking: false
+  release_management: true     # Template versions are tracked (releases/ folder)
+  git_workflow: trunk
+  branch_protection_level: simple
+  graduation_tier: single
+  wpac_role: installable_template
+
+badge: "📦"
+color: "#27AE60"
+
+marketplace:
+  author: "gald3r"
+  homepage: "https://github.com/gald3r/gald3r"
+  license: "MIT"
+  tags: [template, installable]
+  min_gald3r_version: "1.6.0"

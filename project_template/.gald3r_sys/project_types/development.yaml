@@ -1,0 +1,86 @@
+name: development
+display_name: "Software Development Project"
+description: "A general-purpose software development repository. Full task/bug tracking, GitFlow-lite branching (T1418), and optional multi-tier graduation (T1419)."
+version: "1.0.0"
+
+# This is the recommended type for new product repos, libraries, and services
+# that are NOT part of a gald3r ecosystem (standalone) or that join as WPAC
+# autonomous_child members.
+
+required_folders:
+  - tasks/
+  - tasks/open/
+  - tasks/completed/
+  - bugs/
+  - config/
+  - subsystems/
+
+required_files:
+  - TASKS.md
+  - BUGS.md
+  - PROJECT.md
+  - CONSTRAINTS.md
+  - SUBSYSTEMS.md
+  - config/AGENT_CONFIG.md
+  - .identity
+
+optional_folders:
+  - features/
+  - releases/
+  - linking/
+  - experiments/
+  - specifications_collection/
+  - tracking/
+  - prds/
+
+optional_files:
+  - PLAN.md
+  - FEATURES.md
+  - PRDS.md
+  - config/SPRINT.md
+  - tracking/IDEA_BOARD.md
+  - linking/INBOX.md
+
+default_constraints:
+  - C-021  # No AI co-author footers
+
+default_subsystems: []
+
+gitignore_additions:
+  - ".gald3r/logs/*.log"
+  - ".gald3r/.user_id"
+  - ".gald3r-worktree.json"
+  - ".gald3r-quarantine/"
+
+identity_fields:
+  project_type: development
+  wpac_role: standalone        # Override to autonomous_child when joining an ecosystem
+
+features:
+  task_tracking: true
+  bug_tracking: true
+  release_management: true
+  git_workflow: gitflow-lite   # See docs/GIT_WORKFLOW.md (T1418)
+  branch_protection_level: standard
+  graduation_tier: single      # Set to dual or triple to enable _test/_live repos (T1419)
+  wpac_role: standalone        # Override via @g-setup --wpac-role
+
+badge: "💻"
+color: "#2C3E50"
+
+# AGENT_CONFIG overrides written during @g-setup for this project type:
+# (See .gald3r/config/AGENT_CONFIG.md — Git Workflow Config section)
+agent_config_defaults:
+  branch_protection_level: standard
+  default_branch: main           # feature-branches-only model — NO long-lived dev branch (g-rl-02)
+  pr_required_for_main: true
+  graduation_tier: single
+  test_to_public_history: scrub  # Mode A (zero-history scrub) for public graduation; carry = keep history
+  auto_propose_releases: false  # T1420 — agents surface release proposals when true
+
+marketplace:
+  author: "gald3r"
+  homepage: "https://github.com/gald3r/gald3r"
+  license: "MIT"
+  tags: [development, software, gitflow]
+  min_gald3r_version: "1.6.0"

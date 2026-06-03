@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: gald3r Wiki
+    url: https://github.com/wrm3/gald3r/wiki
+    about: Browse the full documentation before opening an issue
+  - name: Discussions
+    url: https://github.com/wrm3/gald3r/discussions
+    about: For general conversation, ideas, and show-and-tell

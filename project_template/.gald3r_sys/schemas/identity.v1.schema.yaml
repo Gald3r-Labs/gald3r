@@ -1,0 +1,47 @@
+schema_id: identity
+schema_version: v1
+gald3r_rel_version: "1.10.0"
+description: >-
+  Schema for .gald3r/.identity, the project marker file. NOTE: .identity uses a
+  flat key=value line format (NOT YAML/markdown). Each required field below
+  appears as 'key=value' on its own line.
+applies_to: ".gald3r/.identity"
+
+unknown_fields: allow
+
+format: key_value_lines
+
+required:
+  project_id:
+    type: string
+    description: "Stable unique project identifier."
+  project_name:
+    type: string
+    description: "Project name."
+  project_type:
+    type: string
+    description: "Project type (e.g. software_development, controller, development)."
+
+optional:
+  user_id:
+    type: string
+  user_name:
+    type: string
+  gald3r_version:
+    type: string
+    description: "Installed gald3r framework version."
+  vault_location:
+    type: string
+  repos_location:
+    type: string
+  gald3r_rel_version:
+    type: string
+    auto_populate: current_framework_version
+  schema_version:
+    type: string
+    auto_populate: current_schema_version
+
+migration_notes:
+  v1:
+    added: [project_id, project_name, project_type]
+    note: "Initial versioned schema."

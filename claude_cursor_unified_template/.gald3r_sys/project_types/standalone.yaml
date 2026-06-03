@@ -1,0 +1,66 @@
+name: standalone
+display_name: "Standalone Project"
+description: "A minimal gald3r project that is not part of any WPAC ecosystem. Full task/bug tracking, but no ecosystem coordination wiring."
+version: "1.0.0"
+
+# Equivalent to the classic gald3r install for a solo/freelance project.
+# Use project isolation: vault_location={LOCAL} to prevent knowledge leakage.
+
+required_folders:
+  - tasks/
+  - tasks/open/
+  - bugs/
+  - config/
+
+required_files:
+  - TASKS.md
+  - BUGS.md
+  - PROJECT.md
+  - .identity
+
+optional_folders:
+  - subsystems/
+  - features/
+  - experiments/
+  - specifications_collection/
+  - tracking/
+
+optional_files:
+  - PLAN.md
+  - CONSTRAINTS.md
+  - SUBSYSTEMS.md
+  - FEATURES.md
+  - config/AGENT_CONFIG.md
+  - tracking/IDEA_BOARD.md
+
+default_constraints: []
+default_subsystems: []
+
+gitignore_additions:
+  - ".gald3r/logs/*.log"
+  - ".gald3r/.user_id"
+  - ".gald3r-worktree.json"
+
+identity_fields:
+  project_type: standalone
+  wpac_role: standalone
+  vault_location: "{LOCAL}"   # Isolates vault to this project by default
+
+features:
+  task_tracking: true
+  bug_tracking: true
+  release_management: false
+  git_workflow: none
+  branch_protection_level: simple
+  graduation_tier: single
+  wpac_role: standalone
+
+badge: "🔮"
+color: "#8E44AD"
+
+marketplace:
+  author: "gald3r"
+  homepage: "https://github.com/gald3r/gald3r"
+  license: "MIT"
+  tags: [standalone, solo, freelance]
+  min_gald3r_version: "1.6.0"

@@ -1,0 +1,59 @@
+schema_id: bug-file
+schema_version: v1
+gald3r_rel_version: "1.6.0"
+description: "Schema for individual bug files under .gald3r/bugs/**/*.md (YAML frontmatter)."
+applies_to: ".gald3r/bugs/**/*.md"
+
+unknown_fields: allow
+
+required:
+  id:
+    type: string
+    description: "Bug identifier (e.g. BUG-097)."
+  title:
+    type: string
+    min_length: 5
+    description: "Human-readable bug title."
+  severity:
+    type: enum
+    values: [critical, high, medium, low]
+    description: "Bug severity."
+  status:
+    type: enum
+    values: [open, in-progress, fixed, verified, closed, cancelled, wont_fix]
+    description: "Bug lifecycle status."
+
+optional:
+  reported_date:
+    type: date
+    format: "YYYY-MM-DD"
+    auto_populate: git_creation_date
+    description: "Date the bug was reported."
+  reported_by:
+    type: string
+    description: "Who reported the bug (user or agent role)."
+  file:
+    type: string
+    description: "Primary file path where the bug lives."
+  line:
+    type: integer
+    description: "Line number of the bug site, if known."
+  fixed_in_task:
+    type: integer
+    description: "Task ID that fixes this bug, if any."
+  workspace_repos:
+    type: list
+    description: "Manifest repository.id values this bug spans."
+  gald3r_rel_version:
+    type: string
+    auto_populate: current_framework_version
+    description: "gald3r framework release version that produced/validated this file."
+  schema_version:
+    type: string
+    auto_populate: current_schema_version
+    description: "Schema version this file conforms to (e.g. bug-file-v1)."
+
+migration_notes:
+  v1:
+    added: [id, title, severity, status]
+    note: "Initial versioned schema."
