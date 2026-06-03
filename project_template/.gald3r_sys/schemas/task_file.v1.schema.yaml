@@ -1,0 +1,91 @@
+schema_id: task-file
+schema_version: v1
+gald3r_rel_version: "1.10.0"
+description: "Schema for individual task files under .gald3r/tasks/**/*.md (YAML frontmatter)."
+applies_to: ".gald3r/tasks/**/*.md"
+
+# Unknown fields are permitted so that forward-compatible task metadata
+# (added by newer gald3r releases) does not trip validation.
+unknown_fields: allow
+
+required:
+  id:
+    type: integer
+    description: "Sequential task ID (global, monotonic across the project)."
+  title:
+    type: string
+    min_length: 5
+    description: "Human-readable task title."
+  type:
+    type: enum
+    values: [feature, bug_fix, refactor, chore, documentation]
+    description: "Task category."
+  status:
+    type: enum
+    description: >-
+      Task lifecycle status. The first block lists the current (v1) status
+      vocabulary. The legacy block lists pre-1.6 values that remain VALID but
+      are DEPRECATED -- g-medic accepts them and may migrate them to the
+      nearest current value during a migration pass.
+    values:
+      # --- current (v1) lifecycle ---
+      - created
+      - speccing
+      - specced
+      - coding
+      - code_ready
+      - qa_testing
+      - qa_complete
+      - release_ready
+      - released
+      - paused
+      - failed
+      - cancelled
+      - resource_gated
+      # --- legacy (valid but deprecated; retained for back-compat) ---
+      - pending
+      - in-progress
+      - awaiting-verification
+      - verification-in-progress
+      - completed
+      - closed
+    legacy_values_note: >-
+      pending, in-progress, awaiting-verification, verification-in-progress,
+      completed, and closed are legacy status values. They are valid for
+      validation purposes but deprecated; new task files should use the
+      current lifecycle vocabulary.
+  priority:
+    type: enum
+    values: [critical, high, medium, low]
+    description: "Task priority."
+  created_date:
+    type: date
+    format: "YYYY-MM-DD"
+    auto_populate: git_creation_date
+    description: "Date the task file was first created."
+
+optional:
+  workspace_repos:
+    type: list
+    description: "Manifest repository.id values this task's blast radius spans."
+  dependencies:
+    type: list
+    description: "Task IDs this task depends on."
+  release_hold:
+    type: enum
+    values: [none, manual, sync_required]
+    default: none
+    description: "Whether the task is held back from release and why."
+  gald3r_rel_version:
+    type: string
+    auto_populate: current_framework_version
+    description: "gald3r framework release version that produced/validated this file."
+  schema_version:
+    type: string
+    auto_populate: current_schema_version
+    description: "Schema version this file conforms to (e.g. task-file-v1)."
+
+migration_notes:
+  v1:
+    added: [id, title, type, status, priority, created_date]
+    note: "Initial versioned schema."

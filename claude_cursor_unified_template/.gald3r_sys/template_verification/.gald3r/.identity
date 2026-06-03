@@ -1,0 +1,10 @@
+# gald3r_rel_version: 1.6.0
+# schema_version: identity-v1
+project_id={project_id}
+project_name={project_name}
+project_type=software_development
+user_id={USER_ID}
+user_name={user_name}
+gald3r_version=1.9.0
+vault_location={LOCAL}
+repos_location={LOCAL_REPOS}

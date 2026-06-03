@@ -1,0 +1,35 @@
+schema_id: BUGS-md
+schema_version: v1
+gald3r_rel_version: "1.10.0"
+description: >-
+  Schema for the .gald3r/BUGS.md active bug index (markdown document with a
+  status legend and bug rows; table or bullet form). Source of truth for full
+  bug metadata is the per-bug file under .gald3r/bugs/**.
+applies_to: ".gald3r/BUGS.md"
+
+unknown_fields: allow
+
+structure:
+  document_type: markdown
+  top_level_heading:
+    required: true
+  legend_section:
+    required: true
+    description: "Defines each bug status/severity marker used by bug rows."
+  bug_rows:
+    required: true
+    description: "Bug entries as a markdown table or status-bucketed bullets."
+    required_columns: [id, severity, status, title]
+
+required:
+  - top_level_heading
+  - legend_section
+  - bug_rows
+
+cross_reference:
+  validates_against: bug-file
+
+migration_notes:
+  v1:
+    added: [legend_section, bug_rows]
+    note: "Initial versioned schema."
