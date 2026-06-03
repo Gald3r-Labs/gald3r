@@ -1,0 +1,71 @@
+# gald3r_rel_version: 1.6.0
+# schema_version: generic-v1
+# T1238 — Workflow profile: content_creation.
+#
+# Targets podcast/youtube/short-form video studios, marketing-content shops,
+# and any workflow where the deliverable is media + script + render.
+#
+# Activate by setting `workflow_profile: content_creation` in PROJECT.md or
+# in an individual task's frontmatter.
+
+id: content_creation
+name: Content Creation
+description: >
+  Media-production workflow: concept -> script -> production -> review ->
+  render -> publish. Adversarial-review gate sits between in_review and
+  rendering so QC blocks rendering effort on bad scripts.
+
+task_statuses:
+  - id: waiting
+    symbol: "[⌛]"
+    description: "Concept captured; prereqs (asset rights, brief, talent) not yet locked."
+    skip_in_pipeline: true
+  - id: concept
+    symbol: "[💡]"
+    description: "Idea logged; brief outlined; ready for script."
+    skip_in_pipeline: false
+  - id: scripting
+    symbol: "[✍️]"
+    description: "Writer claimed; script in flight."
+    skip_in_pipeline: false
+  - id: in_production
+    symbol: "[🎬]"
+    description: "Recording, capture, or shoot underway."
+    skip_in_pipeline: false
+  - id: in_review
+    symbol: "[🔍]"
+    description: "Awaiting editor / producer review before render."
+    skip_in_pipeline: false
+  - id: rendering
+    symbol: "[⚙️]"
+    description: "Final mix / color / export in progress."
+    skip_in_pipeline: false
+  - id: published
+    symbol: "[✅]"
+    description: "Live on the target channel; archived."
+    skip_in_pipeline: true
+  - id: archived
+    symbol: "[📦]"
+    description: "Removed from active rotation; reference only."
+    skip_in_pipeline: true
+  - id: paused
+    symbol: "[⏸️]"
+    description: "Held — talent unavailable, asset delay, etc."
+    skip_in_pipeline: true
+  - id: cancelled
+    symbol: "[🚫]"
+    description: "Concept abandoned."
+    skip_in_pipeline: true
+
+review_gate:
+  type: editor_review
+  reviewer: g-go-review
+  description: "Fresh reviewer checks script + b-roll + brand voice before greenlighting render."
+
+task_types:
+  - episode
+  - short
+  - thumbnail
+  - script_revision
+  - sponsorship
+  - distribution

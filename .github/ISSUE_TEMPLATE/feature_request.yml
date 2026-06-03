@@ -1,0 +1,89 @@
+name: Feature Request
+description: Suggest a new feature or improvement for gald3r
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea to make gald3r better? We'd love to hear it.
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: AI Platform / IDE
+      description: Which platform would benefit from this feature?
+      options:
+        - Cursor
+        - Claude Code (CLI)
+        - GitHub Copilot
+        - Kiro (Amazon)
+        - Windsurf
+        - Cline (VS Code)
+        - Roo Code
+        - Aider
+        - Augment Code
+        - Gemini CLI
+        - OpenCode (sst.dev)
+        - Codex CLI (OpenAI)
+        - Goose (Block)
+        - JetBrains Junie
+        - Warp Terminal
+        - OpenHands / OpenDevin
+        - Replit Agent
+        - Mistral Vibe
+        - Qwen Code
+        - All platforms
+        - Platform-agnostic / framework level
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: gald3r Component
+      description: Which area of gald3r would this affect?
+      options:
+        - New Command (g-*)
+        - New Skill (g-skl-*)
+        - New Agent (g-agnt-*)
+        - New Rule (g-rl-*)
+        - Task Management system
+        - WPAC / Workspace-Control
+        - Platform parity / sync
+        - gald3r_install / setup
+        - MCP / Valhalla backend
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the pain point or gap you're hitting today
+      placeholder: "When I try to... I have to... which is painful because..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: How would you like to see this work?
+      placeholder: "It would be great if @g-command-name could..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you found any workarounds or alternatives?
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Any other context, screenshots, or examples

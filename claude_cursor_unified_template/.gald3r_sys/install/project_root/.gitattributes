@@ -1,0 +1,50 @@
+# gald3r encoding + line-ending policy (T1428)
+# Pairs with the g-hk-encoding-normalize hook to stop CRLF churn and BOM/mojibake
+# corruption on Windows / PowerShell 5.1 (BUG-073, BUG-094).
+
+# Default: treat as text, normalize to LF in the repo and on checkout.
+* text=auto eol=lf
+
+# Markdown / config / source -- UTF-8 no-BOM, LF.
+*.md        text eol=lf
+*.mdc       text eol=lf
+*.yaml      text eol=lf
+*.yml       text eol=lf
+*.json      text eol=lf
+*.toml      text eol=lf
+*.ini       text eol=lf
+*.cfg       text eol=lf
+*.ts        text eol=lf
+*.tsx       text eol=lf
+*.js        text eol=lf
+*.jsx       text eol=lf
+*.py        text eol=lf
+*.sql       text eol=lf
+*.html      text eol=lf
+*.css       text eol=lf
+*.scss      text eol=lf
+*.txt       text eol=lf
+
+# Shell scripts -- LF is mandatory for execution.
+*.sh        text eol=lf
+*.bash      text eol=lf
+
+# PowerShell -- LF endings, declared UTF-8 working tree.
+# NOTE: PowerShell 5.1 requires a UTF-8 BOM to parse non-ASCII bytes correctly;
+# the g-hk-encoding-normalize hook keeps the BOM on these files. eol=lf is safe
+# (PS5.1 reads LF fine); the BOM is independent of the line-ending policy.
+*.ps1       text eol=lf working-tree-encoding=UTF-8
+*.psm1      text eol=lf working-tree-encoding=UTF-8
+*.psd1      text eol=lf working-tree-encoding=UTF-8
+
+# Binary assets -- never normalize.
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.ico       binary
+*.pdf       binary
+*.zip       binary
+*.gz        binary
+*.db        binary
+*.sqlite    binary

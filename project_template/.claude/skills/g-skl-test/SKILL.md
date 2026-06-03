@@ -1,0 +1,218 @@
+﻿---
+name: g-skl-test
+description: Create, maintain, and run multi-level test plans (fast, comprehensive, regression) for gald3r systems and features. Use when creating test plans, running tests, checking test coverage gaps, doing code review, verification, or when preparing a release. Enforces C-013/C-014/C-015 constraints. Triggered by @g-test command and g-agnt-test agent.
+token_budget: medium
+subsystem_memberships: [BUG_AND_QUALITY]
+---
+# g-skl-test — Test Plan Management
+
+**Files Owned**: `.gald3r/test-plans/`, `.gald3r/TEST_PLANS.md`
+
+**Activate for**: create test plan, run tests, check test coverage, code review gate, verification gate, release gate, `@g-test`.
+
+---
+
+## Test Plan Levels
+
+| Level | Name | When Required | Scope | Max Duration |
+|-------|------|---------------|-------|--------------|
+| L0 | **Functional (system health)** | Install health check / pre-release stamp / CI gate | Per-gald3r-system PASS/FAIL + overall functionality % | < 5 min |
+| L1 | **Fast** | Every PR / code review / verification gate | Unit tests, smoke tests, happy-path | < 5 min |
+| L2 | **Comprehensive** | Feature completion, sprint closure | Integration, edge cases, error paths | < 30 min |
+| L3 | **Regression** | Before any release / version bump | Full suite, previous bug scenarios, cross-subsystem | Unrestricted |
+L1/L2/L3 are **code-test** levels (they run test files via `custom_scripts/tests/run_l1_tests.ps1`,
+T1532). **L0 / FUNCTIONAL** is a distinct **system-health** tier (T1540): it does not run code unit
+tests but exercises each gald3r *system* (Task Management, Bug Tracking, Platform Parity, Hook Wiring,
+Schema, Constraints, Subsystems, Skills, WPAC, Release, Encoding, ...) and emits a per-system
+PASS / PARTIAL / FAIL plus an overall "gald3r is N% functional" score.
+
+---
+
+## Operations
+
+### CREATE — Generate test plans for a subsystem or feature
+
+**Steps**:
+
+1. **Identify scope** — determine subsystem name or feature ID from context
+2. **Derive test plan file path**: `.gald3r/test-plans/{scope}_L{1|2|3}.md`
+3. **Check what exists**: scan `.gald3r/test-plans/` for matching files
+4. **Create missing plans** using the template below (one file per level)
+5. **Register in TEST_PLANS.md** — add rows for each new plan
+6. **If called from code review / verification**: also run AUDIT (see below)
+
+**File naming convention**:
+```
+.gald3r/test-plans/{subsystem-or-feature-slug}_L1_fast.md
+.gald3r/test-plans/{subsystem-or-feature-slug}_L2_comprehensive.md
+.gald3r/test-plans/{subsystem-or-feature-slug}_L3_regression.md
+```
+
+**Test Plan File Template**:
+```markdown
+---
+scope: "{subsystem_or_feature}"
+level: L1 | L2 | L3
+level_name: fast | comprehensive | regression
+status: draft | active | passing | failing
+last_run: null
+created: YYYY-MM-DD
+---
+
+# Test Plan — {scope} — {Level Name}
+
+## Objective
+[What this test level verifies]
+
+## Test Cases
+
+| ID | Description | Type | Expected Result | Status |
+|----|-------------|------|-----------------|--------|
+| T-001 | [test description] | unit/integration/e2e/manual | [expected] | pending |
+
+## Setup / Teardown
+[Any environment setup needed]
+
+## Pass Criteria
+- [ ] All test cases pass
+- [ ] No regressions introduced
+- [L2+] [ ] Edge cases covered
+- [L3 only] [ ] All previous bug scenarios pass
+
+## Notes
+```
+
+---
+
+### AUDIT — Check for missing test plans (called during review/verification)
+
+**Steps**:
+
+1. Read `.gald3r/SUBSYSTEMS.md` — get all `active` subsystems
+2. Read `.gald3r/TASKS.md` — get all `completed` and `in-progress` tasks to find features/subsystems under test
+3. For each active subsystem, check if all 3 test plan files exist in `.gald3r/test-plans/`
+4. For each gap found, **create a task** via `g-skl-tasks` CREATE TASK:
+   - Title: `Create {Level} test plan for {scope}`
+   - Type: `documentation`
+   - Priority: `high` (L1 missing) | `medium` (L2/L3 missing)
+   - Subsystems: `[testing, {scope}]`
+5. Report:
+
+```
+TEST PLAN AUDIT:
+  auth (L1 fast):           ✅ EXISTS
+  auth (L2 comprehensive):  ✅ EXISTS
+  auth (L3 regression):     ⚠️ MISSING — Task NNN created
+  api (L1 fast):            ⚠️ MISSING — Task NNN created
+  ...
+  Gaps found: N | Tasks created: N
+```
+
+---
+
+### RUN — Execute tests for a specific level
+
+**Steps**:
+
+1. Read the test plan file for the specified scope + level
+2. For each test case, determine if it's automatable or manual
+3. For automated tests: look for test files in the project (e.g. `tests/`, `__tests__/`, `spec/`)
+4. Run automated tests via shell if test runner available
+5. For manual tests: print checklist for human verification
+6. Update `status` and `last_run` in the test plan file frontmatter
+7. Report pass/fail per test case
+
+---
+
+### FUNCTIONAL (L0) — gald3r systems health harness (T1540)
+
+**Called for an install health check, a pre-release quality stamp, or a CI gate.**
+Distinct from L1/L2/L3 code tests: this runs `custom_scripts/gald3r_system_test.ps1`, which
+exercises each gald3r *system* and produces a per-system PASS/PARTIAL/FAIL plus an overall
+functionality percentage.
+
+**Run:**
+
+```powershell
+# Full run against the current install (writes .gald3r/reports/system_test_YYYYMMDD_HHMMSS.md)
+pwsh -NoProfile -ExecutionPolicy Bypass -File custom_scripts/gald3r_system_test.ps1
+
+# CI gate: exit non-zero when overall score < 80%
+pwsh -NoProfile -ExecutionPolicy Bypass -File custom_scripts/gald3r_system_test.ps1 -ProjectRoot . -FailBelow 80
+
+# Machine-readable summary for dashboards / agent handoff
+pwsh -NoProfile -ExecutionPolicy Bypass -File custom_scripts/gald3r_system_test.ps1 -Json
+
+# Subset of systems
+pwsh -NoProfile -ExecutionPolicy Bypass -File custom_scripts/gald3r_system_test.ps1 -Systems "task,bug,hooks,git_hooks,schema"
+```
+
+**Systems under test (13):** task, bug, platform_spec, parity, hooks, git_hooks, schema,
+constraints, subsystems, skills, wpac, release, encoding. Skipped systems (e.g. WPAC on a
+non-WPAC project) are excluded from the overall average. Tests are non-destructive; any write
+(Task/Bug create-read-update) runs in a temp dir and never touches the real `.gald3r/`.
+
+**Report:** `.gald3r/reports/system_test_YYYYMMDD_HHMMSS.md` — Overall Score line, per-system
+table, and a Failed Tests breakdown. Suitable to paste into release notes as an objective stamp.
+
+---
+### RELEASE-GATE — Pre-release check (enforces C-015)
+
+**Called before any version bump or release tag.**
+
+1. Run AUDIT across all active subsystems
+2. Verify L2 (comprehensive) exists and has `status: passing` for all subsystems in scope
+3. Verify L3 (regression) exists and has `status: passing` for all subsystems in scope
+4. Any missing or non-passing L2/L3 plan → **BLOCK RELEASE** with list of gaps
+5. Report:
+
+```
+RELEASE GATE:
+  L2 comprehensive — auth:    ✅ passing (last run: YYYY-MM-DD)
+  L2 comprehensive — api:     ❌ MISSING — RELEASE BLOCKED
+  L3 regression — auth:       ✅ passing (last run: YYYY-MM-DD)
+  L3 regression — api:        ⚠️ never run — RELEASE BLOCKED
+  ...
+  VERDICT: BLOCKED — fix 2 gaps before releasing
+```
+
+---
+
+### VERIFICATION-GATE — Pre-[🔍] check (enforces C-014)
+
+**Called when a task is submitted for verification.**
+
+1. Determine the subsystem(s) from the task YAML
+2. Check that L1 (fast) test plan exists for each subsystem
+3. If L1 exists: confirm it has been run (`last_run` is not null and `status: passing`)
+4. If L1 missing → AUDIT creates task, BLOCK verification
+5. Report:
+
+```
+VERIFICATION GATE:
+  auth (L1 fast): ✅ passing — proceed to [🔍]
+  api (L1 fast):  ❌ not run — mark as failing, block [🔍]
+```
+
+---
+
+## TEST_PLANS.md Index Format
+
+```markdown
+# TEST_PLANS.md — {project_name}
+
+| Scope | Level | File | Status | Last Run |
+|-------|-------|------|--------|----------|
+| auth | L1 fast | test-plans/auth_L1_fast.md | passing | 2026-04-10 |
+| auth | L2 comprehensive | test-plans/auth_L2_comprehensive.md | draft | — |
+```
+
+---
+
+## Integration Points
+
+- **g-skl-review / g-skl-code-review**: call AUDIT at end of review pass
+- **g-skl-tasks → `[🔍]` gate**: call VERIFICATION-GATE before marking awaiting-verification
+- **Release process**: call RELEASE-GATE before any version bump; also run FUNCTIONAL (L0) for the system-health stamp in release notes
+- **CI / pre-release**: wire `custom_scripts/gald3r_system_test.ps1 -FailBelow <N>` as a gate (see FUNCTIONAL above)
+- **g-agnt-test**: autonomous agent that runs this skill's operations on schedule or trigger

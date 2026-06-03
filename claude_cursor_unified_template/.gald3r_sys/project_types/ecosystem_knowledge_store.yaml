@@ -1,0 +1,64 @@
+name: ecosystem_knowledge_store
+display_name: "Ecosystem Knowledge Store"
+description: "A repository primarily holding domain knowledge, vault notes, research artifacts, and cross-project intelligence — not source code or a deployable service."
+version: "1.0.0"
+
+required_folders:
+  - tasks/
+  - tasks/open/
+  - bugs/
+  - config/
+
+required_files:
+  - TASKS.md
+  - BUGS.md
+  - PROJECT.md
+  - .identity
+
+optional_folders:
+  - research/
+  - knowledge/
+  - vault/
+  - subsystems/
+  - linking/
+  - experiments/
+
+optional_files:
+  - PLAN.md
+  - SUBSYSTEMS.md
+  - linking/INBOX.md
+
+default_constraints: []
+
+default_subsystems:
+  - knowledge-vault
+  - research-ingestion
+
+gitignore_additions:
+  - ".gald3r/logs/*.log"
+  - ".gald3r/.user_id"
+  - "vault/projects/*/sessions/"     # Vault session files are local-only by default
+  - ".gald3r-worktree.json"
+
+identity_fields:
+  wpac_role: autonomous_child
+  project_type: ecosystem_knowledge_store
+
+features:
+  task_tracking: true
+  bug_tracking: true
+  release_management: false
+  git_workflow: none
+  branch_protection_level: simple
+  graduation_tier: single
+  wpac_role: autonomous_child           # WPAC behaves as autonomous_child
+
+badge: "🧠"
+color: "#E67E22"
+
+marketplace:
+  author: "gald3r"
+  homepage: "https://github.com/gald3r/gald3r"
+  license: "MIT"
+  tags: [knowledge, vault, research]
+  min_gald3r_version: "1.6.0"

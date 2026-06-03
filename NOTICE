@@ -1,0 +1,37 @@
+gald3r - AI Development Framework for Cursor, Claude Code, Gemini, Codex, OpenCode, and GitHub Copilot
+Copyright (c) 2025-2026 Warren R. Martel III
+
+This software is licensed under the Fair Source License, version 1.1, with
+Apache 2.0 as the Future License (FSL-1.1-Apache). See the LICENSE file for
+the full license text, and docs/LICENSE_SUMMARY.md for a plain-language summary.
+
+Plain-language summary:
+
+- You may use gald3r in your own projects, including commercial products and
+  services you build using gald3r.
+- You may modify gald3r for your own use and redistribute your modifications.
+- You may create and sell plugins, extensions, and skill packs that
+  interoperate with gald3r. Plugin authors own their work and may license it
+  however they choose.
+- You may not take gald3r, modify it, and offer it as a competing product or
+  service.
+- Each version of gald3r automatically becomes available under the Apache
+  License 2.0 on the second anniversary of its release.
+
+Plugin naming guideline:
+
+- Plugins may identify themselves as "for gald3r" or "gald3r-compatible."
+- Plugins must not use "gald3r" as the primary name of their product in a
+  way that implies the plugin is, or is an official product of, gald3r.
+
+What this project provides:
+
+- Task management framework for AI-assisted development
+- 9 specialized AI agents across 6 IDE platforms
+- 58 skills and 89 commands
+- Knowledge vault with Obsidian compatibility
+- Multi-project coordination (PCAC) for topology-aware development
+- Adversarial code review with circuit-breaker escalation
+
+For commercial licensing inquiries, custom license terms for enterprise use,
+or other partnership questions, contact: Warren R. Martel III
