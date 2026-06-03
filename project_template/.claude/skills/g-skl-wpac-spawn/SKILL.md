@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-wpac-spawn
 description: >
   Spawn a new gald3r project from the current project. Creates the new project folder
@@ -186,7 +186,7 @@ Run (or instruct the user to run) the installer against the new project path:
 ```
 
 - `setup_gald3r_project.ps1` lives at the root of any `gald3r_template_adv` install
-  (`<template_adv_root>\setup_gald3r_project.ps1`) and deploys the full payload from `claude_cursor_unified_template/`.
+  (`<template_adv_root>\setup_gald3r_project.ps1`) and deploys the full payload from `project_template/`.
 - If the parent project itself was installed from an adv template, the same `setup_gald3r_project.ps1`
   is already present at the parent's project root — reuse it.
 - Prefer the `gald3r_install` MCP tool when available (see Edge Cases); otherwise use the installer above.
