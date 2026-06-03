@@ -1,4 +1,4 @@
-# gald3r - Public Repository .gitignore
+﻿# gald3r - Public Repository .gitignore
 # Managed by gald3r v1.4.0 - https://github.com/wrm3/gald3r
 
 
@@ -98,4 +98,4 @@ temp_scripts/*
 personality_packs/
 **/personality_packs/
 .gald3r_sys/personality_packs/
-claude_cursor_unified_template/.gald3r_sys/personality_packs/
+project_template/.gald3r_sys/personality_packs/
