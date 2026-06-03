@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-medic
 maturity: beta
 version: 2.0.0
@@ -472,13 +472,13 @@ aliases; no skill/rule code changes are needed. A hit means an unambiguous fix
 foreach ($folder in $canonicalFolders) {       # canonical set from _registry.yaml patterns
     if (-not (Test-Path $folder)) {
         New-Item $folder -ItemType Directory | Out-Null
-        Copy-TemplateContents $folder          # README/.gitkeep from claude_cursor_unified_template/.gald3r/
+        Copy-TemplateContents $folder          # README/.gitkeep from project_template/.gald3r/
         $report.FoldersCreated += $folder
     }
 }
 ```
 
-Template contents are sourced from `claude_cursor_unified_template/.gald3r/`. Creation is silent
+Template contents are sourced from `project_template/.gald3r/`. Creation is silent
 and **never halts**; created folders are listed in the medic report.
 
 #### `schema_error` in-memory flag

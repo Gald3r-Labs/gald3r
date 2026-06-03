@@ -1,4 +1,4 @@
-## [1.9.0] - 2026-05-31 (Platforms/ Folder + Post-Push Verify + Plugin System Foundation)
+﻿## [1.9.0] - 2026-05-31 (Platforms/ Folder + Post-Push Verify + Plugin System Foundation)
 
 ### Added
 - **Plugin system foundation** (T1557–T1559): `@g-plugin-install` lands — install a gald3r plugin from a local path (GitHub-URL path implemented, not yet network-tested). Backed by ADR-015 (`.gald3r_sys/docs/adr/ADR-015-plugin-system.md`), a `gald3r-plugin.yaml` manifest schema + validator (`.gald3r_sys/plugins/schema/`), and a security-first installer: it validates the manifest, enforces `gald3r_min_version`, **refuses to overwrite gald3r-core components** (conflict-abort, ADR-015 D6), stamps installed components with `plugin_source:`, records a `.gald3r_sys/plugins/installed.yaml` ledger, and **never auto-runs plugin lifecycle scripts** (opt-in `-RunInstallScript`, previews first, ADR-015 D7). Remaining plugin commands (list/new/remove/update/registry) are in progress (T1560–T1568).
@@ -7,7 +7,7 @@
 
 ### Changed
 - **`gald3r` public repo restructured**: 34 platform directories moved from repo root into `platforms/` subfolder (`gald3r/platforms/<name>/`) for a cleaner root (T1556). `platform_parity_sync.ps1 -SyncToGald3r` updated to target `platforms/` automatically. `DISTRIBUTION_PLAYBOOK.md` Step 5 updated to reflect new target path.
-- `platform_parity_sync.ps1 -ValidatePlatformSpecs` / `GeneratePlatformCats` now discover platforms by scanning `claude_cursor_unified_template/.gald3r_sys/platforms/` dynamically rather than a hardcoded list (T1556 alignment).
+- `platform_parity_sync.ps1 -ValidatePlatformSpecs` / `GeneratePlatformCats` now discover platforms by scanning `project_template/.gald3r_sys/platforms/` dynamically rather than a hardcoded list (T1556 alignment).
 
 ### Added
 - `action_scripts/post_push_verify.ps1` (T1572): 11-check post-push gate that verifies a release landed correctly — VERSION file, CHANGELOG entry + content depth, releases/ file, git remote tag, GitHub release existence + release-notes body populated, public gald3r repo VERSION, public gald3r README version mention, wiki file freshness, and a 10-pattern secrets scan of the release diff (AWS keys, GH tokens, private keys, password/API-key literals, bearer tokens, credential URLs, Slack tokens, DB connection strings). Code-file hits are FAIL; doc-file matches WARN with example suppression. Wired into `DISTRIBUTION_PLAYBOOK.md` Step 8b.

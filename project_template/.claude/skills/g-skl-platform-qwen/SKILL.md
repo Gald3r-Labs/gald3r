@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-platform-qwen
 description: Authoritative reference for Qwen Code (Alibaba CLI coding agent, a Gemini CLI fork) customization in gald3r projects. Covers .qwen/settings.json hooks+MCP, QWEN.md context (NOT AGENTS.md by default), custom commands, subagents, Agent Skills (SKILL.md), and gald3r install verification.
 crawl_max_age_days: 14
@@ -62,7 +62,7 @@ context for one-click distribution.
 
 > **Correction (vs. earlier scaffold):** Qwen Code uses **`.qwen/settings.json`** (JSON) + **`QWEN.md`**,
 > NOT a `config.yaml` + `instructions.md` pair. The legacy deploy scaffold under
-> `claude_cursor_unified_template/.gald3r_sys/platforms/.qwen/` still ships the old format and is slated for
+> `project_template/.gald3r_sys/platforms/.qwen/` still ships the old format and is slated for
 > regeneration.
 
 ## 3. gald3r Integration

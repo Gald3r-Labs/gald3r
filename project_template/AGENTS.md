@@ -1,4 +1,4 @@
-# <!-- gald3r AGENTS.md START -->
+﻿# <!-- gald3r AGENTS.md START -->
 # agents.md - {project_name}
 
 > This file follows the agents.md format for AI agent instructions.
@@ -178,7 +178,7 @@ This project is both a live gald3r workspace and a source of installable framewo
 
 - Reusable framework content must preserve self-hosting parity between the live project and the shipped templates
 - The parity target set is 10 IDE trees: `.cursor/`, `.claude/`, `.agent/`, `.codex/`, `.opencode/`, `templates/.cursor/`, `templates/.claude/`, `templates/.agent/`, `templates/.codex/`, `templates/.opencode/`
-- Template install files also belong to the parity surface: `templates/.gald3r/`, `templates/.claude_cursor_unified_template/`, `templates/AGENTS.md`, `templates/CLAUDE.md`, `templates/GEMINI.md`, `templates/.gitignore`
+- Template install files also belong to the parity surface: `templates/.gald3r/`, `templates/.project_template/`, `templates/AGENTS.md`, `templates/CLAUDE.md`, `templates/GEMINI.md`, `templates/.gitignore`
 - Reusable changes flow both directions between root and `templates/`; local or proprietary workspace content stays out of `templates/`
 - Root and template IDE trees must remain independent real copies, never symlinks or junctions
 - Automated parity propagation is deferred until the canonical tree stabilizes; during the rebuild, parity is enforced manually

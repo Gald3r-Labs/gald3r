@@ -1,4 +1,4 @@
----
+﻿---
 description: "Workspace member .gald3r/ policy — autonomous_child repos own full .gald3r/; controlled_member repos keep marker-only (.identity + PROJECT.md); controller direct-write is the WPAC coordination path"
 globs:
 alwaysApply: true
@@ -68,7 +68,7 @@ ADOPT_APPLY, `gald3r_install`, and any future scaffold/repair flow.
 ## Source of truth
 
 - **Canonical rule file (edit here)**: `G:/gald3r_ecosystem/gald3r_templates/project_template/.cursor/rules/g-rl-36-workspace-member-gald3r-guard.md`
-- **Propagate**: `G:/gald3r_ecosystem/gald3r_templates/custom_scripts/platform_parity_sync.ps1 -SyncGaldSys -Sync` → `gald3r_dev/.gald3r_sys/`, `gald3r_template_{slim,full,adv}/claude_cursor_unified_template/.gald3r_sys/`, `gald3r/claude_cursor_unified_template/.gald3r_sys/`
+- **Propagate**: `G:/gald3r_ecosystem/gald3r_templates/custom_scripts/platform_parity_sync.ps1 -SyncGaldSys -Sync` → `gald3r_dev/.gald3r_sys/`, `gald3r_template_{slim,full,adv}/project_template/.gald3r_sys/`, `gald3r/project_template/.gald3r_sys/`
 - **Do NOT edit for framework changes**: `gald3r_dev/.gald3r_sys/` (sync target only; preserves `.understand-anything/` on controller)
 - **ADR-003**: WPAC Controller Direct-Write Authority (supersedes BUG-021 marker-only-only stance)
 - **ADR-013**: autonomous_child workspace_role definition

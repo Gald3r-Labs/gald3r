@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [TASK_MANAGEMENT]
 ---
 Implementation-only backlog execution: $ARGUMENTS
@@ -639,7 +639,7 @@ python -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]).read())" ".github/w
 
 In all three cases the rule is identical: **lint the file you just wrote → if it fails, fix it inline and re-lint → only a clean exit 0 advances the loop to the next write.**
 
-**Parity note (AC7)** — this `g-go-code.md` under canonical `claude_cursor_unified_template/.cursor/commands/` is the **source of truth** for the `post_write_lint` step. The per-IDE mirrors (`.claude/commands/g-go-code.md`, `.cursor/commands/g-go-code.md`, and the other platform copies) are **propagated later** by `custom_scripts/platform_parity_sync.ps1` — do **not** hand-edit the mirrors. The lint helper `gald3r_post_write_lint.ps1` lives under the same canonical `.gald3r_sys/scripts/` tree and is synced alongside.
+**Parity note (AC7)** — this `g-go-code.md` under canonical `project_template/.cursor/commands/` is the **source of truth** for the `post_write_lint` step. The per-IDE mirrors (`.claude/commands/g-go-code.md`, `.cursor/commands/g-go-code.md`, and the other platform copies) are **propagated later** by `custom_scripts/platform_parity_sync.ps1` — do **not** hand-edit the mirrors. The lint helper `gald3r_post_write_lint.ps1` lives under the same canonical `.gald3r_sys/scripts/` tree and is synced alongside.
 
 **b2) AC gate** — before moving on, walk every `- [ ]` acceptance criterion in the task spec:
   - Is this criterion now satisfied? Check the actual files, not just intent.
