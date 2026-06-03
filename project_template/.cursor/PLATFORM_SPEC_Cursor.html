@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Platform Guide: Cursor (reference implementation)</title>
+<style>
+:root{
+  --bg:#1e1e2e;--surface:#181825;--card:#313244;--text:#cdd6f4;--muted:#a6adc8;
+  --accent:#cba6f7;--accent2:#89b4fa;--green:#a6e3a1;--yellow:#f9e2af;--red:#f38ba8;
+  --border:#45475a;--code-bg:#11111b;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:2rem 1.25rem 4rem}
+header.page{border-bottom:1px solid var(--border);padding-bottom:1rem;margin-bottom:1.5rem}
+h1{color:var(--accent);font-size:2rem;margin:.2rem 0}
+h2{color:var(--accent2);font-size:1.4rem;margin:2rem 0 .6rem;border-bottom:1px solid var(--border);padding-bottom:.3rem}
+h3{color:var(--text);font-size:1.1rem;margin:1.2rem 0 .4rem}
+a{color:var(--accent2)}
+.muted{color:var(--muted)}
+.subtitle{color:var(--muted);margin:.2rem 0 0}
+.glance{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.75rem;margin:1rem 0}
+.chip{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:.6rem .8rem}
+.chip .k{display:block;color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.04em}
+.chip .v{font-size:1rem;font-weight:600}
+section.block{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;margin:1rem 0}
+ul{margin:.4rem 0 .4rem 1.2rem}li{margin:.25rem 0}
+code{background:var(--code-bg);color:var(--green);padding:.1rem .35rem;border-radius:4px;font-family:Consolas,Menlo,monospace;font-size:.9em}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1rem;overflow:auto}
+pre code{background:none;color:var(--text);padding:0}
+table{border-collapse:collapse;width:100%;margin:.6rem 0;font-size:.92rem}
+th,td{border:1px solid var(--border);padding:.45rem .6rem;text-align:left;vertical-align:top}
+th{background:var(--card);color:var(--accent2)}
+footer.page{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);color:var(--muted);font-size:.85rem}
+.index-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.75rem;margin-top:1rem}
+.index-card{display:block;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;text-decoration:none;color:var(--text)}
+.index-card:hover{border-color:var(--accent)}
+.index-card .name{font-weight:600;color:var(--accent)}
+.index-card .tier{float:right}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="page">
+<h1>Platform Guide: Cursor (reference implementation)</h1>
+<p class="subtitle">gald3r platform guide . https://docs.cursor.com</p>
+</header>
+<section class="block">
+<h2>At a Glance</h2>
+<div class="glance">
+<div class="chip"><span class="k">Platform</span><span class="v">cursor</span></div>
+<div class="chip"><span class="k">gald3r support tier</span><span class="v">✅</span></div>
+<div class="chip"><span class="k">Last doc scan</span><span class="v">2026-05-31</span></div>
+<div class="chip"><span class="k">Reference skill</span><span class="v">g-skl-platform-cursor</span></div>
+</div>
+<p class="muted">Official docs: <a href="https://docs.cursor.com">https://docs.cursor.com</a></p>
+<p class="muted">Last verified against platform docs on 2026-05-31.</p>
+<p>Authoritative reference for Cursor IDE customization in gald3r projects. Covers .cursor/ folder layout, all supported primitives (rules/skills/agents/commands/hooks/MCP), parity tiers, vault doc location, crawl freshness gate, and install verification. setting up Cursor in a gald3r project, authoring rules/skills/agents/commands/hooks, understanding .cursor/ structure, verifying Cursor parity, or answering questions about Cursor's capabilities.</p>
+</section>
+<section class="block">
+<h2>What Makes This Platform Different</h2>
+<ul>
+<li>Rules use the Cursor-only <code>.mdc</code> extension (all other platforms use <code>.md</code>); parity sync maps the extension automatically.</li>
+<li><code>hooks.json</code> lives at <code>.cursor/hooks.json</code> (repo <code>.cursor/</code> root), not inside <code>.cursor/hooks/</code>; <code>_hook_md</code> fields point at companion <code>.md</code> files inside <code>.cursor/hooks/</code>.</li>
+<li>No equivalent of <code>AGENTS.md</code> enforcement engine — always-apply behavior comes from <code>.cursor/rules/*.mdc</code> (<code>alwaysApply: true</code>).</li>
+<li>Hook execution: PowerShell on Windows; cross-platform invocation must be honored for Unix users.</li>
+<li>MCP is configured via Cursor settings / root <code>.mcp.json</code> (gitignored) — there is no committed <code>.cursor/mcp.json</code> in this repo.</li>
+</ul>
+</section>
+<section class="block">
+<h2>Hook System</h2>
+<ul>
+<li><strong>Type</strong>: json_config</li>
+<li><strong>Config file</strong>: <code>.cursor/hooks.json</code> (repo-root <code>.cursor/</code>, version 1 — NOT inside <code>.cursor/hooks/</code>)</li>
+<li><strong>Events available</strong> (21 total, verified 2026-05-31 against <a href="https://docs.cursor.com/agent/hooks">https://docs.cursor.com/agent/hooks</a>):</li>
+</ul>
+<p><strong>Agent hooks</strong> (fire during Cmd+K / Agent Chat sessions):</p>
+<ul>
+<li><code>sessionStart</code> / <code>sessionEnd</code> — session lifecycle</li>
+<li><code>preToolUse</code> / <code>postToolUse</code> / <code>postToolUseFailure</code> — generic tool use (all tools)</li>
+<li><code>subagentStart</code> / <code>subagentStop</code> — Task tool subagent lifecycle</li>
+<li><code>beforeShellExecution</code> / <code>afterShellExecution</code> — shell command control</li>
+<li><code>beforeMCPExecution</code> / <code>afterMCPExecution</code> — MCP tool control</li>
+<li><code>beforeReadFile</code> / <code>afterFileEdit</code> — file access and edit control</li>
+<li><code>beforeSubmitPrompt</code> — validate prompts before submission</li>
+<li><code>preCompact</code> — observe context window compaction</li>
+<li><code>stop</code> — agent completion</li>
+<li><code>afterAgentResponse</code> / <code>afterAgentThought</code> — track responses</li>
+</ul>
+<p><strong>Tab hooks</strong> (fire for autonomous inline completions):</p>
+<ul>
+<li><code>beforeTabFileRead</code> — control file access for Tab completions</li>
+<li><code>afterTabFileEdit</code> — post-process Tab edits</li>
+</ul>
+<p><strong>App lifecycle hooks</strong> (fire outside any agent session):</p>
+<ul>
+<li><code>workspaceOpen</code> — fires on workspace open and every folder change; can return additional plugin paths</li>
+</ul>
+<ul>
+<li><strong>Event payload format</strong>: JSON (hooks return the <code>{ continue = true }</code> envelope; block via exit code / verdict)</li>
+<li><strong>Limitations</strong>: command is a full PowerShell invocation; optional <code>matcher</code> regex over tool names; <code>_hook_md</code> companion-doc path (T1171). No async; HTTP hook type (T600) lives in <code>.claude/hooks/</code> pending parity.</li>
+<li><strong>gald3r hook files</strong>: <code>g-hk-session-start.ps1</code> (sessionStart); <code>g-hk-agent-complete.ps1</code>, <code>g-hk-nightly-learn.ps1</code>, <code>g-hk-session-end.ps1</code> (stop); <code>g-hk-validate-shell.ps1</code> (beforeShellExecution); <code>g-hk-pre-tool-call-gald3r-guard.ps1</code>, <code>g-hk-pre-tool-call-prd-freeze.ps1</code>, <code>g-hk-pre-tool-call-member-gald3r-guard.ps1</code> (preToolUse)</li>
+</ul>
+<p>---</p>
+<h3>Hook API Reference</h3>
+<p>Full input/output schemas for each hook event, verified 2026-05-31 from <a href="https://docs.cursor.com/agent/hooks.">https://docs.cursor.com/agent/hooks.</a></p>
+<h3>Hooks configuration format</h3>
+<pre><code>{
+  "version": 1,
+  "hooks": {
+    "sessionStart":         [{ "command": "./hooks/script.ps1" }],
+    "sessionEnd":           [{ "command": "./hooks/script.ps1" }],
+    "preToolUse":           [{ "command": "./hooks/script.ps1", "matcher": "Shell|Read|Write" }],
+    "postToolUse":          [{ "command": "./hooks/script.ps1" }],
+    "postToolUseFailure":   [{ "command": "./hooks/script.ps1" }],
+    "subagentStart":        [{ "command": "./hooks/script.ps1" }],
+    "subagentStop":         [{ "command": "./hooks/script.ps1" }],
+    "beforeShellExecution": [{ "command": "./hooks/script.ps1", "failClosed": true }],
+    "afterShellExecution":  [{ "command": "./hooks/script.ps1" }],
+    "beforeMCPExecution":   [{ "command": "./hooks/script.ps1", "failClosed": true }],
+    "afterMCPExecution":    [{ "command": "./hooks/script.ps1" }],
+    "beforeReadFile":       [{ "command": "./hooks/script.ps1" }],
+    "afterFileEdit":        [{ "command": "./hooks/script.ps1" }],
+    "beforeSubmitPrompt":   [{ "command": "./hooks/script.ps1" }],
+    "preCompact":           [{ "command": "./hooks/script.ps1" }],
+    "stop":                 [{ "command": "./hooks/script.ps1", "loop_limit": 10 }],
+    "afterAgentResponse":   [{ "command": "./hooks/script.ps1" }],
+    "afterAgentThought":    [{ "command": "./hooks/script.ps1" }],
+    "beforeTabFileRead":    [{ "command": "./hooks/script.ps1" }],
+    "afterTabFileEdit":     [{ "command": "./hooks/script.ps1" }],
+    "workspaceOpen":        [{ "command": "./hooks/script.ps1" }]
+  }
+}</code></pre>
+<p>Optional per-entry fields: <code>matcher</code> (regex over tool name), <code>failClosed</code> (bool, default fail-open), <code>loop_limit</code> (int, for <code>stop</code>), <code>_hook_md</code> (companion doc path, T1171).</p>
+<h3>Agent Hooks — payload schemas</h3>
+<p><strong><code>sessionStart</code></strong> — fire-and-forget; no input/output fields defined.</p>
+<p><strong><code>sessionEnd</code></strong> — fire-and-forget:</p>
+<pre><code>// input
+{ "session_id": "...", "reason": "completed|aborted|error|window_close|user_close",
+  "duration_ms": 12345, "is_background_agent": false, "final_status": "...",
+  "error_message": "(optional, when reason=error)" }
+// output: none (fire-and-forget)</code></pre>
+<p><strong><code>preToolUse</code></strong> — can allow/deny/modify tool calls:</p>
+<pre><code>// input
+{ "tool_name": "Shell", "tool_input": { "command": "npm install", "working_directory": "/project" },
+  "tool_use_id": "abc123", "cwd": "/project", "model": "claude-sonnet-4-...", "agent_message": "..." }
+// output
+{ "permission": "allow|deny", "user_message": "(shown when denied)",
+  "agent_message": "(sent to agent when denied)", "updated_input": { "command": "npm ci" } }</code></pre>
+<p><strong><code>postToolUse</code></strong> — fire-and-forget after tool completes.</p>
+<p><strong><code>postToolUseFailure</code></strong> — fire-and-forget on tool failure:</p>
+<pre><code>// input
+{ "tool_name": "Shell", "tool_input": { "command": "npm test" }, "tool_use_id": "abc123",
+  "cwd": "/project", "error_message": "Command timed out after 30s",
+  "failure_type": "timeout|error|permission_denied", "duration": 5000, "is_interrupt": false }
+// output: none</code></pre>
+<p><strong><code>subagentStart</code> / <code>subagentStop</code></strong> — fire-and-forget; no defined payload.</p>
+<p><strong><code>beforeShellExecution</code></strong> — can allow/deny shell commands:</p>
+<pre><code>// input
+{ "command": "ls -l", "cwd": "/app", "sandbox": true }
+// output
+{ "permission": "allow|deny|ask", "user_message": "...", "agent_message": "..." }</code></pre>
+<p>Set <code>failClosed: true</code> for security-critical hooks (default: fail-open).</p>
+<p><strong><code>afterShellExecution</code></strong> — fire-and-forget after shell runs.</p>
+<p><strong><code>beforeMCPExecution</code></strong> — can allow/deny MCP tool calls:</p>
+<pre><code>// input (stdio server)
+{ "tool_name": "readFile", "tool_input": "{\"path\": \"/etc/passwd\"}", "command": "mcp-server" }
+// input (HTTP server)
+{ "tool_name": "readFile", "tool_input": "{\"path\": \"/etc/passwd\"}", "url": "http://localhost:3000" }
+// output
+{ "permission": "allow|deny|ask", "user_message": "...", "agent_message": "..." }</code></pre>
+<p><strong><code>afterMCPExecution</code></strong> — fire-and-forget.</p>
+<p><strong><code>beforeReadFile</code></strong> — can allow/deny file reads sent to model:</p>
+<pre><code>// input
+{ "file_path": "/abs/path/file.py", "content": "&lt;full file contents&gt;",
+  "attachments": [{ "type": "file|rule", "file_path": "/abs/path" }] }
+// output
+{ "permission": "allow|deny", "user_message": "(shown when denied)" }</code></pre>
+<p>Failures are logged and read is allowed through by default; use <code>failClosed: true</code> to block.</p>
+<p><strong><code>afterFileEdit</code></strong> — fire-and-forget after agent edits a file.</p>
+<p><strong><code>beforeSubmitPrompt</code></strong> — can block prompt submissions:</p>
+<pre><code>// input
+{ "prompt": "&lt;user prompt text&gt;",
+  "attachments": [{ "type": "file|rule", "file_path": "/abs/path" }] }
+// output
+{ "continue": true|false, "user_message": "(shown when blocked)" }</code></pre>
+<p><strong><code>preCompact</code></strong> — observe context window compaction; fire-and-forget.</p>
+<p><strong><code>stop</code></strong> — fires when agent completes; fire-and-forget. Use <code>loop_limit</code> to cap recursive stop-hook invocations.</p>
+<p><strong><code>afterAgentResponse</code></strong> — fire-and-forget:</p>
+<pre><code>// input
+{ "text": "&lt;assistant final text&gt;" }
+// output: none</code></pre>
+<p><strong><code>afterAgentThought</code></strong> — fire-and-forget:</p>
+<pre><code>// input
+{ "text": "&lt;aggregated thinking text&gt;", "duration_ms": 5000 }
+// output: none</code></pre>
+<h3>Tab Hooks — payload schemas</h3>
+<p><strong><code>beforeTabFileRead</code></strong> — can allow/deny file reads for Tab completions:</p>
+<pre><code>// input (no attachments field — Tab doesn't use prompt attachments)
+{ "file_path": "/abs/path/file.py", "content": "&lt;full file contents&gt;" }
+// output
+{ "permission": "allow|deny" }</code></pre>
+<p><strong><code>afterTabFileEdit</code></strong> — fire-and-forget after Tab edits a file.</p>
+<h3>App Lifecycle Hooks</h3>
+<p><strong><code>workspaceOpen</code></strong> — fires when workspace opens and on every folder change:</p>
+<pre><code>// output (optional)
+{ "plugin_paths": ["./additional-plugin-path"] }</code></pre>
+<p>Can return additional plugin paths to load for the current workspace.</p>
+<p>---</p>
+</section>
+<section class="block">
+<h2>Configuration Layout</h2>
+<pre><code>.cursor/
+├── cursor_instructions.md      ← gald3r-authored maintainer note (not a Cursor-native file)
+├── rules/                      ← always-apply / on-demand rules (.mdc) — 17 files present
+│   └── g-rl-*.mdc
+├── skills/                     ← skills, folder-per-skill — 110 present
+│   └── g-skl-*/SKILL.md
+├── agents/                     ← agent definitions (.md) + sdk/ + README.md + JOURNAL_FORMAT.md
+│   └── g-agnt-*.md
+├── commands/                   ← @-invoked commands (.md) — 174 present
+│   └── g-*.md
+├── hooks/                      ← PowerShell hook scripts + companion hook.md files
+│   ├── g-hk-*.ps1
+│   └── g-hk-*.md               ← T1171 companion descriptions
+├── hooks.json                  ← TOP-LEVEL hook wiring (NOT .cursor/hooks/hooks.json) — verified
+├── hooks.json.example.disabled ← disabled reference variant
+└── (no .cursor/mcp.json in this repo — MCP configured via Cursor settings / .mcp.json at root)</code></pre>
+</section>
+<section class="block">
+<h2>Best Practices</h2>
+<p class="muted">No dedicated Best Practices section in this spec. See gald3r Integration Notes below for platform-specific guidance.</p>
+</section>
+<section class="block">
+<h2>gald3r Integration Notes</h2>
+<ul>
+<li>Cursor is the <strong>reference platform</strong>: this is the canonical hook/rule/skill layout other platforms mirror. There are no "gaps vs another platform" — only the baseline items in §9.</li>
+<li>T600 HTTP hook caller (<code>g-hk-http-event.ps1</code>) currently lives under <code>.claude/hooks/</code>; propagation to <code>.cursor/hooks/</code> is a documented follow-up.</li>
+<li><code>last_doc_scan: 2026-05-31</code> — 21 hook events verified from <a href="https://docs.cursor.com/agent/hooks">https://docs.cursor.com/agent/hooks</a> (3 categories: Agent hooks, Tab hooks, App lifecycle hooks). Re-scan on next <code>@g-platform-scan-docs cursor</code> to catch any additions.</li>
+</ul>
+<p>---</p>
+</section>
+
+<footer class="page">Generated 2026-05-31 by generate_platform_guide.ps1 (T1539) from PLATFORM_SPEC.md. Human-facing reference; the machine-readable spec remains source of truth.</footer>
+</div>
+</body>
+</html>

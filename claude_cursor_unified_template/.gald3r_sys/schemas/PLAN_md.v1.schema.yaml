@@ -1,0 +1,26 @@
+schema_id: PLAN-md
+schema_version: v1
+gald3r_rel_version: "1.6.0"
+description: >-
+  Schema for .gald3r/PLAN.md, the master strategy / milestone plan
+  (markdown document).
+applies_to: ".gald3r/PLAN.md"
+
+unknown_fields: allow
+
+structure:
+  document_type: markdown
+  top_level_heading:
+    required: true
+  milestones_section:
+    required: true
+    description: "One or more milestone / theme sections describing planned delivery."
+
+required:
+  - top_level_heading
+  - milestones_section
+
+migration_notes:
+  v1:
+    added: [top_level_heading, milestones_section]
+    note: "Initial versioned schema."
