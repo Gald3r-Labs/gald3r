@@ -6,6 +6,15 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.11.0] - 2026-06-04
+
+### Fixed
+- **Personality rule extension**: renamed `gald3r_personality.md` →
+  `gald3r_personality.mdc` in `project_template/.cursor/rules/`. Cursor only loads
+  `.mdc` files from the rules folder; the Norse personality was silently not loading.
+- **Synchronized with gald3r ADV**: both repos now at v1.11.0 with matching
+  `project_template/` shared base content.
+
 ## [1.10.0] - 2026-06-03
 
 ### Changed
