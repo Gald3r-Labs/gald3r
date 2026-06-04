@@ -1,0 +1,4 @@
+# Per-agent journal — durable, offline cross-session learning (myPKA pattern, T1010).
+# Drop concise markdown entries here: YYYY-MM-DD-{task-ref}-{slug}.md
+# See ../../JOURNAL_FORMAT.md for the entry format. This .gitkeep keeps the
+# empty directory tracked; delete it once the first journal entry lands.

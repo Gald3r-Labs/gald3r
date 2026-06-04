@@ -1,0 +1,44 @@
+name: gald3r PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  gald3r-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run gald3r g-go-review
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            You are the gald3r CI review agent. Run @g-go-review on the changes in this PR.
+
+            Focus on:
+            - Security vulnerabilities and credential exposure
+            - Correctness and logic errors
+            - Constraint violations (check .gald3r/CONSTRAINTS.md)
+            - Platform parity gaps (Cursor/Claude/Gemini/Codex/OpenCode/Copilot)
+            - Missing task/bug references for code changes
+            - Stub/TODO annotations without follow-up tasks
+
+            Severity tiers:
+            - Critical/High → FAIL verdict (blocks merge)
+            - Medium/Low    → advisory warning (does not block)
+
+            Output a structured review with:
+            1. Overall verdict: PASS or FAIL
+            2. Findings list with severity (Critical/High/Medium/Low) and file:line references
+            3. Brief summary explaining the verdict
+
+            Post your complete review as a PR comment using the GitHub API.
+            If no issues are found, post a PASS comment confirming the review completed cleanly.

@@ -1,0 +1,19 @@
+# Continue config.yaml
+# Documentation: https://docs.continue.dev
+
+# Configure your models here
+models:
+  - name: claude-sonnet
+    provider: anthropic
+    model: claude-sonnet-4-5
+    roles: [chat, edit]
+  - name: claude-haiku
+    provider: anthropic
+    model: claude-haiku-4-5
+    roles: [autocomplete]
+
+# Rules are loaded from .continue/rules/*.md automatically
+rules: []
+
+# MCP servers (optional)
+mcpServers: []

@@ -1,0 +1,24 @@
+# Project Context — gald3r
+
+> Goose reads `.goosehints` (project root) as project-specific instructions that
+> customize Goose behavior. Edit the canonical copy under
+> `.gald3r_sys/platforms/.goose/` — not the installed copy.
+>
+> NOTE: `.goosehints` is the correct Goose instruction file — NOT `GOOSE.md`
+> (which is not a Goose convention). See PLATFORM_SPEC.md in this folder.
+
+## Task Management
+All tasks are tracked in `.gald3r/TASKS.md`. Before implementing, read the active task in
+`.gald3r/tasks/task{id}_*.md`. Read `.gald3r/CONSTRAINTS.md` before architectural changes.
+
+## Commit Convention
+- `feat(T{id}): description` — new task work
+- `fix(BUG-{id}): description` — bug fix
+
+## Bug Protocol
+Pre-existing bugs: document in `.gald3r/BUGS.md` — never silently ignore.
+
+## gald3r MCP (optional)
+In Goose, extensions ARE MCP servers. Add the gald3r MCP server as an extension in the
+GLOBAL config at `~/.config/goose/config.yaml` (machine-specific) — there is no project
+`.goose/config.yaml` convention. See `goose_instructions.md` for the example snippet.

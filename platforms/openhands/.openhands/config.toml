@@ -1,0 +1,11 @@
+# OpenHands project configuration — gald3r deploy scaffold
+# Docs: https://docs.openhands.dev  (docs.all-hands.dev 308-redirects here)
+
+[core]
+max_iterations = 50
+sandbox_type = "local"
+
+# Optional: point the OpenHands sandbox at the gald3r Docker MCP server.
+# From inside the container, the host is reached via host.docker.internal.
+# [sandbox]
+# mcp_url = "http://host.docker.internal:8092"

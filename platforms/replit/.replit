@@ -1,0 +1,20 @@
+# Replit ENVIRONMENT/run config — gald3r deploy scaffold (NOT the AI-instruction file).
+# Docs: https://docs.replit.com/programming-ide/configuring-repl
+#
+# The Agent's instruction/memory surface is replit.md (auto-created, auto-read, self-updated),
+# not this file. Put durable gald3r conventions in replit.md (and/or AGENTS.md). The snippet
+# below is a session-start chat re-prime since the Agent can rewrite replit.md mid-session:
+#   This project uses gald3r for task management. Tasks are in .gald3r/TASKS.md.
+#   Always reference the active task ID in commits: feat(T{id}): ...
+#   Read .gald3r/CONSTRAINTS.md before making architecture changes.
+
+run = "node bin/install.js && npm start"
+language = "nodejs"
+entrypoint = "index.js"
+
+[nix]
+channel = "stable-24_05"
+
+[deployment]
+run = ["sh", "-c", "npm start"]
+deploymentTarget = "cloudrun"
