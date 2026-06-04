@@ -29,7 +29,7 @@ gald3r uses [Semantic Versioning](https://semver.org/).
   34 platforms. `gald3r_template_adv` is the reference archive for the explicit
   shared-base + platform-overlay pattern (useful for tooling and multi-platform automation).
 
-## [1.10.0] - 2026-06-03
+## [1.11.0] - 2026-06-03
 
 ### Changed
 - **Restructured install model**: deliverable is now `project_template/` — copy its contents to

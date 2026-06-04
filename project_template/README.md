@@ -1,4 +1,4 @@
-# {project_name}
+﻿# {project_name}
 
 This project runs on **[Gald3r](https://github.com/wrm3/gald3r) Unity** -- a hybrid setup for
 **both Cursor and Claude Code** over one shared `.gald3r/` brain. Plan in Cursor, code & review
@@ -20,4 +20,4 @@ Open in **Cursor** or **Claude Code** and run **`@g-setup`** (Cursor) / **`/g-se
 Full catalog on the [Gald3r Wiki](https://github.com/wrm3/gald3r/wiki/Commands).
 
 ---
-*Replace this README with your own as your project grows. Powered by gald3r v1.10.0.*
+*Replace this README with your own as your project grows. Powered by gald3r v1.11.0.*
