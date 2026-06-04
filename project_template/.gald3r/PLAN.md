@@ -1,5 +1,5 @@
----
-gald3r_rel_version: "1.10.0"
+﻿---
+gald3r_rel_version: "1.11.0"
 schema_version: "PLAN-md-v1"
 ---
 # PLAN.md — {PROJECT_NAME}
