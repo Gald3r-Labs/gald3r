@@ -1,0 +1,8 @@
+{
+  "model": "deepseek/deepseek-v4",
+  "skills_path": ".deepcode/skills",
+  "mcp": {
+    "servers": {}
+  },
+  "theme": "dark"
+}

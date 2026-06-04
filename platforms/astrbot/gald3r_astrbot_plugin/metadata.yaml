@@ -1,0 +1,9 @@
+name: gald3r
+description: "gald3r project management framework for AstrBot — brings task tracking, bug reporting, and AI agent coordination into team chat workflows"
+version: "1.0.0"
+author: "gald3r"
+min_astrbot_version: "4.13.0"
+entry: main.py
+skills:
+  - skills/g-skl-status/
+  - skills/g-skl-tasks/

@@ -8,12 +8,19 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ## [1.11.0] - 2026-06-04
 
+### Added
+- **`platforms/` folder**: all 34 platform thin adapters now live directly in `gald3r`.
+  No need to clone `gald3r_template_adv` for Windsurf, Cline, Copilot, etc.
+- **`-Platform <name>` installer arg**: `setup_gald3r_project.ps1` now accepts any of 34
+  platforms. Default (no arg) = Cursor + Claude Code (unchanged). `-Platform windsurf` etc.
+  copies the shared brain (without .cursor/.claude) + the platform's thin config overlay.
+
 ### Fixed
 - **Personality rule extension**: renamed `gald3r_personality.md` →
   `gald3r_personality.mdc` in `project_template/.cursor/rules/`. Cursor only loads
   `.mdc` files from the rules folder; the Norse personality was silently not loading.
-- **Synchronized with gald3r ADV**: both repos now at v1.11.0 with matching
-  `project_template/` shared base content.
+- **Synchronized with gald3r ADV**: both repos at v1.11.0 with matching base content.
+- **README**: updated version badge, installer docs, and platform table.
 
 ## [1.10.0] - 2026-06-03
 
