@@ -160,7 +160,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Issues and PRs welcome.
 
 ## License
 
-[MIT](LICENSE) — see [NOTICE](NOTICE) for third-party attributions.
+[Fair Source License 1.1 (FSL-1.1-Apache)](LICENSE) — see [NOTICE](NOTICE) for third-party attributions.
 
 ---
 
