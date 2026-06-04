@@ -19,8 +19,13 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 - **Personality rule extension**: renamed `gald3r_personality.md` →
   `gald3r_personality.mdc` in `project_template/.cursor/rules/`. Cursor only loads
   `.mdc` files from the rules folder; the Norse personality was silently not loading.
-- **Synchronized with gald3r ADV**: both repos at v1.11.0 with matching base content.
 - **README**: updated version badge, installer docs, and platform table.
+
+### Architecture
+- **Realignment with gald3r ADV**: both repos now share the same `project_template/`
+  structure and `platforms/` thin-adapter model. `gald3r` is the primary install for all
+  34 platforms. `gald3r_template_adv` is the reference archive for the explicit
+  shared-base + platform-overlay pattern (useful for tooling and multi-platform automation).
 
 ## [1.10.0] - 2026-06-03
 
