@@ -1,0 +1,5 @@
+[model]
+name = "mistral-large-latest"
+
+[project]
+instructions_file = "AGENTS.md"
