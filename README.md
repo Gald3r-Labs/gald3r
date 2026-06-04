@@ -5,14 +5,16 @@
 <h1 align="center">gald3r — AI Agent Framework for Your Project</h1>
 
 <p align="center">
-  File-based memory, task management, and agent orchestration that installs in minutes
-  and works in <strong>Cursor</strong> and <strong>Claude Code</strong> — with no server, no database, no Docker.
+  File-based memory, task management, and agent orchestration that installs in minutes.
+  Works in <strong>Cursor</strong> and <strong>Claude Code</strong> (Tier 1), plus
+  <strong>34 AI coding platforms</strong> — no server, no database, no Docker.
 </p>
 
 <p align="center">
-  <a href="https://github.com/wrm3/gald3r/releases/tag/v1.9.0"><img src="https://img.shields.io/badge/version-1.9.0-blue" alt="version 1.9.0" /></a>
+  <a href="https://github.com/wrm3/gald3r/releases/tag/v1.11.0"><img src="https://img.shields.io/badge/version-1.11.0-blue" alt="version 1.11.0" /></a>
   <a href="CHANGELOG.md">Changelog</a> |
-  <a href="CONTRIBUTING.md">Contributing</a>
+  <a href="CONTRIBUTING.md">Contributing</a> |
+  <a href="gald3r_supported_platforms.html">All 34 platforms</a>
 </p>
 
 ---
@@ -39,27 +41,31 @@ Everything is plain markdown files in your repo. No accounts, no API keys beyond
 ### Option 1 — Copy the template (recommended)
 
 ```bash
-# Clone this repo
 git clone https://github.com/wrm3/gald3r.git
 
-# Copy the project_template/ contents into your project root
+# Default: installs Cursor + Claude Code + shared brain
 cp -r gald3r/project_template/. /path/to/your/project/
 ```
 
 Then open your project in Cursor or Claude Code and run `@g-setup` / `/g-setup`.
 
-### Option 2 — Run the installer script
+### Option 2 — Installer script (supports all 34 platforms)
 
 ```powershell
-# From the cloned repo, run:
-.\setup_gald3r_project.ps1 -TargetPath "C:\path\to\your\project" -Platforms cursor,claude
+# Default: Cursor + Claude Code (same as copying project_template/)
+.\setup_gald3r_project.ps1 -TargetPath "C:\MyProject"
+
+# Install for a specific platform only
+.\setup_gald3r_project.ps1 -TargetPath "C:\MyProject" -Platform windsurf
+.\setup_gald3r_project.ps1 -TargetPath "C:\MyProject" -Platform cline
+.\setup_gald3r_project.ps1 -TargetPath "C:\MyProject" -Platform cursor    # Cursor only (no .claude/)
 ```
 
 ---
 
 ## What Gets Installed
 
-After installation your project root will have:
+**Default install** (Cursor + Claude Code):
 
 ```
 your-project/
@@ -72,25 +78,25 @@ your-project/
 └── WORKFLOW.md       ← Project workflow definition
 ```
 
-The `.gald3r/` directory is the shared brain — both Cursor and Claude Code read and write to it.
+**Platform-specific install** (e.g. `-Platform windsurf`): same shared brain, plus the platform's config folder (`.windsurf/rules/` etc.). Cursor and Claude config are skipped.
 
 ---
 
 ## Platform Support
 
-| Platform | Status | Notes |
+| Platform | Tier | Notes |
 |---|---|---|
-| **Cursor** | ✅ Tier 1 | Full support — rules (`.mdc`), skills, commands, hooks, agents |
-| **Claude Code** | ✅ Tier 1 | Full support — rules (`.md`), skills, commands, hooks, agents |
-| **GitHub Copilot** | ⚠️ Partial | Via `.github/copilot-instructions.md`; no native skills |
-| **Windsurf** | ⚠️ Partial | Rules only; no native skill loader |
-| **Cline / Roo** | ⚠️ Partial | Rules only; `.clinerules` / `.roo/rules/` |
-| **Codex CLI** | ⚠️ Partial | Via `AGENTS.md`; skills via markdown |
-| **OpenCode** | ⚠️ Partial | Via `AGENTS.md`; skills support |
-| **Other tools** | 🔜 Planned | See [CHANGELOG.md](CHANGELOG.md) for roadmap |
+| **Cursor** | ✅ Tier 1 | Rules (`.mdc`), skills, commands, hooks, agents |
+| **Claude Code** | ✅ Tier 1 | Rules (`.md`), skills, commands, hooks, agents |
+| **Windsurf, Cline, Roo, Aider** | ⚠️ Tier 2 | Rules + brain + AGENTS.md |
+| **Copilot, Codex, Augment, Gemini, Qwen, Continue** | ⚠️ Tier 2 | Rules + brain + AGENTS.md |
+| **20+ more** | 🔜 Tier 3 | Brain + AGENTS.md (rules where supported) |
 
-> **Cursor + Claude Code users get the full experience.** Other platforms receive a subset
-> of skills and rely on the shared `.gald3r/` memory and `AGENTS.md` instructions.
+Use `-Platform <name>` with the installer, or copy `platforms/<name>/` manually.
+See [gald3r_supported_platforms.html](gald3r_supported_platforms.html) for the full list.
+
+> **Cursor + Claude Code users get the full experience.** Other platforms receive the shared
+> `.gald3r/` brain and `AGENTS.md` instructions, with rules where the platform supports them.
 
 ---
 
@@ -158,4 +164,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Issues and PRs welcome.
 
 ---
 
-*Powered by gald3r v1.9.0 · [Changelog](CHANGELOG.md) · [Roadmap](ROADMAP.md)*
+*Powered by gald3r v1.11.0 · [Changelog](CHANGELOG.md) · [Roadmap](ROADMAP.md)*

@@ -1,0 +1,24 @@
+# gald3r Project Guidelines (Augment Code)
+
+> Augment Code applies this file to every Agent and Chat session on this codebase.
+> Edit the canonical copy under .gald3r_sys/platforms/.augment/ — not the installed copy.
+> The modern alternative is .augment/rules/*.md; this single-file form is the simplest target.
+
+## Task Management
+- All work is tracked in .gald3r/TASKS.md.
+- Read the active task in .gald3r/tasks/task{id}_*.md before implementing.
+- Reference the task ID in commits: feat(T{id}): description | fix(BUG-{id}): description.
+
+## Architecture
+- Read .gald3r/CONSTRAINTS.md before architectural decisions.
+- Subsystem boundaries are documented in .gald3r/SUBSYSTEMS.md.
+- AGENTS.md at the repo root holds the universal gald3r behavioral contract.
+
+## Bug Protocol
+- Pre-existing bugs: document in .gald3r/BUGS.md — never silently ignore.
+- Bugs introduced by the current change: fix inline before completing.
+
+## Code Standards
+- No bare TODO comments — use TODO[TASK-{id}->TASK-{new_id}] and file a follow-up task.
+- Match the conventions already present in the file you are editing.
+- Make surgical changes; do not refactor adjacent code that is out of scope.

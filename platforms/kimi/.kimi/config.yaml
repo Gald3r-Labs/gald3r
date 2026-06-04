@@ -1,0 +1,13 @@
+# .kimi/config.yaml — gald3r project configuration for Kimi Code
+# Docs: https://www.kimi.com/code/docs/en
+
+model:
+  provider: moonshot
+  name: kimi-k1-5-long-context
+
+agent:
+  max_iterations: 50
+  auto_approve: false
+
+mcp:
+  servers: {}

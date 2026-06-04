@@ -1,0 +1,41 @@
+﻿{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "type": "command",
+        "bash": ".claude/hooks/g-hk-session-start.sh",
+        "powershell": ".claude/hooks/g-hk-session-start.ps1",
+        "cwd": ".",
+        "timeoutSec": 30
+      }
+    ],
+    "agentStop": [
+      {
+        "type": "command",
+        "bash": ".claude/hooks/g-hk-agent-complete.sh",
+        "powershell": ".claude/hooks/g-hk-agent-complete.ps1",
+        "cwd": ".",
+        "timeoutSec": 30
+      }
+    ],
+    "preToolUse": [
+      {
+        "type": "command",
+        "bash": ".claude/hooks/g-hk-validate-shell.sh",
+        "powershell": ".claude/hooks/g-hk-validate-shell.ps1",
+        "cwd": ".",
+        "timeoutSec": 15
+      }
+    ],
+    "sessionEnd": [
+      {
+        "type": "command",
+        "bash": ".claude/hooks/g-hk-agent-complete.sh",
+        "powershell": ".claude/hooks/g-hk-agent-complete.ps1",
+        "cwd": ".",
+        "timeoutSec": 30
+      }
+    ]
+  }
+}
