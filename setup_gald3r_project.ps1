@@ -1,16 +1,21 @@
 # setup_gald3r_project.ps1 — gald3r Installer
 # =============================================
-# Default (no -Platform):  installs Cursor + Claude Code + shared brain.
-# -Platform <name>:        installs the specified platform's thin adapter + shared brain.
-#                          Cursor/Claude config is skipped when installing other platforms.
+# Installs gald3r into a target project.
+#
+# Default (no -Platform):
+#   Installs Cursor + Claude Code — copies project_template/ as-is.
+#
+# -Platform <name>:
+#   Installs a specific platform. Copies project_template/ (shared brain,
+#   skipping .cursor/.claude) then overlays platforms/<name>/.
 #
 # Usage:
-#   .\setup_gald3r_project.ps1                                                   # Cursor + Claude
-#   .\setup_gald3r_project.ps1 -TargetPath "C:\MyProject"                        # same, specify target
-#   .\setup_gald3r_project.ps1 -TargetPath "C:\MyProject" -Platform windsurf     # Windsurf only
-#   .\setup_gald3r_project.ps1 -TargetPath "C:\MyProject" -Platform cursor       # Cursor only (no .claude/)
-#   .\setup_gald3r_project.ps1 -TargetPath "C:\MyProject" -DryRun                # preview
-#   .\setup_gald3r_project.ps1 -TargetPath "C:\MyProject" -Force                 # skip confirmations
+#   .\setup_gald3r_project.ps1                                                # Cursor + Claude
+#   .\setup_gald3r_project.ps1 -TargetPath "C:\MyProject"                    # same, no prompt
+#   .\setup_gald3r_project.ps1 -TargetPath "C:\MyProject" -Platform windsurf # Windsurf only
+#   .\setup_gald3r_project.ps1 -TargetPath "C:\MyProject" -Platform cursor   # Cursor only
+#   .\setup_gald3r_project.ps1 -TargetPath "C:\MyProject" -DryRun            # preview only
+#   .\setup_gald3r_project.ps1 -TargetPath "C:\MyProject" -Force             # skip confirmations
 
 param(
     [string]$TargetPath = "",
@@ -21,6 +26,11 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+
+# ── Repo identity ──────────────────────────────────────────────────────────────
+# gald3r:            $RequirePlatform = $false  → default = Cursor + Claude Code
+# gald3r_template_adv: $RequirePlatform = $true → must pick a platform
+$RequirePlatform = $false
 
 # ── Resolve paths ──────────────────────────────────────────────────────────────
 $scriptDir    = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -33,71 +43,82 @@ if (-not (Test-Path $templateDir)) {
 }
 
 $availablePlatforms = if (Test-Path $platformsDir) {
-    (Get-ChildItem $platformsDir -Directory | Select-Object -ExpandProperty Name | Sort-Object)
+    Get-ChildItem $platformsDir -Directory | Select-Object -ExpandProperty Name | Sort-Object
 } else { @() }
 
-# ── Validate platform if given ────────────────────────────────────────────────
+# ── Validate / prompt for platform ────────────────────────────────────────────
 $Platform = $Platform.Trim().ToLower()
-if ($Platform -and $availablePlatforms -notcontains $Platform -and
-    $Platform -notin @("cursor","claude")) {
+
+if ($RequirePlatform -and -not $Platform) {
     Write-Host ""
+    Write-Host "  gald3r Installer" -ForegroundColor Cyan
+    Write-Host "  ─────────────────────────────────────────" -ForegroundColor DarkGray
+    Write-Host "  Available platforms:"
+    $availablePlatforms | ForEach-Object { Write-Host "    * $_" -ForegroundColor DarkGray }
+    Write-Host ""
+    $Platform = (Read-Host "  Platform (e.g. cursor, claude, windsurf)").Trim().ToLower()
+}
+
+if ($Platform -and $availablePlatforms -and $availablePlatforms -notcontains $Platform) {
     Write-Host "  Unknown platform '$Platform'." -ForegroundColor Yellow
     Write-Host "  Available: $($availablePlatforms -join ', ')" -ForegroundColor DarkGray
-    Write-Host "  Leave blank for the default Cursor + Claude install." -ForegroundColor DarkGray
     exit 1
 }
 
-# ── Prompt for target if not given ────────────────────────────────────────────
+# ── Prompt for target path ─────────────────────────────────────────────────────
 if (-not $TargetPath) {
     Write-Host ""
     Write-Host "  gald3r Installer" -ForegroundColor Cyan
     Write-Host "  ─────────────────────────────────────────" -ForegroundColor DarkGray
     if (-not $Platform) {
-        Write-Host "  Default: installs Cursor + Claude Code support."
-        Write-Host "  Use -Platform <name> for a single platform."
+        Write-Host "  Default: Cursor + Claude Code. Use -Platform <name> to install one platform."
         if ($availablePlatforms) {
-            Write-Host "  Supported: $($availablePlatforms -join ', ')" -ForegroundColor DarkGray
+            Write-Host "  Platforms: $($availablePlatforms -join ', ')" -ForegroundColor DarkGray
         }
+    } else {
+        Write-Host "  Platform: $Platform"
     }
     Write-Host ""
-    $TargetPath = Read-Host "  Target project path"
+    $TargetPath = (Read-Host "  Target project path").Trim()
 }
 
-$TargetPath = $TargetPath.Trim().TrimEnd('\').TrimEnd('/')
+$TargetPath = $TargetPath.TrimEnd('\').TrimEnd('/')
 
+# ── Create target if missing ───────────────────────────────────────────────────
 if (-not (Test-Path $TargetPath)) {
     if (-not $Force) {
-        $create = Read-Host "  '$TargetPath' does not exist. Create it? (y/N)"
-        if ($create -notmatch '^[Yy]') { Write-Host "Aborted."; exit 0 }
+        $yn = Read-Host "  '$TargetPath' does not exist. Create it? (y/N)"
+        if ($yn -notmatch '^[Yy]') { Write-Host "Aborted."; exit 0 }
     }
     New-Item -ItemType Directory -Path $TargetPath -Force | Out-Null
     Write-Host "  Created: $TargetPath" -ForegroundColor Green
 }
 
-# ── Check for existing install ────────────────────────────────────────────────
-$existingGald3r = Test-Path (Join-Path $TargetPath ".gald3r")
-if ($existingGald3r -and -not $Force -and -not $DryRun) {
+# ── Warn on existing .gald3r/ ────────────────────────────────────────────────
+if ((Test-Path (Join-Path $TargetPath ".gald3r")) -and -not $Force -and -not $DryRun) {
     Write-Host ""
-    Write-Host "  WARNING: .gald3r/ already exists." -ForegroundColor Yellow
-    Write-Host "  Your tasks, bugs, and plans will NOT be overwritten." -ForegroundColor Yellow
-    $confirm = Read-Host "  Update gald3r config files? (y/N)"
-    if ($confirm -notmatch '^[Yy]') { Write-Host "Aborted."; exit 0 }
+    Write-Host "  WARNING: .gald3r/ already exists. Tasks/bugs/plans will NOT be overwritten." -ForegroundColor Yellow
+    $yn = Read-Host "  Update gald3r config files? (y/N)"
+    if ($yn -notmatch '^[Yy]') { Write-Host "Aborted."; exit 0 }
 }
 
-# ── Helper: copy files from a source dir → target, respecting protected dirs ──
+# ── Copy-Layer helper ─────────────────────────────────────────────────────────
+# Copies all files from $SourceDir into $TargetDir.
+# $SkipTopDirs : top-level dirs to exclude entirely (e.g. skip .cursor when installing windsurf)
+# $Protected   : top-level dirs that exist in target and should never be overwritten
 function Copy-Layer {
     param(
-        [string]$SourceDir,
-        [string]$TargetDir,
-        [string[]]$Protected = @(),
-        [string[]]$SkipTopDirs = @()
+        [string]   $SourceDir,
+        [string]   $TargetDir,
+        [string[]] $SkipTopDirs = @(),
+        [string[]] $Protected   = @()
     )
     $n = 0
     Get-ChildItem -Path $SourceDir -Recurse -File | ForEach-Object {
         $rel    = $_.FullName.Substring($SourceDir.Length).TrimStart('\').TrimStart('/')
         $topDir = ($rel -split '[/\\]')[0]
         if ($SkipTopDirs -contains $topDir) { return }
-        $dest   = Join-Path $TargetDir $rel
+        $dest = Join-Path $TargetDir $rel
         if ($Protected -contains $topDir -and (Test-Path $dest)) { return }
         if (-not $DryRun) {
             $d = Split-Path $dest -Parent
@@ -109,68 +130,67 @@ function Copy-Layer {
     return $n
 }
 
-$protectedDirs = @(".gald3r")
+$protected = @(".gald3r")
 
-# ── Determine install mode ────────────────────────────────────────────────────
-Write-Host ""
-if ($DryRun) { Write-Host "  DRY RUN — no files will be written" -ForegroundColor Yellow }
+# ── Determine what to install ─────────────────────────────────────────────────
+# In gald3r: .cursor/ and .claude/ live inside project_template/ (Tier 1 = no overlay needed)
+# In gald3r_template_adv: project_template/ has NO platform dirs — overlay always required
+$tier1 = if (-not $RequirePlatform) { @("cursor", "claude") } else { @() }
+$isTier1 = (-not $Platform) -or ($Platform -in $tier1)
 
-$label    = ""
-$baseSkip = @()
-$platformDir = $null
-
-if (-not $Platform -or $Platform -in @("cursor","claude")) {
-    # Default: full project_template/ (has .cursor + .claude + brain)
-    $label = if ($Platform -eq "claude") { "Claude Code" }
+$label     = if (-not $Platform) { "Cursor + Claude Code (default)" }
              elseif ($Platform -eq "cursor") { "Cursor" }
-             else { "Cursor + Claude Code (default)" }
-    # For cursor-only: skip .claude; for claude-only: skip .cursor
-    if ($Platform -eq "cursor")  { $baseSkip = @(".claude") }
-    if ($Platform -eq "claude")  { $baseSkip = @(".cursor") }
-} else {
-    # Specific non-Tier1 platform: brain from project_template (no .cursor/.claude) + platform overlay
-    $label = $Platform
-    $baseSkip   = @(".cursor", ".claude")
-    $platformDir = Join-Path $platformsDir $Platform
-    if (-not (Test-Path $platformDir)) {
-        Write-Error "platforms/$Platform/ not found."
-        exit 1
-    }
-}
+             elseif ($Platform -eq "claude") { "Claude Code" }
+             else { $Platform }
 
+Write-Host ""
+if ($DryRun) { Write-Host "  DRY RUN -- no files will be written" -ForegroundColor Yellow }
 Write-Host "  Installing gald3r [$label] into: $TargetPath" -ForegroundColor Cyan
 Write-Host ""
 
 $total = 0
 
-# Step 1: shared base
-$n1 = Copy-Layer -SourceDir $templateDir -TargetDir $TargetPath `
-                 -Protected $protectedDirs -SkipTopDirs $baseSkip
-$total += $n1
-Write-Host "  Base   : $n1 files copied"
+# Step 1: shared base from project_template/
+$skipDirs = if ($isTier1) {
+    # Cursor: skip .claude; Claude: skip .cursor; default: skip nothing
+    if ($Platform -eq "cursor") { @(".claude") }
+    elseif ($Platform -eq "claude") { @(".cursor") }
+    else { @() }
+} else {
+    @(".cursor", ".claude")   # non-Tier1: skip platform-specific dirs, brain only
+}
 
-# Step 2: platform overlay (only for non-Tier1)
-if ($platformDir) {
-    $n2 = Copy-Layer -SourceDir $platformDir -TargetDir $TargetPath `
-                     -Protected $protectedDirs
-    $total += $n2
-    Write-Host "  Config : $n2 files copied ($Platform)"
+$n1 = Copy-Layer -SourceDir $templateDir -TargetDir $TargetPath `
+                 -SkipTopDirs $skipDirs -Protected $protected
+$total += $n1
+Write-Host "  Base   : $n1 files  (project_template/)"
+
+# Step 2: platform overlay (only for non-Tier1 or explicit single platform)
+if ($Platform -and $Platform -notin $tier1 -and (Test-Path $platformsDir)) {
+    $platDir = Join-Path $platformsDir $Platform
+    if (Test-Path $platDir) {
+        $n2 = Copy-Layer -SourceDir $platDir -TargetDir $TargetPath -Protected $protected
+        $total += $n2
+        Write-Host "  Config : $n2 files  (platforms/$Platform/)"
+    }
 }
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 Write-Host ""
 if ($DryRun) {
-    Write-Host "  Dry run — would copy $total files." -ForegroundColor Yellow
+    Write-Host "  Dry run -- would copy $total files." -ForegroundColor Yellow
 } else {
     Write-Host "  Done. $total files installed." -ForegroundColor Green
     Write-Host ""
     Write-Host "  Next steps:" -ForegroundColor Cyan
-    if ($Platform -eq "claude") {
-        Write-Host "   Open in Claude Code and run /g-setup"
-    } elseif (-not $Platform -or $Platform -eq "cursor") {
-        Write-Host "   Open in Cursor → @g-setup  |  or Claude Code → /g-setup"
-    } else {
-        Write-Host "   Open in $Platform — .gald3r/ brain and AGENTS.md are ready"
+    if (-not $Platform -or $Platform -eq "cursor") {
+        Write-Host "   Cursor      : open project, run @g-setup"
+    }
+    if (-not $Platform -or $Platform -eq "claude") {
+        Write-Host "   Claude Code : open project, run /g-setup"
+    }
+    if ($Platform -and $Platform -notin $tier1) {
+        Write-Host "   $Platform : open project in $Platform -- .gald3r/ brain and AGENTS.md are ready"
     }
     Write-Host ""
     Write-Host "  Docs: https://github.com/wrm3/gald3r" -ForegroundColor DarkGray
