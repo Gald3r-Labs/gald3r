@@ -6,7 +6,18 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [Unreleased]
+## [1.10.0] - 2026-06-03
+
+### Changed
+- **Restructured install model**: deliverable is now `project_template/` — copy its contents to
+  your project root. Cursor + Claude Code are Tier 1; other platforms via `AGENTS.md` + `.gald3r/`.
+- **Simplified installer**: `setup_gald3r_project.ps1` rewritten from 44KB → ~110 lines. Single
+  purpose: copy `project_template/` to target, preserving existing `.gald3r/` user data.
+- **Stripped maintainer-only rules**: `g-rl-25` (session-start), `g-rl-33` (enforcement-catchall),
+  and `g-rl-36` (workspace-guard) removed from the shipped template — these are framework-build
+  tools, not end-user config. Shipped set: 11 lightweight rules + `gald3r_personality`.
+- **Updated README**: reflects actual structure and accurate component counts (110 skills,
+  177 commands, 37 hooks, 12 rules).
 
 ### Fixed
 - **BUG-099 safety fix**: All platform scaffold `gald3r_worktree.ps1` scripts and `development.yaml` files defaulted `TargetBranch`/`default_branch` to `dev` instead of `main`. This caused new projects created from any platform template to target a long-lived `dev` branch for worktree merges — a data-loss trap. Flipped 78 files (44 worktree scripts + 34 development.yaml) to `main`. Affects all 34+ platform scaffolds.
