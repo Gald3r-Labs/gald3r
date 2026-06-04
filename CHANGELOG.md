@@ -19,6 +19,8 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 - **Personality rule extension**: renamed `gald3r_personality.md` →
   `gald3r_personality.mdc` in `project_template/.cursor/rules/`. Cursor only loads
   `.mdc` files from the rules folder; the Norse personality was silently not loading.
+- **License reference in README**: corrected from `[MIT]` to `[Fair Source License 1.1
+  (FSL-1.1-Apache)]`. The actual LICENSE file was always FSL — only the README link was wrong.
 - **README**: updated version badge, installer docs, and platform table.
 
 ### Architecture
