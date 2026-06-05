@@ -23,37 +23,32 @@ required:
   status:
     type: enum
     description: >-
-      Task lifecycle status. The first block lists the current (v1) status
-      vocabulary. The legacy block lists pre-1.6 values that remain VALID but
-      are DEPRECATED -- g-medic accepts them and may migrate them to the
-      nearest current value during a migration pass.
+      Task lifecycle status. The first block is the current vocabulary; the legacy
+      block lists values that remain VALID for back-compat but are not written by new
+      files. AUTHORITATIVE SOURCE: the engine validator `gald3r.schema.task` (STATUSES +
+      LEGACY_STATUSES) -- this YAML mirrors what the engine enforces at runtime. g-medic
+      may migrate a legacy value to its nearest current value during a migration pass.
     values:
-      # --- current (v1) lifecycle ---
-      - created
-      - speccing
-      - specced
-      - coding
-      - code_ready
-      - qa_testing
-      - qa_complete
-      - release_ready
-      - released
-      - paused
-      - failed
-      - cancelled
-      - resource_gated
-      # --- legacy (valid but deprecated; retained for back-compat) ---
+      # --- current lifecycle (engine STATUSES) ---
       - pending
+      - speccing
       - in-progress
       - awaiting-verification
       - verification-in-progress
       - completed
+      - failed
+      - paused
+      - cancelled
+      # --- legacy (valid but deprecated; engine LEGACY_STATUSES) ---
+      - waiting
+      - resource-gated
+      - requires-user-attention
+      - verified
       - closed
     legacy_values_note: >-
-      pending, in-progress, awaiting-verification, verification-in-progress,
-      completed, and closed are legacy status values. They are valid for
-      validation purposes but deprecated; new task files should use the
-      current lifecycle vocabulary.
+      waiting, resource-gated, requires-user-attention, verified, and closed are legacy
+      values: valid for validation but deprecated. New task files use the current
+      vocabulary above, which is kept in lockstep with the engine's enforced STATUSES.
   priority:
     type: enum
     values: [critical, high, medium, low]

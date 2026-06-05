@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [AGENT_ORCHESTRATION]
+---
+
 # Anthropic Agent SDK - Base Infrastructure
 
 Core SDK infrastructure for Cursor SubAgents with shared context, workflows, and structured agent-to-agent communication.

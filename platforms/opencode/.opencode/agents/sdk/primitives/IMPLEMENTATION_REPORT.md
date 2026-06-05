@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [AGENT_ORCHESTRATION]
+---
+
 # Cursor Primitives Integration - Implementation Report
 
 **Task**: Task 052 - Anthropic Agent SDK Integration (Primitives Component)

@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [TASK_MANAGEMENT]
+---
 # g-skl-status
 **Skill file**: `SKILL.md`
 

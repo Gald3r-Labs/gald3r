@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [BUG_AND_QUALITY]
+---
 # Quality Metrics Report - October 2025
 
 ## Executive Summary

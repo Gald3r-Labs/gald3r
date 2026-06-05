@@ -34,15 +34,15 @@
 
 .EXAMPLE
     # Check only (useful from session-start hook)
-    powershell -NoProfile -ExecutionPolicy Bypass -File .cursor/skills/g-skl-tasks/scripts/gald3r_tasks_archive_gate.ps1 -CheckOnly
+    powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/g-skl-tasks/scripts/gald3r_tasks_archive_gate.ps1 -CheckOnly
 
 .EXAMPLE
     # Auto-archive when over 2000 lines
-    powershell -NoProfile -ExecutionPolicy Bypass -File .cursor/skills/g-skl-tasks/scripts/gald3r_tasks_archive_gate.ps1 -Apply
+    powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/g-skl-tasks/scripts/gald3r_tasks_archive_gate.ps1 -Apply
 
 .EXAMPLE
     # Lower threshold for testing
-    powershell -NoProfile -ExecutionPolicy Bypass -File .cursor/skills/g-skl-tasks/scripts/gald3r_tasks_archive_gate.ps1 -Apply -Threshold 800
+    powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/g-skl-tasks/scripts/gald3r_tasks_archive_gate.ps1 -Apply -Threshold 800
 #>
 param(
     [switch]$CheckOnly,
@@ -147,7 +147,7 @@ if ($gateState -ne "breached") {
 if (-not $Apply) {
     Write-Out ""
     Write-Out "  Run with -Apply to archive terminal tasks automatically." Gray
-    Write-Out "  Command: .cursor/skills/g-skl-tasks/scripts/gald3r_tasks_archive_gate.ps1 -Apply" Gray
+    Write-Out "  Command: .claude/skills/g-skl-tasks/scripts/gald3r_tasks_archive_gate.ps1 -Apply" Gray
     Emit-Json @{
         gate_state = $gateState
         line_count = $lineCount
@@ -320,7 +320,7 @@ if (Test-Path $bucketIndexFile) {
         "Archive bucket: $bucketName`n" +
         "Archived: $today`n" +
         "Total entries: $($archivedTasks.Count)`n" +
-        "Source: .gald3r/TASKS.md -- gald3r_dev controller`n" +
+        "Source: .gald3r/TASKS.md -- <gald3r_source> controller`n" +
         "Authorized by: gald3r_tasks_archive_gate.ps1 -Apply (auto-gate, $today)`n`n" +
         "---`n`n" +
         "## Index`n`n" +

@@ -53,7 +53,7 @@ Agent: Terse mode off.
 
 - Code blocks and inline `code`
 - Tables and bullets when the data is genuinely tabular or a list
-- All gald3r safety gates (PCAC, Clean Controller, bug-discovery, etc.)
+- All gald3r safety gates (WPAC, Clean Controller, bug-discovery, etc.)
 - All hook execution
 
 ## What it does NOT do

@@ -47,7 +47,7 @@ or `gh` missing → **no-op** with a friendly message.
 
 ## Notes
 
-- New PCAC/issue-derived tasks follow normal `g-skl-tasks` CREATE rules; populate
+- New WPAC/issue-derived tasks follow normal `g-skl-tasks` CREATE rules; populate
   `issue_ref`, `integration_scope: github`, and `last_synced_at`.
 - Edge cases to handle: issue closed externally while task is `[🔄]`; task cancelled
   while issue still open; issue reopened. Surface, don't silently diverge.

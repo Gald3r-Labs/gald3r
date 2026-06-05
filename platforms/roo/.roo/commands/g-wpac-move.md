@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
 Transfer files or folders to another project in the topology: $ARGUMENTS
@@ -48,17 +48,17 @@ Search and update `SUBSYSTEMS.md`, `tasks/*.md`, `AGENTS.md`.
 
 **Migrate a subsystem:**
 ```
-@g-wpac-move G:/gald3r_ecosystem/gald3r_template_full/.cursor/skills/g-skl-websocket-sync → gald3r_mcp
+@g-wpac-move <ECOSYSTEM_ROOT>/<template_full>/.cursor/skills/g-skl-websocket-sync → example_mcp
 ```
 
 **Promote a skill to canonical template:**
 ```
-@g-wpac-move .cursor/skills/g-skl-new-thing → gald3r_template_full
+@g-wpac-move .cursor/skills/g-skl-new-thing → <template_full>
 ```
 
 **Move vault research:**
 ```
-@g-wpac-move .gald3r/vault/research/topic.md → gald3r_vault
+@g-wpac-move .gald3r/vault/research/topic.md → example_vault
 ```
 
 ## Delegates To

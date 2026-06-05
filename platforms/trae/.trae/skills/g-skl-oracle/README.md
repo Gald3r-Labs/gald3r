@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [AGENT_ORCHESTRATION]
+---
 # g-skl-oracle
 **Skill file**: `SKILL.md`
 
@@ -5,7 +8,7 @@
 
 ## What it does
 
-Execute Oracle Database queries and operations via gald3r_valhalla MCP tools. Requires Docker backend (adv tier). Supports read-only queries (oracle_query) and full write operations (oracle_execute) including DDL and PL/SQL blocks.
+Execute Oracle Database queries and operations via example_app MCP tools. Requires Docker backend (adv tier). Supports read-only queries (oracle_query) and full write operations (oracle_execute) including DDL and PL/SQL blocks.
 
 ## When to use
 

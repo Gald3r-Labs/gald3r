@@ -272,7 +272,7 @@ foreach ($file in $candidates) {
         "youtube_url" {
             $script = Find-IngestScript -RelativePath ".cursor/skills/g-skl-ingest-youtube/scripts/fetch_transcript.py"
             if (-not $script) {
-                $script = Find-IngestScript -RelativePath "G:/gald3r_ecosystem/gald3r_template_full/.cursor/skills/g-skl-ingest-youtube/scripts/fetch_transcript.py"
+                $script = Find-IngestScript -RelativePath "<ECOSYSTEM_ROOT>/<template_full>/.cursor/skills/g-skl-ingest-youtube/scripts/fetch_transcript.py"
             }
             if (-not $script) {
                 Move-ToFailed -File $file -Reason "fetch_transcript.py not found in any IDE skill tree — invoke g-skl-ingest-youtube manually"

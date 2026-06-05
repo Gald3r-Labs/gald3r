@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Edge-case round-trip tests for the TOON encoder/decoder (T1384).
 .DESCRIPTION

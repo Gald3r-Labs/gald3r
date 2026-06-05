@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [SECURITY_AND_COMPLIANCE]
+---
 # Scanner Setup — g-skl-compliance
 
 Per-scanner installation and authentication instructions for g-skl-compliance.

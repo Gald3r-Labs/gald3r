@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [MEMORY_AND_KNOWLEDGE]
+---
 # g-skl-memory
 
 > Human-facing companion to `SKILL.md`. The LLM agent reads `SKILL.md`; this
@@ -5,11 +8,11 @@
 
 ## What it does
 
-Captures structured insights, session summaries, and cross-session semantic search via the **gald3r_valhalla** MCP backend.
+Captures structured insights, session summaries, and cross-session semantic search via the **example_app** MCP backend.
 
 Two modes:
 
-- **Full mode** (adv tier) — requires the gald3r_valhalla Docker backend. Calls `memory_capture_insight`, `memory_capture_session`, `memory_search`, `memory_search_combined`. Semantic recall across sessions.
+- **Full mode** (adv tier) — requires the example_app Docker backend. Calls `memory_capture_insight`, `memory_capture_session`, `memory_search`, `memory_search_combined`. Semantic recall across sessions.
 - **Degraded mode** (no backend) — automatically falls back to `g-skl-learn` for file-based capture into `.gald3r/learned-facts.md`. No semantic search, but session insights still persist.
 
 ## When to use
@@ -44,9 +47,9 @@ memory_capture_insight(
 
 ```
 memory_capture_session(
-  summary="Implemented T1043, T1045, T1046 caveman-harvest tasks. "
+  summary="Implemented T1043, T1045, T1046 skills-lock-harvest tasks. "
           "T1042 deferred (ai_safe:false). T1044 pilot scope only.",
-  topics=["caveman-harvest","skills-lock","installer","parity-sync"]
+  topics=["skills-lock-harvest","skills-lock","installer","parity-sync"]
 )
 ```
 
@@ -68,4 +71,4 @@ memory_search(query="why did we pick SHA-256 over BLAKE3 for lock hashes")
 
 - `g-skl-learn` — the file-based fallback this skill degrades into
 - `g-skl-vault` — vault notes (long-form knowledge cards), complementary surface
-- `gald3r_valhalla` — the MCP backend that provides full-mode capability
+- `example_app` — the MCP backend that provides full-mode capability

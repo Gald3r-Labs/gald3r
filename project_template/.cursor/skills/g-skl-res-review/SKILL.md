@@ -289,7 +289,7 @@ When `@g-res-review {github_url}` targets an unmirrored repo:
 
 ## Topology-Aware Routing (T118)
 
-When a PCAC topology is configured (`.gald3r/linking/link_topology.md` exists with `children:` entries), each suggestion in a harvest is assigned a **routing suggestion** before presenting to the user. This ensures findings reach the right project rather than all landing in the current project.
+When a WPAC topology is configured (`.gald3r/linking/link_topology.md` exists with `children:` entries), each suggestion in a harvest is assigned a **routing suggestion** before presenting to the user. This ensures findings reach the right project rather than all landing in the current project.
 
 ### Topology Load Sequence
 
@@ -322,7 +322,7 @@ For each finding `F` in the harvest report:
      - If this-project owns a matching capability: suggest "this-project"
      - Otherwise: suggest "new-project" (explain what capability is missing)
 
-4. "new-project" suggestion text: "⚡ No project owns [{domain}] — consider spawning a [{type}] project via @g-pcac-spawn"
+4. "new-project" suggestion text: "⚡ No project owns [{domain}] — consider spawning a [{type}] project via @g-wpac-spawn"
 ```
 
 ### Display Format
@@ -334,10 +334,10 @@ Harvest report with topology routing adds `Routing` and `Similarity Risk` column
 
 | # | Finding | Complexity | Sim. Risk | Routing | Notes |
 |---|---------|------------|-----------|---------|-------|
-| 1 | Platform adapter pattern | Medium | low | → gald3r_valhalla | gald3r_valhalla owns communications subsystem |
-| 2 | Fast Mode execution profile | Low | medium | → this-project | gald3r_dev owns autonomous-coding capability |
+| 1 | Platform adapter pattern | Medium | low | → example_app | example_app owns communications subsystem |
+| 2 | Fast Mode execution profile | Low | medium | → this-project | <gald3r_source> owns autonomous-coding capability |
 | 3 | gRPC streaming transport | High | high | ⚡ new-project | No peer owns real-time-transport capability |
-| 4 | iMessage gateway | Medium | critical | → multiple:gald3r_valhalla,gald3r_agent | ⛔ APPLY blocked — legal review required |
+| 4 | iMessage gateway | Medium | critical | → multiple:example_app,example_agent | ⛔ APPLY blocked — legal review required |
 ```
 
 **User override**: user can manually change routing before APPLY by typing the target slug when prompted.
@@ -348,7 +348,7 @@ After reviewing routing suggestions, user confirms each routing. Then:
 
 - `→ this-project`: standard APPLY (writes to current project)
 - `→ {peer_slug}`: calls `g-skl-res-apply APPLY --target {peer_slug}`
-- `⚡ new-project`: offers `@g-pcac-spawn {type}` with capability description
+- `⚡ new-project`: offers `@g-wpac-spawn {type}` with capability description
 - `→ multiple:...`: prompts user to choose or split
 
 ### TOPOLOGY_STATUS Operation
@@ -361,4 +361,4 @@ Displays current topology awareness:
 - Lists all known peers and their loaded capabilities
 - Shows which capabilities are `ready` vs `planned`
 - Shows `peers/` snapshot staleness (age in days; >7 days flagged)
-- If no topology: prints `"No PCAC topology configured — run @g-pcac-adopt to link projects"`
+- If no topology: prints `"No WPAC topology configured — run @g-wpac-adopt to link projects"`

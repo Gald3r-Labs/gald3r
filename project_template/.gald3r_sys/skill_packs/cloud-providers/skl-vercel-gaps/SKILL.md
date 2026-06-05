@@ -44,9 +44,9 @@ vercel link
 vercel env pull .env.local
 
 # Install gald3r into the project
-# From gald3r_dev repo:
+# From <gald3r_source> repo:
 #   gald3r_install(project_path="path/to/vercel-project", project_name="my-site")
-# OR manual: copy G:/gald3r_ecosystem/gald3r_template_full/.gald3r/ to your project
+# OR manual: copy <ECOSYSTEM_ROOT>/<template_full>/.gald3r/ to your project
 
 # Add .gald3r/ to .gitignore (gald3r task data is local)
 echo ".gald3r/" >> .gitignore

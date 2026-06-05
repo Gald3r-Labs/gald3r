@@ -5,7 +5,7 @@ Push a task or directive to child projects: $ARGUMENTS
 
 ## What This Command Does
 
-Broadcasts a task order from this parent project to one or more child projects using the PCAC (Project Command and Control) topology. Uses `g-skl-wpac-order`.
+Broadcasts a task order from this parent project to one or more child projects using the WPAC (Project Command and Control) topology. Uses `g-skl-wpac-order`.
 
 ## Workflow
 
@@ -46,7 +46,7 @@ Show results: ✅ created / ⚠️ conflict / ❌ inaccessible
 
 **Order to specific child:**
 ```
-@g-wpac-order gald3r_mcp: add oracle connection pool task
+@g-wpac-order example_mcp: add oracle connection pool task
 ```
 
 **With cascade:**

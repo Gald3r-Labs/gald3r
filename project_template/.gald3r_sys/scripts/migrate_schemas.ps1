@@ -55,16 +55,16 @@
     # Dry-run against the current directory's .gald3r/ — prints "Files to migrate".
 
 .EXAMPLE
-    .\migrate_schemas.ps1 -ProjectPath C:\proj -Apply
-    # Migrates all out-of-date files in C:\proj\.gald3r\ to the current schema version.
+    .\migrate_schemas.ps1 -ProjectPath <project-root> -Apply
+    # Migrates all out-of-date files in <project-root>\.gald3r\ to the current schema version.
 
 .NOTES
     ============================================================================
     gald3r_install MCP INTEGRATION CONTRACT (cross-repo follow-up — NOT IMPLEMENTED HERE)
     ============================================================================
-    The `gald3r_install` MCP tool lives in the separate `gald3r_valhalla` repo and is
+    The `gald3r_install` MCP tool lives in the separate `example_app` repo and is
     OUT OF SCOPE for T1441. This block documents the intended integration so the
-    follow-up task in gald3r_valhalla has an authoritative contract to implement against.
+    follow-up task in example_app has an authoritative contract to implement against.
 
     When `gald3r_install` runs on a project that already has a .gald3r/ directory:
       1. DETECT  — invoke this engine in dry-run and parse its summary, OR read

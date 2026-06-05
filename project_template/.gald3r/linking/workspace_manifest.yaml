@@ -26,7 +26,7 @@ routing_policy:
       - FEATURES.md
       - SUBSYSTEMS.md
 
-pcac_relationship:
+wpac_relationship:
   role: standalone
   parent: null
   children: []

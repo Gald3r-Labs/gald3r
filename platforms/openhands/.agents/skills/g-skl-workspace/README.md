@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [WORKSPACE_COORDINATION]
+---
 # g-skl-workspace
 **Skill file**: `SKILL.md`
 

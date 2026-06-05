@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 # gald3r_validate.ps1 — Zero-dependency gald3r structure integrity check (T1012)
 # Exit 0 = PASS, Exit 1 = FAIL (violations listed)
 # Usage: powershell -File gald3r_validate.ps1 [--fix] [--json] [--project-root <path>] [--report]

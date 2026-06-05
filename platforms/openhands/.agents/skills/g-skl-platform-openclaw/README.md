@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [PLATFORM_INTEGRATION]
+---
 # g-skl-platform-openclaw
 **Skill file**: `SKILL.md`
 
@@ -5,7 +8,7 @@
 
 ## What it does
 
-Authoritative reference for OpenClaw AI agent customization in gald3r projects. Covers SOUL.md pattern, workspace skill conventions, and caveman-compatible integration.
+Authoritative reference for OpenClaw AI agent customization in gald3r projects. Covers SOUL.md pattern, workspace skill conventions, and SOUL.md-based integration.
 
 ## When to use
 

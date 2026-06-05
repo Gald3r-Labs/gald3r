@@ -43,7 +43,7 @@ Hard-gate failures are the only valid stop reasons (see hard stops below).
 
 Before spawning any bucket agents:
 
-1. **PCAC inbox gate** — same as `@g-go-bugs` (only when PCAC is configured)
+1. **WPAC inbox gate** — same as `@g-go-bugs` (only when WPAC is configured)
 2. **Housekeeping commit gate** — `gald3r_housekeeping_commit.ps1 -Mode preflight -Apply -Json`
 3. **Clean Controller Gate** — `git status --short`; stop if unrelated dirty paths
 4. **Claim all target bugs at once** — mark every target bug `[🔄]` / `in-progress` in BUGS.md
@@ -230,7 +230,7 @@ Review commit: {sha}
 
 | Stop reason | Trigger |
 |---|---|
-| PCAC conflict | inbox check exit code `2` |
+| WPAC conflict | inbox check exit code `2` |
 | Unsafe dirty root | housekeeping gate `unsafe-gald3r` / `mixed-dirty` |
 | Pre-reconciliation dirty drift | coordinator detects unrelated changes after parallel work |
 | `[🚨]` items only | all target bugs are requires-user-attention |

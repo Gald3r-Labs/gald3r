@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Retrofit Obsidian/VAULT_OBSIDIAN_STANDARD YAML frontmatter onto vault notes
     that are missing it (T1334). Backup-first, dry-run by default, idempotent.

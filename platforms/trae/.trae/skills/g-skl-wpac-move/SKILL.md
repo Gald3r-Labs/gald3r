@@ -165,27 +165,27 @@ Next: commit changes in both projects to preserve provenance in git history.
 
 ## Common Use Cases
 
-### Subsystem migration to gald3r_mcp
+### Subsystem migration to example_mcp
 
 ```
-Source:  G:/gald3r_ecosystem/gald3r_template_full/.cursor/skills/g-skl-websocket-sync/
-Dest:    gald3r_mcp/.cursor/skills/g-skl-websocket-sync/
+Source:  <ECOSYSTEM_ROOT>/<template_full>/.cursor/skills/g-skl-websocket-sync/
+Dest:    example_mcp/.cursor/skills/g-skl-websocket-sync/
 Reason:  This subsystem requires Docker/MCP infrastructure
 ```
 
 ### Promoting a skill to the canonical template
 
 ```
-Source:  gald3r_dev/.cursor/skills/g-skl-new-thing/
-Dest:    G:/gald3r_ecosystem/gald3r_template_full/.cursor/skills/g-skl-new-thing/
+Source:  <gald3r_source>/.cursor/skills/g-skl-new-thing/
+Dest:    <ECOSYSTEM_ROOT>/<template_full>/.cursor/skills/g-skl-new-thing/
 Reason:  Skill is stable and ready for install-time distribution
 ```
 
 ### Moving vault research notes between projects
 
 ```
-Source:  gald3r_dev/.gald3r/vault/research/topic.md
-Dest:    gald3r_vault/research/topic.md
+Source:  <gald3r_source>/.gald3r/vault/research/topic.md
+Dest:    example_vault/research/topic.md
 Reason:  Consolidating research into the shared vault
 ```
 

@@ -1,4 +1,6 @@
 ---
+name: g-skl-gald3r-component-new
+description: Scaffold a new gald3r .gald3r_sys component (skill, command, rule, agent, or hook) with correct structure and mandatory subsystem tagging.
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 skill_trust_level: core
 ---
@@ -56,7 +58,7 @@ After creating the file:
 
 ### SKILL template
 
-**File path**: `.gald3r_sys/skills/g-skl-<name>/SKILL.md`
+**File path**: `.claude/skills/g-skl-<name>/SKILL.md`
 **Naming**: prefix `g-skl-`, kebab-case slug
 
 ```markdown
@@ -99,7 +101,7 @@ skill_trust_level: core
 
 ### COMMAND template
 
-**File path**: `.gald3r_sys/commands/g-<verb>-<noun>.md`
+**File path**: `.claude/commands/g-<verb>-<noun>.md`
 **Naming**: prefix `g-`, verb before noun, kebab-case
 
 ```markdown
@@ -143,7 +145,7 @@ subsystem_memberships: [GROUP]
 
 ### RULE template
 
-**File path**: `.gald3r_sys/rules/g-rl-<NN>-<slug>.md`
+**File path**: `.claude/rules/g-rl-<NN>-<slug>.md`
 **Naming**: sequential rule number (check highest existing NN + 1), kebab-case slug
 
 ```markdown
@@ -181,7 +183,7 @@ subsystem_memberships: [GROUP]
 - `subsystem_memberships: [GROUP]`
 
 **Conventions**:
-- Rule number must be unique. Run `ls .gald3r_sys/rules/*.md | sort` to find the highest.
+- Rule number must be unique. Run `ls .claude/rules/*.md | sort` to find the highest.
 - Always-applied rules are injected into every AI context — keep them tight (<80 lines ideal).
 - Include an Enforcement Table for common rationalizations.
 
@@ -189,7 +191,7 @@ subsystem_memberships: [GROUP]
 
 ### AGENT template
 
-**File path**: `.gald3r_sys/agents/g-agnt-<name>.md`
+**File path**: `.claude/agents/g-agnt-<name>.md`
 **Naming**: prefix `g-agnt-`, role-descriptive name
 
 ```markdown
@@ -235,7 +237,7 @@ workflow ensuring uniqueness and avoiding overlap with existing agents.
 
 ### HOOK template
 
-**File path**: `.gald3r_sys/hooks/g-hk-<name>.ps1`
+**File path**: `.claude/hooks/g-hk-<name>.ps1`
 **Naming**: prefix `g-hk-`, kebab-case slug
 
 ```powershell
@@ -278,7 +280,7 @@ multi-platform parity automatically.
 Skills, commands, agents, and rules in `.gald3r_sys/` must be synced to IDE targets:
 
 ```powershell
-# From gald3r_templates repo root:
+# From <gald3r_source> repo root:
 pwsh custom_scripts\platform_parity_sync.ps1 -Sync
 ```
 
@@ -293,7 +295,7 @@ pwsh gald3r_template\.gald3r_sys\scripts\aggregate_subsystems.ps1
 ## Installing the git pre-commit enforcement hook (one-time per repo clone)
 
 ```powershell
-# From gald3r_templates repo root:
+# From <gald3r_source> repo root:
 git config core.hooksPath .gald3r_sys/git-hooks
 ```
 

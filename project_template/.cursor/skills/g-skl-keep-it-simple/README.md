@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [AGENT_ORCHESTRATION]
+---
 # g-skl-keep-it-simple — Terse Mode
 
 A user-invoked toggle that silences gald3r's response ceremony for a
@@ -50,7 +53,7 @@ Agent: Terse mode off.
 
 - Code blocks and inline `code`
 - Tables and bullets when the data is genuinely tabular or a list
-- All gald3r safety gates (PCAC, Clean Controller, bug-discovery, etc.)
+- All gald3r safety gates (WPAC, Clean Controller, bug-discovery, etc.)
 - All hook execution
 
 ## What it does NOT do
@@ -82,6 +85,6 @@ whole point — explicit user override, scoped to one session.
 
 ## See also
 
-- Skill: `.cursor/skills/g-skl-keep-it-simple/SKILL.md`
-- Command: `.cursor/commands/g-keep-it-simple.md`
+- Skill: `.claude/skills/g-skl-keep-it-simple/SKILL.md`
+- Command: `.claude/commands/g-keep-it-simple.md`
 - Related: `@g-pers-pick`, `@g-pers-list`

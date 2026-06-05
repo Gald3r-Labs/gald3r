@@ -5,11 +5,11 @@ Maximal workspace swarm autopilot — rolling implement/review until a hard stop
 
 ## Mode: AUTOPILOT (rolling implement → review → next batch)
 
-`g-go-go` is the **explicit** "full throttle" command. It composes existing safe primitives (`g-go --swarm --workspace`, T531 housekeeping gate, T532 workspace mode, T212 rolling swarm pipeline, T206/207/208 swarm reconciliation policies, T170-172 worktree isolation, T495/496 per-root clean gates, marker-only `.gald3r/` invariant, PCAC conflict gates) into one continuous loop. It is **not** an alias for bare `/g-go`. Bare `/g-go` remains controller-only and unchanged.
+`g-go-go` is the **explicit** "full throttle" command. It composes existing safe primitives (`g-go --swarm --workspace`, T531 housekeeping gate, T532 workspace mode, T212 rolling swarm pipeline, T206/207/208 swarm reconciliation policies, T170-172 worktree isolation, T495/496 per-root clean gates, marker-only `.gald3r/` invariant, WPAC conflict gates) into one continuous loop. It is **not** an alias for bare `/g-go`. Bare `/g-go` remains controller-only and unchanged.
 
 > **Independence guarantee**: Each implementation/review cycle uses fresh reviewer subagents with no Phase 1 context. The autopilot loop never lets implementer agents self-verify their own work.
 
-> **Bounded by design**: Autopilot is powerful but bounded. It cannot bypass PCAC conflict gates, clean gates, marker-only member `.gald3r/` protection, task workspace permissions, verification independence, secrets checks, explicit path staging, or non-destructive member rules. Every documented hard stop in the table below cleanly halts the run with an actionable summary.
+> **Bounded by design**: Autopilot is powerful but bounded. It cannot bypass WPAC conflict gates, clean gates, marker-only member `.gald3r/` protection, task workspace permissions, verification independence, secrets checks, explicit path staging, or non-destructive member rules. Every documented hard stop in the table below cleanly halts the run with an actionable summary.
 
 ---
 
@@ -58,11 +58,11 @@ Asking "Continue?" "Which next?" "Looks like X — proceed?" mid-run is a **viol
 | Max parallel implementers | 5 (per swarm hard cap) | `g-go-go --no-code-swarm` to run Phase 1 sequentially (1 coder at a time) |
 | Phase 1 driver | `g-go-code-swarm` (N parallel coders → checkpoint → Phase 2) | `--no-code-swarm` reverts Phase 1 to sequential `g-go-code` |
 | Review independence | one fresh reviewer agent per implementation checkpoint | non-overrideable |
-| Backend dependency | file-first; `gald3r_valhalla` optional | tasks declaring backend dependency in their YAML are deferred when backend down |
+| Backend dependency | file-first; `example_app` optional | tasks declaring backend dependency in their YAML are deferred when backend down |
 | Verification retry ceiling | 3 FAIL cycles → `[🚨]` (T047) | non-overrideable |
 | Auto-merge target | `main` (feature-branches-only model — NO `dev` branch; see `g-rl-02`) | `g-go-go --target-branch <branch>` to merge PASS items to a different branch |
 | Auto-merge behavior | enabled by default after every PASS verdict | `g-go-go --no-auto-merge` to preserve old `[MERGE-BLOCKED]` behavior |
-| Repo scope filter | (none — global scope across all manifest members) | `g-go-go --repos <repo_id>[,<repo_id>...]` to scope autopilot to tasks whose `workspace_repos:` contains at least one of the listed IDs. Skipped tasks (not in scope) are NOT marked failed — they're left for the next run. Budget counter only counts iterations that execute in-scope tasks. Example: `g-go-go --repos gald3r_agent --budget 3` runs only `gald3r_agent` tasks. |
+| Repo scope filter | (none — global scope across all manifest members) | `g-go-go --repos <repo_id>[,<repo_id>...]` to scope autopilot to tasks whose `workspace_repos:` contains at least one of the listed IDs. Skipped tasks (not in scope) are NOT marked failed — they're left for the next run. Budget counter only counts iterations that execute in-scope tasks. Example: `g-go-go --repos example_agent --budget 3` runs only `example_agent` tasks. |
 | Context-aware throttle | **on** (default) | `g-go-go --no-context-aware` to disable throttling and allow full N under all context levels. See "Context-Aware Throttle (BUG-107 Fix Direction #3)" below. |
 
 `g-go-go` accepts the same `$ARGUMENTS` filters as `g-go` (`tasks N,M`, `bugs BUG-NNN`, `subsystem ...`, `bugs-only`, `tasks-only`) plus the autopilot knobs above.
@@ -71,11 +71,11 @@ Asking "Continue?" "Which next?" "Looks like X — proceed?" mid-run is a **viol
 
 When `--repos <repo_id>` is supplied, the autopilot's runnable-queue scan filters to tasks where `workspace_repos:` contains at least one of the requested ids. The 6-condition member-auth check applies normally to each surviving candidate. Non-matching tasks are NOT marked failed — they're silently deferred to a future run.
 
-Multiple repos can be comma-separated: `--repos gald3r_agent,gald3r_throne`. Auto-merge target is `main` (feature-branches-only model — there is no `dev` branch) unless `--target-branch` overrides.
+Multiple repos can be comma-separated: `--repos example_agent,example_desktop`. Auto-merge target is `main` (feature-branches-only model — there is no `dev` branch) unless `--target-branch` overrides.
 
 Budget accounting: the iteration counter (`iter`) only increments when at least one in-scope task is actually attempted (claimed and run through Phase 1/Phase 2). Iterations that find an empty in-scope queue (because all remaining work is out-of-scope or blocked) terminate the run with the standard "no runnable work" hard stop — they do NOT burn budget on no-ops.
 
-`--repos` composes with all other filters: `g-go-go --repos gald3r_agent --controller-only` is a no-op (gald3r_agent tasks are workspace-routed by definition, so the controller-only mode strips them all). Use either `--repos` OR `--controller-only`, not both.
+`--repos` composes with all other filters: `g-go-go --repos example_agent --controller-only` is a no-op (example_agent tasks are workspace-routed by definition, so the controller-only mode strips them all). Use either `--repos` OR `--controller-only`, not both.
 
 ---
 
@@ -143,41 +143,47 @@ The context-aware throttle is the proactive valve; the stop-detection hook is th
 
 ## Task/Bug Inbox Intake (T1573 — First Step Each Iteration)
 
-Before the PCAC gate, before any claim, run the inbox intake to absorb any tasks/bugs
-dropped into the gitignored staging zones during this or a prior run:
+Before the WPAC gate, before any claim, run the inbox intake to absorb any tasks/bugs
+dropped into the gitignored staging zones during this or a prior run. **Prefer the engine
+verb** (it reuses the same ID-assignment, frontmatter, and index regeneration as every other
+gald3r write); fall back to the co-located script only where the engine is unavailable:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File custom_scripts\hot_inbox_intake.ps1 -ProjectRoot . -Quiet
+# Primary — engine op (absorbs the old script; pure Mode-A, no git: the housekeeping commit below stages the result)
+gald3r inbox            # or: python -m gald3r inbox
+
+# Fallback (L0, no engine) — the co-located script, behaviour-identical
+powershell -NoProfile -ExecutionPolicy Bypass -File skills\g-skl-tasks\scripts\hot_inbox_intake.ps1 -ProjectRoot . -Quiet
 ```
 
 If `N > 0` items were ingested: log `"Ingested N task(s) / M bug(s) from inbox"` and continue.
-If inbox is empty: exits 0, no output, no commit — continue immediately.
+If inbox is empty: reports nothing ingested — continue immediately.
 
 > **Why this runs first**: Writing to `TASKS.md` or `BUGS.md` outside the iteration's
 > coordinator staging allowlist triggers the Housekeeping Commit Gate `mixed-dirty`
 > hard-block. The intake script is the sole writer of those index files in its commit,
 > so the gate classifies it as `safe-gald3r-housekeeping` and allows it. Running intake
-> before the PCAC and clean gates ensures the tree is already normalized when those
+> before the WPAC and clean gates ensures the tree is already normalized when those
 > gates run.
 
-> **Tool routing**: invoke through the **PowerShell tool**, not Bash (same reason as PCAC hook below).
+> **Tool routing**: invoke through the **PowerShell tool**, not Bash (same reason as WPAC hook below).
 
 ---
 
-## PCAC Inbox Gate (Before Claiming Work)
+## WPAC Inbox Gate (Before Claiming Work)
 
-Before each loop iteration claims work, run the re-callable PCAC inbox check:
+Before each loop iteration claims work, run the re-callable WPAC inbox check:
 
 ```powershell
-$hook = @( ".cursor\hooks\g-hk-pcac-inbox-check.ps1", ".claude\hooks\g-hk-pcac-inbox-check.ps1", ".agent\hooks\g-hk-pcac-inbox-check.ps1", ".codex\hooks\g-hk-pcac-inbox-check.ps1", ".opencode\hooks\g-hk-pcac-inbox-check.ps1" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+$hook = @( ".cursor\hooks\g-hk-wpac-inbox-check.ps1", ".claude\hooks\g-hk-wpac-inbox-check.ps1", ".agent\hooks\g-hk-wpac-inbox-check.ps1", ".codex\hooks\g-hk-wpac-inbox-check.ps1", ".opencode\hooks\g-hk-wpac-inbox-check.ps1" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 if ($hook) { powershell -NoProfile -ExecutionPolicy Bypass -File $hook -ProjectRoot . -BlockOnConflict }
 ```
 
-> **Tool routing (BUG-031)**: invoke this snippet through the **PowerShell tool**, not Bash. PowerShell-only syntax (`@(...)` array, `Where-Object`, `Test-Path`) routed to Bash produces a parse error such as ``syntax error near unexpected token `('``  — that failure is a tool-selection error, **NOT** a real PCAC conflict gate.
+> **Tool routing (BUG-031)**: invoke this snippet through the **PowerShell tool**, not Bash. PowerShell-only syntax (`@(...)` array, `Where-Object`, `Test-Path`) routed to Bash produces a parse error such as ``syntax error near unexpected token `('``  — that failure is a tool-selection error, **NOT** a real WPAC conflict gate.
 
 If the check reports `INBOX CONFLICT GATE` or exits with code `2`, **HARD STOP**: emit the final summary and exit. Do not claim more work, spawn more agents, or commit.
 
-The autopilot also re-runs the PCAC inbox check at every heartbeat interval and once before each rolling-wave bucket spawn.
+The autopilot also re-runs the WPAC inbox check at every heartbeat interval and once before each rolling-wave bucket spawn.
 
 ---
 
@@ -254,7 +260,7 @@ A selected task may run against a member repository only when ALL of the followi
 1. The member's manifest `repository.id` appears in the task's `workspace_repos:` list.
 2. The task's `workspace_touch_policy` is in the manifest entry's `allowed_write_policy.allowed_touch_policies`.
 3. The manifest entry's `allowed_write_policy.write_allowed` is `true`.
-4. Every dependency, blocker, PCAC inbox, and `[🚨]` check passes for that member root.
+4. Every dependency, blocker, WPAC inbox, and `[🚨]` check passes for that member root.
 5. Per-repo clean check passes (or `-AllowDirty` is documented per-root in the task's `## Status History`).
 6. No member `.gald3r/` control-plane path is targeted (marker-only invariant).
 
@@ -266,7 +272,7 @@ If any check fails for a member, the autopilot defers that task with a per-repo 
 
 ```
 INIT
-  ├─ PCAC inbox gate (HARD STOP on conflict)
+  ├─ WPAC inbox gate (HARD STOP on conflict)
   ├─ Housekeeping preflight at orchestration root
   ├─ Integration-branch detection (T1443 — HARD STOP on excessive divergence; see below)
   ├─ Clean Controller Gate per-root
@@ -358,7 +364,7 @@ The loop never blocks on `[🔍]` dependencies of newly runnable downstream work
 
 | Stop reason | Trigger | Action |
 |-------------|---------|--------|
-| **PCAC conflict** | inbox check exit code `2` | halt before next claim |
+| **WPAC conflict** | inbox check exit code `2` | halt before next claim |
 | **Stale / divergent integration branch** (T1443/BUG-099) | INIT detection finds candidate integration branches diverge beyond `integration_divergence_max_commits`, or the only available target is strictly behind the active source branch | halt; report the ahead/behind counts and the disqualified target; never blindly default to a stale `dev` |
 | **Unsafe dirty orchestration root** | housekeeping gate returns `unsafe-gald3r` / `mixed-dirty` / `conflict` / `drift-detected` | halt; do not stage |
 | **Unsafe dirty member root** for ALL routed work | every selected member root has unrelated dirty paths | halt with per-root listing |
@@ -397,9 +403,9 @@ Heartbeats are append-only to the session output; they do NOT trigger user promp
 
 ## File-First Fallback
 
-`g-go-go` MUST work without `gald3r_valhalla` services. Optional backend failures are surfaced and degraded:
+`g-go-go` MUST work without `example_app` services. Optional backend failures are surfaced and degraded:
 
-- Vault MCP unavailable → file-first vault reads only; tasks that explicitly declare `requires_backend: true` in their YAML are deferred with `Deferred — gald3r_valhalla unavailable` in the summary.
+- Vault MCP unavailable → file-first vault reads only; tasks that explicitly declare `requires_backend: true` in their YAML are deferred with `Deferred — example_app unavailable` in the summary.
 - Memory MCP unavailable → no memory capture/recall; loop continues using local task/bug specs only.
 - Oracle MCP unavailable → tasks routed through Oracle subsystems are deferred.
 - Platform-docs search unavailable → loop falls back to local docs reads.
@@ -426,9 +432,9 @@ Never crash on optional backend failure; deferring affected work and continuing 
 | 2    | 2            | 1         | 2   | 0   | 789abc            | 012def        |
 
 ### Repos touched
-- gald3r_dev: {commits} commits, last {sha}
-- gald3r_template_full: SKIPPED (unrelated dirty: .github/...)
-- gald3r_throne: {commits} commits, last {sha}
+- <gald3r_source>: {commits} commits, last {sha}
+- <template_full>: SKIPPED (unrelated dirty: .github/...)
+- example_desktop: {commits} commits, last {sha}
 
 ### Failed / blocked items
 - Task {id}: FAIL — {reason}; ≥3 cycles → marked [🚨]
@@ -444,7 +450,7 @@ Never crash on optional backend failure; deferring affected work and continuing 
 ### Next safe command
 @g-go-go --budget 5    # if you want another short run
 @g-go tasks {failed_ids}    # to retry specific failures
-@g-pcac-read    # if a PCAC conflict halted the run
+@g-wpac-read    # if a WPAC conflict halted the run
 
 ### Push offer (final summary only)
 This summary is the ONE place to offer a push. Do NOT offer push between iterations, between task commits, or at partial-run checkpoints — it interrupts the loop. The single end-of-run offer:
@@ -471,14 +477,14 @@ Want me to push now?
 | **TASKS.md dual-format scan (MANDATORY)** — TASKS.md contains tasks in two formats that MUST both be scanned: (1) bullet-list `- [STATUS] **Task NNN**:...` and (2) markdown-table `\| [STATUS] \| [NNN](path) \| title \| type \| deps \|`. A grep that only matches the bullet format silently drops the entire table backlog. Before declaring "no runnable work", verify both patterns were searched. Missing table-format tasks and claiming the queue is empty is a spec violation equivalent to a complexity-aversion stop. | Queue completeness — prevents silent task starvation |
 | **Dependency resolution includes archive (MANDATORY)** — when checking condition 4 (all dependencies resolved), if a dependency task file is NOT found in `.gald3r/tasks/task{id}_*.md`, ALSO check `.gald3r/archive/tasks/*/task{id}_*.md`. A task found in the archive with `status: completed` (or `status: verified`) counts as a fully satisfied dependency. Never treat a missing-in-active-tasks dependency as unresolved without first checking the archive. Marking a task as blocked because a dep "file not found" when that dep lives in the archive is a spec violation equivalent to a complexity-aversion stop. | Prevents archived completed deps from silently blocking downstream chains |
 | **Controller-only fallback** — when all workspace member repos block, retry `source_only`/`docs_only` tasks before stopping | Never stop while controller-only work remains |
-| **`--repos` filter (T1152)** — when `--repos <ids>` is supplied, runnable-queue scan filters to tasks whose `workspace_repos:` intersects the requested ids; out-of-scope tasks are silently deferred (NOT marked failed); budget counter only increments on iterations that execute in-scope tasks; controller-only fallback is disabled while `--repos` is active | Lets the autopilot be scoped to one or more member repos (e.g. `--repos gald3r_agent`) without burning the budget on unrelated tasks; preserves the deferred-task safety of pre-T1152 behavior |
+| **`--repos` filter (T1152)** — when `--repos <ids>` is supplied, runnable-queue scan filters to tasks whose `workspace_repos:` intersects the requested ids; out-of-scope tasks are silently deferred (NOT marked failed); budget counter only increments on iterations that execute in-scope tasks; controller-only fallback is disabled while `--repos` is active | Lets the autopilot be scoped to one or more member repos (e.g. `--repos example_agent`) without burning the budget on unrelated tasks; preserves the deferred-task safety of pre-T1152 behavior |
 | **Auto-merge member repo branches on PASS (MANDATORY)** -- after the review-result commit for each PASS item, run `gald3r_worktree.ps1 -Action MergeToMain -RepoPath <member_path> -TaskId {id} -TargetBranch main -Apply` in dependency order (lowest ID first); default target is `main` (feature-branches-only model — NO `dev` branch, see `g-rl-02`); override with `--target-branch <branch>` for a custom target; on success the helper FF-merges the feature branch into `main` (or override target) and deletes both code + review branches and worktree folders; log `[AUTO-MERGED→main]` in session summary; on merge-blocked (conflict), missing target branch, or member-dirty: preserve branch, log `[MERGE-BLOCKED]` / `[MERGE-SKIPPED-DIRTY]` as human action item (fallback, not default); pass `--no-auto-merge` to skip entirely and use old `[MERGE-BLOCKED]` behavior; never run auto-merge for FAIL items | Eliminates manual branch merge ceremony after every autopilot run — feature branches merge straight to `main` |
 | Autopilot composes existing safe primitives — never bypasses any gate | One command, same safety contract |
 | Implementation agents NEVER self-verify their own work | Adversarial independence preserved across all loop iterations |
 | Hard stops emit final summaries and exit cleanly | Stops are not failures; they are the safety boundary |
 | Run budget bounds the loop | Prevents runaway autonomous runs |
 | Heartbeats are output-only — never prompt the user | Fire-and-forget design |
-| File-first fallback when optional backends are down | `gald3r_valhalla` is optional, not required |
+| File-first fallback when optional backends are down | `example_app` is optional, not required |
 | Per-repo commits only — no cross-repo single commits | Each manifest member is an independent git root |
 | Marker-only `.gald3r/` invariant is absolute | Member control-plane writes are forbidden, period |
 | `[🚨]` items are NEVER auto-retried | Human-only resolution by policy (T047) |
@@ -504,8 +510,8 @@ Want me to push now?
 @g-go-go --target-branch main           # default: PASS items merge to main (feature-branches-only model)
 @g-go-go --no-auto-merge                # disable auto-merge; reviewer leaves [MERGE-BLOCKED] for human
 @g-go-go --target-branch staging        # merge to a custom branch instead of main
-@g-go-go --repos gald3r_agent --budget 3   # scope autopilot to gald3r_agent tasks only
-@g-go-go --repos gald3r_agent,gald3r_throne # scope autopilot to two specific member repos
+@g-go-go --repos example_agent --budget 3   # scope autopilot to example_agent tasks only
+@g-go-go --repos example_agent,example_desktop # scope autopilot to two specific member repos
 @g-go-go --no-context-aware              # disable context-aware throttle (full N at all context levels)
 @g-go-go --no-context-aware --budget 3  # short burst: max parallelism, no throttle
 @g-go-go --no-code-swarm                 # Phase 1 sequential coding (1 task at a time); Phase 2 review swarm unchanged

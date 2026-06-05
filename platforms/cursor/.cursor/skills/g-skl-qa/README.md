@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [BUG_AND_QUALITY]
+---
 # g-skl-qa
 **Skill file**: `SKILL.md`
 

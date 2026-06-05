@@ -1,9 +1,9 @@
-# setup_gald3r_project.ps1 — gald3r Installer
+# setup_gald3r_project.ps1 - gald3r Installer
 # =============================================
 # Installs gald3r into a target project.
 #
 # Default (no -Platform):
-#   Installs Cursor + Claude Code — copies project_template/ as-is.
+#   Installs Cursor + Claude Code - copies project_template/ as-is.
 #
 # -Platform <name>:
 #   Installs a specific platform. Copies project_template/ (shared brain,
@@ -21,18 +21,19 @@ param(
     [string]$TargetPath = "",
     [string]$Platform   = "",
     [switch]$Force,
-    [switch]$DryRun
+    [switch]$DryRun,
+    [switch]$NoEngine    # skip provisioning the bundled gald3r engine (uv); skills then use SKILL.full.md
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-# ── Repo identity ──────────────────────────────────────────────────────────────
-# gald3r:            $RequirePlatform = $false  → default = Cursor + Claude Code
-# gald3r_template_adv: $RequirePlatform = $true → must pick a platform
+# -- Repo identity --------------------------------------------------------------
+# gald3r:            $RequirePlatform = $false  -> default = Cursor + Claude Code
+# <template_adv>: $RequirePlatform = $true -> must pick a platform
 $RequirePlatform = $false
 
-# ── Resolve paths ──────────────────────────────────────────────────────────────
+# -- Resolve paths --------------------------------------------------------------
 $scriptDir    = Split-Path -Parent $MyInvocation.MyCommand.Path
 $templateDir  = Join-Path $scriptDir "project_template"
 $platformsDir = Join-Path $scriptDir "platforms"
@@ -46,13 +47,13 @@ $availablePlatforms = if (Test-Path $platformsDir) {
     Get-ChildItem $platformsDir -Directory | Select-Object -ExpandProperty Name | Sort-Object
 } else { @() }
 
-# ── Validate / prompt for platform ────────────────────────────────────────────
+# -- Validate / prompt for platform --------------------------------------------
 $Platform = $Platform.Trim().ToLower()
 
 if ($RequirePlatform -and -not $Platform) {
     Write-Host ""
     Write-Host "  gald3r Installer" -ForegroundColor Cyan
-    Write-Host "  ─────────────────────────────────────────" -ForegroundColor DarkGray
+    Write-Host "  -----------------------------------------" -ForegroundColor DarkGray
     Write-Host "  Available platforms:"
     $availablePlatforms | ForEach-Object { Write-Host "    * $_" -ForegroundColor DarkGray }
     Write-Host ""
@@ -65,11 +66,11 @@ if ($Platform -and $availablePlatforms -and $availablePlatforms -notcontains $Pl
     exit 1
 }
 
-# ── Prompt for target path ─────────────────────────────────────────────────────
+# -- Prompt for target path -----------------------------------------------------
 if (-not $TargetPath) {
     Write-Host ""
     Write-Host "  gald3r Installer" -ForegroundColor Cyan
-    Write-Host "  ─────────────────────────────────────────" -ForegroundColor DarkGray
+    Write-Host "  -----------------------------------------" -ForegroundColor DarkGray
     if (-not $Platform) {
         Write-Host "  Default: Cursor + Claude Code. Use -Platform <name> to install one platform."
         if ($availablePlatforms) {
@@ -84,7 +85,7 @@ if (-not $TargetPath) {
 
 $TargetPath = $TargetPath.TrimEnd('\').TrimEnd('/')
 
-# ── Create target if missing ───────────────────────────────────────────────────
+# -- Create target if missing ---------------------------------------------------
 if (-not (Test-Path $TargetPath)) {
     if (-not $Force) {
         $yn = Read-Host "  '$TargetPath' does not exist. Create it? (y/N)"
@@ -94,7 +95,7 @@ if (-not (Test-Path $TargetPath)) {
     Write-Host "  Created: $TargetPath" -ForegroundColor Green
 }
 
-# ── Warn on existing .gald3r/ ────────────────────────────────────────────────
+# -- Warn on existing .gald3r/ ------------------------------------------------
 if ((Test-Path (Join-Path $TargetPath ".gald3r")) -and -not $Force -and -not $DryRun) {
     Write-Host ""
     Write-Host "  WARNING: .gald3r/ already exists. Tasks/bugs/plans will NOT be overwritten." -ForegroundColor Yellow
@@ -102,7 +103,7 @@ if ((Test-Path (Join-Path $TargetPath ".gald3r")) -and -not $Force -and -not $Dr
     if ($yn -notmatch '^[Yy]') { Write-Host "Aborted."; exit 0 }
 }
 
-# ── Copy-Layer helper ─────────────────────────────────────────────────────────
+# -- Copy-Layer helper ---------------------------------------------------------
 # Copies all files from $SourceDir into $TargetDir.
 # $SkipTopDirs : top-level dirs to exclude entirely (e.g. skip .cursor when installing windsurf)
 # $Protected   : top-level dirs that exist in target and should never be overwritten
@@ -132,9 +133,9 @@ function Copy-Layer {
 
 $protected = @(".gald3r")
 
-# ── Determine what to install ─────────────────────────────────────────────────
+# -- Determine what to install -------------------------------------------------
 # In gald3r: .cursor/ and .claude/ live inside project_template/ (Tier 1 = no overlay needed)
-# In gald3r_template_adv: project_template/ has NO platform dirs — overlay always required
+# In <template_adv>: project_template/ has NO platform dirs - overlay always required
 $tier1 = if (-not $RequirePlatform) { @("cursor", "claude") } else { @() }
 $isTier1 = (-not $Platform) -or ($Platform -in $tier1)
 
@@ -175,12 +176,32 @@ if ($Platform -and $Platform -notin $tier1 -and (Test-Path $platformsDir)) {
     }
 }
 
-# ── Summary ───────────────────────────────────────────────────────────────────
+# -- Summary -------------------------------------------------------------------
 Write-Host ""
 if ($DryRun) {
     Write-Host "  Dry run -- would copy $total files." -ForegroundColor Yellow
 } else {
     Write-Host "  Done. $total files installed." -ForegroundColor Green
+
+    # -- Provision the bundled gald3r engine (uv) ------------------------------
+    # Makes the slimmed skills' preferred path (`gald3r <verb>`) work out of the box.
+    # Fully optional: -NoEngine skips it, and any failure is non-fatal because every
+    # slimmed skill ships a SKILL.full.md fallback that works without the engine.
+    if (-not $NoEngine) {
+        $provPs1 = Join-Path $TargetPath ".gald3r_sys/engine/provision_engine.ps1"
+        if (Test-Path $provPs1) {
+            Write-Host ""
+            Write-Host "  Provisioning the bundled gald3r engine (uv)..." -ForegroundColor Cyan
+            try { & $provPs1 } catch {
+                Write-Host "  Engine bootstrap skipped: $($_.Exception.Message)" -ForegroundColor Yellow
+                Write-Host "  (Skills still work via their SKILL.full.md fallback.)" -ForegroundColor DarkGray
+            }
+        }
+    } else {
+        Write-Host "  Engine provisioning skipped (-NoEngine). Skills use their SKILL.full.md fallback;" -ForegroundColor DarkGray
+        Write-Host "  provision later with: pwsh .gald3r_sys/engine/provision_engine.ps1" -ForegroundColor DarkGray
+    }
+
     Write-Host ""
     Write-Host "  Next steps:" -ForegroundColor Cyan
     if (-not $Platform -or $Platform -eq "cursor") {
@@ -192,6 +213,9 @@ if ($DryRun) {
     if ($Platform -and $Platform -notin $tier1) {
         Write-Host "   $Platform : open project in $Platform -- .gald3r/ brain and AGENTS.md are ready"
     }
+    Write-Host ""
+    Write-Host "   Engine     : slimmed skills call the bundled engine at .gald3r_sys/engine/" -ForegroundColor DarkGray
+    Write-Host "                (re/provision anytime: pwsh .gald3r_sys/engine/provision_engine.ps1)" -ForegroundColor DarkGray
     Write-Host ""
     Write-Host "  Docs: https://github.com/wrm3/gald3r" -ForegroundColor DarkGray
 }

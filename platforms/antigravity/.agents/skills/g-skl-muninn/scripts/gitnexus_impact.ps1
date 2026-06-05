@@ -1,13 +1,13 @@
-<#
+﻿<#
 .SYNOPSIS
-    [DEPRECATED — T1158] Use `.gald3r_sys/skills/g-skl-muninn/scripts/graph_impact.ps1` instead.
+    [DEPRECATED — T1158] Use `.claude/skills/g-skl-muninn/scripts/graph_impact.ps1` instead.
     Cross-file impact analysis for gald3r projects (T921).
     Returns a list of files that import, call, or reference the target file/symbol.
 
 .DESCRIPTION
     ⚠️ DEPRECATED (T1158): This script wrapped GitNexus, which has been
     replaced by the gald3r_muninn clean-room rewrite (parent epic T1147,
-    plugin T1157). Use `.gald3r_sys/skills/g-skl-muninn/scripts/graph_impact.ps1` for all new work — it
+    plugin T1157). Use `.claude/skills/g-skl-muninn/scripts/graph_impact.ps1` for all new work — it
     wraps the muninn `graph_impact` MCP tool and falls back to ripgrep
     automatically.
 
@@ -69,11 +69,11 @@ param(
 
 $ErrorActionPreference = "Continue"
 
-# DEPRECATION NOTICE — T1158. Forward to .gald3r_sys/skills/g-skl-muninn/scripts/graph_impact.ps1 when
+# DEPRECATION NOTICE — T1158. Forward to .claude/skills/g-skl-muninn/scripts/graph_impact.ps1 when
 # available so existing callers keep working during the migration window.
 $replacement = Join-Path $PSScriptRoot "graph_impact.ps1"
 if (Test-Path $replacement) {
-    Write-Warning "[DEPRECATED] .gald3r_sys/skills/g-skl-muninn/scripts/gitnexus_impact.ps1 is deprecated (T1158). Forwarding to .gald3r_sys/skills/g-skl-muninn/scripts/graph_impact.ps1."
+    Write-Warning "[DEPRECATED] .claude/skills/g-skl-muninn/scripts/gitnexus_impact.ps1 is deprecated (T1158). Forwarding to .claude/skills/g-skl-muninn/scripts/graph_impact.ps1."
     # Forward original parameters verbatim. Note: -Backend gitnexus is no
     # longer meaningful; the new script accepts 'muninn' | 'mcp' | 'ripgrep'
     # | 'auto'. Map the closest equivalent and let the new script decide.

@@ -1,4 +1,7 @@
-﻿# g-skl-wpac-adopt
+﻿---
+subsystem_memberships: [WORKSPACE_COORDINATION]
+---
+# g-skl-wpac-adopt
 **Skill file**: `SKILL.md`
 
 > Human-facing companion to `SKILL.md`. The LLM agent reads `SKILL.md`; this page is for developers browsing the skill library.

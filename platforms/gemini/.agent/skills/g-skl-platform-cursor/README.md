@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [PLATFORM_INTEGRATION]
+---
 # g-skl-platform-cursor
 **Skill file**: `SKILL.md`
 

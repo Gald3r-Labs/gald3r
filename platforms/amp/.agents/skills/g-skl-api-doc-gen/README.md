@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [BUG_AND_QUALITY, PLATFORM_INTEGRATION]
+---
+
 # g-skl-api-doc-gen
 **Skill file**: `SKILL.md`
 

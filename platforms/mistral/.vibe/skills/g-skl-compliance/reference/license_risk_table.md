@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [SECURITY_AND_COMPLIANCE]
+---
 # License Risk Table — g-skl-compliance
 
 Canonical license → risk tier mapping for gald3r compliance scanning.

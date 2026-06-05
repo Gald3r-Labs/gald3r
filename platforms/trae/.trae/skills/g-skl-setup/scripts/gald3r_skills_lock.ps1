@@ -1,10 +1,9 @@
-<#
+﻿<#
 .SYNOPSIS
-    Read/write/verify gald3r-skills-lock.json (T1043 / IDEA-HARVEST-136).
+    Read/write/verify gald3r-skills-lock.json (T1043).
 
 .DESCRIPTION
-    Lock-file management for installed gald3r projects. Mirrors the caveman
-    skills-lock.json pattern. Operations:
+    Lock-file management for installed gald3r projects. Manages a per-project skills-lock.json. Operations:
 
       WRITE   — scan installed platform skill copies, compute SHA-256 hashes,
                 write gald3r-skills-lock.json.
@@ -39,7 +38,7 @@
     Installed project root. Default: current directory.
 
 .PARAMETER SourceRoot
-    Canonical gald3r source (for UPGRADE). Default: gald3r_dev parent of this script.
+    Canonical gald3r source (for UPGRADE). Default: <gald3r_source> parent of this script.
 
 .PARAMETER LockFile
     Lock file relative path (default: gald3r-skills-lock.json at project root).

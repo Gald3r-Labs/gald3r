@@ -26,10 +26,10 @@
 
 .EXAMPLE
     # Dry-run: show which release files would be created
-    .\backfill_release_files.ps1 -ProjectRoot "G:\MyProject"
+    .\backfill_release_files.ps1 -ProjectRoot "<project-root>"
 
     # Apply: create the missing release files
-    .\backfill_release_files.ps1 -ProjectRoot "G:\MyProject" -Apply
+    .\backfill_release_files.ps1 -ProjectRoot "<project-root>" -Apply
 
 .NOTES
     Task: T1438  Bug: BUG-104

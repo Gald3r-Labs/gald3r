@@ -7,7 +7,6 @@ subsystem_memberships: [PLATFORM_INTEGRATION]
 
 # g-skl-cli-jcode — jcode Rust Coding Agent
 
-Reference: [github.com/1jehuang/jcode](https://github.com/1jehuang/jcode) | 4,827 ⭐ | MIT | Rust
 
 ## What is jcode?
 
@@ -252,4 +251,3 @@ done
 Once `@g-recon-docs` is run for `jcode`, full docs will be at:
 `{vault_location}/research/platforms/jcode/`
 
-Source: `github.com/1jehuang/jcode` — ingested via IDEA-HARVEST-001.

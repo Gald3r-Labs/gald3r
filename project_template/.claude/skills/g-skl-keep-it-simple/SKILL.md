@@ -64,11 +64,11 @@ work in terse mode for all subsequent turns in the current session.
 6. **Aim for ≤5 sentences per textual answer** unless the answer is
    primarily a code block, command, or table.
 7. **Tool calls still happen.** Terse mode affects output presentation,
-   not internal tool use. Hooks, PCAC checks, and gald3r system gates
+   not internal tool use. Hooks, WPAC checks, and gald3r system gates
    continue to fire as normal.
 8. **All gald3r safety gates still fire.** Bug-discovery gate, todo-
    completion gate, code-change-requires-task gate, member-marker
-   invariant, PCAC inbox gate, Clean Controller Gate, etc. remain in
+   invariant, WPAC inbox gate, Clean Controller Gate, etc. remain in
    force. Terse mode reduces ceremony, not safety.
 
 ## Deactivation
@@ -95,7 +95,7 @@ The personality pack rule (`silicon_valley_personality.md` /
 normally fires on every response. `g-skl-keep-it-simple` is an explicit
 user override on top of that rule. The precedence order is:
 
-1. Hard safety gates (PCAC conflict, Clean Controller Gate, secrets
+1. Hard safety gates (WPAC conflict, Clean Controller Gate, secrets
    detection) — never suppressed.
 2. `g-skl-keep-it-simple` activation — suppresses presentation rules.
 3. Personality pack — applies when (2) is not active.

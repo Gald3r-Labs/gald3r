@@ -1,4 +1,4 @@
-# run_compliance_scan.ps1 — g-skl-compliance PowerShell helper
+﻿# run_compliance_scan.ps1 — g-skl-compliance PowerShell helper
 # Called by @g-compliance-scan and @g-compliance-gate hook.
 #
 # TODO[TASK-906→TASK-<follow-up>]: Replace stub with full ORT/FOSSA/Snyk/PMD pipeline.

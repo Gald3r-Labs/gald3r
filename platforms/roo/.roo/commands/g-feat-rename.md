@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [RELEASE_AND_VERSIONING]
 ---
 Rename a feature slug and title. Activates **g-skl-features** → RENAME operation.

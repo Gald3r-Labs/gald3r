@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [TASK_MANAGEMENT]
 ---
 > **Deprecated**: Use `@g-task-add` instead. This alias is kept for backward compatibility.

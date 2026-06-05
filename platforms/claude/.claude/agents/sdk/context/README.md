@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [AGENT_ORCHESTRATION]
+---
+
 # Context Storage and Persistence System
 
 **Part of Task 052: Anthropic Agent SDK Integration**
@@ -543,6 +547,3 @@ See inline documentation in source files:
 
 ---
 
-**Author**: Database Expert Agent
-**Task**: 052 - Anthropic Agent SDK Integration
-**Date**: 2025-11-01

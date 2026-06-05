@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-status
 description: Show project status — session context, active tasks, phase progress, goals, ideas.
 token_budget: low
@@ -76,10 +76,10 @@ Only when PCAC is active, call `g-hk-pcac-inbox-check.ps1 -BlockOnConflict` when
    Suggested compact output:
 
    ```text
-   Workspace-Control: gald3r_dev Workspace-Control Bootstrap (active_bootstrap)
+   Workspace-Control: <gald3r_source> Workspace-Control Bootstrap (active_bootstrap)
    Manifest: .gald3r/linking/workspace_manifest.yaml
-   Owner: gald3r_dev | Controlled members: 3
-   Members: gald3r_template_slim (planned_clean_member, path missing, writes blocked), gald3r_template_full (...), gald3r_template_adv (...)
+   Owner: <gald3r_source> | Controlled members: 3
+   Members: <template_slim> (planned_clean_member, path missing, writes blocked), <template_full> (...), <template_adv> (...)
    Routing: valid policies docs_only, generated_output, source_only, multi_repo
    Current work scope: task/bug workspace_repos=<ids or current repo only>; workspace_touch_policy=<policy or default current-repo>
    Boundary: report-only; Task 177 defers backend, UI, Docker/Kubernetes/MCP, Valhalla, and Yggdrasil systems.
@@ -88,7 +88,7 @@ Only when PCAC is active, call `g-hk-pcac-inbox-check.ps1 -BlockOnConflict` when
    When member paths exist, report git cleanliness per member repo, not from the control repo:
 
    ```text
-   Git: gald3r_template_full clean | gald3r_template_adv dirty (2 files) | gald3r_template_slim missing
+   Git: <template_full> clean | <template_adv> dirty (2 files) | <template_slim> missing
    ```
 
    If the active task or bug has `workspace_repos` / `workspace_touch_policy`, show it in one line near active work. Omitted metadata means current repository only.

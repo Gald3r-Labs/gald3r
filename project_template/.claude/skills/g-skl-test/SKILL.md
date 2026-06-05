@@ -20,7 +20,7 @@ subsystem_memberships: [BUG_AND_QUALITY]
 | L1 | **Fast** | Every PR / code review / verification gate | Unit tests, smoke tests, happy-path | < 5 min |
 | L2 | **Comprehensive** | Feature completion, sprint closure | Integration, edge cases, error paths | < 30 min |
 | L3 | **Regression** | Before any release / version bump | Full suite, previous bug scenarios, cross-subsystem | Unrestricted |
-L1/L2/L3 are **code-test** levels (they run test files via `custom_scripts/tests/run_l1_tests.ps1`,
+L1/L2/L3 are **code-test** levels (they run test files via `scripts/tests/run_l1_tests.ps1`,
 T1532). **L0 / FUNCTIONAL** is a distinct **system-health** tier (T1540): it does not run code unit
 tests but exercises each gald3r *system* (Task Management, Bug Tracking, Platform Parity, Hook Wiring,
 Schema, Constraints, Subsystems, Skills, WPAC, Release, Encoding, ...) and emits a per-system
@@ -127,25 +127,27 @@ TEST PLAN AUDIT:
 ### FUNCTIONAL (L0) — gald3r systems health harness (T1540)
 
 **Called for an install health check, a pre-release quality stamp, or a CI gate.**
-Distinct from L1/L2/L3 code tests: this runs `custom_scripts/gald3r_system_test.ps1`, which
-exercises each gald3r *system* and produces a per-system PASS/PARTIAL/FAIL plus an overall
-functionality percentage.
+Distinct from L1/L2/L3 code tests: this exercises each gald3r *system* and produces a
+per-system PASS/PARTIAL/FAIL plus an overall functionality percentage. **Prefer the engine
+command** `gald3r doctor` (pure, read-only — it recomputes index integrity without mutating
+state); fall back to the co-located script only where the engine is unavailable.
 
 **Run:**
 
 ```powershell
-# Full run against the current install (writes .gald3r/reports/system_test_YYYYMMDD_HHMMSS.md)
-pwsh -NoProfile -ExecutionPolicy Bypass -File custom_scripts/gald3r_system_test.ps1
+# Primary — engine health check (read-only)
+gald3r doctor                       # full run, human table
+gald3r doctor --fail-below 80       # CI gate: exit 1 when overall score < 80
+gald3r --json doctor                # machine-readable summary for dashboards / handoff
+gald3r doctor --only tasks,bugs     # subset of system groups
 
-# CI gate: exit non-zero when overall score < 80%
-pwsh -NoProfile -ExecutionPolicy Bypass -File custom_scripts/gald3r_system_test.ps1 -ProjectRoot . -FailBelow 80
-
-# Machine-readable summary for dashboards / agent handoff
-pwsh -NoProfile -ExecutionPolicy Bypass -File custom_scripts/gald3r_system_test.ps1 -Json
-
-# Subset of systems
-pwsh -NoProfile -ExecutionPolicy Bypass -File custom_scripts/gald3r_system_test.ps1 -Systems "task,bug,hooks,git_hooks,schema"
+# Fallback (L0, no engine) — the co-located script (also writes a markdown report under .gald3r/reports/)
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/gald3r_system_test.ps1 -ProjectRoot . -FailBelow 80
 ```
+
+> The engine `doctor` covers the deterministic, read-only checks (structure + per-system
+> phantom/orphan integrity + skills). The git-hook / subprocess-parity / encoding checks live
+> only in the fallback script (they are impure and intentionally out of the Mode-A engine).
 
 **Systems under test (13):** task, bug, platform_spec, parity, hooks, git_hooks, schema,
 constraints, subsystems, skills, wpac, release, encoding. Skipped systems (e.g. WPAC on a
@@ -214,5 +216,5 @@ VERIFICATION GATE:
 - **g-skl-review / g-skl-code-review**: call AUDIT at end of review pass
 - **g-skl-tasks → `[🔍]` gate**: call VERIFICATION-GATE before marking awaiting-verification
 - **Release process**: call RELEASE-GATE before any version bump; also run FUNCTIONAL (L0) for the system-health stamp in release notes
-- **CI / pre-release**: wire `custom_scripts/gald3r_system_test.ps1 -FailBelow <N>` as a gate (see FUNCTIONAL above)
+- **CI / pre-release**: wire `scripts/gald3r_system_test.ps1 -FailBelow <N>` as a gate (see FUNCTIONAL above)
 - **g-agnt-test**: autonomous agent that runs this skill's operations on schedule or trigger

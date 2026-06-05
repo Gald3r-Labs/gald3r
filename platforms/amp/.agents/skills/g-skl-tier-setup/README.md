@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [PROJECT_IDENTITY_SETUP]
+---
 # g-skl-tier-setup
 **Skill file**: `SKILL.md`
 

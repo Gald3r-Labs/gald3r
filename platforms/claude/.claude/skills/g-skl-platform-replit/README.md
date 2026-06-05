@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [PLATFORM_INTEGRATION]
+---
 # g-skl-platform-replit
 **Skill file**: `SKILL.md`
 

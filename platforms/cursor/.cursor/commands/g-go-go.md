@@ -55,14 +55,15 @@ Asking "Continue?" "Which next?" "Looks like X — proceed?" mid-run is a **viol
 | Mode | `--swarm --workspace` (T532 expands to manifest-declared repos) | `g-go-go --controller-only` to skip workspace expansion |
 | Heartbeat interval | 30 minutes wall-clock | `g-go-go --heartbeat 15m` |
 | Run budget (max iterations) | 12 implementation/review cycles | `g-go-go --budget 5` or `--budget 25` |
-| Max parallel implementers | 5 (per swarm hard cap) | inherited from `g-go --swarm` |
+| Max parallel implementers | 5 (per swarm hard cap) | `g-go-go --no-code-swarm` to run Phase 1 sequentially (1 coder at a time) |
+| Phase 1 driver | `g-go-code-swarm` (N parallel coders → checkpoint → Phase 2) | `--no-code-swarm` reverts Phase 1 to sequential `g-go-code` |
 | Review independence | one fresh reviewer agent per implementation checkpoint | non-overrideable |
-| Backend dependency | file-first; `gald3r_valhalla` optional | tasks declaring backend dependency in their YAML are deferred when backend down |
+| Backend dependency | file-first; `example_app` optional | tasks declaring backend dependency in their YAML are deferred when backend down |
 | Verification retry ceiling | 3 FAIL cycles → `[🚨]` (T047) | non-overrideable |
-| Auto-merge target | `dev` (B+C pattern — Bot handles dev, Contributor controls main) | `g-go-go --target-branch main` to ship PASS items directly to main |
+| Auto-merge target | `main` (feature-branches-only model — NO `dev` branch; see `g-rl-02`) | `g-go-go --target-branch <branch>` to merge PASS items to a different branch |
 | Auto-merge behavior | enabled by default after every PASS verdict | `g-go-go --no-auto-merge` to preserve old `[MERGE-BLOCKED]` behavior |
-| Repo scope filter | (none — global scope across all manifest members) | `g-go-go --repos <repo_id>[,<repo_id>...]` to scope autopilot to tasks whose `workspace_repos:` contains at least one of the listed IDs. Skipped tasks (not in scope) are NOT marked failed — they're left for the next run. Budget counter only counts iterations that execute in-scope tasks. Example: `g-go-go --repos gald3r_agent --budget 3` runs only `gald3r_agent` tasks. |
-| Context-aware throttle | off | `g-go-go --context-aware` proactively REDUCES the bucket count N under context pressure (instead of stopping). See "Context-Aware Throttle (BUG-107 Fix Direction #3)" below. |
+| Repo scope filter | (none — global scope across all manifest members) | `g-go-go --repos <repo_id>[,<repo_id>...]` to scope autopilot to tasks whose `workspace_repos:` contains at least one of the listed IDs. Skipped tasks (not in scope) are NOT marked failed — they're left for the next run. Budget counter only counts iterations that execute in-scope tasks. Example: `g-go-go --repos example_agent --budget 3` runs only `example_agent` tasks. |
+| Context-aware throttle | **on** (default) | `g-go-go --no-context-aware` to disable throttling and allow full N under all context levels. See "Context-Aware Throttle (BUG-107 Fix Direction #3)" below. |
 
 `g-go-go` accepts the same `$ARGUMENTS` filters as `g-go` (`tasks N,M`, `bugs BUG-NNN`, `subsystem ...`, `bugs-only`, `tasks-only`) plus the autopilot knobs above.
 
@@ -70,11 +71,11 @@ Asking "Continue?" "Which next?" "Looks like X — proceed?" mid-run is a **viol
 
 When `--repos <repo_id>` is supplied, the autopilot's runnable-queue scan filters to tasks where `workspace_repos:` contains at least one of the requested ids. The 6-condition member-auth check applies normally to each surviving candidate. Non-matching tasks are NOT marked failed — they're silently deferred to a future run.
 
-Multiple repos can be comma-separated: `--repos gald3r_agent,gald3r_throne`. Auto-merge target remains `dev` per the B+C pattern unless `--target-branch` overrides.
+Multiple repos can be comma-separated: `--repos example_agent,example_desktop`. Auto-merge target is `main` (feature-branches-only model — there is no `dev` branch) unless `--target-branch` overrides.
 
 Budget accounting: the iteration counter (`iter`) only increments when at least one in-scope task is actually attempted (claimed and run through Phase 1/Phase 2). Iterations that find an empty in-scope queue (because all remaining work is out-of-scope or blocked) terminate the run with the standard "no runnable work" hard stop — they do NOT burn budget on no-ops.
 
-`--repos` composes with all other filters: `g-go-go --repos gald3r_agent --controller-only` is a no-op (gald3r_agent tasks are workspace-routed by definition, so the controller-only mode strips them all). Use either `--repos` OR `--controller-only`, not both.
+`--repos` composes with all other filters: `g-go-go --repos example_agent --controller-only` is a no-op (example_agent tasks are workspace-routed by definition, so the controller-only mode strips them all). Use either `--repos` OR `--controller-only`, not both.
 
 ---
 
@@ -90,7 +91,8 @@ The autopilot maintains a single run-state marker that the stop hook reads. The 
    ```json
    { "active": true, "iter": 0, "budget_remaining": 12,
      "authorized_hard_stop": "", "reinvoke_count": 0,
-     "updated_at": "<iso-8601>" }
+     "updated_at": "<iso-8601>",
+     "completed_iterations": [] }
    ```
 2. **Each iteration** — refresh `iter` and `budget_remaining` (the hook reads the latest values to bound re-invokes).
 3. **On a genuine hard stop** — BEFORE emitting the final summary, write the exact hard-stop table row verbatim into `authorized_hard_stop`. This is the ONLY way to legitimately end the run. A blank `authorized_hard_stop` means "the loop has no authorized reason to stop".
@@ -113,18 +115,21 @@ Re-invokes are capped at `min(budget_remaining, 25)`. A genuine hard stop and bu
 
 ## Context-Aware Throttle (BUG-107 Fix Direction #3)
 
-`g-go-go --context-aware` gives the loop a graceful pressure-relief valve: instead of stopping when context is tight, **reduce N (the parallel bucket / implementer count)** so the run continues with less parallelism. Trading parallelism for continuation is always preferred over halting.
+Context-aware throttling is **ON by default**. Every `g-go-go` run applies a deterministic N-reduction based on context usage — instead of stopping when context is tight, the loop **reduces N (the parallel bucket / implementer count)** so the run continues with less parallelism. Trading parallelism for continuation is always preferred over halting.
 
+Use `--no-context-aware` to disable throttling entirely (full N at all context levels, for short/controlled runs where you want maximum throughput and are managing context yourself).
 ### Behavior
 
-- Default is **off**. When `--context-aware` is passed, each iteration computes its bucket count N as usual (smart agent count from `g-go --swarm`, hard cap 5), then applies a deterministic reduction based on estimated context usage:
+Each iteration computes its bucket count N as usual (smart agent count from `g-go --swarm`, hard cap 5), then applies a deterministic reduction based on a deterministic context proxy: the completed iteration count (`iter`) read from `ggo_run_state.json`. This proxy is always observable and eliminates dependence on the model's self-reported context fill percentage, which was the root failure mode in BUG-107.
 
-  | Estimated context usage | N adjustment |
-  |-------------------------|--------------|
-  | `< 60%` | no change (full N) |
-  | `60%–74%` | `N = ceil(N / 2)` |
-  | `75%–84%` | `N = 2` (or current N if already lower) |
-  | `>= 85%` | `N = 1` (single implementer, single reviewer) |
+  | Context proxy condition                          | N adjustment |
+  |--------------------------------------------------|--------------|
+  | `iter < 4`  (early run, compression active)      | no change (full N) |
+  | `iter 4–6`  (mid run)                            | `N = ceil(N / 2)` |
+  | `iter 7–9`  (late run)                           | `N = 2` (or current N if already lower) |
+  | `iter >= 10` (deep run)                          | `N = 1` (single implementer, single reviewer) |
+
+> **Compression is the primary context management mechanism** (see inter-iteration compression in the LOOP below). The throttle is a secondary adjustment: even with full compression, spawning N=5 new buckets on a late iteration adds meaningful current-iteration context, so reducing N under late-run conditions is still useful. But throttle alone — without compression — cannot prevent O(n²) accumulation, because it only reduces future additions, not existing history.
 
 - **N is never reduced below 1.** A reduced N still runs the next lowest-ID eligible task — reduction throttles parallelism, it never skips or defers work for context reasons.
 - The reduction is **per-iteration and reversible**: when context pressure subsides on a later iteration, N is recomputed from the table and may rise back toward the full smart count.
@@ -132,7 +137,30 @@ Re-invokes are capped at `min(budget_remaining, 25)`. A genuine hard stop and bu
 
 ### Interaction with the stop-detection hook
 
-`--context-aware` is the proactive valve; the stop-detection hook is the reactive backstop. Under pressure the loop first throttles N (Fix #3); if the agent still attempts an unauthorized halt, the hook re-invokes it (Fix #2). Together they close BUG-107 from both directions.
+The context-aware throttle is the proactive valve; the stop-detection hook is the reactive backstop. Under pressure the loop first throttles N (Fix #3); if the agent still attempts an unauthorized halt, the hook re-invokes it (Fix #2). Together they close BUG-107 from both directions.
+
+---
+
+## Task/Bug Inbox Intake (T1573 — First Step Each Iteration)
+
+Before the PCAC gate, before any claim, run the inbox intake to absorb any tasks/bugs
+dropped into the gitignored staging zones during this or a prior run:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File custom_scripts\hot_inbox_intake.ps1 -ProjectRoot . -Quiet
+```
+
+If `N > 0` items were ingested: log `"Ingested N task(s) / M bug(s) from inbox"` and continue.
+If inbox is empty: exits 0, no output, no commit — continue immediately.
+
+> **Why this runs first**: Writing to `TASKS.md` or `BUGS.md` outside the iteration's
+> coordinator staging allowlist triggers the Housekeeping Commit Gate `mixed-dirty`
+> hard-block. The intake script is the sole writer of those index files in its commit,
+> so the gate classifies it as `safe-gald3r-housekeeping` and allows it. Running intake
+> before the PCAC and clean gates ensures the tree is already normalized when those
+> gates run.
+
+> **Tool routing**: invoke through the **PowerShell tool**, not Bash (same reason as PCAC hook below).
 
 ---
 
@@ -173,21 +201,21 @@ After every coordinator-owned shared write, re-run with `-Mode post-write -Apply
 
 ## Integration-Branch Detection + Divergence Hard-Stop (T1443 / BUG-099 recurrence prevention)
 
-BUG-099 occurred because the autopilot blindly defaulted to `dev` as its integration/merge
-target even when `dev` was ~143k lines behind the active feature branch. To prevent recurrence,
-`g-go-go` MUST **detect** the correct integration branch at INIT (read-only) before basing any
-worktree on it or auto-merging into it — never hardcode `dev`.
+BUG-099 occurred because the autopilot blindly defaulted to a long-lived `dev` integration
+branch even when it was ~143k lines behind the active feature branch. The `dev`/`test` model is
+now retired (see `g-rl-02-git_workflow` — feature-branches-only). The integration target is
+**`main`**. The detection + divergence guard below is retained to prevent any stale-target
+recurrence.
 
 ### Detection heuristic (read-only — no checkout/commit/merge side effects)
 
-1. **Prefer the branch the main checkout is currently on** (`git rev-parse --abbrev-ref HEAD`).
-   In normal operation the run integrates into the branch the user is working on.
-2. Otherwise, among the candidate branches (`main`, `dev`, `feature/*` that the current HEAD or
-   the configured target descends from), **prefer the branch that is *ahead*** of the others.
-   Compute ahead/behind with `git rev-list --left-right --count A...B`.
-3. **NEVER select a branch that is strictly *behind* a candidate** (the BUG-099 failure). A
-   stale `dev` is disqualified the moment another candidate is ahead of it.
-4. The `--target-branch <name>` override still applies, but it is validated against the same
+1. **Default integration target is `main`** — the single permanent branch.
+2. **Prefer the branch the main checkout is currently on** when it is a `feature/*` or `fix/*`
+   branch actively being integrated (`git rev-parse --abbrev-ref HEAD`); otherwise use `main`.
+3. **NEVER select a branch that is strictly *behind* a candidate** (the BUG-099 failure):
+   compute ahead/behind with `git rev-list --left-right --count A...B` and disqualify a target
+   that is behind the active source branch.
+4. The `--target-branch <name>` override still applies, but is validated against the same
    divergence gate below — an explicit stale target also hard-stops.
 
 ### Divergence hard-stop
@@ -268,26 +296,49 @@ LOOP (iter < budget_remaining)
   │       (capacity-permitting low-severity sweep)
   │
   ├─ Refresh run-state marker: update iter + budget_remaining (the stop hook reads these to bound re-invokes)
-  ├─ Phase 1 (g-go-code --swarm --workspace protocol):
+  ├─ Phase 1 — CODING SWARM (invoke `g-go-code-swarm`):
+  │   ⚡ The coordinator MUST invoke `g-go-code-swarm` (equivalent: `g-go-code --swarm`) as the
+  │      Phase 1 sub-driver — NOT bare `g-go` or `g-go-code`. This is what makes Phase 1 parallel.
+  │      Exception: `--no-code-swarm` flag → fall back to sequential `g-go-code` (1 task at a time).
   │   ├─ Skip non-expired [📝] / [🔄] / [🕵️] claims
-  │   ├─ Partition into N buckets (N = smart agent count from g-go)
+  │   ├─ Compute N = smart agent count from g-go swarm partition logic (hard cap: 5)
   │   │   If --context-aware: reduce N per the context-usage table (never below 1); reversible per-iteration
-  │   ├─ Pre-create one coding worktree per bucket
-  │   ├─ Spawn N implementer subagents (handoff mode — return patches/artifacts/evidence/proposed-status only)
-  │   ├─ Wait for all bucket handoffs
+  │   │   If --no-code-swarm: force N=1 (sequential coding, no parallel buckets)
+  │   ├─ Invoke `g-go-code-swarm` with the partitioned queue and computed N:
+  │   │   - g-go-code-swarm pre-creates one T170 coding worktree per bucket
+  │   │   - g-go-code-swarm spawns N implementer subagents in parallel (handoff mode)
+  │   │     Each bucket agent returns: patch bundle, artifacts, evidence, proposed status rows
+  │   │     Bucket agents MUST NOT write shared .gald3r/ files, CHANGELOG, or commits
+  │   ├─ WAIT for all N bucket handoffs before proceeding (fan-in barrier)
   │   ├─ Pre-Reconciliation Clean Gate per-root (HARD STOP on dirty drift)
-  │   ├─ Coordinator reconciles bucket patches into primary checkout one at a time
-  │   ├─ Coordinator owns shared writes: TASKS.md, BUGS.md, task/bug status files,
+  │   ├─ Coordinator reconciles bucket patches into primary checkout one at a time (deterministic order)
+  │   ├─ Coordinator owns all shared writes: TASKS.md, BUGS.md, task/bug status files,
   │   │   CHANGELOG.md, generated Copilot prompts, parity output, per-repo final staging
   │   ├─ Coordinator creates per-repo code-complete checkpoint commits
   │   └─ phase1_results = list of [🔍] items per bucket
-  ├─ Phase 2 (g-go-review --swarm protocol):
-  │   ├─ Spawn M fresh reviewer subagents (no Phase 1 context)
+  ├─ Phase 2 — REVIEW SWARM (invoke `g-go-review-swarm`):
+  │   ⚡ The coordinator invokes `g-go-review-swarm` (equivalent: `g-go-review --swarm`) as the
+  │      Phase 2 sub-driver, passing the Phase 1 checkpoint branch/SHA as the review source.
+  │   ├─ Spawn M fresh reviewer subagents in parallel (no Phase 1 context — independence guaranteed)
   │   ├─ Each reviewer runs from a review-swarm worktree based on the Phase 1 checkpoint
   │   ├─ Reviewers return PASS/FAIL payloads + Status History rows + evidence (no writes)
   │   ├─ Coordinator batch-writes TASKS.md/BUGS.md verdicts (PASS → [✅], FAIL → [📋])
   │   ├─ Coordinator creates per-repo review-result commits (PASS, FAIL, mixed)
   │   └─ Detect ≥3 FAIL cycles per item → [🚨] Requires-User-Attention (T047)
+  ├─ [INTER-ITERATION COMPRESSION] Mandatory before iter increment:
+  │   ├─ Serialize this iteration's result into a compact summary (≤100 words):
+  │   │   { iter, phase1_tasks[], phase1_verdict, phase2_tasks[], phase2_verdict,
+  │   │     checkpoint_sha, review_sha }
+  │   ├─ Append the compact summary to ggo_run_state.json .completed_iterations[]
+  │   ├─ Update ggo_run_state.json .updated_at = now
+  │   ├─ DISCARD the full raw Phase 1 + Phase 2 conversation outputs from working
+  │   │   context. The compact summary IS the entire record for this iteration.
+  │   │   Bucket patches, evidence blobs, and verbose handoff payloads are NOT
+  │   │   retained in the coordinator's conversational history after this step.
+  │   └─ The coordinator's primary context for subsequent iterations is:
+  │       - TASKS.md + BUGS.md (re-read fresh each iteration)
+  │       - ggo_run_state.json .completed_iterations[] (compact summaries only)
+  │       - Current iteration's own Phase 1/Phase 2 outputs
   ├─ Heartbeat check: if elapsed >= heartbeat_interval, emit heartbeat summary
   ├─ Increment iter; recompute budget_remaining
   └─ Loop again
@@ -346,9 +397,9 @@ Heartbeats are append-only to the session output; they do NOT trigger user promp
 
 ## File-First Fallback
 
-`g-go-go` MUST work without `gald3r_valhalla` services. Optional backend failures are surfaced and degraded:
+`g-go-go` MUST work without `example_app` services. Optional backend failures are surfaced and degraded:
 
-- Vault MCP unavailable → file-first vault reads only; tasks that explicitly declare `requires_backend: true` in their YAML are deferred with `Deferred — gald3r_valhalla unavailable` in the summary.
+- Vault MCP unavailable → file-first vault reads only; tasks that explicitly declare `requires_backend: true` in their YAML are deferred with `Deferred — example_app unavailable` in the summary.
 - Memory MCP unavailable → no memory capture/recall; loop continues using local task/bug specs only.
 - Oracle MCP unavailable → tasks routed through Oracle subsystems are deferred.
 - Platform-docs search unavailable → loop falls back to local docs reads.
@@ -375,9 +426,9 @@ Never crash on optional backend failure; deferring affected work and continuing 
 | 2    | 2            | 1         | 2   | 0   | 789abc            | 012def        |
 
 ### Repos touched
-- gald3r_dev: {commits} commits, last {sha}
-- gald3r_template_full: SKIPPED (unrelated dirty: .github/...)
-- gald3r_throne: {commits} commits, last {sha}
+- <gald3r_source>: {commits} commits, last {sha}
+- <template_full>: SKIPPED (unrelated dirty: .github/...)
+- example_desktop: {commits} commits, last {sha}
 
 ### Failed / blocked items
 - Task {id}: FAIL — {reason}; ≥3 cycles → marked [🚨]
@@ -420,19 +471,21 @@ Want me to push now?
 | **TASKS.md dual-format scan (MANDATORY)** — TASKS.md contains tasks in two formats that MUST both be scanned: (1) bullet-list `- [STATUS] **Task NNN**:...` and (2) markdown-table `\| [STATUS] \| [NNN](path) \| title \| type \| deps \|`. A grep that only matches the bullet format silently drops the entire table backlog. Before declaring "no runnable work", verify both patterns were searched. Missing table-format tasks and claiming the queue is empty is a spec violation equivalent to a complexity-aversion stop. | Queue completeness — prevents silent task starvation |
 | **Dependency resolution includes archive (MANDATORY)** — when checking condition 4 (all dependencies resolved), if a dependency task file is NOT found in `.gald3r/tasks/task{id}_*.md`, ALSO check `.gald3r/archive/tasks/*/task{id}_*.md`. A task found in the archive with `status: completed` (or `status: verified`) counts as a fully satisfied dependency. Never treat a missing-in-active-tasks dependency as unresolved without first checking the archive. Marking a task as blocked because a dep "file not found" when that dep lives in the archive is a spec violation equivalent to a complexity-aversion stop. | Prevents archived completed deps from silently blocking downstream chains |
 | **Controller-only fallback** — when all workspace member repos block, retry `source_only`/`docs_only` tasks before stopping | Never stop while controller-only work remains |
-| **`--repos` filter (T1152)** — when `--repos <ids>` is supplied, runnable-queue scan filters to tasks whose `workspace_repos:` intersects the requested ids; out-of-scope tasks are silently deferred (NOT marked failed); budget counter only increments on iterations that execute in-scope tasks; controller-only fallback is disabled while `--repos` is active | Lets the autopilot be scoped to one or more member repos (e.g. `--repos gald3r_agent`) without burning the budget on unrelated tasks; preserves the deferred-task safety of pre-T1152 behavior |
-| **Auto-merge member repo branches on PASS (MANDATORY)** -- after the review-result commit for each PASS item, run `gald3r_worktree.ps1 -Action MergeToMain -RepoPath <member_path> -TaskId {id} -TargetBranch dev -Apply` in dependency order (lowest ID first); default target is `dev` (B+C pattern — Bot handles dev, Contributor controls main); override with `--target-branch main` to ship directly to main; on success the helper FF-merges the code branch into `dev` (or override target) and deletes both code + review branches and worktree folders; log `[AUTO-MERGED→dev]` in session summary; on merge-blocked (conflict), missing target branch, or member-dirty: preserve branch, log `[MERGE-BLOCKED]` / `[MERGE-SKIPPED-DIRTY]` as human action item (fallback, not default); pass `--no-auto-merge` to skip entirely and use old `[MERGE-BLOCKED]` behavior; never run auto-merge for FAIL items | Eliminates manual branch merge ceremony after every autopilot run — B+C pattern keeps human in control of dev→main promotion |
+| **`--repos` filter (T1152)** — when `--repos <ids>` is supplied, runnable-queue scan filters to tasks whose `workspace_repos:` intersects the requested ids; out-of-scope tasks are silently deferred (NOT marked failed); budget counter only increments on iterations that execute in-scope tasks; controller-only fallback is disabled while `--repos` is active | Lets the autopilot be scoped to one or more member repos (e.g. `--repos example_agent`) without burning the budget on unrelated tasks; preserves the deferred-task safety of pre-T1152 behavior |
+| **Auto-merge member repo branches on PASS (MANDATORY)** -- after the review-result commit for each PASS item, run `gald3r_worktree.ps1 -Action MergeToMain -RepoPath <member_path> -TaskId {id} -TargetBranch main -Apply` in dependency order (lowest ID first); default target is `main` (feature-branches-only model — NO `dev` branch, see `g-rl-02`); override with `--target-branch <branch>` for a custom target; on success the helper FF-merges the feature branch into `main` (or override target) and deletes both code + review branches and worktree folders; log `[AUTO-MERGED→main]` in session summary; on merge-blocked (conflict), missing target branch, or member-dirty: preserve branch, log `[MERGE-BLOCKED]` / `[MERGE-SKIPPED-DIRTY]` as human action item (fallback, not default); pass `--no-auto-merge` to skip entirely and use old `[MERGE-BLOCKED]` behavior; never run auto-merge for FAIL items | Eliminates manual branch merge ceremony after every autopilot run — feature branches merge straight to `main` |
 | Autopilot composes existing safe primitives — never bypasses any gate | One command, same safety contract |
 | Implementation agents NEVER self-verify their own work | Adversarial independence preserved across all loop iterations |
 | Hard stops emit final summaries and exit cleanly | Stops are not failures; they are the safety boundary |
 | Run budget bounds the loop | Prevents runaway autonomous runs |
 | Heartbeats are output-only — never prompt the user | Fire-and-forget design |
-| File-first fallback when optional backends are down | `gald3r_valhalla` is optional, not required |
+| File-first fallback when optional backends are down | `example_app` is optional, not required |
 | Per-repo commits only — no cross-repo single commits | Each manifest member is an independent git root |
 | Marker-only `.gald3r/` invariant is absolute | Member control-plane writes are forbidden, period |
 | `[🚨]` items are NEVER auto-retried | Human-only resolution by policy (T047) |
 | **Stop-detection re-invoke (BUG-107 #2)** — the `g-hk-ggo-stop-detect` stop hook re-invokes the loop when it halts without an authorized hard-stop row; bounded by `min(budget_remaining, 25)` re-invokes; genuine hard stops and budget exhaustion are never re-invoked | Makes the no-early-stop contract mechanically self-enforcing instead of prose-only |
-| **Context-aware throttle (BUG-107 #3)** — `--context-aware` reduces bucket count N under context pressure (never below 1; reversible per-iteration) instead of stopping | Trades parallelism for continuation; context pressure is never a stop reason |
+| **Context-aware throttle (BUG-107 #3)** — ON by default; reduces bucket count N under context pressure (never below 1; reversible per-iteration) instead of stopping. Use `--no-context-aware` to disable. | Trades parallelism for continuation; context pressure is never a stop reason. Default-on prevents BUG-107 without requiring the user to remember the flag. |
+| **Inter-iteration compression (MANDATORY)** - after Phase 2 review result for each iteration, serialize the compact iteration summary (<=100 words: iter, phase1_tasks[], phase1_verdict, phase2_tasks[], phase2_verdict, checkpoint_sha, review_sha) to `ggo_run_state.json .completed_iterations[]` and discard raw Phase 1 + Phase 2 conversation outputs. The coordinator's prior-iteration record is the compact summary ONLY. | Prevents O(n^2) coordinator history growth that causes BUG-107 context saturation before budget is exhausted. Compression is the primary fix; throttle is secondary. |
+| **Phase 1 coding swarm (T1526)** — Phase 1 MUST invoke `g-go-code-swarm` (N parallel coders), NOT bare `g-go`. Phase 2 MUST invoke `g-go-review-swarm`. Both phases are parallel by default. Use `--no-code-swarm` to revert Phase 1 to sequential coding when needed. | Parallel coding swarm is the default; sequential is the opt-out. Without this, throughput is bottlenecked by sequential Phase 1 even when N>1 is configured. |
 | **Run-state marker is mandatory under autopilot** — write `.gald3r/logs/ggo_run_state.json` at INIT, refresh `iter`/`budget_remaining` each iteration, and write `authorized_hard_stop` verbatim before any genuine hard-stop exit | The stop hook depends on this marker to distinguish authorized stops from disguised context-panic stops |
 
 ---
@@ -448,13 +501,15 @@ Want me to push now?
 @g-go-go tasks 220, 222, 223
 @g-go-go bugs-only
 @g-go-go subsystem multiple-ide-platform-parity
-@g-go-go --target-branch main           # ship PASS items directly to main instead of dev
+@g-go-go --target-branch main           # default: PASS items merge to main (feature-branches-only model)
 @g-go-go --no-auto-merge                # disable auto-merge; reviewer leaves [MERGE-BLOCKED] for human
-@g-go-go --target-branch staging        # merge to a custom branch instead of dev
-@g-go-go --repos gald3r_agent --budget 3   # scope autopilot to gald3r_agent tasks only
-@g-go-go --repos gald3r_agent,gald3r_throne # scope autopilot to two specific member repos
-@g-go-go --context-aware                 # reduce bucket count N under context pressure instead of stopping (BUG-107)
-@g-go-go --context-aware --budget 25     # long unattended run that throttles parallelism rather than halting
+@g-go-go --target-branch staging        # merge to a custom branch instead of main
+@g-go-go --repos example_agent --budget 3   # scope autopilot to example_agent tasks only
+@g-go-go --repos example_agent,example_desktop # scope autopilot to two specific member repos
+@g-go-go --no-context-aware              # disable context-aware throttle (full N at all context levels)
+@g-go-go --no-context-aware --budget 3  # short burst: max parallelism, no throttle
+@g-go-go --no-code-swarm                 # Phase 1 sequential coding (1 task at a time); Phase 2 review swarm unchanged
+@g-go-go --no-code-swarm --budget 3      # safe debugging mode: sequential coding, parallel review
 ```
 
 The defaults (workspace mode, 12-iteration budget, 30-minute heartbeat) are tuned for a multi-hour overnight or background run. Use `--budget 3` and `--heartbeat 5m` for quick autopilot bursts.

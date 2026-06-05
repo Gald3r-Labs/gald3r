@@ -4,12 +4,12 @@ description: >
   gald3r_muninn MCP — query the local codebase knowledge graph for impact
   analysis, caller chains, dependencies, and symbol search. Clean-room
   rewrite (T1147 epic, T1153-T1158) of the GitNexus integration; auto-loaded
-  by the gald3r_valhalla MCP server from docker/gald3r/tools/plugins/muninn/.
+  by the example_app MCP server from docker/gald3r/tools/plugins/muninn/.
   Wire into g-go-code Step b0 Impact Scan before any implementation.
 version: "1.0"
 platforms: [cursor, claude, gemini, codex, opencode]
-mcp_server: gald3r_valhalla
-mcp_entry: ".mcp.json → gald3r_muninn entry (auto-loaded into gald3r_valhalla)"
+mcp_server: example_app
+mcp_entry: ".mcp.json → gald3r_muninn entry (auto-loaded into example_app)"
 related_tasks: [T1147, T1153, T1154, T1155, T1156, T1157, T1158, T921]
 token_budget: medium
 subsystem_memberships: [MEMORY_AND_KNOWLEDGE]
@@ -39,13 +39,13 @@ estimates.
 
 ## MCP Configuration
 
-`gald3r_muninn` is loaded as a plugin **inside** the `gald3r_valhalla` MCP
+`gald3r_muninn` is loaded as a plugin **inside** the `example_app` MCP
 server. The `.mcp.json` entry documents the migration; the actual transport
-is the existing gald3r_valhalla HTTP endpoint:
+is the existing example_app HTTP endpoint:
 
 ```json
 "gald3r_muninn": {
-  "_comment": "muninn graph_* tools auto-loaded by gald3r_valhalla",
+  "_comment": "muninn graph_* tools auto-loaded by example_app",
   "type": "http",
   "url": "http://localhost:8090/mcp"
 }
@@ -87,7 +87,7 @@ envelope shape: `{error, message}` for `invalid_argument` /
 
 ## IMPACT SCAN: g-go-code Step b0
 
-Before implementing any task, run this sequence (via `.cursor/skills/g-skl-muninn/scripts/graph_impact.ps1`
+Before implementing any task, run this sequence (via `.claude/skills/g-skl-muninn/scripts/graph_impact.ps1`
 or a direct MCP call):
 
 ```
@@ -122,12 +122,12 @@ or a direct MCP call):
 
 ## PowerShell Wrapper
 
-`.cursor/skills/g-skl-muninn/scripts/graph_impact.ps1` is the PowerShell entry point used by Step b0 and
+`.claude/skills/g-skl-muninn/scripts/graph_impact.ps1` is the PowerShell entry point used by Step b0 and
 the post-commit hook. It:
 
 1. Loads `docker/gald3r/tools/plugins/muninn/plugin.py` in-process via Python
    (no MCP server required for the local code path).
-2. Falls back to the running gald3r_valhalla MCP server (`-Backend mcp`) when
+2. Falls back to the running example_app MCP server (`-Backend mcp`) when
    in-process Python is unavailable.
 3. Falls back to ripgrep-based import scanning when neither is reachable
    (falls back to ripgrep import scanning when muninn is unavailable).
@@ -166,4 +166,4 @@ This skill lives in (canonical + IDE mirrors):
 - `.opencode/skills/g-skl-muninn/SKILL.md`
 
 MCP entry under key `"gald3r_muninn"` in `.mcp.json` documents the migration —
-actual transport is the existing `gald3r_valhalla` HTTP endpoint.
+actual transport is the existing `example_app` HTTP endpoint.

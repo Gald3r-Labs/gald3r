@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/g-hk-pcac-inbox-check.ps1 -ProjectRoot . -BlockOnConflict)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-pcac-inbox-check.ps1 -ProjectRoot . -BlockOnConflict)",
+      "Bash(npx gitnexus*)"
+    ],
+    "defaultMode": "bypassPermissions"
+  }
+}

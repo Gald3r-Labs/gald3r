@@ -41,7 +41,7 @@ Confirm which siblings were notified. They will action at next session.
 
 **Sync with a specific sibling:**
 ```
-@g-wpac-sync gald3r_mcp — we added vault-hooks-automation subsystem
+@g-wpac-sync example_mcp — we added vault-hooks-automation subsystem
 ```
 
 **Sync all siblings:**

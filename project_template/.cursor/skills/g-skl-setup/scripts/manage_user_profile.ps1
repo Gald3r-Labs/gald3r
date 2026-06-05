@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Manage the gald3r user settings profile (T1036).
 
@@ -36,7 +36,7 @@
 
 .EXAMPLE
     # Show effective profile for a project
-    .\manage_user_profile.ps1 -Action get -ProjectPath G:\MyProject
+    .\manage_user_profile.ps1 -Action get -ProjectPath <project-root>
 
     # Set personality theme globally (dry-run)
     .\manage_user_profile.ps1 -Action set -Field personality.theme -Value norse
@@ -45,7 +45,7 @@
     .\manage_user_profile.ps1 -Action set -Field personality.theme -Value norse -Apply
 
     # Set personality theme for a specific project only
-    .\manage_user_profile.ps1 -Action set -Field personality.theme -Value professional -ProjectPath G:\WorkProject -Apply
+    .\manage_user_profile.ps1 -Action set -Field personality.theme -Value professional -ProjectPath <project-root> -Apply
 
     # Validate API keys
     .\manage_user_profile.ps1 -Action validate-keys

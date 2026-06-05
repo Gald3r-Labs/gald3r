@@ -21,4 +21,4 @@ The skill handles: file update, TASKS.md sync, Status History append, subsystem 
 
 > **Alias**: `@g-task-update` also works (deprecated; use `@g-task-upd` for new work).
 
-Workspace-Control updates: `@g-task-upd TASK-NNN workspace-repos gald3r_dev,gald3r_template_full` and `@g-task-upd TASK-NNN workspace-touch-policy generated_output` must validate IDs/policies against `.gald3r/linking/workspace_manifest.yaml` when present. Unknown member IDs are invalid. Widening from current-repo-only to member repos, or to `generated_output`/`multi_repo`, requires Status History context or equivalent explicit instruction before writing the update.
+Workspace-Control updates: `@g-task-upd TASK-NNN workspace-repos <gald3r_source>,<template_full>` and `@g-task-upd TASK-NNN workspace-touch-policy generated_output` must validate IDs/policies against `.gald3r/linking/workspace_manifest.yaml` when present. Unknown member IDs are invalid. Widening from current-repo-only to member repos, or to `generated_output`/`multi_repo`, requires Status History context or equivalent explicit instruction before writing the update.

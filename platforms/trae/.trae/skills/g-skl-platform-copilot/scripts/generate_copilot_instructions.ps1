@@ -23,7 +23,7 @@ if (-not $ProjectRoot) {
 
 Write-Verbose "Project root: $ProjectRoot"
 $EcosystemRoot = Split-Path $ProjectRoot -Parent
-$TemplateFullRoot = Join-Path $EcosystemRoot "gald3r_template_full"
+$TemplateFullRoot = Join-Path $EcosystemRoot "<template_full>"
 
 # Source: all g-rl-*.mdc files in .cursor/rules/, sorted numerically
 $rulesDir = Join-Path $ProjectRoot ".cursor\rules"
@@ -44,7 +44,7 @@ $banner = @"
   .github/copilot-instructions.md — AUTO-GENERATED, DO NOT EDIT MANUALLY
   
   Generated from: .cursor/rules/g-rl-*.mdc
-  Generator:      .gald3r_sys/skills/g-skl-platform-copilot/scripts/generate_copilot_instructions.ps1
+  Generator:      .claude/skills/g-skl-platform-copilot/scripts/generate_copilot_instructions.ps1
   Generated at:   $timestamp
 
   This file carries gald3r always-apply rules into GitHub Copilot sessions.

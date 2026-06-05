@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-wpac-send-to
 description: >
   Send files, features, specs, ideas, or code from the current project to any
@@ -54,10 +54,10 @@ Options:
 
 **Examples**:
 ```
-@g-wpac-send-to --sibling gald3r_valhalla --what .gald3r/features/gald3r_backend --type features
+@g-wpac-send-to --sibling example_app --what .gald3r/features/gald3r_backend --type features
 @g-wpac-send-to --child gald3r_payments --what src/payments/ --type code --message "Payment subsystem ready for extraction"
-@g-wpac-send-to --parent gald3r_dev --what .gald3r/features/feat-012_auth.md --type features --message "This feature should live in the template"
-@g-wpac-send-to --sibling gald3r_vault --what research/articles/topic.md --type docs
+@g-wpac-send-to --parent <gald3r_source> --what .gald3r/features/feat-012_auth.md --type features --message "This feature should live in the template"
+@g-wpac-send-to --sibling example_vault --what research/articles/topic.md --type docs
 ```
 
 ---

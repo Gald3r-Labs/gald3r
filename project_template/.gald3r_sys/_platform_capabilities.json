@@ -1,0 +1,248 @@
+{
+  "_comment": "Platform capabilities for pack installers. hasRules=supports rule files, hasSkills=supports skill files, rulesExt=file extension for rules, copilotInstructions=path for copilot-style append",
+  "_discovery": "Installer reads .gald3r_sys/platforms/ to get platform list, then checks this file for capabilities",
+  ".agents": {
+    "hasRules": true,
+    "rulesExt": ".md",
+    "hasSkills": true,
+    "rulesDir": "rules",
+    "skillsDir": "skills"
+  },
+  ".agent": {
+    "hasRules": true,
+    "rulesExt": ".md",
+    "hasSkills": true,
+    "rulesDir": "rules",
+    "skillsDir": "skills"
+  },
+  ".aider": {
+    "hasRules": true,
+    "rulesExt": ".md",
+    "hasSkills": false,
+    "rulesDir": "rules",
+    "skillsDir": null
+  },
+  ".augment": {
+    "hasRules": true,
+    "rulesExt": ".md",
+    "hasSkills": false,
+    "rulesDir": "rules",
+    "skillsDir": null
+  },
+  ".claude": {
+    "hasRules": true,
+    "rulesExt": ".md",
+    "hasSkills": true,
+    "rulesDir": "rules",
+    "skillsDir": "skills"
+  },
+  ".cline": {
+    "hasRules": true,
+    "rulesExt": ".md",
+    "hasSkills": false,
+    "rulesDir": "rules",
+    "skillsDir": null
+  },
+  ".codex": {
+    "hasRules": false,
+    "rulesExt": ".md",
+    "hasSkills": true,
+    "rulesDir": null,
+    "skillsDir": "skills"
+  },
+  ".copilot": {
+    "hasRules": false,
+    "rulesExt": ".md",
+    "hasSkills": false,
+    "rulesDir": null,
+    "skillsDir": null,
+    "copilotInstructions": ".github/copilot-instructions.md"
+  },
+  ".cursor": {
+    "hasRules": true,
+    "rulesExt": ".mdc",
+    "hasSkills": true,
+    "rulesDir": "rules",
+    "skillsDir": "skills"
+  },
+  ".goose": {
+    "hasRules": true,
+    "rulesExt": ".md",
+    "hasSkills": false,
+    "rulesDir": "rules",
+    "skillsDir": null
+  },
+  ".junie": {
+    "hasRules": true,
+    "rulesExt": ".md",
+    "hasSkills": false,
+    "rulesDir": "rules",
+    "skillsDir": null
+  },
+  ".kiro": {
+    "hasRules": true,
+    "rulesExt": ".md",
+    "hasSkills": false,
+    "rulesDir": "rules",
+    "skillsDir": null
+  },
+  ".kiro-cli": {
+    "hasRules": true,
+    "rulesExt": ".md",
+    "hasSkills": false,
+    "rulesDir": "rules",
+    "skillsDir": null
+  },
+  ".mistral": {
+    "hasRules": true,
+    "rulesExt": ".md",
+    "hasSkills": false,
+    "rulesDir": "rules",
+    "skillsDir": null
+  },
+  ".openclaw": {
+    "hasRules": true,
+    "rulesExt": ".md",
+    "hasSkills": false,
+    "rulesDir": "rules",
+    "skillsDir": null
+  },
+  ".opencode": {
+    "hasRules": false,
+    "rulesExt": ".md",
+    "hasSkills": true,
+    "rulesDir": null,
+    "skillsDir": "skills"
+  },
+  ".openhands": {
+    "hasRules": true,
+    "rulesExt": ".md",
+    "hasSkills": false,
+    "rulesDir": "rules",
+    "skillsDir": null
+  },
+  ".qwen": {
+    "hasRules": true,
+    "rulesExt": ".md",
+    "hasSkills": false,
+    "rulesDir": "rules",
+    "skillsDir": null
+  },
+  ".replit": {
+    "hasRules": true,
+    "rulesExt": ".md",
+    "hasSkills": false,
+    "rulesDir": "rules",
+    "skillsDir": null
+  },
+  ".roo": {
+    "hasRules": true,
+    "rulesExt": ".md",
+    "hasSkills": false,
+    "rulesDir": "rules",
+    "skillsDir": null
+  },
+  ".subq": {
+    "hasRules": true,
+    "rulesExt": ".md",
+    "hasSkills": false,
+    "rulesDir": "rules",
+    "skillsDir": null,
+    "_note": "Provisional — SubQ Code in private beta (T868); install conventions confirmed on public release."
+  },
+  ".warp": {
+    "hasRules": false,
+    "rulesExt": ".md",
+    "hasSkills": false,
+    "rulesDir": null,
+    "skillsDir": null,
+    "_note": "Terminal-first; no project rules file. Integration via Warp Drive workflows + shell profile env vars."
+  },
+  ".windsurf": {
+    "hasRules": true,
+    "rulesExt": ".md",
+    "hasSkills": false,
+    "rulesDir": "rules",
+    "skillsDir": null
+  },
+  "gald3r_astrbot_plugin": {
+    "hasRules": true,
+    "rulesExt": "—",
+    "hasSkills": true,
+    "rulesDir": "rules",
+    "skillsDir": "skills",
+    "_added": "from PLATFORM_SPEC 06-02 (backfill T#5)"
+  },
+  ".codebuddy": {
+    "hasRules": true,
+    "rulesExt": "rules.md",
+    "hasSkills": true,
+    "rulesDir": "rules",
+    "skillsDir": "skills",
+    "_added": "from PLATFORM_SPEC 06-02 (backfill T#5)"
+  },
+  ".continue": {
+    "hasRules": true,
+    "rulesExt": ".md",
+    "hasSkills": false,
+    "rulesDir": "rules",
+    "skillsDir": null,
+    "_added": "from PLATFORM_SPEC 06-02 (backfill T#5)"
+  },
+  ".deepcode": {
+    "hasRules": true,
+    "rulesExt": "rules.md",
+    "hasSkills": true,
+    "rulesDir": "rules",
+    "skillsDir": ".agents/skills",
+    "_added": "from PLATFORM_SPEC 06-02 (backfill T#5)"
+  },
+  ".hermes": {
+    "hasRules": true,
+    "rulesExt": "—",
+    "hasSkills": true,
+    "rulesDir": "rules",
+    "skillsDir": "/.hermes/skills",
+    "_added": "from PLATFORM_SPEC 06-02 (backfill T#5)"
+  },
+  ".kimi": {
+    "hasRules": true,
+    "rulesExt": "—",
+    "hasSkills": true,
+    "rulesDir": "rules",
+    "skillsDir": "skills",
+    "_added": "from PLATFORM_SPEC 06-02 (backfill T#5)"
+  },
+  ".vibe": {
+    "hasRules": false,
+    "rulesExt": "rules.md",
+    "hasSkills": true,
+    "rulesDir": null,
+    "skillsDir": "skills",
+    "_added": "from PLATFORM_SPEC 06-02 (backfill T#5)"
+  },
+  ".qoder": {
+    "hasRules": true,
+    "rulesExt": ".md",
+    "hasSkills": true,
+    "rulesDir": "rules",
+    "skillsDir": "skills",
+    "_added": "from PLATFORM_SPEC 06-02 (backfill T#5)"
+  },
+  ".trae": {
+    "hasRules": true,
+    "rulesExt": ".md",
+    "hasSkills": true,
+    "rulesDir": "rules",
+    "skillsDir": "skills",
+    "_added": "from PLATFORM_SPEC 06-02 (backfill T#5)"
+  },
+  ".cursorrules": {
+    "hasRules": true,
+    "rulesExt": ".cursorrules",
+    "hasSkills": false,
+    "rulesDir": "rules",
+    "skillsDir": null,
+    "_added": "from PLATFORM_SPEC 06-02 (backfill T#5)"
+  }
+}

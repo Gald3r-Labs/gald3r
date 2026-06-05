@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [UI_AND_OUTPUT]
+---
 # g-skl-theme-editor
 **Skill file**: `SKILL.md`
 
@@ -5,7 +8,7 @@
 
 ## What it does
 
-Create and edit gald3r HTML themes against docs/themes/theme-schema.json. Visual editor (live preview, per-token color pickers, import/export :root blocks) ships in gald3r_throne; this skill is the spec + a file-first fallback that works without the app. Invoked by g-theme-edit.
+Create and edit gald3r HTML themes against docs/themes/theme-schema.json. Visual editor (live preview, per-token color pickers, import/export :root blocks) ships in example_desktop; this skill is the spec + a file-first fallback that works without the app. Invoked by g-theme-edit.
 
 ## When to use
 

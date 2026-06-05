@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [BUG_AND_QUALITY]
+---
 # Bug Fix Workflow Example
 
 ## Complete Lifecycle: BUG-002 - Shopping Cart Total Calculation

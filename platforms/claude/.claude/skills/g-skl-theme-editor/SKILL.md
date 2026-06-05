@@ -1,6 +1,6 @@
 ﻿---
 name: g-skl-theme-editor
-description: Create and edit gald3r HTML themes against docs/themes/theme-schema.json. Visual editor (live preview, per-token color pickers, import/export :root blocks) ships in gald3r_throne; this skill is the spec + a file-first fallback that works without the app. Invoked by g-theme-edit.
+description: Create and edit gald3r HTML themes against docs/themes/theme-schema.json. Visual editor (live preview, per-token color pickers, import/export :root blocks) ships in example_desktop; this skill is the spec + a file-first fallback that works without the app. Invoked by g-theme-edit.
 token_budget: low
 subsystem_memberships: [UI_AND_OUTPUT]
 ---
@@ -26,7 +26,7 @@ Open it in any browser (or a Tauri/Electron webview). It:
 - autosaves edits to `localStorage` (T1327),
 - offers a base-theme selector (dark/light/mocha), reset, and rename (T1331).
 
-**gald3r_throne integration:** throne ships the editor by serving this file as a
+**example_desktop integration:** throne ships the editor by serving this file as a
 static asset (copy `docs/theme-editor.html` + `docs/themes/` into throne's
 `public/theme-editor/`, or load it in a webview). No React/router surgery needed —
 the editor is framework-free. Saving a downloaded `.css` into `docs/themes/` plus

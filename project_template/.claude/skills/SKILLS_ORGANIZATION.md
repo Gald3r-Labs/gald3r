@@ -205,17 +205,17 @@ These Skills are in a subfolder and all work correctly.
 
 ---
 
-## Gald3r PCAC Skill Group
+## Gald3r WPAC Skill Group
 
-The cross-project coordination skills use the `g-skl-pcac-*` naming convention:
+The cross-project coordination skills use the `g-skl-wpac-*` naming convention:
 
 | Skill | Command | Purpose |
 |-------|---------|---------|
-| `g-skl-pcac-order` | `@g-pcac-order` | Parent pushes a task to one or more child projects |
-| `g-skl-pcac-ask` | `@g-pcac-ask` | Child requests parent action; marks local task blocked |
-| `g-skl-pcac-sync` | `@g-pcac-sync` | Advisory sibling contract sync (non-blocking) |
-| `g-skl-pcac-read` | `@g-pcac-read` | Review and action all INBOX items |
-| `g-skl-pcac-move` | `@g-pcac-move` | Transfer files/folders to another project |
+| `g-skl-wpac-order` | `@g-wpac-order` | Parent pushes a task to one or more child projects |
+| `g-skl-wpac-ask` | `@g-wpac-ask` | Child requests parent action; marks local task blocked |
+| `g-skl-wpac-sync` | `@g-wpac-sync` | Advisory sibling contract sync (non-blocking) |
+| `g-skl-wpac-read` | `@g-wpac-read` | Review and action all INBOX items |
+| `g-skl-wpac-move` | `@g-wpac-move` | Transfer files/folders to another project |
 
 All 5 skills are propagated to all 10 IDE targets. Topology lives in `.gald3r/linking/link_topology.md`.
 

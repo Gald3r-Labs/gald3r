@@ -1,11 +1,11 @@
-<#
+﻿<#
 .SYNOPSIS
     Cross-file impact analysis for gald3r projects (T1158).
     Returns a list of files that import, call, or reference the target file/symbol.
 
 .DESCRIPTION
     Wraps the gald3r_muninn `graph_impact` MCP tool (replaces the deprecated
-    gitnexus-based `.cursor/skills/g-skl-muninn/scripts/gitnexus_impact.ps1`).
+    gitnexus-based `.claude/skills/g-skl-muninn/scripts/gitnexus_impact.ps1`).
 
     Backend resolution order:
     1. **muninn (preferred)** — invoke the muninn plugin core directly via
@@ -13,10 +13,10 @@
        persistent SQLite graph store at `~/.gald3r/muninn.db` (override with
        `MUNINN_DB_PATH`). This is the same code path the MCP server uses for
        the `graph_impact` tool — calling it in-process avoids the network
-       hop and works whether or not the gald3r_valhalla MCP server is
+       hop and works whether or not the example_app MCP server is
        currently running.
     2. **MCP HTTP (optional)** — pass `-Backend mcp` to force a JSON-RPC
-       call against the running gald3r_valhalla MCP server (default
+       call against the running example_app MCP server (default
        `http://localhost:8090/mcp`, override with `-McpUrl`).
     3. **ripgrep fallback** — when neither muninn path is reachable (no
        index, plugin import failed, network error), fall back to the
@@ -40,7 +40,7 @@
 
 .PARAMETER McpUrl
     MCP server URL when -Backend mcp is used.
-    Defaults to "http://localhost:8090/mcp" (gald3r_valhalla).
+    Defaults to "http://localhost:8090/mcp" (example_app).
 
 .PARAMETER Json
     Output results as JSON instead of formatted text.
@@ -51,11 +51,11 @@
     .\scripts\graph_impact.ps1 -File "..." -Backend mcp
 
 .NOTES
-    Replaces `.cursor/skills/g-skl-muninn/scripts/gitnexus_impact.ps1` (deprecated). See task T1158 for
+    Replaces `.claude/skills/g-skl-muninn/scripts/gitnexus_impact.ps1` (deprecated). See task T1158 for
     the migration; see `.gald3r/subsystems/codebase-graph.md` for subsystem
     overview. The muninn plugin lives at
     `docker/gald3r/tools/plugins/muninn/plugin.py` and exposes the
-    `graph_impact` MCP tool via the gald3r_valhalla server.
+    `graph_impact` MCP tool via the example_app server.
 
     Task: T1158 — gald3r_muninn g-go-code Step b0 integration.
 #>
@@ -160,7 +160,7 @@ except Exception as exc:
     }
 }
 
-# --- BACKEND: MCP HTTP (gald3r_valhalla server) ---
+# --- BACKEND: MCP HTTP (example_app server) ---
 function Invoke-McpImpact {
     try {
         $payload = @{

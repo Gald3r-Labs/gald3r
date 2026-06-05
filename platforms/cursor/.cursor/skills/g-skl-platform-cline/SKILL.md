@@ -80,7 +80,7 @@ Test-Path .cline/skills                  # Agent Skills dir (NOT .claude/skills)
 
 ## 4. Common Pitfalls
 
-- **Hooks are macOS/Linux only** at time of research (v3.36). On **Windows** (the gald3r_templates
+- **Hooks are macOS/Linux only** at time of research (v3.36). On **Windows** (the <gald3r_source>
   dev env) `g-hk-*.ps1` do **not** wire natively — use git `core.hooksPath` or manual invocation for
   session-start / pre-tool gating until Windows hook support lands.
 - **Subagents/teams need the Cline SDK / CLI runtime**, not the bare IDE chat — don't expect

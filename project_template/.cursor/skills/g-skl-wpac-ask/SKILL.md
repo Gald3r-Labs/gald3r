@@ -41,7 +41,7 @@ subsystem_memberships: [WORKSPACE_COORDINATION]
    ---
    order_id: "ord-{uuid-short}"
    sent_to: "{parent_project_id}"
-   sent_to_path: "G:/path/to/parent"
+   sent_to_path: "<path>/to/parent"
    sent_at: "YYYY-MM-DD"
    type: ask                                # T167: type discriminator (was implicit; now explicit)
    local_depends: [task_id, ...]            # which LOCAL tasks gate on the parent acting
@@ -96,4 +96,4 @@ When `parent_action_status: completed` is set → change local task status from 
 
 ## Parent-Side Receipt (T166)
 
-The parent project does **not** create the receiving task here — they create it via `g-skl-wpac-read` when they action the request. That receiving-side task gets `priority: high` by default per the PCAC-priority floor (T166), with `wpac_source: { type: ask, source_project: <child>, inbox_ref: REQ-XXX }` written to the task frontmatter for traceability. The parent agent must NOT auto-downgrade priority; humans may manually adjust it after the task lands.
+The parent project does **not** create the receiving task here — they create it via `g-skl-wpac-read` when they action the request. That receiving-side task gets `priority: high` by default per the WPAC-priority floor (T166), with `wpac_source: { type: ask, source_project: <child>, inbox_ref: REQ-XXX }` written to the task frontmatter for traceability. The parent agent must NOT auto-downgrade priority; humans may manually adjust it after the task lands.

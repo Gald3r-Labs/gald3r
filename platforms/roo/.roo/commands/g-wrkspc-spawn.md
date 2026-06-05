@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
 Spawn a new local Workspace-Control member project: $ARGUMENTS
@@ -25,7 +25,7 @@ Delegates to `g-skl-workspace` operation `SPAWN_PLAN` by default, or `SPAWN_APPL
 
 ## When To Use This
 
-Use `@g-wrkspc-spawn` when the destination should start as a clean independent git root, such as `G:/gald3r_ecosystem/gald3r_throne`.
+Use `@g-wrkspc-spawn` when the destination should start as a clean independent git root, such as `<ECOSYSTEM_ROOT>/example_desktop`.
 
 Use `@g-wrkspc-adopt` instead for an existing gald3r project with `.gald3r/` history that must be surfaced in the control project. Use `@g-wrkspc-member-add` instead when an existing repo only needs registry metadata.
 
@@ -46,6 +46,6 @@ Use `@g-wrkspc-adopt` instead for an existing gald3r project with `.gald3r/` his
 ## Usage Examples
 
 ```text
-@g-wrkspc-spawn gald3r_throne --id gald3r_throne --path G:/gald3r_ecosystem/gald3r_throne --description "Desktop workspace app" --dry-run
-@g-wrkspc-spawn gald3r_throne --id gald3r_throne --path G:/gald3r_ecosystem/gald3r_throne --description "Desktop workspace app" --allow-existing-empty --apply
+@g-wrkspc-spawn example_desktop --id example_desktop --path <ECOSYSTEM_ROOT>/example_desktop --description "Desktop workspace app" --dry-run
+@g-wrkspc-spawn example_desktop --id example_desktop --path <ECOSYSTEM_ROOT>/example_desktop --description "Desktop workspace app" --allow-existing-empty --apply
 ```

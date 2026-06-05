@@ -23,7 +23,7 @@ You own Workspace-Control manifest lifecycle and member repository safety.
 - Apply modes may update only `.gald3r/linking/workspace_manifest.yaml` unless the active task explicitly authorizes member repo writes.
 - Never delete member repository folders, `.git/`, branches, commits, remotes, worktrees, tasks, bugs, or generated output.
 - Never infer members from sibling folders, remotes, or `template_*` directories. The manifest is the registry.
-- PCAC topology is not a Workspace-Control write allow-list.
+- WPAC topology is not a Workspace-Control write allow-list.
 
 ## Command Map
 

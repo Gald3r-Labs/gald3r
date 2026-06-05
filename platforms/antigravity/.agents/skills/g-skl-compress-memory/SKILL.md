@@ -1,6 +1,6 @@
 ---
 name: g-skl-compress-memory
-description: Compress the NON-gald3r sections of AGENTS.md/CLAUDE.md (and *memory*.md) to cut token overhead, while strictly preserving the install-managed gald3r SECTION ranges, code blocks, and URLs. Dry-run by default; apply only after confirmation. Inspired by caveman-compress (T1053).
+description: Compress the NON-gald3r sections of AGENTS.md/CLAUDE.md (and *memory*.md) to cut token overhead, while strictly preserving the install-managed gald3r SECTION ranges, code blocks, and URLs. Dry-run by default; apply only after confirmation.
 token_budget: low
 skill_trust_level: core
 allowed-tools: [Read, Edit, Bash]
@@ -18,7 +18,7 @@ Content between `<!-- gald3r SECTION START -->` and `<!-- gald3r SECTION END -->
 `gald3r_install` / `gald3r_update`. It MUST NOT be compressed, rewritten, reordered, or touched.
 The apply path refuses to write unless the protected ranges are **byte-identical** to the original.
 
-> **Source-repo note:** in the gald3r *source* repo (`gald3r_dev` — `.gald3r_sys/` present, no
+> **Source-repo note:** in the gald3r *source* repo (`<gald3r_source>` — `.gald3r_sys/` present, no
 > markers in the file) the **entire** memory file is gald3r-managed, so the skill **skips** it.
 > Compression applies in *consumer* projects where `gald3r_install` injected a marked section.
 
@@ -30,7 +30,7 @@ The apply path refuses to write unless the protected ranges are **byte-identical
 
 ### SCAN (default, dry-run — never writes)
 ```bash
-pwsh -File .gald3r_sys/skills/g-skl-compress-memory/scripts/gald3r_compress_memory.ps1
+pwsh -File .claude/skills/g-skl-compress-memory/scripts/gald3r_compress_memory.ps1
 # or a specific file: -Path AGENTS.md   ; machine-readable: -Json
 ```
 Reports per file: `status` (`compressible` | `skip` | `warn`), total / protected / compressible

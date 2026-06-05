@@ -1,6 +1,6 @@
 ---
 name: g-skl-comfyui
-description: ComfyUI V5 agent integration for local GPU image/video generation. Install, launch, manage workflows, and run AnimateDiff/SDXL pipelines via the ComfyUI REST API. Local GPU path — zero cloud costs. Use for gald3r_throne theme pack animation or any offline image/video generation.
+description: ComfyUI V5 agent integration for local GPU image/video generation. Install, launch, manage workflows, and run AnimateDiff/SDXL pipelines via the ComfyUI REST API. Local GPU path — zero cloud costs. Use for example_desktop theme pack animation or any offline image/video generation.
 token_budget: medium
 subsystem_memberships: [UI_AND_OUTPUT]
 ---
@@ -11,7 +11,7 @@ Enables gald3r agents to install, launch, and operate ComfyUI V5 workflows on de
 
 **When to use this skill:**
 - User has a local GPU and wants cost-free image/video generation
-- Generating gald3r_throne animation theme pack assets locally
+- Generating example_desktop animation theme pack assets locally
 - Running AnimateDiff video generation from SDXL models
 - Operating node-graph workflows with full control over the pipeline
 
@@ -161,7 +161,7 @@ Template path: call `RUN_WORKFLOW` with `workflow: "animatediff_i2v"`
 Pre-configured workflow for theme pack animation assets:
 - Uses SDXL for style frame generation
 - AnimateDiff for character movement clips
-- Output convention: save to `<workspace>\gald3r_throne\src-tauri\maestro2\comfyui_workflows\`
+- Output convention: save to `<workspace>\example_desktop\src-tauri\maestro2\comfyui_workflows\`
 - Workflow JSON: store at the above path as `maestro2_theme_starter.json`
 
 Template path: call `RUN_WORKFLOW` with `workflow: "maestro2_theme_starter"`
@@ -185,7 +185,7 @@ Template path: call `RUN_WORKFLOW` with `workflow: "maestro2_theme_starter"`
 
 Animation theme pack workflows live at:
 ```
-<workspace>\gald3r_throne\src-tauri\maestro2\comfyui_workflows\
+<workspace>\example_desktop\src-tauri\maestro2\comfyui_workflows\
 ```
 
 For cloud-based generation without local GPU, use `higgsfield` skill (T848).

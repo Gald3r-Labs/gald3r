@@ -65,9 +65,9 @@ graphify index --lang python,typescript --root . --out .graphify/
 
 # gald3r workspace (all repos)
 graphify index --lang python,typescript \
-  --root G:/gald3r_ecosystem/gald3r_valhalla/project_code/docker/servers \
-  --root G:/gald3r_ecosystem/gald3r_throne/src \
-  --out G:/gald3r_ecosystem/.graphify/
+  --root <ECOSYSTEM_ROOT>/example_app/project_code/docker/servers \
+  --root <ECOSYSTEM_ROOT>/example_desktop/src \
+  --out <ECOSYSTEM_ROOT>/.graphify/
 ```
 
 ### Update index after changes
@@ -102,7 +102,7 @@ graphify query --impact output_pipeline.OutputPipeline
 graphify query --callers PluginLoader.load_plugin
 
 # Understand vault_search dependencies:
-graphify query --imports gald3r_mcp.tools.plugins.vault_search --depth 2
+graphify query --imports example_mcp.tools.plugins.vault_search --depth 2
 
 # Find all classes inheriting from OutputTransformer:
 graphify query --subclasses OutputTransformer
@@ -111,8 +111,8 @@ graphify query --subclasses OutputTransformer
 ### Using gitNexus MCP (if T871 wired):
 ```
 # Via MCP tool calls in agent context:
-graph_callers(symbol="OutputPipeline", repo="gald3r_valhalla")
-graph_impact(file="gald3r_mcp/output_pipeline.py")
+graph_callers(symbol="OutputPipeline", repo="example_app")
+graph_impact(file="example_mcp/output_pipeline.py")
 graph_search(symbol="memory_capture_session")
 ```
 
@@ -133,7 +133,7 @@ Before implementing any task, run the Impact Scan:
 
 ### Compact graph summary format (inject into context window)
 ```
-IMPACT SCAN: gald3r_mcp/output_pipeline.py
+IMPACT SCAN: example_mcp/output_pipeline.py
 Direct callers: mcp_server.py (1 call: register_resources)
 Imported by: tests/fast/test_fast_output_pipeline.py
 Downstream deps: none (leaf module)
@@ -154,16 +154,16 @@ graphify status
 # Output: Index age: 2h, Files tracked: 847, Staleness: LOW
 ```
 
-### Multi-repo workspace index (gald3r_dev + valhalla + throne)
+### Multi-repo workspace index (<gald3r_source> + valhalla + throne)
 ```powershell
 # scripts/graphify_rebuild_workspace.ps1
 $repos = @(
-    "G:/gald3r_ecosystem/gald3r_valhalla/project_code/docker/servers",
-    "G:/gald3r_ecosystem/gald3r_throne/src",
-    "G:/gald3r_ecosystem/gald3r_dev"
+    "<ECOSYSTEM_ROOT>/example_app/project_code/docker/servers",
+    "<ECOSYSTEM_ROOT>/example_desktop/src",
+    "<ECOSYSTEM_ROOT>/<gald3r_source>"
 )
 foreach ($r in $repos) {
-    graphify index --lang python,typescript --root $r --out "G:/gald3r_ecosystem/.graphify/"
+    graphify index --lang python,typescript --root $r --out "<ECOSYSTEM_ROOT>/.graphify/"
 }
 ```
 
@@ -193,7 +193,7 @@ From the Graphify project documentation and internal gald3r testing:
 | Java | ✗ | ✓ | ✓ |
 | C/C++ | ✗ | ✓ | ✓ |
 
-gald3r primary targets: **Python** (gald3r_valhalla) + **TypeScript/React** (gald3r_throne) — both fully supported.
+gald3r primary targets: **Python** (example_app) + **TypeScript/React** (example_desktop) — both fully supported.
 
 ## FALLBACK: tree-sitter + ripgrep
 
@@ -204,7 +204,7 @@ When no graph backend is installed, fall back to structured symbol search:
 rg "memory_capture_episode\(" --type py -l
 
 # Find all imports of a module
-rg "from gald3r_mcp.output_pipeline import|import output_pipeline" --type py
+rg "from example_mcp.output_pipeline import|import output_pipeline" --type py
 
 # Find class definition
 rg "^class OutputPipeline" --type py -l
@@ -232,5 +232,5 @@ This skill lives in:
 - `.cursor/skills/g-skl-graphify/SKILL.md` (Cursor)
 - `.claude/skills/g-skl-graphify/SKILL.md` (Claude Code parity)
 
-The graphify index at `G:/gald3r_ecosystem/.graphify/` is shared across both IDE contexts.
+The graphify index at `<ECOSYSTEM_ROOT>/.graphify/` is shared across both IDE contexts.
 gitNexus MCP (T871) exposes the same graph via MCP tool calls — no CLI install required once T871 is wired.

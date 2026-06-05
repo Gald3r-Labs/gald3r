@@ -15,7 +15,7 @@ Accepts a feature description and generates a self-contained **proposal document
 `docs/proposals/YYYYMMDD_HHMMSS_Cursor_PROPOSAL_<slug>.md` covering everything needed
 for human approval before any `.gald3r/` writes occur.
 
-Inspired by the OpenSpec `/propose` pattern — one command, one file, full context.
+One command, one file, full context.
 
 ---
 

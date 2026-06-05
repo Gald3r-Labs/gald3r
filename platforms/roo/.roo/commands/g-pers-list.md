@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
 # g-pers-list — List available personality packs

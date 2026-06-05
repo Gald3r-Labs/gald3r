@@ -75,7 +75,7 @@ Allowed implementation readiness checks are limited to smoke/unit-style evidence
 
 The output may include a review handoff and checkpoint SHA. It must not perform the review. Use `g-go` / `g-go --swarm` for implement-plus-auto-review, or `g-go-review` / `g-go-review --swarm` for review-only.
 
-## Completion Signal Contract (T1175 — Sandcastle pattern)
+## Completion Signal Contract (T1175)
 
 `g-go-code` MUST NOT mark a task `[🔍]` (Awaiting Verification) based on "agent feels done" or "end of turn" heuristics. A **completion signal** is a structured, file-grounded artifact set that the next-stage reviewer can verify cold without re-reading the implementer's reasoning.
 
@@ -92,7 +92,7 @@ A valid completion signal consists of **all** of the following — every item is
 
 **Why this matters**: the next agent (`g-go-review` or any reviewer) reads the task file cold and uses these artifacts as the authoritative ground-truth for the work claimed complete. Missing signal pieces are the root cause of the "passed review but actually broken" failure mode.
 
-## Journal Capture on Novel Pattern (T1010 — myPKA pattern)
+## Journal Capture on Novel Pattern (T1010)
 
 After a task reaches `[🔍]`, IF the implementation surfaced a **novel pattern,
 decision rule, or anti-pattern** worth remembering for next time, write **one**
@@ -111,7 +111,7 @@ concise entry to the active agent's journal:
   `g-skl-learn`'s project-wide `learned-facts.md`. It is **not** part of the
   mandatory completion signal — a missing journal entry never blocks `[🔍]`.
 
-## Iteration and Timeout Limits (T1175 — Sandcastle pattern)
+## Iteration and Timeout Limits (T1175)
 
 `g-go-code` accepts dual stop-conditions in `$ARGUMENTS`. **Whichever limit hits first stops the run cleanly**; the limit is not a hard kill — it is a soft "no new claims, finish what's in flight, write the summary" boundary.
 
@@ -282,7 +282,7 @@ Re-run the helper in `-Mode post-write -Apply` immediately after coordinator-own
 
 After the WPAC gate is skipped or passes:
 
-1. At the **orchestration git root** (the repo from which you run this command — normally the Workspace-Control owner, e.g. `gald3r_dev`): run `git status --short`. If anything is listed **outside** this run's explicit coordinator staging allowlist for the active task and bug IDs, **STOP** here. Do not claim tasks or bugs, create or reuse T170 worktrees, partition swarms, or write coordinator-owned updates to `.gald3r/TASKS.md`, `.gald3r/BUGS.md`, other shared `.gald3r` coordination files, `CHANGELOG.md`, generated Copilot prompts, or parity output until unrelated changes are committed, stashed, or moved to a prior focused commit. Preserve any bucket handoff artifacts already produced and list the paths that blocked progress.
+1. At the **orchestration git root** (the repo from which you run this command — normally the Workspace-Control owner, e.g. `<gald3r_source>`): run `git status --short`. If anything is listed **outside** this run's explicit coordinator staging allowlist for the active task and bug IDs, **STOP** here. Do not claim tasks or bugs, create or reuse T170 worktrees, partition swarms, or write coordinator-owned updates to `.gald3r/TASKS.md`, `.gald3r/BUGS.md`, other shared `.gald3r` coordination files, `CHANGELOG.md`, generated Copilot prompts, or parity output until unrelated changes are committed, stashed, or moved to a prior focused commit. Preserve any bucket handoff artifacts already produced and list the paths that blocked progress.
 
 2. **`gald3r_worktree.ps1 -AllowDirty`**: do not use this switch for `g-go`, `g-go-code`, `g-go-review`, or any `--swarm` variant **except** when every dirty path is owned exclusively by the active task/bug scope and a `## Status History` row documents that override. Otherwise clean the checkout first. The same **per-root** `-AllowDirty` discipline applies to every repository included in the touch set below when multi-repo work is in scope.
 
@@ -537,13 +537,13 @@ Call `graph_impact` on each file in the task touch set via gald3r_muninn MCP. Th
 Direct MCP equivalent (when calling tools by name):
 
 ```jsonc
-// gald3r_valhalla MCP server (muninn plugin)
+// example_app MCP server (muninn plugin)
 { "tool": "graph_impact", "arguments": { "file_path": "{file_to_be_modified}" } }
 ```
 
 Review the returned `files` list (each entry `{path, relation}` with `relation` ∈ `imports | calls | imports+calls`). If the impact scan reveals > 3 transitively dependent files, add them to the implementation context window before writing. This prevents cross-file breakage ("agent edits one file and breaks another"). Non-blocking: proceed even if the script returns `warning: not_indexed` or falls back to the ripgrep backend.
 
-Use `.cursor/skills/g-skl-muninn/scripts/graph_impact.ps1` for all impact analysis (T1158).
+Use `.claude/skills/g-skl-muninn/scripts/graph_impact.ps1` for all impact analysis (T1158).
 
 **b0.1a Index freshness check (T1149)** — before relying on impact results, check index state (the wrapper reports it; or call `graph_status` via MCP):
 
@@ -564,13 +564,13 @@ Read `.gald3r/config/AGENT_CONFIG.md` → `context_reduction_mode.graphify_b0_en
 
 Backend fallback order (g-skl-graphify §Backends):
 
-1. **gald3r_muninn MCP** (preferred, T1158) — `graph_impact` / `graph_callers` / `graph_callees` / `graph_deps` for symbol-level call/import resolution. Auto-loaded into the gald3r_valhalla MCP server; see `.mcp.json` `gald3r_muninn` entry.
+1. **gald3r_muninn MCP** (preferred, T1158) — `graph_impact` / `graph_callers` / `graph_callees` / `graph_deps` for symbol-level call/import resolution. Auto-loaded into the example_app MCP server; see `.mcp.json` `gald3r_muninn` entry.
 2. **graphify CLI** — when muninn is unavailable, run `graphify query --root . --symbol {target}` against the local `.graphify/` index. See g-skl-graphify §SETUP for indexing guidance.
 3. **tree-sitter + ripgrep fallback** — when neither backend is reachable, fall back to the legacy grep-based context-prep (Step b0.1 + ad-hoc reads). Do NOT halt the run.
 
 Failure modes (never halt the run):
 
-- **Missing backend** — gald3r_valhalla MCP server unreachable AND muninn plugin import fails AND `graphify` CLI not on PATH AND no `.graphify/` index → log "graphify b0 skipped: no backend reachable" and fall through to legacy.
+- **Missing backend** — example_app MCP server unreachable AND muninn plugin import fails AND `graphify` CLI not on PATH AND no `.graphify/` index → log "graphify b0 skipped: no backend reachable" and fall through to legacy.
 - **Graph staleness** — index older than the orchestration root's last commit (muninn `graph_status` returns `stale: true` when index >24h old) → emit a warning; still use the result (advisory) and append a note recommending re-indexing via the muninn indexer or `graphify update`.
 - **Query timeout** (>5s) — abort the query, log "graphify b0 timeout — fell back to legacy", proceed.
 - **Empty result** — query returned no symbols / no edges → log "graphify b0 empty — fell back to legacy"; proceed with Step b0.1 context.
@@ -639,7 +639,7 @@ python -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]).read())" ".github/w
 
 In all three cases the rule is identical: **lint the file you just wrote → if it fails, fix it inline and re-lint → only a clean exit 0 advances the loop to the next write.**
 
-**Parity note (AC7)** — this `g-go-code.md` under canonical `project_template/.cursor/commands/` is the **source of truth** for the `post_write_lint` step. The per-IDE mirrors (`.claude/commands/g-go-code.md`, `.cursor/commands/g-go-code.md`, and the other platform copies) are **propagated later** by `custom_scripts/platform_parity_sync.ps1` — do **not** hand-edit the mirrors. The lint helper `gald3r_post_write_lint.ps1` lives under the same canonical `.gald3r_sys/scripts/` tree and is synced alongside.
+**Parity note (AC7)** — this `g-go-code.md` under canonical `project_template/.claude/commands/` is the **source of truth** for the `post_write_lint` step. The per-IDE mirrors (`.claude/commands/g-go-code.md`, `.cursor/commands/g-go-code.md`, and the other platform copies) are **propagated later** by `custom_scripts/platform_parity_sync.ps1` — do **not** hand-edit the mirrors. The lint helper `gald3r_post_write_lint.ps1` lives under the same canonical `.gald3r_sys/scripts/` tree and is synced alongside.
 
 **b2) AC gate** — before moving on, walk every `- [ ]` acceptance criterion in the task spec:
   - Is this criterion now satisfied? Check the actual files, not just intent.
@@ -867,7 +867,7 @@ auto-generated skill, distinguished by the `g-skl-auto-` prefix and `auto_genera
 frontmatter (NOT a subfolder — the skills tree is flat for parity deployment):
 
 ```
-.cursor/skills/g-skl-auto-<slug>/SKILL.md
+.claude/skills/g-skl-auto-<slug>/SKILL.md
 ```
 
 Frontmatter (gald3r SKILL.md standard + provenance):

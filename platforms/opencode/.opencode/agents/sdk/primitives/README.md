@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [AGENT_ORCHESTRATION]
+---
+
 # Cursor Primitives Integration for Agent SDK
 
 This module provides Agent SDK agents with access to Cursor's core primitives:

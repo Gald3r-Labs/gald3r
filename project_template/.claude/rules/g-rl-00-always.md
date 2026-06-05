@@ -59,6 +59,6 @@ subsystem_memberships: [LOGGING_SYSTEM]
 
    **Regression canonical example** — this is the exact construct that triggered T1144 (a PowerShell `@(...)` array piped through `Where-Object` to find a hook file, executed inside a `Bash` tool call):
    ```powershell
-   $hook = @( ".cursor\hooks\g-hk-pcac-inbox-check.ps1", ".claude\hooks\g-hk-pcac-inbox-check.ps1" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+   $hook = @( ".cursor\hooks\g-hk-wpac-inbox-check.ps1", ".claude\hooks\g-hk-wpac-inbox-check.ps1" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
    ```
-   Bash rejects `@(` with `syntax error near unexpected token '('`. That error is a **tool-routing failure**, not a real PCAC conflict or hook-missing condition — re-route the same snippet through PowerShell and it succeeds. Do not enter an error-driven retry loop; switch tools.
+   Bash rejects `@(` with `syntax error near unexpected token '('`. That error is a **tool-routing failure**, not a real WPAC conflict or hook-missing condition — re-route the same snippet through PowerShell and it succeeds. Do not enter an error-driven retry loop; switch tools.

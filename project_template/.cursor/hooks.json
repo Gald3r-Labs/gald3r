@@ -9,57 +9,57 @@
   "hooks": {
     "sessionStart": [
       {
-        "command": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-session-start.ps1",
+        "command": "pwsh -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-session-start.ps1",
         "_hook_md": ".cursor/hooks/g-hk-session-start.md"
       }
     ],
     "stop": [
       {
-        "command": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-agent-complete.ps1",
+        "command": "pwsh -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-agent-complete.ps1",
         "_hook_md": ".cursor/hooks/g-hk-agent-complete.md"
       },
       {
-        "command": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-nightly-learn.ps1",
+        "command": "pwsh -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-nightly-learn.ps1",
         "_hook_md": ".cursor/hooks/g-hk-nightly-learn.md"
       },
       {
-        "command": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-session-end.ps1",
+        "command": "pwsh -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-session-end.ps1",
         "_hook_md": ".cursor/hooks/g-hk-session-end.md"
       },
       {
-        "command": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-encoding-normalize.ps1 -Quiet",
+        "command": "pwsh -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-encoding-normalize.ps1 -Quiet",
         "_hook_md": ".cursor/hooks/g-hk-encoding-normalize.md"
       },
       {
-        "command": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-ggo-stop-detect.ps1",
+        "command": "pwsh -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-ggo-stop-detect.ps1",
         "_hook_md": ".cursor/hooks/g-hk-ggo-stop-detect.md"
       }
     ],
     "beforeShellExecution": [
       {
-        "command": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-validate-shell.ps1",
+        "command": "pwsh -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-validate-shell.ps1",
         "_hook_md": ".cursor/hooks/g-hk-validate-shell.md"
       }
     ],
     "preToolUse": [
       {
         "matcher": "Edit|Write|MultiEdit|NotebookEdit|Patch|ApplyPatch|str_replace_editor",
-        "command": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-pre-tool-call-gald3r-guard.ps1",
+        "command": "pwsh -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-pre-tool-call-gald3r-guard.ps1",
         "_hook_md": ".cursor/hooks/g-hk-pre-tool-call-gald3r-guard.md"
       },
       {
         "matcher": "Edit|Write|MultiEdit|NotebookEdit|Patch|ApplyPatch|str_replace_editor",
-        "command": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-pre-tool-call-prd-freeze.ps1",
+        "command": "pwsh -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-pre-tool-call-prd-freeze.ps1",
         "_hook_md": ".cursor/hooks/g-hk-pre-tool-call-prd-freeze.md"
       },
       {
         "matcher": "Edit|Write|MultiEdit|NotebookEdit|Patch|ApplyPatch|str_replace_editor",
-        "command": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-pre-tool-call-member-gald3r-guard.ps1",
+        "command": "pwsh -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-pre-tool-call-member-gald3r-guard.ps1",
         "_hook_md": ".cursor/hooks/g-hk-pre-tool-call-member-gald3r-guard.md"
       },
       {
         "matcher": "Bash|Shell|Terminal|run_terminal_cmd",
-        "command": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-pre-tool-call.ps1",
+        "command": "pwsh -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-pre-tool-call.ps1",
         "_hook_md": ".cursor/hooks/g-hk-pre-tool-call.md"
       }
     ]

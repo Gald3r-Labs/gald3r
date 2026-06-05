@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [AGENT_ORCHESTRATION]
 ---
 # g-agent-hire — Research-gated new agent creation workflow
@@ -8,8 +8,7 @@ new agents land with quality, uniqueness, and parity baked in — rather
 than being added ad hoc with overlap, unclear ownership, or trigger-phrase
 collisions.
 
-Inspired by myPKA's Nolan specialist pattern (IDEA-HARVEST-111). The
-command is interactive at the REVIEW phase by design — humans approve
+The command is interactive at the REVIEW phase by design — humans approve
 the contract before any IDE-target file is written.
 
 ## Usage
@@ -43,10 +42,10 @@ implementations of the requested agent role.
 ### Phase 2 — DRAFT
 
 Generates the new agent's contract, following existing gald3r agent
-structure (see `.gald3r_sys/agents/g-agnt-*.md` and the AGENTS.md
+structure (see `.claude/agents/g-agnt-*.md` and the AGENTS.md
 "Agents" roster). Produces:
 
-1. `.gald3r_sys/agents/g-agnt-<slug>.md` — full agent contract:
+1. `.claude/agents/g-agnt-<slug>.md` — full agent contract:
    - YAML frontmatter: `name`, `description` (third-person, includes
      trigger phrases), `model`, `tools` (allowed-tools list),
      `disable-model-invocation`
@@ -88,7 +87,7 @@ Only runs after explicit user approval in Phase 3. Actions:
 2. Append a new row to the canonical AGENTS.md roster table.
 3. Run `custom_scripts/platform_parity_sync.ps1 -Sync` so external template
    member repos pick up the new agent (controller parity is owned by
-   gald3r_dev — see CLAUDE.md learned fact #31).
+   <gald3r_source> — see CLAUDE.md learned fact #31).
 4. Move the staged draft to
    `.gald3r/reports/agent_drafts/hired/<slug>_<ISO>.md` for audit.
 5. Append a CHANGELOG.md `[Unreleased]` entry under "Added" describing
@@ -99,7 +98,7 @@ Only runs after explicit user approval in Phase 3. Actions:
 | Gate | Rule |
 |---|---|
 | Trigger-phrase uniqueness | The new agent's trigger phrases MUST NOT collide with any existing agent's trigger phrases. Scan all `g-agnt-*.md` files and the AGENTS.md roster. Collisions block the hire — revise or rename. |
-| Skill ownership | The new agent MUST reference at least one owned skill (`.gald3r_sys/skills/g-skl-*/` entry). An agent with zero skill ownership is overlap with an existing role — either declare ownership or do not hire. |
+| Skill ownership | The new agent MUST reference at least one owned skill (`.claude/skills/g-skl-*/` entry). An agent with zero skill ownership is overlap with an existing role — either declare ownership or do not hire. |
 | `use proactively when:` present | The agent contract MUST contain a populated `Use proactively when:` section so the model invokes it appropriately. Empty or boilerplate sections block the hire. |
 | Description format | `description:` field MUST be third-person and contain trigger terms a model can match against — see [[skl-skill-create]] "Writing Effective Descriptions". |
 
@@ -131,8 +130,7 @@ After Phase 4, offer to regenerate `PRODUCT_SYSTEMS.md`:
 
 ## Related
 
-- T1017 — original task spec (IDEA-HARVEST-111, myPKA Nolan specialist
-  pattern).
+- T1017 — original task spec .
 - T1172a — `token_budget:` ordinal bands (re-used here for the
   agent's "Estimated context impact").
 - `custom_scripts/platform_parity_sync.ps1` — controller parity machinery

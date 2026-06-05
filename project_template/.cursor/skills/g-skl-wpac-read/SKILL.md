@@ -41,7 +41,7 @@ subsystem_memberships: [WORKSPACE_COORDINATION]
    - Show: who is asking, what they need, which task is blocking them
    - Offer: `Action (create task here) / Defer (keep open) / Reject (close with note)`
    - If actioned: create task in `.gald3r/tasks/` with reference to child's blocking task
-     - **PCAC-priority floor (T166)**: tasks spawned from PCAC items default to `priority: high`. If the source INBOX item is `[CONFLICT]` or carries an explicit urgency flag (e.g., `urgent: true`), default to `priority: critical`. Pass `wpac_source: { type: order|ask|broadcast|sync|conflict, source_project: <name>, inbox_ref: <id> }` to `g-skl-tasks` CREATE TASK so the audit trail is preserved in the task frontmatter and TASKS.md gets the `[WPAC]` tag prefix. Critical (CONFLICT-derived) tasks must also force `requires_verification: true` — never skip verification on cross-project work. Humans MAY downgrade priority manually after creation; agents MUST NOT auto-downgrade.
+     - **WPAC-priority floor (T166)**: tasks spawned from WPAC items default to `priority: high`. If the source INBOX item is `[CONFLICT]` or carries an explicit urgency flag (e.g., `urgent: true`), default to `priority: critical`. Pass `wpac_source: { type: order|ask|broadcast|sync|conflict, source_project: <name>, inbox_ref: <id> }` to `g-skl-tasks` CREATE TASK so the audit trail is preserved in the task frontmatter and TASKS.md gets the `[WPAC]` tag prefix. Critical (CONFLICT-derived) tasks must also force `requires_verification: true` — never skip verification on cross-project work. Humans MAY downgrade priority manually after creation; agents MUST NOT auto-downgrade.
    - If accessible: write `parent_action_status: completed` to child's task file
    - Mark INBOX entry `[DONE]`
 
@@ -98,7 +98,7 @@ subsystem_memberships: [WORKSPACE_COORDINATION]
      ┌─────────────────────┬────────────────────────────────┬──────────────┐
      │ Project             │ Ready Capabilities              │ Last Updated │
      ├─────────────────────┼────────────────────────────────┼──────────────┤
-     │ gald3r_valhalla      │ docker-backend, project-registry│ 2026-04-18   │
+     │ example_app      │ docker-backend, project-registry│ 2026-04-18   │
      └─────────────────────┴────────────────────────────────┴──────────────┘
      ```
    - If no peer snapshots exist: skip silently

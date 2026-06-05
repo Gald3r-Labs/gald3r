@@ -10,13 +10,13 @@ Usage:
 
 Examples:
     # Check what would change (no writes):
-    python migrate_topics_to_tags.py --vault-path G:/gald3r_ecosystem/gald3r_vault --dry-run
+    python migrate_topics_to_tags.py --vault-path <ECOSYSTEM_ROOT>/example_vault --dry-run
 
     # Apply the migration:
-    python migrate_topics_to_tags.py --vault-path G:/gald3r_ecosystem/gald3r_vault
+    python migrate_topics_to_tags.py --vault-path <ECOSYSTEM_ROOT>/example_vault
 
     # Apply with verbose output:
-    python migrate_topics_to_tags.py --vault-path G:/gald3r_ecosystem/gald3r_vault --verbose
+    python migrate_topics_to_tags.py --vault-path <ECOSYSTEM_ROOT>/example_vault --verbose
 """
 
 from __future__ import annotations

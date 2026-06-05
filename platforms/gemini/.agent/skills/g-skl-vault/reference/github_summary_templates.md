@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [MEMORY_AND_KNOWLEDGE, VAULT_AND_RESEARCH]
+---
 # GitHub Summary Templates
 
 Use these templates when tracked repos or gists are mirrored into `repos_location` and summarized into the vault.
@@ -19,7 +22,7 @@ type: github_repo
 ingestion_type: github_sync
 source: https://github.com/owner/repo
 title: "owner/repo"
-topics: [tag1, tag2]
+tags: [tag1, tag2]
 refresh_policy: weekly
 source_volatility: high
 last_version: vX.Y.Z

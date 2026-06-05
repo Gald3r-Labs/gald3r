@@ -38,7 +38,7 @@ The agent acknowledges with a single line — for example:
 - **Per-conversation**: in multi-window setups, terse mode is per
   conversation, not global.
 - **Tool calls unaffected**: terse mode changes output presentation only.
-  Tool calls, hooks, PCAC checks, and gald3r system gates execute
+  Tool calls, hooks, WPAC checks, and gald3r system gates execute
   unchanged.
 
 ## Safety
@@ -49,13 +49,13 @@ All gald3r safety gates continue to fire in terse mode:
 - Todo-completion gate (`g-rl-34`)
 - Code-change-requires-task gate (`g-rl-33`)
 - Member-marker invariant (`g-rl-36`)
-- PCAC inbox gate, Clean Controller Gate, secrets detection
+- WPAC inbox gate, Clean Controller Gate, secrets detection
 
 Terse mode reduces ceremony, not safety.
 
 ## See also
 
-- Skill: `g-skl-keep-it-simple` (`.cursor/skills/g-skl-keep-it-simple/SKILL.md`)
+- Skill: `g-skl-keep-it-simple` (`.claude/skills/g-skl-keep-it-simple/SKILL.md`)
 - Related: `@g-pers-pick`, `@g-pers-list`
 
 ## Source

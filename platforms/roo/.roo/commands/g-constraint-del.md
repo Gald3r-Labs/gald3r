@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 ---
 Deprecate a constraint. Activates **g-skl-constraints** → DEPRECATE operation.

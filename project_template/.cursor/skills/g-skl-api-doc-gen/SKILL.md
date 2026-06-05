@@ -17,7 +17,7 @@ Scan entry points and imports for:
   FastAPI:   from fastapi import FastAPI  /  app = FastAPI()
   Flask:     from flask import Flask      /  @app.route(...)
   Express:   express = require('express') /  app.get(...) / router.post(...)
-  FastMCP:   from fastmcp import FastMCP  /  @mcp.tool()  (gald3r_valhalla)
+  FastMCP:   from fastmcp import FastMCP  /  @mcp.tool()  (example_app)
 ```
 
 ---
@@ -44,7 +44,7 @@ Scan entry points and imports for:
 // Extract: path, handler function params
 ```
 
-### FastMCP plugins (gald3r_valhalla)
+### FastMCP plugins (example_app)
 ```python
 # Parse TOOL_NAME, TOOL_DESCRIPTION, TOOL_PARAMS dicts
 # Extract execute() function signature and return type
@@ -163,7 +163,7 @@ Create a new user account.
 
 ## Step 6: FastMCP Plugin Documentation
 
-For gald3r_valhalla plugins, generate a standardized doc block:
+For example_app plugins, generate a standardized doc block:
 
 ```python
 """

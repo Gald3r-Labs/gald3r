@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Wrap gald3r report data in the standard JSON envelope and export (T1381).
 .DESCRIPTION

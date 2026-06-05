@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-curator
 description: >
   Autonomous skill library curator — grades every SKILL.md against a structured rubric
@@ -7,7 +7,7 @@ description: >
   writes a structured audit log. Never deletes — only proposes. Safe for unattended
   scheduled runs.
 type: skill
-topics: [skill-management, audit, rubric, consolidation, scheduling]
+tags: [skill-management, audit, rubric, consolidation, scheduling]
 safety: file-read + file-write only; no Shell, no web fetch, no destructive ops
 triggers:
   - "@g-curator"

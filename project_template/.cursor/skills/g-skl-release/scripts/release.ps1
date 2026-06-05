@@ -1,13 +1,13 @@
-<#
+﻿<#
 .SYNOPSIS
     Orchestrate a gald3r slim template release — version injection, parity gate, export, and handoff.
 
 .DESCRIPTION
-    Drives the full release pipeline from gald3r_dev to the public gald3r repo:
+    Drives the full release pipeline from <gald3r_source> to the public gald3r repo:
       1. Run platform parity check (unless -Force or -SkipParityCheck)
-      2. Inject version string into all 5 version locations in G:/gald3r_ecosystem/gald3r_template_full
+      2. Inject version string into all 5 version locations in <ECOSYSTEM_ROOT>/<template_full>
       3. Validate CHANGELOG.md contains a heading for the target version
-      4. Run export_slim_template_repo.ps1 to mirror G:/gald3r_ecosystem/gald3r_template_full to -Destination
+      4. Run export_slim_template_repo.ps1 to mirror <ECOSYSTEM_ROOT>/<template_full> to -Destination
       5. Print the suggested git commit, tag, and push commands
 
     Default is DRY-RUN (reports what would happen). Use -Apply to write files.
@@ -50,9 +50,18 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$RepoRoot = (Get-Item $PSScriptRoot).Parent.FullName
+$ScriptsDir = $PSScriptRoot
+$SkillRoot = Split-Path $ScriptsDir -Parent
+# Resolve <gald3r_source> repo root (skill lives under gald3r_template/.gald3r_sys/...)
+$RepoRoot = $SkillRoot
+for ($i = 0; $i -lt 6; $i++) {
+    if (Test-Path (Join-Path $RepoRoot "custom_scripts\platform_parity_sync.ps1")) { break }
+    $parent = Split-Path $RepoRoot -Parent
+    if ($parent -eq $RepoRoot) { break }
+    $RepoRoot = $parent
+}
 $EcosystemRoot = Split-Path $RepoRoot -Parent
-$TemplateSrc = Join-Path $EcosystemRoot "gald3r_template_full"
+$TemplateSrc = Join-Path $EcosystemRoot "<template_full>"
 
 Write-Host ""
 Write-Host "gald3r release pipeline" -ForegroundColor Cyan

@@ -11,7 +11,7 @@ its declared support against the Cursor reference implementation. Delegates to
 
 ## Delegates To
 
-- Script: `custom_scripts/check_platform_status.ps1 -Platform <name>` (default: all)
+- Engine: `gald3r platform status --platform <name>` (default: all); fallback `skills/g-skl-platform-monitor/scripts/check_platform_status.ps1`.
 - Skill: `g-skl-platform-monitor` → `CHECK`
 - Agent: `g-agnt-platformer`
 

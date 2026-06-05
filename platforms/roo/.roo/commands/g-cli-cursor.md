@@ -1,4 +1,4 @@
----
+﻿---
 description: Cursor CLI quick reference — Agent/Plan/Ask/Debug modes, Cloud Agent handoff, session management.
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---

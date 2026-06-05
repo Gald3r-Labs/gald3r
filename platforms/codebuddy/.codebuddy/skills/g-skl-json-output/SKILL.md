@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-json-output
 description: Emit gald3r command output (status, review, backlog) as structured JSON for scripting, CI gates, dashboards, and agent-to-agent handoff. Operations SERIALIZE, SCHEMA, VALIDATE, EXPORT. Invoked by --json flag commands (T1381). Mirrors g-skl-html-output. Coordination state files stay markdown.
 token_budget: low
@@ -57,9 +57,9 @@ Parse the produced string (must be valid JSON); confirm the envelope keys exist 
 Save under `html_output_dir` (default `docs/`) using `g-rl-01` naming with a `.json`
 extension: `YYYYMMDD_HHMMSS_<IDE>_<TOPIC>.json`. Return the path.
 
-Helper: `.gald3r_sys/skills/g-skl-json-output/scripts/json_output.ps1`
+Helper: `.claude/skills/g-skl-json-output/scripts/json_output.ps1`
 ```powershell
-pwsh -File .gald3r_sys/skills/g-skl-json-output/scripts/json_output.ps1 `
+pwsh -File .claude/skills/g-skl-json-output/scripts/json_output.ps1 `
   -Command g-status -Schema status -DataJson $jsonString -OutDir docs -Topic STATUS
 ```
 

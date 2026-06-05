@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
     gald3r pre-push gate: regular (light) vs release (CHANGELOG/version discipline).
@@ -21,9 +21,9 @@
     Print mode and checks but always exit 0 (for agents verifying wiring).
 
 .EXAMPLE
-    ./.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1
-    ./.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1 -Release
-    $env:GALD3R_RELEASE_PUSH=1; ./.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1 -NonInteractive
+    ./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1
+    ./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1 -Release
+    $env:GALD3R_RELEASE_PUSH=1; ./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1 -NonInteractive
 #>
 [CmdletBinding()]
 param(

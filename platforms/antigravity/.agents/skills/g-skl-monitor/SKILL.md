@@ -1,8 +1,8 @@
----
+﻿---
 name: g-skl-monitor
 description: >
   Manage scheduled content monitors for YouTube playlists, docs sites, GitHub repos,
-  and URLs via gald3r_valhalla MCP tools. Requires Docker backend (adv tier).
+  and URLs via example_app MCP tools. Requires Docker backend (adv tier).
   Monitors trigger automatic re-ingestion when new content is detected.
 version: 1.0.0
 min_tier: adv
@@ -18,7 +18,7 @@ triggers:
   - "remove monitor"
   - g-monitor
 requires:
-  - gald3r_valhalla MCP server (Docker backend)
+  - example_app MCP server (Docker backend)
   - monitor_add MCP tool
   - monitor_list MCP tool
   - monitor_check MCP tool
@@ -29,7 +29,7 @@ subsystem_memberships: [VAULT_AND_RESEARCH]
 
 # g-skl-monitor
 
-**Requires**: gald3r_valhalla Docker backend + `monitor_add` / `monitor_list` / `monitor_check` / `monitor_remove` MCP tools.
+**Requires**: example_app Docker backend + `monitor_add` / `monitor_list` / `monitor_check` / `monitor_remove` MCP tools.
 
 **Activate for**: Setting up scheduled content watching, checking for new videos/commits/docs changes, listing active monitors, removing monitors.
 
@@ -155,4 +155,4 @@ Before using this skill:
 ```
 gald3r_server_status()
 ```
-If unavailable: **this skill does not work in slim or full tier installs** — content monitors require the gald3r_valhalla PostgreSQL backend to store monitor state.
+If unavailable: **this skill does not work in slim or full tier installs** — content monitors require the example_app PostgreSQL backend to store monitor state.

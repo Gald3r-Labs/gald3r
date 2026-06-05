@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [MEMORY_AND_KNOWLEDGE]
+---
 # g-skl-muninn
 **Skill file**: `SKILL.md`
 
@@ -5,7 +8,7 @@
 
 ## What it does
 
-gald3r_muninn MCP — query the local codebase knowledge graph for impact analysis, caller chains, dependencies, and symbol search. Clean-room rewrite (T1147 epic, T1153-T1158) of the GitNexus integration; auto-loaded by the gald3r_valhalla MCP server from docker/gald3r/tools/plugins/muninn/. …
+gald3r_muninn MCP — query the local codebase knowledge graph for impact analysis, caller chains, dependencies, and symbol search. Clean-room rewrite (T1147 epic, T1153-T1158) of the GitNexus integration; auto-loaded by the example_app MCP server from docker/gald3r/tools/plugins/muninn/. …
 
 ## When to use
 

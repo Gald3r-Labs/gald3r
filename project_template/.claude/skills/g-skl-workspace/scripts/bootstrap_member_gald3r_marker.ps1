@@ -1,4 +1,4 @@
-# .claude/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1
+﻿# .claude/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1
 #
 # Bootstrap the marker-only `.gald3r/` for a Workspace-Control member
 # repository. Creates `.gald3r/.identity` (if absent) tying the member back
@@ -132,7 +132,7 @@ with the workspace controller's documentation conventions._
 
 - Live tasks, bugs, plans, releases: workspace controller (``$ControllerPath``)
 - This member's source code, build configuration, runtime files: this repository
-- Cross-project coordination (PCAC, INBOX, orders): workspace controller
+- Cross-project coordination (WPAC, INBOX, orders): workspace controller
 
 ## Why marker-only?
 

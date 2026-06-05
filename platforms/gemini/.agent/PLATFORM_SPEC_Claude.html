@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Platform Guide: Claude Code</title>
+<style>
+:root{
+  --bg:#1e1e2e;--surface:#181825;--card:#313244;--text:#cdd6f4;--muted:#a6adc8;
+  --accent:#cba6f7;--accent2:#89b4fa;--green:#a6e3a1;--yellow:#f9e2af;--red:#f38ba8;
+  --border:#45475a;--code-bg:#11111b;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:2rem 1.25rem 4rem}
+header.page{border-bottom:1px solid var(--border);padding-bottom:1rem;margin-bottom:1.5rem}
+h1{color:var(--accent);font-size:2rem;margin:.2rem 0}
+h2{color:var(--accent2);font-size:1.4rem;margin:2rem 0 .6rem;border-bottom:1px solid var(--border);padding-bottom:.3rem}
+h3{color:var(--text);font-size:1.1rem;margin:1.2rem 0 .4rem}
+a{color:var(--accent2)}
+.muted{color:var(--muted)}
+.subtitle{color:var(--muted);margin:.2rem 0 0}
+.glance{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.75rem;margin:1rem 0}
+.chip{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:.6rem .8rem}
+.chip .k{display:block;color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.04em}
+.chip .v{font-size:1rem;font-weight:600}
+section.block{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;margin:1rem 0}
+ul{margin:.4rem 0 .4rem 1.2rem}li{margin:.25rem 0}
+code{background:var(--code-bg);color:var(--green);padding:.1rem .35rem;border-radius:4px;font-family:Consolas,Menlo,monospace;font-size:.9em}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:1rem;overflow:auto}
+pre code{background:none;color:var(--text);padding:0}
+table{border-collapse:collapse;width:100%;margin:.6rem 0;font-size:.92rem}
+th,td{border:1px solid var(--border);padding:.45rem .6rem;text-align:left;vertical-align:top}
+th{background:var(--card);color:var(--accent2)}
+footer.page{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);color:var(--muted);font-size:.85rem}
+.index-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.75rem;margin-top:1rem}
+.index-card{display:block;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:.8rem 1rem;text-decoration:none;color:var(--text)}
+.index-card:hover{border-color:var(--accent)}
+.index-card .name{font-weight:600;color:var(--accent)}
+.index-card .tier{float:right}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="page">
+<h1>Platform Guide: Claude Code</h1>
+<p class="subtitle">gald3r platform guide . https://docs.anthropic.com/en/docs/claude-code</p>
+</header>
+<section class="block">
+<h2>At a Glance</h2>
+<div class="glance">
+<div class="chip"><span class="k">Platform</span><span class="v">claude</span></div>
+<div class="chip"><span class="k">gald3r support tier</span><span class="v">⚠️</span></div>
+<div class="chip"><span class="k">Last doc scan</span><span class="v">never</span></div>
+<div class="chip"><span class="k">Reference skill</span><span class="v">g-skl-platform-cursor</span></div>
+</div>
+<p class="muted">Official docs: <a href="https://docs.anthropic.com/en/docs/claude-code">https://docs.anthropic.com/en/docs/claude-code</a></p>
+<p class="muted">Last verified against platform docs on never.</p>
+<p>Authoritative reference for Claude Code customization in gald3r projects. Covers .claude/ folder layout, CLAUDE.md, agents, skills, commands, hooks (hooks.json format), MCP, and install verification. setting up Claude Code in a gald3r project, authoring <code>.claude/</code> configs, understanding hooks.json format, verifying Claude parity, or answering questions about Claude Code's capabilities.</p>
+</section>
+<section class="block">
+<h2>What Makes This Platform Different</h2>
+<ul>
+<li>TWO competing hook config surfaces: <code>.claude/hooks.json</code> (gald3r) AND <code>.claude/settings.json</code> <code>"hooks"</code> (live <code>Stop</code> chat-logger). Ambiguous which wins; possible double-fire or no-fire.</li>
+<li>Event-name casing mismatch: <code>hooks.json</code> lowercase vs official PascalCase (<code>SessionStart</code>/<code>Stop</code>). <code>beforeShellExecution</code> is a Cursor-era name with no Claude Code equivalent.</li>
+<li>Mixed entry shapes inside a single <code>hooks.json</code> (flat vs nested-with-matcher).</li>
+<li><code>local.settings.json</code> non-standard filename present alongside official <code>settings.local.json</code> — likely dead/legacy.</li>
+<li>Rules are plain <code>.md</code> (NOT <code>.mdc</code>); always-apply behavior leans on <code>CLAUDE.md</code> (<code>@AGENTS.md</code> import) rather than a per-rule activation engine.</li>
+</ul>
+</section>
+<section class="block">
+<h2>Hook System</h2>
+<ul>
+<li><strong>Type</strong>: json_config</li>
+<li><strong>Config file</strong>: <code>.claude/settings.json</code> key <code>"hooks"</code> (OFFICIAL, supported) — gald3r ALSO ships a top-level <code>.claude/hooks.json</code> (non-standard, partly-legacy; see §6/§9)</li>
+<li><strong>Events available</strong> (official Claude Code lifecycle): <code>SessionStart</code>, <code>SessionEnd</code>, <code>UserPromptSubmit</code>, <code>PreToolUse</code>, <code>PostToolUse</code>, <code>Notification</code>, <code>Stop</code>, <code>SubagentStop</code>, <code>PreCompact</code></li>
+</ul>
+<ul>
+<li><strong>Event payload format</strong>: JSON (matcher-grouped: <code>{ "matcher", "hooks":[{ "type":"command", "command" }] }</code>)</li>
+<li><strong>Limitations</strong>: official shape is matcher-grouped nested arrays; flat <code>{ "command" }</code> entries in <code>hooks.json</code> are suspect. <code>_hook_md</code> → <code>additional_context</code> injection (T1171) unconfirmed on Claude Code.</li>
+<li><strong>gald3r hook files</strong>: <code>g-hk-*.ps1</code> invoked via <code>powershell.exe -File .claude/hooks/g-hk-*.ps1</code>; <code>PreToolUse</code> block (correct nested shape) is the most likely to fire; <code>sessionStart</code>/<code>stop</code>/<code>beforeShellExecution</code> are the suspect lowercase entries</li>
+</ul>
+</section>
+<section class="block">
+<h2>Configuration Layout</h2>
+<pre><code>.claude/
+├── CLAUDE.md                ← gald3r-managed project instruction file (loaded every session); imports @AGENTS.md
+├── settings.json            ← gald3r/user — permissions, env, mcpServers, hooks (official schema)
+├── settings.local.json      ← user-local overrides (gitignored)
+├── local.settings.json      ← legacy/local overrides (gitignored)  ❓ non-standard name — see §9
+├── hooks.json               ← gald3r-managed hook wiring (NON-standard top-level file — see §6/§9)
+├── rules/                   ← gald3r — always-apply modular rules (g-rl-*.md, plain .md)
+│   └── g-rl-*.md
+├── skills/                  ← gald3r — folder-per-skill (g-skl-*/SKILL.md); native Claude Code Agent Skills
+│   └── g-skl-*/SKILL.md
+├── agents/                  ← gald3r — subagent definitions (g-agnt-*.md); native Claude Code subagents
+│   └── g-agnt-*.md
+├── commands/                ← gald3r — slash commands (g-*.md → /g-*)
+│   └── g-*.md
+└── hooks/                   ← gald3r — hook scripts (g-hk-*.ps1) + companion g-hk-*.md (T1171)
+    └── g-hk-*.ps1 / g-hk-*.md</code></pre>
+</section>
+<section class="block">
+<h2>Best Practices</h2>
+<p class="muted">No dedicated Best Practices section in this spec. See gald3r Integration Notes below for platform-specific guidance.</p>
+</section>
+<section class="block">
+<h2>gald3r Integration Notes</h2>
+<ul>
+<li><strong>T1509 (this task's motivating bug): hook wiring on Claude Code MUST be done via the official <code>settings.json</code> <code>"hooks"</code> shape, NOT the lowercase top-level <code>hooks.json</code>.</strong> Migrate gald3r entries to <code>{ matcher, hooks:[{ type:"command", command }] }</code> under <code>settings.json</code> and normalize event names to official PascalCase.</li>
+<li>BUG-100 (resolved) confirms <code>g-hk-session-start.ps1</code> IS exercised on some Claude Code versions, but does NOT confirm the lowercase <code>hooks.json</code> wiring is the firing path. Run a hook-firing smoke test before flipping Hooks to ✅.</li>
+<li>When Claude Code updates, re-verify event names against <a href="https://docs.anthropic.com/en/docs/claude-code/hooks">https://docs.anthropic.com/en/docs/claude-code/hooks</a> (breaking-change history to watch: hook config moved into <code>settings.json</code>).</li>
+<li>Strengths over Cursor reference: native subagents (<code>.claude/agents/</code>) and native Agent Skills (<code>.claude/skills/</code>) require no shimming.</li>
+</ul>
+<p>---</p>
+</section>
+
+<footer class="page">Generated 2026-05-30 by generate_platform_guide.ps1 (T1539) from PLATFORM_SPEC.md. Human-facing reference; the machine-readable spec remains source of truth.</footer>
+</div>
+</body>
+</html>

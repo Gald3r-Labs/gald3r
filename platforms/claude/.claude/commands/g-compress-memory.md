@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [MEMORY_AND_KNOWLEDGE]
 ---
 # g-compress-memory
@@ -23,4 +23,4 @@ token overhead, preserving gald3r-managed ranges. Activates **g-skl-compress-mem
 
 In the gald3r **source** repo the whole memory file is gald3r-managed, so SCAN reports `skip`.
 
-Helper: `.gald3r_sys/skills/g-skl-compress-memory/scripts/gald3r_compress_memory.ps1`
+Helper: `.claude/skills/g-skl-compress-memory/scripts/gald3r_compress_memory.ps1`

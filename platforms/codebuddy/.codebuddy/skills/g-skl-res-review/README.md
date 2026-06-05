@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [VAULT_AND_RESEARCH]
+---
 # g-skl-res-review
 **Skill file**: `SKILL.md`
 

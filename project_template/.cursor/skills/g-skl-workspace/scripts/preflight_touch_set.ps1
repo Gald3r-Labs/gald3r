@@ -1,4 +1,4 @@
-# .cursor/skills/g-skl-workspace/scripts/preflight_touch_set.ps1
+# .claude/skills/g-skl-workspace/scripts/preflight_touch_set.ps1
 #
 # Human- and CI-friendly touch-set git preflight (T504 / g-rl-33).
 # Resolves the orchestration repo + optional workspace manifest members and
@@ -11,8 +11,8 @@
 #
 # Examples:
 #   .\scripts\preflight_touch_set.ps1
-#   .\scripts\preflight_touch_set.ps1 -WorkspaceRepoId gald3r_throne,gald3r_valhalla
-#   .\scripts\preflight_touch_set.ps1 -TaskFile .\.gald3r\tasks\task230_k8s_manifest_authoring_adopted_gald3r_web.md
+#   .\scripts\preflight_touch_set.ps1 -WorkspaceRepoId example_desktop,example_app
+#   .\scripts\preflight_touch_set.ps1 -TaskFile .\.gald3r\tasks\task230_k8s_manifest_authoring_adopted_example_web.md
 
 [CmdletBinding()]
 param(
@@ -180,7 +180,7 @@ function Resolve-ToGitRoot {
 $orch = $OrchestrationRoot
 if (-not $orch) { $orch = Find-DefaultOrchestrationRoot }
 if (-not $orch) {
-    Write-StatusLine RED "Could not resolve orchestration git root. Run from inside gald3r_dev or pass -OrchestrationRoot."
+    Write-StatusLine RED "Could not resolve orchestration git root. Run from inside <gald3r_source> or pass -OrchestrationRoot."
     Write-Output ''
     Write-Output 'Next:'
     Write-Output '  cd <path-to-your-controller-repo>'

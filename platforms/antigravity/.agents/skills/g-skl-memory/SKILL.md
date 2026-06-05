@@ -1,8 +1,8 @@
----
+﻿---
 name: g-skl-memory
 description: >
   Capture structured insights, session summaries, and search cross-session agent memory
-  via gald3r_valhalla MCP tools. Dual-mode: degrades to file-based g-skl-learn when
+  via example_app MCP tools. Dual-mode: degrades to file-based g-skl-learn when
   backend is unavailable. Full semantic search requires Docker backend (adv tier).
 version: 1.0.0
 min_tier: adv
@@ -17,7 +17,7 @@ triggers:
   - "memory search"
   - g-memory
 requires:
-  - gald3r_valhalla MCP server (Docker backend) for full semantic search
+  - example_app MCP server (Docker backend) for full semantic search
   - memory_capture_insight MCP tool
   - memory_capture_session MCP tool
   - memory_search MCP tool
@@ -30,7 +30,7 @@ subsystem_memberships: [MEMORY_AND_KNOWLEDGE]
 
 # g-skl-memory
 
-**Full capability**: requires gald3r_valhalla Docker backend.
+**Full capability**: requires example_app Docker backend.
 **Degraded mode**: when backend unavailable, use `g-skl-learn` for file-based insight capture.
 
 **Activate for**: Capturing important decisions mid-session, storing how-to procedures, searching what was decided in past sessions, end-of-session summaries.
@@ -67,7 +67,7 @@ memory_capture_insight(
   category="procedure",
   topic="python-venv",
   project_id="<from .gald3r/.project_id>",
-  project_path="G:/path/to/project",
+  project_path="<path>/to/project",
   scope="project",
   platform="cursor"
 )
@@ -95,11 +95,11 @@ Use at the end of every session on platforms without automatic hooks (Gemini, VS
 ```
 memory_capture_session(
   summary="Implemented tier-sync script fixes for .copilot and .github directories. Stubbed all deprecated harvest/ingest skills across 15 targets.",
-  project_path="G:/path/to/project",
+  project_path="<path>/to/project",
   project_id="<from .gald3r/.project_id>",
   platform="cursor",
   key_decisions="File-level sync replaces dir-level for .copilot/.github to prevent skip-if-exists bug",
-  files_changed="custom_scripts/tier_sync.ps1, G:/gald3r_ecosystem/gald3r_template_full/.copilot/commands/*, G:/gald3r_ecosystem/gald3r_template_adv/.copilot/commands/*"
+  files_changed="custom_scripts/tier_sync.ps1, <ECOSYSTEM_ROOT>/<template_full>/.copilot/commands/*, <ECOSYSTEM_ROOT>/<template_adv>/.copilot/commands/*"
 )
 ```
 
@@ -166,7 +166,7 @@ memory_context(
 
 ## File-Based Fallback (no backend)
 
-When gald3r_valhalla is unavailable, use `g-skl-learn` instead:
+When example_app is unavailable, use `g-skl-learn` instead:
 - Insights written to `.gald3r/learned-facts.md` as bullet points
 - Searchable via `Grep` on that file
 - Format: `- **[topic]**: insight text _(YYYY-MM-DD)_`

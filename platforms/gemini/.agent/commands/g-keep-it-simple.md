@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [MEMORY_AND_KNOWLEDGE]
 ---
 Toggle terse mode on or off: $ARGUMENTS
@@ -55,7 +55,7 @@ Terse mode reduces ceremony, not safety.
 
 ## See also
 
-- Skill: `g-skl-keep-it-simple` (`.gald3r_sys/skills/g-skl-keep-it-simple/SKILL.md`)
+- Skill: `g-skl-keep-it-simple` (`.claude/skills/g-skl-keep-it-simple/SKILL.md`)
 - Related: `@g-pers-pick`, `@g-pers-list`
 
 ## Source

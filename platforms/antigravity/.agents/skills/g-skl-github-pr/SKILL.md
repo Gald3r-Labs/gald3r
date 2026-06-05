@@ -113,7 +113,7 @@ Non-trivial logic (repo auto-detect, body templating) may live in
 
 ## Parity
 
-Canonical source: `.gald3r_sys/skills/g-skl-github-pr/`. Propagated to platform
+Canonical source: `.claude/skills/g-skl-github-pr/`. Propagated to platform
 mirrors (`.cursor/`, `.claude/`, `.agent/`, …) and template repos via the
 controller parity sync (`platform_parity_sync.ps1 -ApplyFromRoot` / `-SyncGaldSys`,
 T1284 / T1294).

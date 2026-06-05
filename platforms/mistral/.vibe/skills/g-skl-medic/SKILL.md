@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-medic
 maturity: beta
 version: 2.0.0
@@ -59,7 +59,7 @@ When L1 triage detects a **structural gap** matching a known framework constrain
 a repo that predates C-023 release files), the corresponding heal path backfills it. Heals are
 **dry-run by default**; pass `--apply` to write. Every operation is logged to
 `.gald3r/logs/medic_heal_YYYYMMDD.log` (only when `--apply`). Runner:
-`.gald3r_sys/skills/g-skl-medic/scripts/gald3r_medic_heal.ps1`.
+`.claude/skills/g-skl-medic/scripts/gald3r_medic_heal.ps1`.
 
 ```
 @g-medic --heal-c023 --dry-run     # plan release-file backfill from CHANGELOG (no writes)
@@ -97,7 +97,7 @@ Direct invocation: `gald3r_medic_heal.ps1 -ProjectRoot <path> -Heal c023|version
 
 ### Curation mode (`--curate`, Task 517)
 
-**Default (dry-run)**: runs `.gald3r_sys/skills/g-skl-medic/scripts/gald3r_medic_curate.ps1` — counts feature/subsystem sprawl (recursive subsystem count), runs hierarchy sync helpers with `-WarnOnly`, adds a **fragmentation** section (duplicate `feat-NNN` hits in `FEATURES.md`, subsystem specs on disk not indexed in `SUBSYSTEMS.md` via sync JSON), and writes a human report plus `medic_curate_proposal_<stamp>.json` under `.gald3r/reports/` (gitignored). The proposal keeps top-level `moves` empty for safety, but now includes non-binding `suggested_moves` and `index_candidates` with source, target, risk/confidence, and rationale so the reviewer has concrete candidates to approve/edit/reject.
+**Default (dry-run)**: runs `.claude/skills/g-skl-medic/scripts/gald3r_medic_curate.ps1` — counts feature/subsystem sprawl (recursive subsystem count), runs hierarchy sync helpers with `-WarnOnly`, adds a **fragmentation** section (duplicate `feat-NNN` hits in `FEATURES.md`, subsystem specs on disk not indexed in `SUBSYSTEMS.md` via sync JSON), and writes a human report plus `medic_curate_proposal_<stamp>.json` under `.gald3r/reports/` (gitignored). The proposal keeps top-level `moves` empty for safety, but now includes non-binding `suggested_moves` and `index_candidates` with source, target, risk/confidence, and rationale so the reviewer has concrete candidates to approve/edit/reject.
 
 **No report files (CI / no disk side effects)**: pass `-NoReportFiles` to `gald3r_medic_curate.ps1` — prints the same report + proposal JSON to stdout only (no `medic_curate_*.md` / proposal files / `medic_curate_latest.json`).
 
@@ -275,6 +275,10 @@ Write new `gald3r_version` to `.gald3r/.identity`. Append to `.gald3r/reports/UP
 
 - **TTL Check**: for each `in-progress` task: `now > claim_expires_at`? → reset to `pending`
 - **Verification Timeout**: `[🔍]` for > 8h → reset to `pending`; > 4h → flag only
+- **Platform Doc Freshness** (T1520): if `.gald3r/PLATFORM_STATUS.md` exists, parse the `Last Doc Scan` column for each platform row and compare against the `crawl_max_age_days` threshold (default `7`). Treat overdue platforms as a soft warning (⚠️), not a hard failure. Report format:
+  - All fresh → `Platform docs: ✅ all N platforms fresh`
+  - Any stale → `Platform docs: ⚠️ M of N platforms overdue — run @g-platform-scan`
+  Pure read of one file; never writes. If `PLATFORM_STATUS.md` does not exist, skip the check silently (no warning).
 - **Health Score**:
   ```
   base  = (completed / total_non_cancelled_non_paused) × 100
@@ -285,6 +289,7 @@ Write new `gald3r_version` to `.gald3r/.identity`. Append to `.gald3r/reports/UP
   -20   per open PCAC `INBOX.md` CONFLICT item (L1 continues, L2-L4 blocked until `@g-pcac-read`)
   -3    per active MCP server over 10 (see L1-K)
   -1    per MCP server flagged [ELEVATED] by Agent Shield (see L1-K)
+  -10   if ANY platform overdue for doc re-crawl (T1520) — capped at -10 regardless of count
   final = max(0, base − penalties)
   Healthy: ≥80 | Degraded: 50-79 | Critical: <50
   ```
@@ -294,7 +299,7 @@ Write new `gald3r_version` to `.gald3r/.identity`. Append to `.gald3r/reports/UP
 
 ### L1-K: MCP Server Count & Agent Shield (T1165)
 
-> **Source**: V13 "Everything Claude Code" harvest (YouTube `utHRH2FEAsY`). Claude Code recommends ≤10 active MCP servers to avoid context bloat, tool-routing slowdown, and dilution of model attention across the tool list. A single backend like `gald3r_valhalla` is ~42 tools on its own, so a user who adds 4–5 MCPs casually can hit 150+ tools and not notice.
+> **Source**: V13 "Everything Claude Code" harvest (YouTube `utHRH2FEAsY`). Claude Code recommends ≤10 active MCP servers to avoid context bloat, tool-routing slowdown, and dilution of model attention across the tool list. A single backend like `example_app` is ~42 tools on its own, so a user who adds 4–5 MCPs casually can hit 150+ tools and not notice.
 
 **Goal**: surface excessive MCP server counts and flag servers whose tool surface includes broad filesystem/shell/execute access (Agent Shield heuristic).
 
@@ -345,7 +350,7 @@ Active servers: N  |  Elevated: M  |  Penalty: -P (-3×over10, -1×elevated)
 
 | Server               | Tool count | Access level | Recommendation |
 |----------------------|-----------:|--------------|----------------|
-| gald3r_valhalla      | 42         | scoped       | keep           |
+| example_app      | 42         | scoped       | keep           |
 | chrome-devtools      | 38         | scoped       | keep           |
 | muninn              | 14         | scoped       | keep           |
 | desktop-commander    | 9          | [ELEVATED]   | review — broad filesystem/shell access |
@@ -467,13 +472,13 @@ aliases; no skill/rule code changes are needed. A hit means an unambiguous fix
 foreach ($folder in $canonicalFolders) {       # canonical set from _registry.yaml patterns
     if (-not (Test-Path $folder)) {
         New-Item $folder -ItemType Directory | Out-Null
-        Copy-TemplateContents $folder          # README/.gitkeep from gald3r_template/.gald3r/
+        Copy-TemplateContents $folder          # README/.gitkeep from project_template/.gald3r/
         $report.FoldersCreated += $folder
     }
 }
 ```
 
-Template contents are sourced from `gald3r_template/.gald3r/`. Creation is silent
+Template contents are sourced from `project_template/.gald3r/`. Creation is silent
 and **never halts**; created folders are listed in the medic report.
 
 #### `schema_error` in-memory flag
@@ -733,8 +738,8 @@ Run the following only when PCAC is active:
 
 For each finding, generate a suggested PCAC coordination message (does NOT send without explicit per-message human approval):
 ```
-Suggested: [SYNC] to gald3r_valhalla — request capability status update for "vector-search"
-  → Run: @g-pcac-notify gald3r_valhalla "Requesting capability status update for vector-search"
+Suggested: [SYNC] to example_app — request capability status update for "vector-search"
+  → Run: @g-pcac-notify example_app "Requesting capability status update for vector-search"
   Approve? [y/n]
 ```
 
@@ -744,7 +749,7 @@ Write `MEDIC_REPORT_L4.md` to `.gald3r/reports/` (workspace findings plus option
 
 ```
 🌐 Ecosystem Health Score: 72/100 (Degraded)
-  gald3r_valhalla:  3 stale capabilities  |  1 contract mismatch
+  example_app:  3 stale capabilities  |  1 contract mismatch
   gald3r_frontend:  snapshot 12d old  |  2 blocked deps > 14d
 ```
 

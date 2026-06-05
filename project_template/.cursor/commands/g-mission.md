@@ -5,7 +5,6 @@ subsystem_memberships: [TASK_MANAGEMENT]
 
 Run an autonomous goal-locked loop until a verifiable completion condition is satisfied: $ARGUMENTS
 
-Aliases: `@g-juggernaut`, `@g-kamikaze`
 
 ## Usage
 
@@ -47,11 +46,11 @@ For unattended runs (overnight, meetings, AFK), use the wrapper script instead o
 The script loops the `claude` CLI invocation automatically:
 - `CONTEXT_GATE` and `BUDGET_EXHAUSTED` → **transparent auto-resume** (no human input, 5-second gap between sessions)
 - `QUEUE_EMPTY`, `CONDITION_MET` → loop ends (success)
-- Any blocking code (`AI_SAFE_BLOCKED`, `BLAST_RADIUS_HIGH`, `PCAC_CONFLICT`, etc.) → loop ends, human review required
+- Any blocking code (`AI_SAFE_BLOCKED`, `BLAST_RADIUS_HIGH`, `WPAC_CONFLICT`, etc.) → loop ends, human review required
 
 A 12-hour overnight run at 20-30 min per session = up to 36 sessions × 3-10 tasks = 100-360 tasks while you sleep.
 
-**Why sessions exist at all:** The agent's context window has a hard ceiling — at ~75% fill, continuing mid-task would risk memory loss and partial work. The checkpoint commits everything cleanly, then the wrapper relaunches immediately. Context resets are transparent in overnight mode.
+**Why sessions exist at all:** The agent's context window has a hard ceiling. Continuing mid-task once that ceiling is near would risk memory loss and partial work. The session boundary is triggered by a **deterministic turn-budget proxy** (`turns_consumed >= ceil(turn_budget * 0.75)`), NOT by a self-reported context-fill percentage — that sensor is unreliable (BUG-107, fixed the same way in `g-go-go.md` under T1547). The checkpoint commits everything cleanly, then the wrapper relaunches immediately. Context resets are transparent in overnight mode.
 
 **Equivalent to Claude Code's `/goal`:** `scripts/mission-overnight.ps1` is our implementation of the same pattern Claude Code uses natively — a post-session evaluator that fires automatically without user prompts.
 
@@ -74,7 +73,7 @@ This is the closest analog to `/goal` on other platforms — state the primary o
 
 ```
 # Example: verify CLI works, then clear the rest of the safe backlog
-@g-mission "gald3r_agent CLI exits 0 with ollama" --until-empty --budget 60
+@g-mission "example_agent CLI exits 0 with ollama" --until-empty --budget 60
 ```
 
 Write `mode: until-empty` in `ACTIVE_MISSION.md` when this flag is active so the evaluator knows to switch phases rather than terminate on first success.
@@ -94,7 +93,7 @@ Write `mode: until-empty` in `ACTIVE_MISSION.md` when this flag is active so the
 **Only these items remain as true pauses even in `--until-empty` mode:**
 
 - `ai_safe: false` — hard stop, always
-- PCAC `[ORDER]` or `[CONFLICT]` inbox items — hard stop, always
+- WPAC `[ORDER]` or `[CONFLICT]` inbox items — hard stop, always
 - Budget exhausted — hard stop, always
 
 Everything else: **skip and continue.** The deferred questions file is the skip ledger. The mission loop does NOT stop because a task is hard, complex, or touches other repos.
@@ -114,16 +113,15 @@ Everything else: **skip and continue.** The deferred questions file is the skip 
 **Required loop termination check in `--until-empty` mode:**
 
 Before writing a session checkpoint and stopping, the agent MUST be able to answer YES to one of:
-1. Context ≥ 75% (checkpoint, resume later)
+1. Turn budget proxy: `turns_consumed >= ceil(turn_budget * 0.75)` — checkpoint and resume.
+   This is the **deterministic** proxy for context pressure (mirrors the T1547 fix in `g-go-go.md`).
+   Do NOT use self-reported context fill percentage — it is unreliable (BUG-107).
 2. Budget exhausted
-3. Hard stop condition hit (`ai_safe: false` or PCAC conflict)
+3. Hard stop condition hit (`ai_safe: false` or WPAC conflict)
 4. **Every single task in `open/`, `in-progress/`, and `paused/` has been individually read and individually either claimed, completed, or logged as a named skip in `_deferred_questions.md`**
 
 A global queue assessment does not satisfy condition 4. If the agent has not read every task file, it has not finished the loop.
 
-> **Alias names explained:**
-> - `@g-juggernaut` — unstoppable forward momentum; no backing down until condition met
-> - `@g-kamikaze` — all-in; burns turns until done
 
 ---
 
@@ -133,9 +131,9 @@ The evaluator judges your condition against what the agent has surfaced in the c
 
 | Good condition | Why |
 |---|---|
-| `all tests in gald3r_throne pass and tsc exits 0` | Agent runs tests; output proves it |
+| `all tests in example_desktop pass and tsc exits 0` | Agent runs tests; output proves it |
 | `T{id} is marked [✅] in TASKS.md` | Agent updates TASKS.md; file state proves it |
-| `desktop/ and docker/ removed from gald3r_dev (git status clean)` | Agent runs git rm + status; output proves it |
+| `desktop/ and docker/ removed from <gald3r_source> (git status clean)` | Agent runs git rm + status; output proves it |
 | `CHANGELOG.md has entries for every completed task this week` | Agent reads git log + CHANGELOG; diff proves it |
 
 **Tips:**
@@ -263,8 +261,6 @@ If no mission file exists: `No active mission. Set one with @g-mission <conditio
 | `@g-go-go` | Run until the task queue is exhausted (no explicit condition) |
 | `@g-mission` | Run until YOUR stated condition is provably met; stop when done |
 | `@g-mission --until-empty` | Run until condition met, THEN drain the full `ai_safe` queue; closest to `/goal` on other platforms |
-| `@g-juggernaut` | Alias for `@g-mission`; use when you want unstoppable forward momentum |
-| `@g-kamikaze` | Alias for `@g-mission`; use when it's all-in, no stopping |
 
 ---
 
@@ -275,13 +271,13 @@ If no mission file exists: `No active mission. Set one with @g-mission <conditio
 If the mission condition touches more than one git root, declare the repos upfront:
 
 ```
-@g-mission all tests pass and tsc exits 0 --repos gald3r_throne,gald3r_valhalla
+@g-mission all tests pass and tsc exits 0 --repos example_desktop,example_app
 @g-mission T1218 cleanup complete --from-task T1218
 ```
 
 When `--repos` is supplied, write the list into `ACTIVE_MISSION.md` frontmatter as:
 ```yaml
-touch_repos: [gald3r_throne, gald3r_valhalla]   # manifest repository.id values
+touch_repos: [example_desktop, example_app]   # manifest repository.id values
 ```
 
 When `--from-task T{id}` is used, inherit `workspace_repos:` and `extended_touch_repos:` directly from the task's frontmatter — no separate `--repos` needed.
@@ -292,7 +288,7 @@ If neither is supplied and the condition mentions a member repo name, extract it
 
 Before each new `g-go` iteration starts AND before any coordinator shared write (TASKS.md, BUGS.md, CHANGELOG.md, review-result commits), run the full Clean Controller Gate and member touch-set expansion:
 
-1. Run `git status --short` at the orchestration root (gald3r_dev)
+1. Run `git status --short` at the orchestration root (e.g. <gald3r_source>)
 2. For each repo in `touch_repos:`, also run `git status --short` at that root
 3. If **any** root has unrelated dirty paths → **pause the mission** before the next iteration; do not auto-commit unrelated changes; surface the exact dirty paths and ask for direction
 4. If dirty paths are **exclusively safe gald3r housekeeping** (task/bug status files, CHANGELOG entries owned by this mission) → the Gald3r Housekeeping Commit Gate auto-commits them before the next iteration proceeds (standard `chore(gald3r)` commit)
@@ -302,7 +298,7 @@ Before each new `g-go` iteration starts AND before any coordinator shared write 
 Member repos (declared in `workspace_manifest.yaml` with marker-only `.gald3r/`) are **read targets only** during a mission:
 
 - **DO**: read member repo source code, run tests in member repos, commit implementation changes to member repos
-- **DO NOT**: write `.gald3r/` task files, BUGS.md, TASKS.md, or any gald3r control-plane state into a member repo — that state lives in the controller (gald3r_dev) only
+- **DO NOT**: write `.gald3r/` task files, BUGS.md, TASKS.md, or any gald3r control-plane state into a member repo — that state lives in the controller (<gald3r_source>) only
 - If a task spec has `workspace_repos: [member_id]`, the implementing agent may write code to that member's git root but all task-status writes go to the controller's `.gald3r/tasks/` and TASKS.md
 
 ### ai_safe and blast_radius gates
@@ -318,16 +314,16 @@ The mission loop respects per-task safety metadata:
 | `blast_radius: high` | **Pause mission**; surface: "Task T{id} has `blast_radius: high` — confirm before proceeding" |
 | `requires_verification: true` | Task must go through `[🔍]` → independent verifier before mission counts it as done; mission loop does NOT self-verify these |
 
-### PCAC inbox re-check cadence during long missions
+### WPAC inbox re-check cadence during long missions
 
-PCAC inbox is checked:
+WPAC inbox is checked:
 - At mission start (standard session-start check)
-- Every 30 minutes of elapsed mission time (coordinator re-runs `g-hk-pcac-inbox-check.ps1 -BlockOnConflict`)
+- Every 30 minutes of elapsed mission time (coordinator re-runs `g-hk-wpac-inbox-check.ps1 -BlockOnConflict`)
 - Before any coordinator shared write (TASKS.md, BUGS.md, CHANGELOG)
 
 If the inbox check returns `INBOX CONFLICT GATE` (exit code 2) at any point mid-mission:
 - **Pause the loop immediately** — do not start the next iteration
-- Surface: `⚠️ PCAC conflict detected mid-mission. Run @g-pcac-read to resolve before mission continues.`
+- Surface: `⚠️ WPAC conflict detected mid-mission. Run @g-wpac-read to resolve before mission continues.`
 - Preserve `ACTIVE_MISSION.md` with `status: paused` (not abandoned) so the mission can resume after resolution
 
 ### Resuming a paused mission
@@ -338,7 +334,7 @@ If the inbox check returns `INBOX CONFLICT GATE` (exit code 2) at any point mid-
 ```
 
 1. Read `ACTIVE_MISSION.md` — confirm `status: paused` OR `status: active` (session checkpoint, not true pause)
-2. Re-run PCAC inbox check; confirm clean
+2. Re-run WPAC inbox check; confirm clean
 3. Re-run Clean Controller Gate on all repos in `touch_repos:`
 4. Resume the loop from where it left off (condition not yet met, budget not exhausted)
 5. If `--budget N` supplied on resume, update `turn_budget:` in `ACTIVE_MISSION.md` and reset `turns_consumed: 0` for this session only (accumulated prior turns are preserved in Evaluator Notes)
@@ -359,19 +355,20 @@ Within each folder, claim in priority order: `critical` → `high` → `medium` 
 
 #### Context threshold — when to trigger the checkpoint
 
-**Trigger the session checkpoint when context usage reaches 75%.** This is the correct balance:
-- **Too low (≤33%)**: wastes session capacity; the next resume starts with ~15-25% startup overhead (rules + AGENTS.md + ACTIVE_MISSION.md), so stopping at 33% leaves almost no usable room per session
-- **Too high (>85%)**: risks running out of room mid-task or mid-checkpoint write
-- **75% target**: leaves ~25% headroom to finish the current in-flight task and write the checkpoint cleanly
+**Trigger the session checkpoint using the deterministic turn-budget proxy: `turns_consumed >= ceil(turn_budget * 0.75)`.** Both values are read from `ACTIVE_MISSION.md`, so the trigger is always observable and does not depend on the model's self-reported context fill percentage (the unreliable sensor that caused BUG-107; T1547 replaced the same sensor in `g-go-go.md`). The proxy targets ~75% of the per-session turn budget, which is the correct balance:
+- **Too low (proxy fires before ~33% of budget)**: wastes session capacity; the next resume starts with startup overhead (rules + AGENTS.md + ACTIVE_MISSION.md), so checkpointing too early leaves almost no usable room per session
+- **Too high (proxy never fires before budget exhaustion)**: risks running out of room mid-task or mid-checkpoint write
+- **`ceil(turn_budget * 0.75)` target**: leaves a turn margin to finish the current in-flight task and write the checkpoint cleanly
 
 **Do NOT stop early because:**
 - The task queue has hard tasks remaining (split and continue instead)
 - The current task took more turns than expected
 - A prior task's commit added context
+- You believe context "feels full" — trust the deterministic proxy, not a self-reported fill estimate
 
 **DO stop and write the checkpoint when:**
-- Context reaches 75%
-- The current task just completed and committed (natural task boundary, context ≥ 60%)
+- The turn-budget proxy fires (`turns_consumed >= ceil(turn_budget * 0.75)`)
+- The current task just completed and committed (natural task boundary) AND `turns_consumed >= ceil(turn_budget * 0.6)`
 - Budget is exhausted
 
 #### Checkpoint procedure
@@ -396,11 +393,11 @@ Run @g-mission resume to continue.
 
 | Code | Trigger | What it means |
 |---|---|---|
-| `CONTEXT_GATE` | ctx ≥ 75% | Normal session boundary — context fill hit the checkpoint threshold (see §Session-end checkpoint) |
+| `CONTEXT_GATE` | `turns_consumed` ≥ `ceil(turn_budget * 0.75)` | Normal session boundary — deterministic turn-budget proxy hit the checkpoint threshold (see §Session-end checkpoint). NOT a self-reported context-fill %. |
 | `BUDGET_EXHAUSTED` | `turns_consumed` ≥ `turn_budget` | Turn budget from `--budget N` consumed; resume resets counter |
 | `QUEUE_EMPTY` | No claimable `ai_safe: true` tasks remain | Drain phase complete; all open ai_safe tasks claimed or skipped |
 | `CONDITION_MET` | Evaluator check passes | Mission condition provably achieved; final summary follows |
-| `PCAC_CONFLICT` | `g-hk-pcac-inbox-check.ps1` exits 2 | INBOX conflict gate fired mid-mission; run `@g-pcac-read` to resolve |
+| `WPAC_CONFLICT` | `g-hk-wpac-inbox-check.ps1` exits 2 | INBOX conflict gate fired mid-mission; run `@g-wpac-read` to resolve |
 | `AI_SAFE_BLOCKED` | Next task has `ai_safe: false` | Human review required before next task can be claimed autonomously |
 | `BLAST_RADIUS_HIGH` | Next task has `blast_radius: high` | Explicit user approval required before proceeding |
 | `CLEAN_GATE_BLOCKED` | Dirty unrelated paths in touch-set | Unrelated uncommitted changes in orchestration root or a member repo; commit/stash them first |
@@ -413,7 +410,7 @@ Run @g-mission resume to continue.
 - `CONTEXT_GATE` and `BUDGET_EXHAUSTED` are **non-blocking** — mission stays `status: active`; user resumes with `@g-mission resume`
 - All other codes set `status: paused` in `ACTIVE_MISSION.md`; re-run pre-flight checks on resume
 - Do NOT combine multiple codes — pick the **primary** trigger
-- Include the specific triggering rule or value in the one-liner: e.g., `CONTEXT_GATE — ctx=76%, threshold=75%` or `AI_SAFE_BLOCKED — T1199 has ai_safe: false`
+- Include the specific triggering rule or value in the one-liner: e.g., `CONTEXT_GATE — turns_consumed=23, threshold=ceil(30*0.75)=23` or `AI_SAFE_BLOCKED — T1199 has ai_safe: false`
 
 **Incorrect session-end output (do NOT produce):**
 ```
@@ -426,9 +423,9 @@ Status: paused-partial — substantive progress, queue not fully empty
 
 - Tasks with `ai_safe: false`
 - Tasks with `blast_radius: high`
-- PCAC `[ORDER]` or `[CONFLICT]` inbox items arriving mid-mission
+- WPAC `[ORDER]` or `[CONFLICT]` inbox items arriving mid-mission
 - Any dirty unrelated paths in the member touch-set that aren't owned by this mission
-- Schema migrations or destructive DDL in gald3r_valhalla
+- Schema migrations or destructive DDL in example_app
 - Removals from git (`git rm`) of non-scratch files
 
 ### ⛔ HARD RULE: "Scope too large" is NEVER a valid defer reason
@@ -442,7 +439,7 @@ Status: paused-partial — substantive progress, queue not fully empty
 3. Claim and implement `T{id}a` (the smallest independently shippable slice) in the current iteration
 4. Continue the mission loop — do NOT write a summary and stop
 
-**The same rule applies to cross-repo tasks:** if a task nominally touches `workspace_repos: [gald3r_throne]` but its first AC is purely `gald3r_dev` documentation, spec-writing, or scaffolding — do the `gald3r_dev`-only portion as `T{id}a`, file `T{id}b` for the cross-repo implementation, and continue.
+**The same rule applies to cross-repo tasks:** if a task nominally touches `workspace_repos: [example_desktop]` but its first AC is purely `<gald3r_source>` documentation, spec-writing, or scaffolding — do the `<gald3r_source>`-only portion as `T{id}a`, file `T{id}b` for the cross-repo implementation, and continue.
 
 **What IS a valid reason to skip (not defer) a task and keep looping:**
 - `ai_safe: false` — log it, skip it, move to next task
@@ -475,14 +472,37 @@ The agent operating under a mission actively manages the path to the condition:
 - The **context anchor**: each iteration opens with `MISSION: <condition>` injected alongside the goal, keeping every iteration aligned
 - The **turn accounting**: `turns_consumed` increments each major iteration; budget exhaustion pauses rather than auto-extends
 
-Everything else — safety gates, gald3r housekeeping commits, PCAC inbox checks, review checkpoints, member marker invariants — applies without modification.
+### Context efficiency (T1549 — why g-mission needs no per-iteration compression step)
+
+`g-mission`'s own coordinator context does **not** accumulate quadratically the way pre-T1547
+`g-go-go` did, and therefore does **not** need a g-mission-specific inter-iteration compression
+step. The reasons are structural:
+
+1. **The outer loop is across sessions, not within one.** The `mission-overnight.ps1` wrapper
+   relaunches a fresh `claude -p` process each session, so context resets between iterations of
+   the mission loop. Per-session accumulation is linear, not quadratic.
+2. **Per-session heavy work is a single `@g-go-go` call**, which now compresses its own
+   inter-iteration history internally (T1547: `completed_iterations[]` summaries + raw-output
+   discard). g-mission inherits that fix — it does not re-implement it.
+3. **g-mission's durable state is file-backed, not conversation-backed.** Mission progress lives
+   in `ACTIVE_MISSION.md` (`turns_consumed`, `phase`, append-only `## Evaluator Notes`), which
+   survives session resets. The coordinator does not re-read or re-inject a growing in-conversation
+   transcript each iteration; it reads the compact mission file plus fresh TASKS.md/git state.
+4. **The session boundary is the deterministic turn-budget proxy** (`turns_consumed >=
+   ceil(turn_budget * 0.75)`), so a long single-session run checkpoints and hands off to a fresh
+   session well before raw history can saturate — without relying on the unreliable self-reported
+   context sensor (BUG-107).
+
+If a future change makes g-mission run many `@g-go-go` calls inside a *single* session without a
+wrapper relaunch, revisit this and add a compression step analogous to the g-go-go LOOP
+`[INTER-ITERATION COMPRESSION]` step. Under the current architecture that step would be redundant.
+Everything else — safety gates, gald3r housekeeping commits, WPAC inbox checks, review checkpoints, member marker invariants — applies without modification.
 
 ## Safety rules
 
 - Never auto-extend a turn budget — always pause and surface the reason when budget is exhausted
-- Never skip the PCAC INBOX gate — even in mission mode, inbox conflicts stop the loop
+- Never skip the WPAC INBOX gate — even in mission mode, inbox conflicts stop the loop
 - Never mark mission `achieved` without running the verification check (`tsc`, `vitest`, `git status`, etc.) — evaluator must see actual command output
-- `@g-kamikaze` mode does not reduce safety checks — the name is flavor only
 - Coordinator-owned gald3r writes still happen after each g-go iteration (housekeeping commit gate applies)
 - Mission does not suppress the bug-discovery gate, todo-completion gate, or code-change-requires-task gate
 
@@ -511,9 +531,7 @@ Claude Code uses `/goal` for this pattern. In Cursor, `@g-mission` is the equiva
 /goal all tests in test/auth pass and the lint step is clean
 
 # gald3r / Cursor  
-@g-mission all tests in gald3r_throne pass and tsc exits 0
-@g-juggernaut all tests in gald3r_throne pass and tsc exits 0
-@g-kamikaze all tests in gald3r_throne pass and tsc exits 0
+@g-mission all tests in example_desktop pass and tsc exits 0
 ```
 
 ---
@@ -523,4 +541,3 @@ Claude Code uses `/goal` for this pattern. In Cursor, `@g-mission` is the equiva
 - Spec: see `.gald3r/tasks/` for T{id} once created
 - Config: `.gald3r/config/ACTIVE_MISSION.md`
 - Depends on: `@g-goal`, `@g-go-go`, `@g-go`
-- Inspired by: Claude Code `/goal`, Cursor `babysit` skill pattern

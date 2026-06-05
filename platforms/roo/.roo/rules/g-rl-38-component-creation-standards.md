@@ -17,10 +17,10 @@ you MUST include subsystem membership tagging. Creation without tagging is a vio
 ### Markdown components (skills, commands, agents, rules)
 
 Every `.md` file created or modified in:
-- `.gald3r_sys/skills/<name>/SKILL.md`
-- `.gald3r_sys/commands/*.md`
-- `.gald3r_sys/agents/*.md`
-- `.gald3r_sys/rules/*.md`
+- `.claude/skills/<name>/SKILL.md`
+- `.claude/commands/*.md`
+- `.claude/agents/*.md`
+- `.claude/rules/*.md`
 
 MUST contain a YAML frontmatter block with `subsystem_memberships:`:
 
@@ -53,7 +53,7 @@ it must be followed by a retroactive tagging within the same session.
 ### PowerShell components (hooks, scripts)
 
 Every `.ps1` file created or modified in:
-- `.gald3r_sys/hooks/*.ps1`
+- `.claude/hooks/*.ps1`
 - `.gald3r_sys/scripts/*.ps1`
 
 MUST have a `# @subsystems:` comment in the first 15 lines:

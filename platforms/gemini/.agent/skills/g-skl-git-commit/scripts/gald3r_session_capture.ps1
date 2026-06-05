@@ -3,7 +3,7 @@
     Capture Claude Code session JSONL from a worktree to the host for cross-sandbox resume.
 
 .DESCRIPTION
-    Implements Task 1124 (sandcastle-pattern session capture). After a g-go iteration runs
+    Implements Task 1124. After a g-go iteration runs
     inside an agent worktree/sandbox, the active Claude Code session transcript lives under
     the worktree's encoded project folder. This helper:
 
@@ -18,7 +18,7 @@
 
     Path encoding:
       Claude Code names each project folder by replacing every non-alphanumeric character
-      in the absolute cwd with '-'. e.g. "G:\gald3r_ecosystem\gald3r_dev"
+      in the absolute cwd with '-'. e.g. "<workspace>\<gald3r_source>"
       -> "G--gald3r-ecosystem-gald3r-dev".
 
     Default locations (overridable):
@@ -62,7 +62,7 @@
     Emit a machine-readable JSON result object instead of human text.
 
 .EXAMPLE
-    pwsh -File gald3r_session_capture.ps1 -Action Capture -WorktreePath ../.gald3r-worktrees/gald3r_dev/T1124 -TaskId 1124 -Apply
+    pwsh -File gald3r_session_capture.ps1 -Action Capture -WorktreePath ../.gald3r-worktrees/<gald3r_source>/T1124 -TaskId 1124 -Apply
 
 .EXAMPLE
     pwsh -File gald3r_session_capture.ps1 -Action Resolve -SessionId 7f3c... -ProjectId my-proj

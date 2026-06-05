@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [PROJECT_IDENTITY_SETUP]
+---
 # g-skl-setup
 
 > Human-facing companion to `SKILL.md`. The LLM agent reads `SKILL.md`; this
@@ -10,7 +13,7 @@ First-time gald3r installation in a project. Creates the `.gald3r/` folder struc
 Two layouts:
 
 - **Slim** — what `g-skl-setup` creates by default. Just the seven canonical files plus `tasks/`, `bugs/`, `features/`, `subsystems/`, `reports/`, `logs/`, `specifications_collection/`.
-- **Full** — gald3r_dev only. Adds `config/`, `experiments/`, `linking/`, `vault/`, `phases/`. Do not create these in slim installs.
+- **Full** — <gald3r_source> only. Adds `config/`, `experiments/`, `linking/`, `vault/`, `phases/`. Do not create these in slim installs.
 
 ## When to use
 
@@ -58,7 +61,7 @@ Recomputes SKILL.md hashes against `gald3r-skills-lock.json`. Exits non-zero if 
 
 ```powershell
 .\scripts\gald3r_skills_lock.ps1 -Action UPGRADE -ProjectPath . `
-    -SourceRoot G:\gald3r_ecosystem\gald3r_dev
+    -SourceRoot <workspace>\<gald3r_source>
 ```
 
 Classifies each skill as `unchanged`, `local-modified`, `upstream-changed`, `both-changed`, `new`, or `removed`.

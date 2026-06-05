@@ -1,26 +1,26 @@
-<#
+﻿<#
 .SYNOPSIS
     gald3r Maintainer Release Tool
     Syncs and tags a release across gald3r's three template repositories.
-    gald3r_dev only — NOT shipped to user projects.
+    <gald3r_source> only — NOT shipped to user projects.
 
 .DESCRIPTION
     This is the maintainer tool for releasing gald3r itself across:
-      - G:/gald3r_ecosystem/gald3r_template_slim
-      - G:/gald3r_ecosystem/gald3r_template_full
-      - G:/gald3r_ecosystem/gald3r_template_adv
+      - <ECOSYSTEM_ROOT>/<template_slim>
+      - <ECOSYSTEM_ROOT>/<template_full>
+      - <ECOSYSTEM_ROOT>/<template_adv>
 
-    For user project releases, use @g-ship / .gald3r_sys/skills/g-skl-release/scripts/gald3r_semver.ps1.
+    For user project releases, use @g-ship / .claude/skills/g-skl-release/scripts/gald3r_semver.ps1.
 
     Two-track release model:
-      Track A (gald3r_dev):      version managed in gald3r_dev CHANGELOG.md / VERSION
+      Track A (<gald3r_source>):      version managed in <gald3r_source> CHANGELOG.md / VERSION
       Track B (template repos):  version managed in each template repo's CHANGELOG.md / VERSION
 
     This script handles Track B — promoting template CHANGELOGs and tagging.
 
 .PARAMETER TemplateVersion
     Version to release in the template repos (e.g., "1.5.0").
-    If omitted, reads from gald3r_template_adv/VERSION.
+    If omitted, reads from <template_adv>/VERSION.
 
 .PARAMETER Theme
     Short theme name for the release (e.g., "Platform Framework Architecture").
@@ -32,7 +32,7 @@
     Skip GitHub release creation.
 
 .PARAMETER RepoRoot
-    Override the ecosystem root (default: G:/gald3r_ecosystem).
+    Override the ecosystem root (default: <ECOSYSTEM_ROOT>).
 
 .EXAMPLE
     # Dry-run: see what would happen
@@ -46,7 +46,7 @@
 
 .NOTES
     Task: T1210
-    gald3r_dev maintainer-only. See root_only_manifest.yaml.
+    <gald3r_source> maintainer-only. See root_only_manifest.yaml.
 #>
 
 param(
@@ -55,16 +55,16 @@ param(
     [switch]$Apply,
     [switch]$GitHub,
     [switch]$NoGitHub,
-    [string]$RepoRoot = "G:\gald3r_ecosystem"
+    [string]$RepoRoot = "<workspace>"
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $repos = @(
-    "$RepoRoot\gald3r_template_slim",
-    "$RepoRoot\gald3r_template_full",
-    "$RepoRoot\gald3r_template_adv"
+    "$RepoRoot\<template_slim>",
+    "$RepoRoot\<template_full>",
+    "$RepoRoot\<template_adv>"
 )
 
 $semverScript = Join-Path $PSScriptRoot "gald3r_semver.ps1"
@@ -89,10 +89,10 @@ foreach ($repo in $repos) {
 # ── Determine template version ────────────────────────────────────────────────
 
 if (-not $TemplateVersion) {
-    $versionFile = "$RepoRoot\gald3r_template_adv\VERSION"
+    $versionFile = "$RepoRoot\<template_adv>\VERSION"
     if (Test-Path $versionFile) {
         $TemplateVersion = (Get-Content $versionFile -Raw).Trim()
-        Write-Status "Auto-detected version from gald3r_template_adv/VERSION: $TemplateVersion"
+        Write-Status "Auto-detected version from <template_adv>/VERSION: $TemplateVersion"
     } else {
         Fail "TemplateVersion not specified and VERSION file not found at $versionFile"
     }
@@ -184,7 +184,7 @@ foreach ($repo in $repos) {
         Set-Content $versionPath $TemplateVersion -NoNewline
         Write-Status "    ✓ VERSION → $TemplateVersion" "Green"
 
-        # Promote CHANGELOG (use gald3r_dev semver script if available)
+        # Promote CHANGELOG (use <gald3r_source> semver script if available)
         if (Test-Path $semverScript) {
             & powershell -NoProfile -ExecutionPolicy Bypass -File $semverScript `
                 -ProjectRoot $repo `
@@ -225,7 +225,7 @@ if ($GitHub -and -not $NoGitHub -and $Apply) {
         gh release create "v$TemplateVersion" `
             --title $title `
             --notes-file $notesFile `
-            --repo "FSTrent/$repoName" 2>&1
+            --repo "wrm3/$repoName" 2>&1
 
         Write-Status "  ✓ GitHub release created for $repoName" "Green"
     }
@@ -236,5 +236,5 @@ Write-Status "── Release v$TemplateVersion complete ────────
 Write-Status ""
 Write-Status "Next steps:" "Cyan"
 Write-Status "  Push all template repos:  git push origin main --tags (in each)" "Gray"
-Write-Status "  Update gald3r_dev CHANGELOG if needed" "Gray"
+Write-Status "  Update <gald3r_source> CHANGELOG if needed" "Gray"
 Write-Status ""

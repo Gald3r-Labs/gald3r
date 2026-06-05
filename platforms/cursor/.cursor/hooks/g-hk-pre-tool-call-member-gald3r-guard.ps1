@@ -18,7 +18,7 @@
 # bootstrap_member_gald3r_marker.ps1; allows writing the marker pair itself).
 #
 # Rule reference: .claude/rules/g-rl-36-workspace-member-gald3r-guard.md
-# Guard helper: .gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1
+# Guard helper: .cursor/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1
 
 $ErrorActionPreference = "SilentlyContinue"
 
@@ -165,7 +165,7 @@ if ($markerFiles -contains $suffix) {
 $msg = "Member .gald3r/ marker-only guard: refused Edit/Write to '$suffix' inside member repository '$hit'. " +
        "Workspace-Control member repositories may keep ONLY .gald3r/.identity and .gald3r/PROJECT.md. " +
        "Live control-plane state (TASKS.md, tasks/, BUGS.md, PLAN.md, ...) is forbidden in members. " +
-       "Use the workspace controller (gald3r_dev) for orchestration writes. " +
+       "Use the workspace controller (<gald3r_source>) for orchestration writes. " +
        "See .claude/rules/g-rl-36-workspace-member-gald3r-guard.md and BUG-021."
 @{
     permission    = "deny"

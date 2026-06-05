@@ -55,8 +55,8 @@ If the completed task changes something that has a section in `README.md`:
 
 | Project type | CHANGELOG.md | README.md |
 |-------------|--------------|-----------|
-| gald3r_dev (this repo) | `CHANGELOG.md` at root | `README.md` at root (contributor view) |
-| G:/gald3r_ecosystem/gald3r_template_full | `G:/gald3r_ecosystem/gald3r_template_full/CHANGELOG.md` | `G:/gald3r_ecosystem/gald3r_template_full/README.md` (end-user view) |
+| <gald3r_source> (this repo) | `CHANGELOG.md` at root | `README.md` at root (contributor view) |
+| <ECOSYSTEM_ROOT>/<template_full> | `<ECOSYSTEM_ROOT>/<template_full>/CHANGELOG.md` | `<ECOSYSTEM_ROOT>/<template_full>/README.md` (end-user view) |
 | Installed gald3r project | `CHANGELOG.md` at project root | `README.md` at project root |
 
 ## Timing

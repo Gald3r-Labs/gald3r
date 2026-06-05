@@ -1,35 +1,33 @@
 ---
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 ---
-# g-command-new - Scaffold a new gald3r command with mandatory subsystem tagging
+# g-command-new - Scaffold a new command in YOUR project
 
-Creates a new `.gald3r_sys/commands/g-<verb>-<noun>.md` using the canonical
-command template with `subsystem_memberships:` pre-filled.
+Creates a new command for your own project. You choose where it lives - your AI platform folder
+(e.g. `.cursor/commands/`, `.claude/commands/`) or somewhere in your repo's contents. Never writes
+to `.gald3r_sys/`.
 
 ## Usage
 
 ```
-@g-command-new <verb-noun> [group]
-@g-command-new "feat-promote"
-@g-command-new "feat-promote" RELEASE_AND_VERSIONING
+@g-command-new <verb-noun>
+@g-command-new "deploy-staging"
 ```
 
-- `<verb-noun>` — slug without the `g-` prefix (e.g. `feat-promote` creates `g-feat-promote.md`)
-- `[group]` — optional subsystem group; prompted interactively if omitted
+- `<verb-noun>` - kebab-case command name (verb before noun).
 
 ## Steps
 
-Activates **g-skl-gald3r-component-new** with `type: command`.
+Activates **g-skl-gald3r-component-new**.
 
-1. Collect verb-noun slug, group, and one-line description
-2. Write `.gald3r_sys/commands/g-<verb>-<noun>.md` from the command template
-3. Verify `subsystem_memberships:` is present
-4. Offer to run `platform_parity_sync.ps1 -Sync`
-5. Offer to regenerate `PRODUCT_SYSTEMS.md`
-6. Offer CHANGELOG entry (g-rl-26)
+1. Ask **where** to create it:
+   - **(a) Platform folder** - e.g. `.cursor/commands/<verb-noun>.md`, `.claude/commands/<verb-noun>.md`.
+   - **(b) Repo contents** - a path you specify inside your project.
+2. Collect a one-line description and the steps the command should perform.
+3. Write the command file from the template at the chosen location.
+4. Offer a CHANGELOG entry if your project keeps one.
 
 ## Related
 
-- Skill: `g-skl-gald3r-component-new` (implementation + template)
-- Rule: `g-rl-38` (always-applied creation standards)
-- Hook: `g-hk-component-tag-check` (git pre-commit enforcement)
+- Skill: `g-skl-gald3r-component-new` (implementation)
+- Maintainer-only equivalent (edits gald3r itself): `@g-gald3r-command-new`

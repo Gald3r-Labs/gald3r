@@ -10,7 +10,7 @@
   Coordination files (TASKS.md, BUGS.md, task specs) are NEVER rendered here.
 .EXAMPLE
   pwsh -File render.ps1 -Template report -Title "Project Status" `
-       -SessionLabel "g-status - gald3r_dev" -BodyHtml $html -OutDir docs -Topic STATUS
+       -SessionLabel "g-status - <gald3r_source>" -BodyHtml $html -OutDir docs -Topic STATUS
 #>
 [CmdletBinding()]
 param(

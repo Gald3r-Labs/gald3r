@@ -52,7 +52,7 @@ Each (except `antigravity`, which has none yet — see T1465) has a
 - **Never auto-apply platform config changes.** `UPGRADE` produces a diff/proposal for human
   review only. Application happens through `platform_parity_sync.ps1` after review.
 - **Edit canonical sources only** — `gald3r_template/.gald3r_sys/`. Never hand-edit the synced
-  `.cursor/` / `.claude/` copies or `gald3r_dev/.gald3r_sys/` (sync targets, regenerated).
+  `.cursor/` / `.claude/` copies or `<gald3r_source>/.gald3r_sys/` (sync targets, regenerated).
 - **Common vs. platform-specific** — follow the decision tree in `g-skl-platform-cursor/SKILL.md`.
   Universal gald3r logic goes in `.gald3r_sys/skills|agents|hooks/`; platform-only config goes in
   `.gald3r_sys/platforms/.<platform>/`; unsupported features are documented as "Known Gaps".

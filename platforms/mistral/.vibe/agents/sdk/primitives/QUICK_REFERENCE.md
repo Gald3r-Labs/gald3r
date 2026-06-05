@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [AGENT_ORCHESTRATION]
+---
+
 # Cursor Primitives - Quick Reference
 
 One-page reference for SDK agents using primitives.

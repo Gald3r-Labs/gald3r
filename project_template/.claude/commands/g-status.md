@@ -24,18 +24,18 @@ Before completing the status report, scan `.gald3r/tasks/**/*.md` for any task w
 This check runs on every `@g-status` call. Results appear in the **Blockers & Risks** section.
 
 
-### PCAC Inbox Gate (Only When PCAC Is Configured)
+### WPAC Inbox Gate (Only When WPAC Is Configured)
 
-Before task claiming, implementation, verification, planning, or swarm partitioning, first determine whether this project is a PCAC participant. PCAC is configured only when `.gald3r/linking/link_topology.md` declares at least one parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares PCAC project linking relationships. A Workspace-Control manifest and local `INBOX.md` alone do not make the project a PCAC group member.
+Before task claiming, implementation, verification, planning, or swarm partitioning, first determine whether this project is a WPAC participant. WPAC is configured only when `.gald3r/linking/link_topology.md` declares at least one parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares WPAC project linking relationships. A Workspace-Control manifest and local `INBOX.md` alone do not make the project a WPAC group member.
 
-If PCAC is configured, run the re-callable inbox check when the hook exists:
+If WPAC is configured, run the re-callable inbox check when the hook exists:
 
 ```powershell
-$hook = @( ".cursor\hooks\g-hk-pcac-inbox-check.ps1", ".claude\hooks\g-hk-pcac-inbox-check.ps1", ".agent\hooks\g-hk-pcac-inbox-check.ps1", ".codex\hooks\g-hk-pcac-inbox-check.ps1", ".opencode\hooks\g-hk-pcac-inbox-check.ps1" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+$hook = @( ".cursor\hooks\g-hk-wpac-inbox-check.ps1", ".claude\hooks\g-hk-wpac-inbox-check.ps1", ".agent\hooks\g-hk-wpac-inbox-check.ps1", ".codex\hooks\g-hk-wpac-inbox-check.ps1", ".opencode\hooks\g-hk-wpac-inbox-check.ps1" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 if ($hook) { powershell -NoProfile -ExecutionPolicy Bypass -File $hook -ProjectRoot . -BlockOnConflict }
 ```
 
-Installed templates may call the equivalent hook from the active IDE folder. If the check reports `INBOX CONFLICT GATE` or exits with code `2`, stop immediately and run `@g-pcac-read`; do not claim tasks, create worktrees, spawn reviewers, or continue planning until conflicts are resolved. Non-conflict requests, broadcasts, and syncs are advisory and should be surfaced in the session summary. If PCAC is not configured, skip this gate and report `PCAC: not configured / skipped`.
+Installed templates may call the equivalent hook from the active IDE folder. If the check reports `INBOX CONFLICT GATE` or exits with code `2`, stop immediately and run `@g-wpac-read`; do not claim tasks, create worktrees, spawn reviewers, or continue planning until conflicts are resolved. Non-conflict requests, broadcasts, and syncs are advisory and should be surfaced in the session summary. If WPAC is not configured, skip this gate and report `WPAC: not configured / skipped`.
 
 ## What This Command Does
 
@@ -83,7 +83,7 @@ If `.gald3r/linking/workspace_manifest.yaml` exists, I'll include a compact Work
 - Active manifest path, workspace ID/name, owner repo ID, controlled member count, and member IDs
 - Member lifecycle status, path reachability, write policy summary, and per-member git cleanliness when paths are reachable
 - Current task/bug `workspace_repos` and `workspace_touch_policy` routing metadata when present
-- A clear distinction between PCAC topology/INBOX/order state and Workspace-Control member registry state
+- A clear distinction between WPAC topology/INBOX/order state and Workspace-Control member registry state
 - Task 177 deferral reminder when backend, UI, Docker/Kubernetes/MCP, Valhalla, Yggdrasil, or control-plane status would otherwise be implied
 
 If the manifest is absent, workspace output stays quiet unless you explicitly ask for workspace details.

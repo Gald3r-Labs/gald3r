@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-wpac-read
 description: Review and action all incoming cross-project coordination items — conflicts (block planning), requests from children, broadcasts from parents, and peer syncs from siblings.
 token_budget: medium
@@ -98,7 +98,7 @@ subsystem_memberships: [WORKSPACE_COORDINATION]
      ┌─────────────────────┬────────────────────────────────┬──────────────┐
      │ Project             │ Ready Capabilities              │ Last Updated │
      ├─────────────────────┼────────────────────────────────┼──────────────┤
-     │ gald3r_valhalla      │ docker-backend, project-registry│ 2026-04-18   │
+     │ example_app      │ docker-backend, project-registry│ 2026-04-18   │
      └─────────────────────┴────────────────────────────────┴──────────────┘
      ```
    - If no peer snapshots exist: skip silently

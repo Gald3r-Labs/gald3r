@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [AGENT_ORCHESTRATION]
+---
+
 # SubAgents User Guide
 
 **Version**: 2.0 (Hybrid Architecture)

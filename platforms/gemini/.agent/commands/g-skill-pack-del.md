@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
 # g-skill-pack-del — Remove a skill pack or individual skill
@@ -27,5 +27,5 @@ g-skill-pack-del <pack-name> --force          Remove including _evolved variants
 ## Notes
 - `_evolved` skills (user-customized) are protected from accidental deletion
 - Use `--force` only when you explicitly want to remove a customized skill
-- gald3r core skills (in `.gald3r_sys/skills/`) are never touched by this command
+- gald3r core skills (in `.claude/skills/`) are never touched by this command
 

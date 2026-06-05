@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-ship
 description: >
   Semantic versioning and release management for gald3r projects.
@@ -57,7 +57,7 @@ Invoked by `@g-ship [major|minor|patch]`.
 1. Read current version from `VERSION` file (fallback: latest `## [X.Y.Z]` header in CHANGELOG.md)
 2. Calculate new version based on bump type
 3. Show the `[Unreleased]` section preview and new version to user — confirm before proceeding
-4. Run `.gald3r_sys/skills/g-skl-release/scripts/gald3r_semver.ps1 -BumpType <type> -Theme "<theme>" -Apply`
+4. Run `.claude/skills/g-skl-release/scripts/gald3r_semver.ps1 -BumpType <type> -Theme "<theme>" -Apply`
    - Promotes `## [Unreleased]` → `## [X.Y.Z] - YYYY-MM-DD (Theme)`
    - Writes new empty `## [Unreleased]` at top
    - Bumps `VERSION` file
@@ -105,7 +105,7 @@ in member projects must be migrated forward so projects are never left partially
    (dry-run first: platform_parity_sync.ps1 -MigrateSchemas)
    ```
 
-2. **For a gald3r framework release** (this repo is `gald3r_templates` and member repos
+2. **For a gald3r framework release** (this repo is `<gald3r_source>` and member repos
    are accessible on disk), OPTIONALLY auto-run the migration on all registered workspace
    members. Dry-run first, then apply on confirmation:
    ```powershell
@@ -116,7 +116,7 @@ in member projects must be migrated forward so projects are never left partially
    .\custom_scripts\platform_parity_sync.ps1 -MigrateSchemas -Apply
 
    # Single member only
-   .\custom_scripts\platform_parity_sync.ps1 -MigrateSchemas -Target gald3r_templates -Apply
+   .\custom_scripts\platform_parity_sync.ps1 -MigrateSchemas -Target <gald3r_source> -Apply
    ```
    The migration engine (`.gald3r_sys/scripts/migrate_schemas.ps1`) never deletes fields:
    deprecated fields become `deprecated_<name>`, removed fields become `legacy_<name>`, and
@@ -328,5 +328,5 @@ Pick **one** mode per repo — do not run both against the same `CHANGELOG.md`.
 - `@g-git-push` — prompts for version bump if [Unreleased] is non-empty
 - `g-skl-tasks` COMPLETE — calls CHANGELOG-ENTRY for user-facing tasks
 - `g-skl-bugs` FIX — calls CHANGELOG-ENTRY for bug closures
-- `.gald3r_sys/skills/g-skl-release/scripts/gald3r_semver.ps1` — PowerShell engine (gald3r projects)
-- `.gald3r_sys/skills/g-skl-release/scripts/gald3r_release.ps1` — maintainer tool for gald3r's own 3-repo release
+- `.claude/skills/g-skl-release/scripts/gald3r_semver.ps1` — PowerShell engine (gald3r projects)
+- `.claude/skills/g-skl-release/scripts/gald3r_release.ps1` — maintainer tool for gald3r's own 3-repo release

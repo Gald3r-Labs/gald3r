@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
 Send a request to the parent project: $ARGUMENTS
@@ -44,7 +44,7 @@ Report the request was written and which task is now blocked.
 
 **Request a resource:**
 ```
-@g-wpac-ask gald3r_mcp needs to expose the oracle connection pool API for our task 015.
+@g-wpac-ask example_mcp needs to expose the oracle connection pool API for our task 015.
 ```
 
 ## Delegates To

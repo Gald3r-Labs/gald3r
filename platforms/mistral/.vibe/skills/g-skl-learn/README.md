@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [MEMORY_AND_KNOWLEDGE]
+---
 # g-skl-learn
 **Skill file**: `SKILL.md`
 

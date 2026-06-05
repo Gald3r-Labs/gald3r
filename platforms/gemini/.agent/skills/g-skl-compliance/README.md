@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [SECURITY_AND_COMPLIANCE]
+---
 # g-skl-compliance
 **Skill file**: `SKILL.md`
 

@@ -563,8 +563,8 @@ When `g-skl-res-review` has assigned routing suggestions, `g-skl-res-apply` can 
 ### `--target {project-slug}` Flag
 
 ```
-g-res-apply APPLY {slug} --target gald3r_valhalla
-g-res-apply APPLY {slug} --target gald3r_valhalla --mode=approved
+g-res-apply APPLY {slug} --target example_app
+g-res-apply APPLY {slug} --target example_app --mode=approved
 ```
 
 **Behavior when `--target` is set:**
@@ -572,7 +572,7 @@ g-res-apply APPLY {slug} --target gald3r_valhalla --mode=approved
 1. **Resolve target project path** from `.gald3r/linking/link_topology.md`:
    - Search `children[]` for matching `project_name`
    - If not found: error: `"Unknown target '{slug}' — not in link_topology.md children"`
-   - If found but path not accessible: fall back to PCAC INFO notification (see below)
+   - If found but path not accessible: fall back to WPAC INFO notification (see below)
 
 2. **Check target's CONSTRAINTS.md** — read `{target_path}/.gald3r/CONSTRAINTS.md`:
    - If any constraint explicitly prohibits the feature's subsystem → flag as violation: `"⚠️ AC would violate {target_slug} constraint C-{id}: {title}"`
@@ -587,9 +587,9 @@ g-res-apply APPLY {slug} --target gald3r_valhalla --mode=approved
    - `{target_path}/.gald3r/SUBSYSTEMS.md`
    - `{target_path}/.gald3r/subsystems/`
 
-4. **Send PCAC INFO notification** to target project INBOX (`{target_path}/.gald3r/linking/INBOX.md`):
+4. **Send WPAC INFO notification** to target project INBOX (`{target_path}/.gald3r/linking/INBOX.md`):
    ```
-   [INFO] g-res-apply APPLY from gald3r_dev: {N} features applied from {slug} harvest.
+   [INFO] g-res-apply APPLY from <gald3r_source>: {N} features applied from {slug} harvest.
    Review: {target_path}/.gald3r/tasks/ for new task files.
    Routing: features in [{domain_tags}] tagged for this project.
    ```
@@ -617,8 +617,8 @@ Interactive routing mode. For each feature group from the harvest:
    ```
    SPLIT APPLY complete:
    → this-project: 5 features (feat-090, feat-091, ...)
-   → gald3r_valhalla: 3 features (feat-040, feat-085, ...)
-   → gald3r_agent: 2 features (feat-029, ...)
+   → example_app: 3 features (feat-040, feat-085, ...)
+   → example_agent: 2 features (feat-029, ...)
    ⚡ new-project suggested: 1 feature (needs real-time-transport capability)
    ```
 
@@ -626,15 +626,15 @@ Interactive routing mode. For each feature group from the harvest:
 
 If the target project path doesn't exist on disk:
 
-1. Queue the APPLY as a **pending PCAC order** in `.gald3r/linking/pending_orders/`
+1. Queue the APPLY as a **pending WPAC order** in `.gald3r/linking/pending_orders/`
 2. Create `pending_orders/order_{timestamp}_{target_slug}.md` with the full feature list
-3. Print: `"⏳ {target_slug} not accessible locally — queued as pending order. Deliver via @g-pcac-order when target is reachable."`
+3. Print: `"⏳ {target_slug} not accessible locally — queued as pending order. Deliver via @g-wpac-order when target is reachable."`
 
 ### Examples
 
 ```bash
-# Apply all approved features to gald3r_valhalla (backend project)
-g-res-apply APPLY external_agent_recon --target gald3r_valhalla --mode=approved
+# Apply all approved features to example_app (backend project)
+g-res-apply APPLY external_agent_recon --target example_app --mode=approved
 
 # Interactive split across multiple projects
 g-res-apply APPLY external_agent_recon --split
@@ -643,5 +643,5 @@ g-res-apply APPLY external_agent_recon --split
 g-res-apply DRY-RUN external_agent_recon --split
 
 # Apply to target with constraint check bypass
-g-res-apply APPLY external_agent_recon --target gald3r_valhalla --force
+g-res-apply APPLY external_agent_recon --target example_app --force
 ```

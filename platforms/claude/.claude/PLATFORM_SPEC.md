@@ -61,7 +61,7 @@ user-level `~/.claude/`). gald3r writes the project-level tree:
 | `settings.json`, `settings.local.json` | Claude Code owns the schema; gald3r seeds it | official config surface |
 | `~/.claude/` (user global) | Claude Code / user | gald3r does NOT write the user-global tree |
 
-Verified against the live install in this repo (`G:/gald3r_ecosystem/gald3r_templates/.claude/`).
+Verified against the live install in this repo (`<ECOSYSTEM_ROOT>/<gald3r_source>/.claude/`).
 
 ---
 
@@ -225,7 +225,7 @@ Legend: ✅ verified working · ⚠️ partial / Cursor-generic · ❌ not suppo
 
 | Capability | Verdict | How verified |
 |---|---|---|
-| Folder hierarchy | ✅ | Listed live `G:/gald3r_ecosystem/gald3r_templates/.claude/` (Bash `ls`). |
+| Folder hierarchy | ✅ | Listed live `<ECOSYSTEM_ROOT>/<gald3r_source>/.claude/` (Bash `ls`). |
 | `CLAUDE.md` + `@AGENTS.md` import | ✅ | Read live `.claude/CLAUDE.md` (uses `@AGENTS.md`). |
 | Rules `.md` (not `.mdc`) | ✅ | `.claude/rules/` contains `g-rl-*.md`; no `.mdc`. |
 | Skills folder-per-skill | ✅ | `.claude/skills/g-skl-*/SKILL.md` present; this repo's `g-skl-platform-claude/SKILL.md` is one. |
