@@ -20,7 +20,7 @@ Reference docs at: `{vault_location}/research/platforms/copilot/` once populated
 |---------|--------|-------|
 | Always-apply rules | ✅ | Via `.github/copilot-instructions.md` — run `generate_copilot_instructions.ps1` |
 | Commands (`g-*`) | ✅ | `.copilot/commands/` mirrors other IDE targets |
-| Skills | ❌ | Phase 2 — awaits gald3r_valhalla MCP URL |
+| Skills | ❌ | Phase 2 — awaits example_app MCP URL |
 | Agents | ❌ | Phase 2 — awaits public MCP endpoint |
 | Hooks | ❌ | Not supported by Copilot CLI architecture |
 
@@ -98,7 +98,7 @@ The generator:
 - Reads all `g-rl-*.mdc` files in numeric order
 - Strips Cursor-specific YAML frontmatter
 - Wraps with a Copilot-friendly header banner
-- Writes to `.github/copilot-instructions.md` and `G:/gald3r_ecosystem/gald3r_template_full/.github/copilot-instructions.md`
+- Writes to `.github/copilot-instructions.md` and `<ECOSYSTEM_ROOT>/<template_full>/.github/copilot-instructions.md`
 - Is idempotent (safe to rerun)
 
 ## Headless / CI Usage
@@ -115,10 +115,10 @@ echo "1" | gh copilot suggest --target git "stage all tracked changes and commit
 
 Copilot Phase 1 does not have a headless coding agent like `cursor agent` or `codex`. For multi-agent workflows involving Copilot:
 - Use `.github/copilot-instructions.md` to carry gald3r rules to Copilot IDE sessions
-- Coordinate via `.gald3r/linking/INBOX.md` PCAC messages as usual
+- Coordinate via `.gald3r/linking/INBOX.md` WPAC messages as usual
 - Copilot users work in their IDE; task status is updated in `.gald3r/tasks/` files manually
 
-Phase 2 will add `.github/agents/*.agent.md` to enable agent-mode invocation once gald3r_valhalla provides a public MCP server URL.
+Phase 2 will add `.github/agents/*.agent.md` to enable agent-mode invocation once example_app provides a public MCP server URL.
 
 ## Known Limitations (Phase 1)
 

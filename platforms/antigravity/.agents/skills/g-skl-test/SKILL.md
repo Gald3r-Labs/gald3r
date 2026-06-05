@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-test
 description: Create, maintain, and run multi-level test plans (fast, comprehensive, regression) for gald3r systems and features. Use when creating test plans, running tests, checking test coverage gaps, doing code review, verification, or when preparing a release. Enforces C-013/C-014/C-015 constraints. Triggered by @g-test command and g-agnt-test agent.
 token_budget: medium
@@ -16,9 +16,15 @@ subsystem_memberships: [BUG_AND_QUALITY]
 
 | Level | Name | When Required | Scope | Max Duration |
 |-------|------|---------------|-------|--------------|
+| L0 | **Functional (system health)** | Install health check / pre-release stamp / CI gate | Per-gald3r-system PASS/FAIL + overall functionality % | < 5 min |
 | L1 | **Fast** | Every PR / code review / verification gate | Unit tests, smoke tests, happy-path | < 5 min |
 | L2 | **Comprehensive** | Feature completion, sprint closure | Integration, edge cases, error paths | < 30 min |
 | L3 | **Regression** | Before any release / version bump | Full suite, previous bug scenarios, cross-subsystem | Unrestricted |
+L1/L2/L3 are **code-test** levels (they run test files via `custom_scripts/tests/run_l1_tests.ps1`,
+T1532). **L0 / FUNCTIONAL** is a distinct **system-health** tier (T1540): it does not run code unit
+tests but exercises each gald3r *system* (Task Management, Bug Tracking, Platform Parity, Hook Wiring,
+Schema, Constraints, Subsystems, Skills, WPAC, Release, Encoding, ...) and emits a per-system
+PASS / PARTIAL / FAIL plus an overall "gald3r is N% functional" score.
 
 ---
 
@@ -118,6 +124,38 @@ TEST PLAN AUDIT:
 
 ---
 
+### FUNCTIONAL (L0) — gald3r systems health harness (T1540)
+
+**Called for an install health check, a pre-release quality stamp, or a CI gate.**
+Distinct from L1/L2/L3 code tests: this runs `custom_scripts/gald3r_system_test.ps1`, which
+exercises each gald3r *system* and produces a per-system PASS/PARTIAL/FAIL plus an overall
+functionality percentage.
+
+**Run:**
+
+```powershell
+# Full run against the current install (writes .gald3r/reports/system_test_YYYYMMDD_HHMMSS.md)
+pwsh -NoProfile -ExecutionPolicy Bypass -File custom_scripts/gald3r_system_test.ps1
+
+# CI gate: exit non-zero when overall score < 80%
+pwsh -NoProfile -ExecutionPolicy Bypass -File custom_scripts/gald3r_system_test.ps1 -ProjectRoot . -FailBelow 80
+
+# Machine-readable summary for dashboards / agent handoff
+pwsh -NoProfile -ExecutionPolicy Bypass -File custom_scripts/gald3r_system_test.ps1 -Json
+
+# Subset of systems
+pwsh -NoProfile -ExecutionPolicy Bypass -File custom_scripts/gald3r_system_test.ps1 -Systems "task,bug,hooks,git_hooks,schema"
+```
+
+**Systems under test (13):** task, bug, platform_spec, parity, hooks, git_hooks, schema,
+constraints, subsystems, skills, wpac, release, encoding. Skipped systems (e.g. WPAC on a
+non-WPAC project) are excluded from the overall average. Tests are non-destructive; any write
+(Task/Bug create-read-update) runs in a temp dir and never touches the real `.gald3r/`.
+
+**Report:** `.gald3r/reports/system_test_YYYYMMDD_HHMMSS.md` — Overall Score line, per-system
+table, and a Failed Tests breakdown. Suitable to paste into release notes as an objective stamp.
+
+---
 ### RELEASE-GATE — Pre-release check (enforces C-015)
 
 **Called before any version bump or release tag.**
@@ -175,5 +213,6 @@ VERIFICATION GATE:
 
 - **g-skl-review / g-skl-code-review**: call AUDIT at end of review pass
 - **g-skl-tasks → `[🔍]` gate**: call VERIFICATION-GATE before marking awaiting-verification
-- **Release process**: call RELEASE-GATE before any version bump
+- **Release process**: call RELEASE-GATE before any version bump; also run FUNCTIONAL (L0) for the system-health stamp in release notes
+- **CI / pre-release**: wire `custom_scripts/gald3r_system_test.ps1 -FailBelow <N>` as a gate (see FUNCTIONAL above)
 - **g-agnt-test**: autonomous agent that runs this skill's operations on schedule or trigger

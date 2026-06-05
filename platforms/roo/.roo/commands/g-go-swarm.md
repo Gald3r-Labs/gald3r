@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [TASK_MANAGEMENT]
 ---
 Alias for `@g-go --swarm`: $ARGUMENTS
@@ -12,7 +12,7 @@ Alias for `@g-go --swarm`: $ARGUMENTS
 
 **The coordinator MUST NEVER ask the user to confirm a plan, select a scope, choose between options, or approve a proposal.** This command is designed for fire-and-forget operation across multi-window workflows and scheduled automation. The user typed this command and moved on — they are NOT watching this session.
 
-The **only** valid reasons to stop are documented **hard-gate failures** (WPAC conflict exit-code `2`, dirty orchestration root outside the active task's staging allowlist, manifest / `workspace_repos` resolution error on multi-repo work). Everything else — including ambiguous queue composition, mixed gald3r_dev vs member tasks, varying scope, and large `[🔍]` queues — is resolved by the **auto-plan algorithm** below without comment to the user.
+The **only** valid reasons to stop are documented **hard-gate failures** (WPAC conflict exit-code `2`, dirty orchestration root outside the active task's staging allowlist, manifest / `workspace_repos` resolution error on multi-repo work). Everything else — including ambiguous queue composition, mixed <gald3r_source> vs member tasks, varying scope, and large `[🔍]` queues — is resolved by the **auto-plan algorithm** below without comment to the user.
 
 **Asking "Go?" or "Conservative or expanded?" or "Which tasks?" is a violation of this rule.** Apply the auto-plan and start working.
 
@@ -41,11 +41,12 @@ When `$ARGUMENTS` provides explicit IDs, use those exactly — skip scope filter
 ---
 
 Runs the full **pipeline orchestrator** in swarm mode:
-- **Phase 1**: N parallel implementation agents (subsystem-boundary partition)
-- **Phase 2**: M parallel reviewer agents (round-robin, fresh context each)
+- **Phase 1**: N parallel implementation agents via `g-go-code-swarm` (subsystem-boundary partition)
+- **Phase 2**: M parallel reviewer agents via `g-go-review-swarm` (round-robin, fresh context each)
 - **Rolling waves**: implementation continues on newly runnable downstream work while review catches up on committed checkpoints
 
 This is exactly `@g-go --swarm`. Use this command for discoverability.
+⚡ **Phase 1 invocation**: The coordinator MUST invoke `g-go-code-swarm` (or `g-go-code --swarm`) as the Phase 1 driver — N coders run in parallel, fan-in to a checkpoint, THEN Phase 2 begins. Invoking bare `g-go` per task is sequential coding and defeats the swarm architecture.
 Phase 1 implementer agents use the `g-go-code --swarm` implementation-only boundary: they may run smoke/unit readiness checks, but must not launch full adversarial review. Phase 2 is the only review lane in this pipeline.
 If Phase 1 has exactly one runnable item after workspace preflight, auto-downgrade Phase 1 to standard `@g-go` / `@g-go-code` single-agent implementation and continue the pipeline. Do not stop merely because swarm partitioning would produce one bucket. Workspace preflight blockers still stop the run.
 Phase 1 must create or reuse one T170 coding worktree per implementation bucket before
@@ -91,7 +92,7 @@ Re-run the helper in `-Mode post-write -Apply` immediately after coordinator-own
 
 After the WPAC gate is skipped or passes:
 
-1. At the **orchestration git root** (the repo from which you run this command — normally the Workspace-Control owner, e.g. `gald3r_dev`): run `git status --short`. If anything is listed **outside** this run's explicit coordinator staging allowlist for the active task and bug IDs, **STOP** here. Do not claim tasks or bugs, create or reuse T170 worktrees, partition swarms, or write coordinator-owned updates to `.gald3r/TASKS.md`, `.gald3r/BUGS.md`, other shared `.gald3r` coordination files, `CHANGELOG.md`, generated Copilot prompts, or parity output until unrelated changes are committed, stashed, or moved to a prior focused commit. Preserve any bucket handoff artifacts already produced and list the paths that blocked progress.
+1. At the **orchestration git root** (the repo from which you run this command — normally the Workspace-Control owner, e.g. `<gald3r_source>`): run `git status --short`. If anything is listed **outside** this run's explicit coordinator staging allowlist for the active task and bug IDs, **STOP** here. Do not claim tasks or bugs, create or reuse T170 worktrees, partition swarms, or write coordinator-owned updates to `.gald3r/TASKS.md`, `.gald3r/BUGS.md`, other shared `.gald3r` coordination files, `CHANGELOG.md`, generated Copilot prompts, or parity output until unrelated changes are committed, stashed, or moved to a prior focused commit. Preserve any bucket handoff artifacts already produced and list the paths that blocked progress.
 
 2. **`gald3r_worktree.ps1 -AllowDirty`**: do not use this switch for `g-go`, `g-go-code`, `g-go-review`, or any `--swarm` variant **except** when every dirty path is owned exclusively by the active task/bug scope and a `## Status History` row documents that override. Otherwise clean the checkout first. The same **per-root** `-AllowDirty` discipline applies to every repository included in the touch set below when multi-repo work is in scope.
 

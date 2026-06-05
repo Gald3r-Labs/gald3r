@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [TASK_MANAGEMENT]
 ---
 Archive (soft-delete) a task. Activates **g-skl-tasks** → ARCHIVE TASK operation.

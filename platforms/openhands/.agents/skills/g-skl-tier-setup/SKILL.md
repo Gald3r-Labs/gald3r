@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-tier-setup
 description: Configurable product-tier onboarding skill. SETUP creates release_profiles/, scaffolds template_{tier}/ directories, and writes .gald3r/.identity tier metadata. ENABLE annotates existing SUBSYSTEMS.md with min_tier:, infers defaults from subsystem content, and calls platform_parity_sync -TierSync. Ships in full + adv tiers only (slim installs are pre-configured).
 operations: [SETUP, ENABLE]
@@ -11,7 +11,7 @@ subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 
 **Activate for**: "tier setup", "enable tiers", "add a product tier", "free/pro/enterprise", "slim/full/adv", `@g-tier-setup`, `@g-tier-setup SETUP`, `@g-tier-setup ENABLE`.
 
-**Tier**: Ships in `gald3r_template_full` and `gald3r_template_adv` external repos only — NOT in `gald3r_template_slim`. Slim projects are pre-configured by gald3r itself and do not manage tiers.
+**Tier**: Ships in `<template_full>` and `<template_adv>` external repos only — NOT in `<template_slim>`. Slim projects are pre-configured by gald3r itself and do not manage tiers.
 
 **Dependency**: Requires T082 sub-tasks 082-1 through 082-3 shipped (subsystem `min_tier:` schema, `release_profiles/` directory, `tier_sync.ps1`). Calls into `platform_parity_sync.ps1 -TierSync` after ENABLE.
 
@@ -330,8 +330,8 @@ This is an example source-repo tier configuration:
 # .gald3r/release_profiles/slim.yaml
 name: slim
 tier_prefix: S
-template_dir: G:/gald3r_ecosystem/gald3r_template_slim
-destination: G:\gald3r_ecosystem\gald3r
+template_dir: <ECOSYSTEM_ROOT>/<template_slim>
+destination: <workspace>\gald3r
 remote: https://github.com/wrm3/gald3r.git
 included_tiers: [slim]
 operational_requirement: none
@@ -341,8 +341,8 @@ description: "Baseline gald3r — git clone only, zero dependencies."
 # .gald3r/release_profiles/full.yaml
 name: full
 tier_prefix: F
-template_dir: G:/gald3r_ecosystem/gald3r_template_full
-destination: G:\gald3r_ecosystem\gald3r_template_full_release
+template_dir: <ECOSYSTEM_ROOT>/<template_full>
+destination: <workspace>\<template_full>_release
 remote: https://github.com/example/gald3r-template-full.git
 included_tiers: [slim, full]
 operational_requirement: api-keys
@@ -352,8 +352,8 @@ description: "Full-featured gald3r — requires API keys and network."
 # .gald3r/release_profiles/adv.yaml
 name: adv
 tier_prefix: A
-template_dir: G:/gald3r_ecosystem/gald3r_template_adv
-destination: G:\gald3r_ecosystem\gald3r_adv
+template_dir: <ECOSYSTEM_ROOT>/<template_adv>
+destination: <workspace>\gald3r_adv
 remote: https://github.com/wrm3/gald3r_adv.git
 included_tiers: [slim, full, adv]
 operational_requirement: docker
@@ -420,7 +420,7 @@ Inference defaults match this table: `docker` signals → `docker` tier; `api-ke
 
 - Does not populate `template_{tier}/` directories with actual skill/rule/command files — that is `custom_scripts/platform_parity_sync.ps1 -TierSync`
 - Does not deploy tiers to sibling repos — that is `g-skl-release` SHIP (and PUBLISH)
-- Does not modify `G:/gald3r_ecosystem/gald3r_template_slim` — see AC-7 in Task 083: slim installs are pre-configured by gald3r
+- Does not modify `<ECOSYSTEM_ROOT>/<template_slim>` — see AC-7 in Task 083: slim installs are pre-configured by gald3r
 - Does not enforce tier boundaries on new code — see C-018 tier boundary constraint (pending, Task 082-4 dependency)
 - Does not run without `.gald3r/` being initialized — run `@g-setup` first
 
@@ -436,7 +436,7 @@ The interactive flow can run either in-chat (the agent asks and the user answers
 
 This skill ships in:
 - Root: `.cursor/`, `.claude/`, `.agent/`, `.codex/`, `.opencode/` (5 targets)
-- `G:/gald3r_ecosystem/gald3r_template_full`: all 5 IDE directories
-- `G:/gald3r_ecosystem/gald3r_template_adv`: all 5 IDE directories
+- `<ECOSYSTEM_ROOT>/<template_full>`: all 5 IDE directories
+- `<ECOSYSTEM_ROOT>/<template_adv>`: all 5 IDE directories
 
-It does NOT ship in `G:/gald3r_ecosystem/gald3r_template_slim`. That is intentional — C-009 parity is tier-scoped for this skill per AC-7. The `platform_parity_sync.ps1 -TierSync` script already knows tier-scoped skills exist and will not copy this skill into the slim tree.
+It does NOT ship in `<ECOSYSTEM_ROOT>/<template_slim>`. That is intentional — C-009 parity is tier-scoped for this skill per AC-7. The `platform_parity_sync.ps1 -TierSync` script already knows tier-scoped skills exist and will not copy this skill into the slim tree.

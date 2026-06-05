@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [RELEASE_AND_VERSIONING]
 ---
 Finalize a GitHub PR after review (merge on PASS / keep Draft on FAIL): $ARGUMENTS

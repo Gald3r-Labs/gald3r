@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
 Register a parent project for this project: $ARGUMENTS
@@ -24,11 +24,11 @@ Delegates to `g-skl-wpac-claim`.
 ## Examples
 
 ```
-# Claim gald3r_master_control as this project's parent
-@g-wpac-claim G:\gald3r_ecosystem\gald3r_master_control
+# Claim <master_control> as this project's parent
+@g-wpac-claim <workspace>\<master_control>
 
 # Claim without touching the parent project (remote/read-only)
-@g-wpac-claim G:\gald3r_ecosystem\gald3r_master_control --one-way
+@g-wpac-claim <workspace>\<master_control> --one-way
 ```
 
 ## What Happens

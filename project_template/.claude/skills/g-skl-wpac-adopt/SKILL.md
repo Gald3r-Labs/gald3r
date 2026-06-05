@@ -39,15 +39,15 @@ If target `.identity` not found:
 
 `g-wpac-adopt` writes to `<target_path>/.gald3r/workspace/` when the target is locally accessible (Step 6 below). `workspace/` is forbidden in Workspace-Control member `.gald3r/` — only `.identity` and `PROJECT.md` are marker-safe. If the target is a Workspace-Control controlled_member or migration_source registered in any ancestor `workspace_manifest.yaml`, the target write must be skipped.
 
-Run the guard helper against the target path **before** any write into the target's `.gald3r/`. Use `-DotGald3rPath linking/` to evaluate the specific path PCAC adopt would write:
+Run the guard helper against the target path **before** any write into the target's `.gald3r/`. Use `-DotGald3rPath linking/` to evaluate the specific path WPAC adopt would write:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath "<target_project_path>" -DotGald3rPath "linking/"
 ```
 
 - exit `0` — target is not a member (or is the control project / outside workspace / template); bidirectional adoption proceeds normally.
-- exit `1` — target is a member; `workspace/` is control plane and forbidden. Switch to `--one-way` automatically and skip Step 6 (target write). Record `BLOCK pcac_adopt_member_repo_gald3r_guard_block` in the session summary, plus the matched repo id/role. Suggest `@g-wrkspc-adopt` for Workspace-Control adoption, which routes coordination through the workspace controller's manifest instead of writing WPAC topology into the member.
-- exit `2` — stop with `BLOCK pcac_adopt_member_repo_gald3r_guard_error` and direct the user to fix the manifest.
+- exit `1` — target is a member; `workspace/` is control plane and forbidden. Switch to `--one-way` automatically and skip Step 6 (target write). Record `BLOCK wpac_adopt_member_repo_gald3r_guard_block` in the session summary, plus the matched repo id/role. Suggest `@g-wrkspc-adopt` for Workspace-Control adoption, which routes coordination through the workspace controller's manifest instead of writing WPAC topology into the member.
+- exit `2` — stop with `BLOCK wpac_adopt_member_repo_gald3r_guard_error` and direct the user to fix the manifest.
 
 The current project's own `.gald3r/workspace/` updates (Steps 3-5 below) are unaffected; the guard applies only to the target write.
 
@@ -128,10 +128,10 @@ on the target path:
 
 ```powershell
 # $targetPath = <target_project_path>
-& "<gald3r_template_adv_root>\setup_gald3r_project.ps1" -TargetPath $targetPath -Platforms cursor,claude
+& "<<template_adv>_root>\setup_gald3r_project.ps1" -TargetPath $targetPath -Platforms cursor,claude
 ```
 
-- `setup_gald3r_project.ps1` lives at the root of any `gald3r_template_adv` install
+- `setup_gald3r_project.ps1` lives at the root of any `<template_adv>` install
   (`<template_adv_root>\setup_gald3r_project.ps1`); if this project was installed from an adv
   template the same script is already present at this project's root -- reuse it.
 - Match the platforms the parent project uses (read from the parent's installed IDE dirs).

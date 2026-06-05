@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [BUG_AND_QUALITY]
+---
 # g-skl-bugs
 
 > Human-facing companion to `SKILL.md`. The LLM agent reads `SKILL.md`; this

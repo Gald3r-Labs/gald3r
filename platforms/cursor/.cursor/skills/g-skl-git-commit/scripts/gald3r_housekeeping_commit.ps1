@@ -1,4 +1,4 @@
-# .gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_housekeeping_commit.ps1
+﻿# .claude/skills/g-skl-git-commit/scripts/gald3r_housekeeping_commit.ps1
 #
 # Safe controller .gald3r/ housekeeping safety classifier (T531).
 #

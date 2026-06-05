@@ -1,7 +1,7 @@
 ﻿---
 name: g-skl-oracle
 description: >
-  Execute Oracle Database queries and operations via gald3r_valhalla MCP tools.
+  Execute Oracle Database queries and operations via example_app MCP tools.
   Requires Docker backend (adv tier). Supports read-only queries (oracle_query)
   and full write operations (oracle_execute) including DDL and PL/SQL blocks.
 version: 1.0.0
@@ -20,7 +20,7 @@ triggers:
   - "insert into oracle"
   - g-oracle
 requires:
-  - gald3r_valhalla MCP server (Docker backend)
+  - example_app MCP server (Docker backend)
   - oracle_query MCP tool
   - oracle_execute MCP tool
 token_budget: medium
@@ -29,7 +29,7 @@ subsystem_memberships: [AGENT_ORCHESTRATION]
 
 # g-skl-oracle
 
-**Requires**: gald3r_valhalla Docker backend + `oracle_query` / `oracle_execute` MCP tools.
+**Requires**: example_app Docker backend + `oracle_query` / `oracle_execute` MCP tools.
 
 **Activate for**: Oracle SQL queries, data reads, schema inspection, inserts/updates/deletes, DDL operations, PL/SQL blocks.
 
@@ -138,4 +138,4 @@ Before using this skill, verify the backend is up:
 ```
 gald3r_server_status()
 ```
-If unavailable: **this skill does not work in slim or full tier installs** — Oracle access requires the gald3r_valhalla Docker backend.
+If unavailable: **this skill does not work in slim or full tier installs** — Oracle access requires the example_app Docker backend.

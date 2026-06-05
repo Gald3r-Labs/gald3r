@@ -13,7 +13,7 @@ last_updated: 2026-05-10
 
 ## Background
 
-Research finding (gald3r_dev empirical observation across 2026-04 / 2026-05 autopilot runs):
+Research finding (<gald3r_source> empirical observation across 2026-04 / 2026-05 autopilot runs):
 
 | Enforcement surface | Compliance |
 |---|---|
@@ -46,12 +46,12 @@ Scanned: `.claude/rules/*.md` and `.cursor/rules/*.mdc` (15 files each; pairs ar
 | `g-rl-04-code_reusability.md` | DRY 3-strike rule + folder conventions | `advisory` | Code quality nudges. Reviewable post-hoc. | none needed | none |
 | `g-rl-08-powershell.md` | PowerShell command-separator + curl alias notes | `advisory` | Tool-choice guidance. Wrong syntax fails immediately and is self-correcting. | none needed | none |
 | `g-rl-09-python_venv.md` | UV venv + dependency sync | `advisory` | Code-style and dependency hygiene. Violations show up in next install. | none needed | none |
-| `g-rl-25-gald3r_session_start.md` | Session start display + sync validation + PCAC inbox surface | `mixed` | Display is advisory; **PCAC INBOX conflict gate is a hard-constraint** (must block claims/coding when an open conflict exists) | `g-hk-pcac-inbox-check.ps1` (`-BlockOnConflict` exit code 2); wired into `g-go-go`, `g-go`, `g-go-code`, `g-go-review` commands; sessionStart hook can surface but does not currently block tool calls | Pre-tool-call hook (planned) should re-check PCAC INBOX conflict state and refuse `Edit`/`Write` on `.gald3r/` paths while an unresolved `[CONFLICT]` exists. Today this is command-internal only. |
+| `g-rl-25-gald3r_session_start.md` | Session start display + sync validation + WPAC inbox surface | `mixed` | Display is advisory; **WPAC INBOX conflict gate is a hard-constraint** (must block claims/coding when an open conflict exists) | `g-hk-wpac-inbox-check.ps1` (`-BlockOnConflict` exit code 2); wired into `g-go-go`, `g-go`, `g-go-code`, `g-go-review` commands; sessionStart hook can surface but does not currently block tool calls | Pre-tool-call hook (planned) should re-check WPAC INBOX conflict state and refuse `Edit`/`Write` on `.gald3r/` paths while an unresolved `[CONFLICT]` exists. Today this is command-internal only. |
 | `g-rl-26-readme-changelog.md` | Update CHANGELOG/README at feature boundary | `advisory` | Doc hygiene. Missing CHANGELOG entry is a review-time fail, not a runtime hazard. | review-time only | none (review owns it) |
-| `g-rl-33-enforcement_catchall.md` | The catchall: error reporting, mandatory commit offer, **`.gald3r/` folder gate**, **PRD freeze gate (C-019)**, PCAC INBOX gate, **Clean Controller Gate**, gald3r housekeeping commit gate, **PCAC priority floor**, PCAC outbound tracking, code-change-enforcement, delegation hints | `hard-constraint` (multiple) | This file is the central hard-constraint document. Multiple sub-rules are data-loss-risky if violated. | Partial: `g-hk-pre-commit.ps1` (secret scan); `gald3r_housekeeping_commit.ps1`; `gald3r_push_gate.ps1`; `g-hk-pcac-inbox-check.ps1` (PCAC). **No `.gald3r/` write guard hook.** **No PRD freeze hook.** **No code-change-vs-task-id check at pre-commit.** | **Major gap** — see next section. |
+| `g-rl-33-enforcement_catchall.md` | The catchall: error reporting, mandatory commit offer, **`.gald3r/` folder gate**, **PRD freeze gate (C-019)**, WPAC INBOX gate, **Clean Controller Gate**, gald3r housekeeping commit gate, **WPAC priority floor**, WPAC outbound tracking, code-change-enforcement, delegation hints | `hard-constraint` (multiple) | This file is the central hard-constraint document. Multiple sub-rules are data-loss-risky if violated. | Partial: `g-hk-pre-commit.ps1` (secret scan); `gald3r_housekeeping_commit.ps1`; `gald3r_push_gate.ps1`; `g-hk-wpac-inbox-check.ps1` (WPAC). **No `.gald3r/` write guard hook.** **No PRD freeze hook.** **No code-change-vs-task-id check at pre-commit.** | **Major gap** — see next section. |
 | `g-rl-34-todo_completion_gate.md` | Stub/TODO annotation + follow-up task creation | `mixed` | Stub annotation is hard-constraint at task completion (`[🔍]` gate); discovery is advisory at any other time. | task verifier runs at `g-go-review`; no hook | A pre-commit hook scanning for bare `# TODO` / `pass` / `raise NotImplementedError` without the `TODO[TASK-X→TASK-Y]` form would surface unannotated stubs deterministically. |
 | `g-rl-35-bug-discovery-gate.md` | Pre-existing bug logging + `BUG[BUG-{id}]` annotation | `advisory` | Bug discovery is an agent-judgement step. Hook can't easily detect "what is a pre-existing bug". | none needed | none |
-| `g-rl-36-workspace-member-gald3r-guard.md` | Workspace-Control member `.gald3r/` MUST be marker-only (`.identity` + `PROJECT.md` only) | `hard-constraint` | Violation = control-plane drift, framework integrity loss. BUG-021 was filed for exactly this case. | `.claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1` invoked from skills (`g-skl-workspace`, `g-skl-setup`, `g-skl-pcac-spawn`, `g-skl-pcac-adopt`); `.claude/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1` for audit | **No pre-tool-call hook.** Today the guard is called from skill code paths only — direct `Write`/`Edit` to a member `.gald3r/` path bypasses it. A pre-tool-call hook that recognises `<member>/.gald3r/<not-marker>` paths and refuses the write closes this. |
+| `g-rl-36-workspace-member-gald3r-guard.md` | Workspace-Control member `.gald3r/` MUST be marker-only (`.identity` + `PROJECT.md` only) | `hard-constraint` | Violation = control-plane drift, framework integrity loss. BUG-021 was filed for exactly this case. | `.claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1` invoked from skills (`g-skl-workspace`, `g-skl-setup`, `g-skl-wpac-spawn`, `g-skl-wpac-adopt`); `.claude/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1` for audit | **No pre-tool-call hook.** Today the guard is called from skill code paths only — direct `Write`/`Edit` to a member `.gald3r/` path bypasses it. A pre-tool-call hook that recognises `<member>/.gald3r/<not-marker>` paths and refuses the write closes this. |
 | `g-rl-37-think-in-code.md` | Use a single script when 3+ tool calls would do the same work | `advisory` | Token-efficiency guidance. No safety risk. | none needed | none |
 | `rally.md` | Rally HTTP API conventions | `advisory` | Operational guidance for an internal task tracker. | none needed | none |
 | `silicon_valley_personality.md` | Persona rule | `advisory` | Cosmetic. | none needed | none |
@@ -108,7 +108,7 @@ Refusal messages reference the relevant rule path (`.claude/rules/g-rl-NN-...md`
 | Codex (`.codex/hooks/`) | scripts present; no hooks.json | scripts callable manually | scripts callable manually | ✅ extended (script copied) | scripts-ready; harness wiring TBD |
 | Gemini / Antigravity (`.agent/hooks/`) | scripts present; no hooks.json | scripts callable manually | scripts callable manually | ✅ extended (script copied) | scripts-ready; harness wiring TBD |
 | OpenCode (`.opencode/hooks/`) | no hooks.json (per learned fact #47 OpenCode has no native hooks) | n/a | n/a | ✅ extended (script copied for manual invocation) | scripts-only; documented gap |
-| GitHub Copilot (`.copilot/`) | no hooks (per learned fact #49 Copilot Phase 1 has no hooks) | n/a | n/a | n/a | documented gap; Phase 2 awaits gald3r_valhalla public MCP URL |
+| GitHub Copilot (`.copilot/`) | no hooks (per learned fact #49 Copilot Phase 1 has no hooks) | n/a | n/a | n/a | documented gap; Phase 2 awaits example_app public MCP URL |
 
 Cursor's documented hook events as of late 2025 are `sessionStart`, `stop`, `beforeShellExecution`, `beforeReadFile`, `beforeSubmitPrompt`, `beforeMCPExecution`, `afterFileEdit`. There is no documented `beforeFileWrite` event in Cursor — meaning Cursor's harness cannot today auto-refuse an `Edit`/`Write` tool call via these hooks. The `preToolUse` key in `.cursor/hooks.json` is forward-looking: if Cursor adds tool-arg introspection, the wiring is already in place. Until then, the same Cursor-side enforcement falls back to context-injected rules + the pre-commit extensions. Claude Code's `PreToolUse` event is the only platform-supported tool-arg-introspecting hook surface today.
 
@@ -128,7 +128,7 @@ Cursor's documented hook events as of late 2025 are `sessionStart`, `stop`, `bef
 | g-rl-04 | n/a (advisory) | — |
 | g-rl-08 | n/a (advisory) | — |
 | g-rl-09 | n/a (advisory) | — |
-| g-rl-25 | partial — PCAC INBOX hook surfaces conflicts; pre-tool-call extension not yet wired | Future: extend `g-hk-pre-tool-call-gald3r-guard.ps1` to re-check INBOX conflict state when an active CONFLICT exists |
+| g-rl-25 | partial — WPAC INBOX hook surfaces conflicts; pre-tool-call extension not yet wired | Future: extend `g-hk-pre-tool-call-gald3r-guard.ps1` to re-check INBOX conflict state when an active CONFLICT exists |
 | g-rl-26 | review-time | n/a |
 | g-rl-33 (.gald3r/ guard) | **shipped** | `g-hk-pre-tool-call-gald3r-guard.ps1` (AC5) — refuses unsupervised Edit/Write to `.gald3r/`; bypassable via `GALD3R_ACTIVE_AGENT` env var |
 | g-rl-33 (PRD freeze C-019) | **shipped** | `g-hk-pre-tool-call-prd-freeze.ps1` (AC6) — refuses Edit/Write to released/superseded PRDs; bypassable via `GALD3R_PRD_REVISE_ACTIVE` env var |
@@ -142,7 +142,7 @@ Cursor's documented hook events as of late 2025 are `sessionStart`, `stop`, `bef
 
 ## Cross-platform footnote
 
-This matrix is written from `gald3r_dev` (Claude Code orientation). Hook parity across the other five IDE platforms is part of the Phase-2 implementation work, not this audit. The audit findings (which rules are hard vs advisory) are platform-neutral.
+This matrix is written from `<gald3r_source>` (Claude Code orientation). Hook parity across the other five IDE platforms is part of the Phase-2 implementation work, not this audit. The audit findings (which rules are hard vs advisory) are platform-neutral.
 
 ## Related
 

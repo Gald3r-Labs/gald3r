@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
 Remove or retire a Workspace-Control member from the manifest: $ARGUMENTS
@@ -24,6 +24,6 @@ Plans or applies a registry-only member removal or retirement in `.gald3r/linkin
 ## Usage Examples
 
 ```
-@g-wrkspc-member-remove gald3r_template_adv --dry-run
-@g-wrkspc-member-remove gald3r_template_adv --apply
+@g-wrkspc-member-remove <template_adv> --dry-run
+@g-wrkspc-member-remove <template_adv> --apply
 ```

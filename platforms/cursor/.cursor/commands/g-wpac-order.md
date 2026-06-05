@@ -46,7 +46,7 @@ Show results: ✅ created / ⚠️ conflict / ❌ inaccessible
 
 **Order to specific child:**
 ```
-@g-wpac-order gald3r_mcp: add oracle connection pool task
+@g-wpac-order example_mcp: add oracle connection pool task
 ```
 
 **With cascade:**

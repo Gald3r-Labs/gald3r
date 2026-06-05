@@ -18,5 +18,5 @@ last_updated: "{YYYY-MM-DD}"
 
 This project is **standalone**. Update `role` to `parent`, `child`, `standalone`, or `sibling-only` as appropriate.
 
-Run `@g-pcac-claim` to register a parent, `@g-pcac-adopt` to register children,
-or `@g-pcac-sync` to register siblings.
+Run `@g-wpac-claim` to register a parent, `@g-wpac-adopt` to register children,
+or `@g-wpac-sync` to register siblings.

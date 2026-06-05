@@ -9,11 +9,11 @@ subsystem_memberships: [TASK_MANAGEMENT]
 ## When to Use
 Session start, checking project health, @g-status command.
 
-## PCAC Inbox Gate
+## WPAC Inbox Gate
 
-At the start of this skill, determine whether the project is a PCAC participant. PCAC is active only when `.gald3r/linking/link_topology.md` declares at least one parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares PCAC project linking relationships. A Workspace-Control manifest and local `INBOX.md` alone do not make a project part of a PCAC group.
+At the start of this skill, determine whether the project is a WPAC participant. WPAC is active only when `.gald3r/linking/link_topology.md` declares at least one parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares WPAC project linking relationships. A Workspace-Control manifest and local `INBOX.md` alone do not make a project part of a WPAC group.
 
-Only when PCAC is active, call `g-hk-pcac-inbox-check.ps1 -BlockOnConflict` when present. `INBOX CONFLICT GATE` blocks status work until `@g-pcac-read` resolves conflicts. `g-medic` L1 uses its own non-blocking health gate before blocking higher-risk work. Non-conflict requests, broadcasts, and syncs remain advisory and should be surfaced in output. If PCAC is not active, skip the hook and report `PCAC: not configured / skipped`.
+Only when WPAC is active, call `g-hk-wpac-inbox-check.ps1 -BlockOnConflict` when present. `INBOX CONFLICT GATE` blocks status work until `@g-wpac-read` resolves conflicts. `g-medic` L1 uses its own non-blocking health gate before blocking higher-risk work. Non-conflict requests, broadcasts, and syncs remain advisory and should be surfaced in output. If WPAC is not active, skip the hook and report `WPAC: not configured / skipped`.
 
 ## Steps
 
@@ -70,16 +70,16 @@ Only when PCAC is active, call `g-hk-pcac-inbox-check.ps1 -BlockOnConflict` when
 
    - If absent: omit the Workspace-Control section unless the user explicitly asks for workspace status.
    - If present: reuse `g-skl-workspace STATUS` / `VALIDATE` behavior and include a compact section.
-   - Do not infer workspace members from sibling folders, `template_*` folders, remotes, or PCAC topology.
-   - Keep PCAC separate: PCAC reports topology, INBOX, orders, requests, and peer snapshots; Workspace-Control reports manifest-backed local member scope.
+   - Do not infer workspace members from sibling folders, `template_*` folders, remotes, or WPAC topology.
+   - Keep WPAC separate: WPAC reports topology, INBOX, orders, requests, and peer snapshots; Workspace-Control reports manifest-backed local member scope.
 
    Suggested compact output:
 
    ```text
-   Workspace-Control: gald3r_dev Workspace-Control Bootstrap (active_bootstrap)
+   Workspace-Control: <gald3r_source> Workspace-Control Bootstrap (active_bootstrap)
    Manifest: .gald3r/linking/workspace_manifest.yaml
-   Owner: gald3r_dev | Controlled members: 3
-   Members: gald3r_template_slim (planned_clean_member, path missing, writes blocked), gald3r_template_full (...), gald3r_template_adv (...)
+   Owner: <gald3r_source> | Controlled members: 3
+   Members: <template_slim> (planned_clean_member, path missing, writes blocked), <template_full> (...), <template_adv> (...)
    Routing: valid policies docs_only, generated_output, source_only, multi_repo
    Current work scope: task/bug workspace_repos=<ids or current repo only>; workspace_touch_policy=<policy or default current-repo>
    Boundary: report-only; Task 177 defers backend, UI, Docker/Kubernetes/MCP, Valhalla, and Yggdrasil systems.
@@ -88,7 +88,7 @@ Only when PCAC is active, call `g-hk-pcac-inbox-check.ps1 -BlockOnConflict` when
    When member paths exist, report git cleanliness per member repo, not from the control repo:
 
    ```text
-   Git: gald3r_template_full clean | gald3r_template_adv dirty (2 files) | gald3r_template_slim missing
+   Git: <template_full> clean | <template_adv> dirty (2 files) | <template_slim> missing
    ```
 
    If the active task or bug has `workspace_repos` / `workspace_touch_policy`, show it in one line near active work. Omitted metadata means current repository only.

@@ -128,7 +128,7 @@ in `settings.json` — set it to a list like `["AGENTS.md", "CONTEXT.md", "GEMIN
 - **Events (11)**: `SessionStart`, `SessionEnd`, `BeforeAgent`, `AfterAgent`, `BeforeModel`,
   `AfterModel`, `BeforeToolSelection`, `BeforeTool`, `AfterTool`, `PreCompress`, `Notification`.
 - Added **~January 2026** (enabled by default v0.26.0+ per secondary reporting).
-- gald3r `g-hk-*` automation (SessionStart context injection, PCAC inbox check, pre-tool `.gald3r/`
+- gald3r `g-hk-*` automation (SessionStart context injection, WPAC inbox check, pre-tool `.gald3r/`
   guards, pre-commit/pre-push gates) now wires to these events — **no manual workaround required**
   the way the prior spec assumed.
 - Source: https://geminicli.com/docs/hooks/
@@ -205,7 +205,7 @@ fully-featured gald3r targets. Platform-specific deltas:
 
 - Ship gald3r primitives natively: `.gemini/commands/g-*.toml`, `.gemini/agents/g-agnt-*.md`,
   `.gemini/skills/<name>/SKILL.md`, hooks + MCP in `.gemini/settings.json`, `GEMINI.md` overlay.
-- Hooks now fire natively — do NOT degrade session-start / PCAC / pre-commit to manual steps.
+- Hooks now fire natively — do NOT degrade session-start / WPAC / pre-commit to manual steps.
 - Set `context.fileName` to include `AGENTS.md` if reusing the gald3r universal instruction file.
 - Re-verify on the next `@g-platform-scan-docs gemini` (crawl_max_age_days: 7) — confirm subagent /
   hook event names against the installed CLI version.

@@ -13,7 +13,7 @@ First-time setup of gald3r in a project. @g-setup command.
 
 **This skill creates the SLIM layout.** Do not create the folders marked "full only" below.
 
-| Folder | Slim | Full (gald3r_dev only) |
+| Folder | Slim | Full (<gald3r_source> only) |
 |--------|------|------------------------|
 | `tasks/`, `bugs/`, `features/`, `subsystems/`, `reports/`, `logs/` | ✅ | ✅ |
 | `config/` (HEARTBEAT.md, SPRINT.md, AGENT_CONFIG.md) | ❌ | ✅ |
@@ -29,7 +29,7 @@ First-time setup of gald3r in a project. @g-setup command.
 **Before any folder or file creation**, verify the target install path is not a Workspace-Control controlled_member or migration_source repository. `g-skl-setup` is for installing a full standalone gald3r project; member repositories use a marker-only `.gald3r/` shape that is owned by `g-wrkspc-spawn` / `g-wrkspc-adopt` plus the bootstrap helper, NOT full setup.
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .cursor/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath "<absolute_install_target>"
+powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath "<absolute_install_target>"
 ```
 
 Outcomes:
@@ -37,10 +37,10 @@ Outcomes:
 - exit `0` (ALLOW) — target is the workspace control project, outside any workspace, or a template directory; proceed with full setup.
 - exit `1` (BLOCK) — target is a Workspace-Control controlled_member or migration_source. **Stop**. Direct the user to either:
   1. Run setup against the workspace control project instead, OR
-  2. Run `@g-wrkspc-spawn` (new empty member) or `@g-wrkspc-adopt` (existing standalone gald3r project) if the target should be a workspace member. Both paths use `.cursor/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1` to create the marker pair (`.identity` + `PROJECT.md`) — they do NOT install the full gald3r control plane in members.
+  2. Run `@g-wrkspc-spawn` (new empty member) or `@g-wrkspc-adopt` (existing standalone gald3r project) if the target should be a workspace member. Both paths use `.claude/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1` to create the marker pair (`.identity` + `PROJECT.md`) — they do NOT install the full gald3r control plane in members.
 - exit `2` (ERROR) — manifest unparseable. Resolve before continuing. If the project is genuinely standalone (no `.gald3r/linking/workspace_manifest.yaml` in any ancestor), the helper returns ALLOW; an actual exit `2` indicates a broken manifest.
 
-Installed projects ship the same helper at `.cursor/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1`. External template repos (`G:/gald3r_ecosystem/gald3r_template_slim`, `G:/gald3r_ecosystem/gald3r_template_full`, `G:/gald3r_ecosystem/gald3r_template_adv`) are the only legitimate exception for live `.gald3r/` writes outside the control project.
+Installed projects ship the same helper at `.claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1`. External template repos (`<ECOSYSTEM_ROOT>/<template_slim>`, `<ECOSYSTEM_ROOT>/<template_full>`, `<ECOSYSTEM_ROOT>/<template_adv>`) are the only legitimate exception for live `.gald3r/` writes outside the control project.
 
 ### Step 0.5 — Git Readiness Check
 
@@ -58,19 +58,55 @@ git rev-parse --is-inside-work-tree
   → N: warn "g-go-go autopilot requires git; some features will not work" then continue
   ```
 
-**2. Does a `dev` branch exist?**
+**2. Does a `main` branch exist?**
+
+gald3r uses a **feature-branches-only model** — a single permanent `main` branch plus
+short-lived `feature/*` and `fix/*` branches. There is **no long-lived `dev`/`test` branch**
+(see `g-rl-02-git_workflow`). Confirm `main` exists as the integration target:
+```
+git branch --list main
+```
+- Non-empty output → `main` exists, skip.
+- Empty → check the current default branch name (`git rev-parse --abbrev-ref HEAD`). If the repo
+  uses a differently-named default (e.g. `master`), note it; otherwise offer (default Y):
+  ```
+  "No 'main' branch found. Create main from current HEAD? [Y/n]"
+  → Y: git branch -M main
+        [if remote exists] git push --set-upstream origin main
+  → N: warn "g-go-go autopilot auto-merge will MERGE-BLOCKED without a main branch"
+  ```
+
+**2b. Migrate an existing `dev`-model repo (USER-SAFETY — T1535 / BUG-099)**
+
+A repo created under the retired `dev`/`test` promotion model may still carry a
+long-lived `dev` branch. The old auto-merge defaulted to that `dev` branch, which was
+the root cause of the BUG-099 history-loss class. Detect and offer a **safe,
+confirmation-gated** migration — **never auto-delete a user branch**:
 ```
 git branch --list dev
 ```
-- Non-empty output → dev exists, skip.
-- Empty → no dev branch. Offer (default Y):
+- Empty → no migration needed, skip silently.
+- Non-empty → a legacy `dev` branch exists. Compute its relationship to `main`:
   ```
-  "No 'dev' branch found. Create dev from current HEAD? [Y/n]"
-  → Y: git checkout -b dev
-        [if remote exists] git push --set-upstream origin dev
-        git checkout - (return to original branch)
-  → N: warn "g-go-go autopilot will MERGE-BLOCKED without a dev branch"
+  git rev-list --left-right --count main...dev
   ```
+  Then offer (default N — destructive-adjacent, so do NOT default Y):
+  ```
+  "Legacy 'dev' branch detected (old promotion model). gald3r is now
+   feature-branches-only -> main. Promote dev's unique work onto main, then
+   retire dev? This will NOT delete dev until you confirm a second time. [y/N]"
+  → Y: 1. git checkout main
+       2. git merge --ff-only dev   (if dev is strictly ahead — safe fast-forward)
+          - if FF is not possible, STOP and report: "dev and main diverged
+            (N ahead / M behind). Manual review required — not auto-merging."
+       3. Only after a clean FF, offer separately:
+          "Retire (delete) the local 'dev' branch now? [y/N]"
+          → Y: git branch -d dev   (safe delete; refuses if not merged)
+          → N: leave dev in place; print "dev retained — delete manually when ready"
+  → N: print "Left dev in place. You remain on the legacy model until migrated."
+  ```
+- This step is **report-only when no `dev` branch exists** and **never performs a
+  force-delete (`-D`) or a non-fast-forward merge** without explicit user confirmation.
 
 **3. Remote check (info only — never blocks setup)**
 ```
@@ -122,11 +158,11 @@ The template (`assets/gitattributes-lfs.template`) covers: `.psd .ai .fbx .obj
 
 3. **If gald3r_install unavailable**, create manually:
    - Folders: `.gald3r/`, `.gald3r/tasks/`, `.gald3r/features/`, `.gald3r/bugs/`, `.gald3r/subsystems/`, `.gald3r/reports/`, `.gald3r/logs/`, `.gald3r/specifications_collection/`
-   - Create `.gald3r/specifications_collection/README.md` with the index template (see template in `G:/gald3r_ecosystem/gald3r_template_full/.gald3r/specifications_collection/README.md`)
-   - Create `.gald3r/learned-facts.md` from the template in `G:/gald3r_ecosystem/gald3r_template_full/.gald3r/learned-facts.md`
+   - Create `.gald3r/specifications_collection/README.md` with the index template (see template in `<ECOSYSTEM_ROOT>/<template_full>/.gald3r/specifications_collection/README.md`)
+   - Create `.gald3r/learned-facts.md` from the template in `<ECOSYSTEM_ROOT>/<template_full>/.gald3r/learned-facts.md`
    - If `.gald3r/.identity` contains `vault_location`, create `{vault_location}/log.md` as a seed file (one header line — `append_log()` will populate it on first ingest)
    - If `.gald3r/.identity` contains `vault_location`, create `{vault_location}/projects/{project_name}/` directory; this is where `repos.txt` and `repo_tracker.json` will live when `github_sync.py` runs
-   - If `.gald3r/.identity` contains `vault_location` **and** `{vault_location}/obsidian_setup.md` does not already exist, copy `G:/gald3r_ecosystem/gald3r_template_full/.gald3r/vault/obsidian_setup.md` (or the installed equivalent at `{skill_root}/reference/obsidian_setup.md`) to `{vault_location}/obsidian_setup.md`. This seeds the one-page Obsidian setup guide so vault users can find it immediately.
+   - If `.gald3r/.identity` contains `vault_location` **and** `{vault_location}/obsidian_setup.md` does not already exist, copy `<ECOSYSTEM_ROOT>/<template_full>/.gald3r/vault/obsidian_setup.md` (or the installed equivalent at `{skill_root}/reference/obsidian_setup.md`) to `{vault_location}/obsidian_setup.md`. This seeds the one-page Obsidian setup guide so vault users can find it immediately.
    - **Research-type projects:** when creating `TASKS.md`, add a research log section below the task list
    - Files: Use g-project (CREATE PROJECT.MD) and g-plan (CREATE PLAN.MD) for all file generation
    - Seed `CONSTRAINTS.md` with:
@@ -168,7 +204,7 @@ The template (`assets/gitattributes-lfs.template`) covers: `.psd .ai .fbx .obj
      and Command Set are active (e.g. GitHub integration activates only for
      `software_development`).
 
-5. **Verify structure** (slim v3 layout — ground truth from G:\gald3r\.gald3r):
+5. **Verify structure** (slim v3 layout — ground truth from <project-root>\.gald3r):
    ```
    .gald3r/ ✅
    ├── .identity ✅
@@ -193,8 +229,8 @@ The template (`assets/gitattributes-lfs.template`) covers: `.psd .ai .fbx .obj
    ```
 
    > **NOT in slim:** `config/`, `experiments/`, `linking/`, `vault/`, `phases/`
-   > These belong in `gald3r_dev` only. Do not create them here.
-   > **When `linking/` IS created** (full tier): also seed `.gald3r/linking/capabilities.md` using the template at `G:/gald3r_ecosystem/gald3r_template_full/.gald3r/linking/capabilities.md`. Replace `{project_slug}` and `{project_name}` placeholders with the actual project name. Replace `{YYYY-MM-DD}` with today's date.
+   > These belong in `<gald3r_source>` only. Do not create them here.
+   > **When `linking/` IS created** (full tier): also seed `.gald3r/linking/capabilities.md` using the template at `<ECOSYSTEM_ROOT>/<template_full>/.gald3r/linking/capabilities.md`. Replace `{project_slug}` and `{project_name}` placeholders with the actual project name. Replace `{YYYY-MM-DD}` with today's date.
 
 6. **Create PROJECT.MD scaffolding**:
    - `.gald3r/PROJECT.md` — include a **Project Linking** section (parents, children, siblings); starts with `relationships: none`
@@ -229,18 +265,18 @@ The template (`assets/gitattributes-lfs.template`) covers: `.psd .ai .fbx .obj
    
    Update SUBSYSTEMS.md with the index table, sub-features table, integrations table, and mermaid interconnection graph.
 
-8. **Write skills lock file** (T1043 / IDEA-HARVEST-136):
+8. **Write skills lock file** (T1043):
    After platform skill directories are placed (whether by `gald3r_install` MCP, by `bin/install.js`, or manually), write `gald3r-skills-lock.json` at project root via:
    ```powershell
    .\scripts\gald3r_skills_lock.ps1 -Action WRITE -ProjectPath . -Tier <slim|full|adv>
    ```
    - Records SHA-256 hash of each installed `SKILL.md` so future runs can detect tamper / drift.
    - Pair with `-Action VERIFY` during `gald3r_validate.ps1` runs.
-   - Pair with `-Action UPGRADE -SourceRoot <gald3r_dev path>` to classify each installed skill as `unchanged | local-modified | upstream-changed | both-changed | new | removed` before pulling a new gald3r version.
+   - Pair with `-Action UPGRADE -SourceRoot <<gald3r_source> path>` to classify each installed skill as `unchanged | local-modified | upstream-changed | both-changed | new | removed` before pulling a new gald3r version.
    - Lock file format and operations documented in `docs/SKILLS_LOCK_FORMAT.md`.
 
 8b. **Codebase Graph Initialization (gald3r_muninn, T1149)** — non-blocking, always optional:
-   - Check index state via `graph_status` (MCP) or `.cursor/skills/g-skl-muninn/scripts/graph_impact.ps1 -File <any source file> -Json`. If it reports `index_missing` / `warning: not_indexed`, offer to build it now:
+   - Check index state via `graph_status` (MCP) or `.claude/skills/g-skl-muninn/scripts/graph_impact.ps1 -File <any source file> -Json`. If it reports `index_missing` / `warning: not_indexed`, offer to build it now:
      ```powershell
      python -m docker.gald3r.tools.plugins.muninn.indexers.python_indexer --root .   # Python sources
      node  docker/gald3r/tools/plugins/muninn/indexers/ts_indexer.js  --root .       # TS/JS sources (needs Node.js)
@@ -314,3 +350,18 @@ gald3r has **two distinct setup entry points** with non-overlapping responsibili
 2. Then run `@g-setup` in-session to scaffold and personalize the `.gald3r/` control plane (mission, goals, subsystems, first task).
 
 If a user invokes `@g-setup` on a project that has no IDE platform dirs yet, point them at `setup_gald3r_project.ps1` for platform deployment rather than prompting for platforms here.
+
+---
+
+## gald3r Engine (bundled) <!-- gald3r-engine-note -->
+
+This install bundles the gald3r **engine** at `.gald3r_sys/engine/` — a deterministic Mode-A
+core (no LLM calls) that the slimmed skills call for state CRUD (tasks, bugs, features, prds,
+ideas, constraints, subsystems, release, vault) and to serve the centralized judgment prompts.
+
+- **Provision / verify** (one-time): `pwsh .gald3r_sys/engine/provision_engine.ps1`
+  (macOS/Linux without pwsh: `sh .gald3r_sys/engine/provision_engine.sh`). The only prerequisite
+  is `uv`, which the script installs if missing. The installer runs this automatically.
+- Slimmed skills then call: `uv run --project .gald3r_sys/engine gald3r <verb>` (or MCP `gald3r_*`).
+- If the engine isn't provisioned, every slimmed skill still works via its **`SKILL.full.md`**
+  fallback — nothing points outside the install.

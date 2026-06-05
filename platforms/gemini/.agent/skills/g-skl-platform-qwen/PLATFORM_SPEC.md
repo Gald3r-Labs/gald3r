@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [PLATFORM_INTEGRATION]
 platform: qwen
 authoring_path: update
@@ -197,7 +197,7 @@ commands/agents/skills trees and a `.qwen/settings.json` carrying hooks + MCP.
 
 - Qwen Code is a **Gemini CLI fork**: config is `.qwen/settings.json` (JSON, NOT `config.yaml`),
   custom commands, and the `QWEN.md` instruction file. The legacy deploy scaffold under
-  `gald3r_template/.gald3r_sys/platforms/.qwen/` (old `config.yaml` + `instructions.md`) is wrong and
+  `project_template/.gald3r_sys/platforms/.qwen/` (old `config.yaml` + `instructions.md`) is wrong and
   should be regenerated to `settings.json` + `QWEN.md`.
 - Default context file is **`QWEN.md`, not `AGENTS.md`** — use `context.fileName` or a `@AGENTS.md`
   overlay to reuse the gald3r instruction set.

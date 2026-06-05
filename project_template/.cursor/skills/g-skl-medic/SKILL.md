@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-medic
 maturity: beta
 version: 2.0.0
@@ -37,7 +37,7 @@ subsystem_memberships: [PROJECT_IDENTITY_SETUP, AGENT_ORCHESTRATION]
 @g-medic                      # L1 triage only (safe default, always applies)
 @g-medic --level 2            # L1 + L2 (report generated; --apply to execute fixes)
 @g-medic --level 3            # L1 + L2 + L3 (requires --apply to write fixes)
-@g-medic --level 4            # L1 + L2 + L3 + L4 (Workspace-Control plus optional PCAC)
+@g-medic --level 4            # L1 + L2 + L3 + L4 (Workspace-Control plus optional WPAC)
 @g-medic --ecosystem          # alias for --level 4
 @g-medic --dry-run            # any level: report only, no writes
 @g-medic --level 2 --apply   # apply L2 fixes after generating report
@@ -59,7 +59,7 @@ When L1 triage detects a **structural gap** matching a known framework constrain
 a repo that predates C-023 release files), the corresponding heal path backfills it. Heals are
 **dry-run by default**; pass `--apply` to write. Every operation is logged to
 `.gald3r/logs/medic_heal_YYYYMMDD.log` (only when `--apply`). Runner:
-`.cursor/skills/g-skl-medic/scripts/gald3r_medic_heal.ps1`.
+`.claude/skills/g-skl-medic/scripts/gald3r_medic_heal.ps1`.
 
 ```
 @g-medic --heal-c023 --dry-run     # plan release-file backfill from CHANGELOG (no writes)
@@ -97,7 +97,7 @@ Direct invocation: `gald3r_medic_heal.ps1 -ProjectRoot <path> -Heal c023|version
 
 ### Curation mode (`--curate`, Task 517)
 
-**Default (dry-run)**: runs `.cursor/skills/g-skl-medic/scripts/gald3r_medic_curate.ps1` — counts feature/subsystem sprawl (recursive subsystem count), runs hierarchy sync helpers with `-WarnOnly`, adds a **fragmentation** section (duplicate `feat-NNN` hits in `FEATURES.md`, subsystem specs on disk not indexed in `SUBSYSTEMS.md` via sync JSON), and writes a human report plus `medic_curate_proposal_<stamp>.json` under `.gald3r/reports/` (gitignored). The proposal keeps top-level `moves` empty for safety, but now includes non-binding `suggested_moves` and `index_candidates` with source, target, risk/confidence, and rationale so the reviewer has concrete candidates to approve/edit/reject.
+**Default (dry-run)**: runs `.claude/skills/g-skl-medic/scripts/gald3r_medic_curate.ps1` — counts feature/subsystem sprawl (recursive subsystem count), runs hierarchy sync helpers with `-WarnOnly`, adds a **fragmentation** section (duplicate `feat-NNN` hits in `FEATURES.md`, subsystem specs on disk not indexed in `SUBSYSTEMS.md` via sync JSON), and writes a human report plus `medic_curate_proposal_<stamp>.json` under `.gald3r/reports/` (gitignored). The proposal keeps top-level `moves` empty for safety, but now includes non-binding `suggested_moves` and `index_candidates` with source, target, risk/confidence, and rationale so the reviewer has concrete candidates to approve/edit/reject.
 
 **No report files (CI / no disk side effects)**: pass `-NoReportFiles` to `gald3r_medic_curate.ps1` — prints the same report + proposal JSON to stdout only (no `medic_curate_*.md` / proposal files / `medic_curate_latest.json`).
 
@@ -107,11 +107,11 @@ Direct invocation: `gald3r_medic_heal.ps1 -ProjectRoot <path> -Heal c023|version
 
 ---
 
-## PCAC Inbox Health Gate
+## WPAC Inbox Health Gate
 
-Before mode detection, determine whether the project is a PCAC participant. PCAC is active only when `.gald3r/linking/link_topology.md` declares at least one parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares PCAC project linking relationships. A Workspace-Control manifest and local `INBOX.md` alone do not make a project part of a PCAC group.
+Before mode detection, determine whether the project is a WPAC participant. WPAC is active only when `.gald3r/linking/link_topology.md` declares at least one parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares WPAC project linking relationships. A Workspace-Control manifest and local `INBOX.md` alone do not make a project part of a WPAC group.
 
-Only when PCAC is active, call `g-hk-pcac-inbox-check.ps1` without `-BlockOnConflict` when present and capture the result. L1 triage must continue even when `INBOX CONFLICT GATE` is reported so health scoring can surface the conflict. Open PCAC conflicts block L2-L4 planning/apply work, task claiming, implementation, and verification after L1 completes; require `@g-pcac-read` before continuing. Non-conflict requests, broadcasts, and syncs remain advisory and should be surfaced in output. If PCAC is not active, skip the hook and report `PCAC: not configured / skipped`.
+Only when WPAC is active, call `g-hk-wpac-inbox-check.ps1` without `-BlockOnConflict` when present and capture the result. L1 triage must continue even when `INBOX CONFLICT GATE` is reported so health scoring can surface the conflict. Open WPAC conflicts block L2-L4 planning/apply work, task claiming, implementation, and verification after L1 completes; require `@g-wpac-read` before continuing. Non-conflict requests, broadcasts, and syncs remain advisory and should be surfaced in output. If WPAC is not active, skip the hook and report `WPAC: not configured / skipped`.
 
 ## Mode Detection (Run Before Any Level)
 
@@ -275,6 +275,10 @@ Write new `gald3r_version` to `.gald3r/.identity`. Append to `.gald3r/reports/UP
 
 - **TTL Check**: for each `in-progress` task: `now > claim_expires_at`? → reset to `pending`
 - **Verification Timeout**: `[🔍]` for > 8h → reset to `pending`; > 4h → flag only
+- **Platform Doc Freshness** (T1520): if `.gald3r/PLATFORM_STATUS.md` exists, parse the `Last Doc Scan` column for each platform row and compare against the `crawl_max_age_days` threshold (default `7`). Treat overdue platforms as a soft warning (⚠️), not a hard failure. Report format:
+  - All fresh → `Platform docs: ✅ all N platforms fresh`
+  - Any stale → `Platform docs: ⚠️ M of N platforms overdue — run @g-platform-scan`
+  Pure read of one file; never writes. If `PLATFORM_STATUS.md` does not exist, skip the check silently (no warning).
 - **Health Score**:
   ```
   base  = (completed / total_non_cancelled_non_paused) × 100
@@ -282,9 +286,10 @@ Write new `gald3r_version` to `.gald3r/.identity`. Append to `.gald3r/reports/UP
   -3    per [🔍] > 4h
   -10   per task with failure_history > 2
   -15   per subsystem with no tasks ever
-  -20   per open PCAC `INBOX.md` CONFLICT item (L1 continues, L2-L4 blocked until `@g-pcac-read`)
+  -20   per open WPAC `INBOX.md` CONFLICT item (L1 continues, L2-L4 blocked until `@g-wpac-read`)
   -3    per active MCP server over 10 (see L1-K)
   -1    per MCP server flagged [ELEVATED] by Agent Shield (see L1-K)
+  -10   if ANY platform overdue for doc re-crawl (T1520) — capped at -10 regardless of count
   final = max(0, base − penalties)
   Healthy: ≥80 | Degraded: 50-79 | Critical: <50
   ```
@@ -294,7 +299,7 @@ Write new `gald3r_version` to `.gald3r/.identity`. Append to `.gald3r/reports/UP
 
 ### L1-K: MCP Server Count & Agent Shield (T1165)
 
-> **Source**: V13 "Everything Claude Code" harvest (YouTube `utHRH2FEAsY`). Claude Code recommends ≤10 active MCP servers to avoid context bloat, tool-routing slowdown, and dilution of model attention across the tool list. A single backend like `gald3r_valhalla` is ~42 tools on its own, so a user who adds 4–5 MCPs casually can hit 150+ tools and not notice.
+> **Source**: V13 "Everything Claude Code" harvest (YouTube `utHRH2FEAsY`). Claude Code recommends ≤10 active MCP servers to avoid context bloat, tool-routing slowdown, and dilution of model attention across the tool list. A single backend like `example_app` is ~42 tools on its own, so a user who adds 4–5 MCPs casually can hit 150+ tools and not notice.
 
 **Goal**: surface excessive MCP server counts and flag servers whose tool surface includes broad filesystem/shell/execute access (Agent Shield heuristic).
 
@@ -345,7 +350,7 @@ Active servers: N  |  Elevated: M  |  Penalty: -P (-3×over10, -1×elevated)
 
 | Server               | Tool count | Access level | Recommendation |
 |----------------------|-----------:|--------------|----------------|
-| gald3r_valhalla      | 42         | scoped       | keep           |
+| example_app      | 42         | scoped       | keep           |
 | chrome-devtools      | 38         | scoped       | keep           |
 | muninn              | 14         | scoped       | keep           |
 | desktop-commander    | 9          | [ELEVATED]   | review — broad filesystem/shell access |
@@ -467,7 +472,7 @@ aliases; no skill/rule code changes are needed. A hit means an unambiguous fix
 foreach ($folder in $canonicalFolders) {       # canonical set from _registry.yaml patterns
     if (-not (Test-Path $folder)) {
         New-Item $folder -ItemType Directory | Out-Null
-        Copy-TemplateContents $folder          # README/.gitkeep from project_unified_template/.gald3r/
+        Copy-TemplateContents $folder          # README/.gitkeep from project_template/.gald3r/
         $report.FoldersCreated += $folder
     }
 }
@@ -674,20 +679,20 @@ Write `MEDIC_REPORT_L3.md` to `.gald3r/reports/` with full findings + remediatio
 
 ---
 
-## Level 4 — Ecosystem (Workspace + Optional PCAC)
+## Level 4 — Ecosystem (Workspace + Optional WPAC)
 
-*Requires `--level 4` or `--ecosystem` flag. Workspace-Control checks run whenever `.gald3r/linking/workspace_manifest.yaml` exists. PCAC-only checks run only when active PCAC topology exists.*
-*Blast radius: controller plus manifest-declared workspace members for read-only diagnostics; PCAC-linked projects only when PCAC is active.*
-*If Workspace-Control is active and PCAC is inactive, do not skip L4. Print "PCAC: not active; PCAC topology/inbox checks skipped. Workspace-Control: active; L4 workspace checks ran using workspace_manifest.yaml."*
+*Requires `--level 4` or `--ecosystem` flag. Workspace-Control checks run whenever `.gald3r/linking/workspace_manifest.yaml` exists. WPAC-only checks run only when active WPAC topology exists.*
+*Blast radius: controller plus manifest-declared workspace members for read-only diagnostics; WPAC-linked projects only when WPAC is active.*
+*If Workspace-Control is active and WPAC is inactive, do not skip L4. Print "WPAC: not active; WPAC topology/inbox checks skipped. Workspace-Control: active; L4 workspace checks ran using workspace_manifest.yaml."*
 
 ### L4-0: Mode Split (Mandatory)
 
 Before running L4, classify both coordination systems independently:
 
 - **Workspace-Control active**: `.gald3r/linking/workspace_manifest.yaml` exists and parses. Run L4-W checks.
-- **PCAC active**: `.gald3r/linking/link_topology.md` exists and declares at least one non-empty parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares active PCAC relationships. Run L4-P checks.
-- **Neither active**: report that L4 has no workspace or PCAC coordination surface.
-- **Do not conflate them**: a missing PCAC topology must never suppress Workspace-Control L4 checks.
+- **WPAC active**: `.gald3r/linking/link_topology.md` exists and declares at least one non-empty parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares active WPAC relationships. Run L4-P checks.
+- **Neither active**: report that L4 has no workspace or WPAC coordination surface.
+- **Do not conflate them**: a missing WPAC topology must never suppress Workspace-Control L4 checks.
 
 ### L4-W: Workspace-Control Checks
 
@@ -697,11 +702,11 @@ When Workspace-Control is active:
 - Validate manifest syntax, repository IDs, roles, lifecycle statuses, local paths, write policies, and routing policy fields.
 - Check each existing manifest member's git root, branch, upstream, dirty status, and member `.gald3r/` marker-only compliance.
 - Surface missing planned members separately from broken existing members.
-- Report Workspace-Control health separately from PCAC health.
+- Report Workspace-Control health separately from WPAC health.
 
-### L4-P: PCAC Checks (Only When PCAC Is Active)
+### L4-P: WPAC Checks (Only When WPAC Is Active)
 
-Run the following only when PCAC is active:
+Run the following only when WPAC is active:
 
 ### L4-P1: Peer Capability Readiness
 
@@ -718,7 +723,7 @@ Run the following only when PCAC is active:
 ### L4-P3: Cross-Project Feature Contract Validation
 
 - Find features with `cross_project_ref:` slug
-- For each: check peer's version of the same feature (via PCAC INFO or snapshot)
+- For each: check peer's version of the same feature (via WPAC INFO or snapshot)
 - Spec contradictions → flag: "Feature contract mismatch: {slug} — {this_project} spec vs {peer_slug} spec differ"
 
 ### L4-P4: Stale Peer Snapshots
@@ -729,12 +734,12 @@ Run the following only when PCAC is active:
 
 - Tasks with `cross_project_ref` blocked on peer completion for > 14 days → surface for human escalation
 
-### L4-P6: Suggested PCAC Actions
+### L4-P6: Suggested WPAC Actions
 
-For each finding, generate a suggested PCAC coordination message (does NOT send without explicit per-message human approval):
+For each finding, generate a suggested WPAC coordination message (does NOT send without explicit per-message human approval):
 ```
-Suggested: [SYNC] to gald3r_valhalla — request capability status update for "vector-search"
-  → Run: @g-pcac-notify gald3r_valhalla "Requesting capability status update for vector-search"
+Suggested: [SYNC] to example_app — request capability status update for "vector-search"
+  → Run: @g-wpac-notify example_app "Requesting capability status update for vector-search"
   Approve? [y/n]
 ```
 
@@ -744,7 +749,7 @@ Write `MEDIC_REPORT_L4.md` to `.gald3r/reports/` (workspace findings plus option
 
 ```
 🌐 Ecosystem Health Score: 72/100 (Degraded)
-  gald3r_valhalla:  3 stale capabilities  |  1 contract mismatch
+  example_app:  3 stale capabilities  |  1 contract mismatch
   gald3r_frontend:  snapshot 12d old  |  2 blocked deps > 14d
 ```
 
@@ -759,7 +764,7 @@ Each level is a superset of the previous:
 | L1 | Triage | Files / folders | No (auto) |
 | L2 | Diagnosis | `.gald3r/` data | Yes (for fixes) |
 | L3 | Surgery | Subsystems + contracts | Yes (required) |
-| L4 | Ecosystem | Workspace members + optional PCAC linked projects | Yes for fixes; per-message approval for PCAC sends |
+| L4 | Ecosystem | Workspace members + optional WPAC linked projects | Yes for fixes; per-message approval for WPAC sends |
 
 ---
 
@@ -828,4 +833,4 @@ See `PARITY_EXCLUDES.md` in this skill's folder for files intentionally excluded
 - `g-skl-tasks` — owns TASKS.md and tasks/
 - `g-skl-subsystems` — owns SUBSYSTEMS.md and subsystems/
 - `g-skl-constraints` — owns CONSTRAINTS.md
-- `g-pcac-status` — PCAC topology view (required for L4)
+- `g-wpac-status` — WPAC topology view (required for L4)

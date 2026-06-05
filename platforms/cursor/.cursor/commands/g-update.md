@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 ---
 # @g-update — gald3r Framework Update Command
@@ -47,7 +47,7 @@ Check the installed gald3r version and apply framework updates.
 5. **Version reconciliation (T1437 / BUG-102)** — after the framework files are synced,
    write the new framework version back into `.gald3r/.identity` so the install no longer
    reports a stale `gald3r_version`. Read the authoritative version from the source the
-   update came from (the template repo's `gald3r_template/.gald3r/.identity` `gald3r_version=`,
+   update came from (the template repo's `project_template/.gald3r/.identity` `gald3r_version=`,
    or the latest `## [x.y.z]` CHANGELOG header when no template source is available), then
    key=value-replace `gald3r_version=` in the consumer's `.gald3r/.identity` (append it if the
    key is absent). This mirrors `platform_parity_sync.ps1 -SyncGaldSys -Sync`, which performs

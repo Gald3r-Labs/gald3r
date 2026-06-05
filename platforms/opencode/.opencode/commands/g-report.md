@@ -44,7 +44,7 @@ Use `g-skl-workspace` STATUS/VALIDATE semantics:
 - Treat each member as a separate git root; do not infer cleanliness from the control repo.
 - Summarize current task/bug routing metadata: `workspace_repos` and `workspace_touch_policy` when present; omitted metadata means current repository only.
 - Distinguish PCAC from Workspace-Control: PCAC is topology, INBOX, orders, requests, and peer state; Workspace-Control is the manifest-backed local member registry and routing scope.
-- Cite Task 177 boundaries when relevant: backend, UI, Docker/Kubernetes/MCP, `gald3r_valhalla`, `yggdrasil`, dashboards, and control-plane systems are deferred bootstrap boundaries, not missing report sections.
+- Cite Task 177 boundaries when relevant: backend, UI, Docker/Kubernetes/MCP, `example_app`, `yggdrasil`, dashboards, and control-plane systems are deferred bootstrap boundaries, not missing report sections.
 
 Suggested format:
 

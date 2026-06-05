@@ -204,7 +204,7 @@ coordinator at Step 1a of the Auto-Plan scope filter.
 | `local_only` (default — also the behavior when the key is **absent**) | Scope to **this repo's** tasks only. Items whose `workspace_repos` names other members are deferred. Safe default for member / leaf repos. |
 | `workspace_all` | Scope to **all manifest members** (identical to `@g-go --workspace`). |
 
-**Controller pattern**: Controller repos (e.g. `gald3r_dev`) have no code of their own — a
+**Controller pattern**: Controller repos (e.g. `<gald3r_source>`) have no code of their own — a
 bare `@g-go` scoped local-only finds nothing to run. Set `g_go_default_scope: workspace_all`
 in those repos so bare `@g-go` scans the whole workspace by default. Flags still override
 config every time:

@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [RELEASE_AND_VERSIONING]
+---
 # g-skl-github-pr
 **Skill file**: `SKILL.md`
 

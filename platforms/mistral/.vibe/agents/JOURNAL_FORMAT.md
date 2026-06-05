@@ -1,8 +1,12 @@
+---
+subsystem_memberships: [AGENT_ORCHESTRATION]
+---
+
 # Agent Journals — Format & Convention (T1010)
 
 Each gald3r agent has a private, git-tracked journal at
 `{platform}/agents/{slug}/journal/` for durable, **offline** cross-session
-learning (myPKA pattern). Journals supplement `.gald3r/learned-facts.md` with
+learning. Journals supplement `.gald3r/learned-facts.md` with
 per-agent-role specificity. No Docker, no database — plain markdown.
 
 ## When entries are written
@@ -54,7 +58,7 @@ not repeated.
 
 ## Canonical source & deployment
 
-Author journal scaffolding under `.gald3r_sys/agents/{slug}/journal/`
+Author journal scaffolding under `.claude/agents/{slug}/journal/`
 (C-031 canonical source). `.cursor/agents/` and `.claude/agents/` mirror it.
 Journal **content** is local agent learning and is not template content —
 only the empty scaffolding (`.gitkeep` + this doc) ships.

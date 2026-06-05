@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Generate .github/CODEOWNERS from gald3r subsystem specs (T1299).
 

@@ -119,7 +119,7 @@ personality pack via `@g-pers-pick <pack-id>`, not via this skill.
 ## Companion Command
 
 `@g-keep-it-simple` (or `/g-keep-it-simple`) is the command wrapper. See
-`.gald3r_sys/commands/g-keep-it-simple.md`.
+`.claude/commands/g-keep-it-simple.md`.
 
 ## Source
 

@@ -5,7 +5,7 @@
 .DESCRIPTION
     Produces the same file outputs as the in-chat SETUP flow but from a script, for CI or unattended
     installs. Not the primary entry point — prefer the in-chat agent flow for interactive use. This
-    script is per the D015 convention: canonical scripts live in G:/gald3r_ecosystem/gald3r_template_full/.cursor/skills/{skill}/scripts/.
+    script is per the D015 convention: canonical scripts live in <ECOSYSTEM_ROOT>/<template_full>/.cursor/skills/{skill}/scripts/.
 
     SETUP mode:
       - Reads a tiers definition from a JSON file (-DefinitionPath) or accepts repeated -Tier blocks
@@ -32,7 +32,7 @@
     ENABLE only — actually write min_tier: to subsystem files. Without this flag the script reports what it would do.
 
 .PARAMETER ProjectRoot
-    Optional project root path. Defaults to the script's grandparent-of-grandparent (skill is under G:/gald3r_ecosystem/gald3r_template_full/.cursor/skills/ so root is ../../..).
+    Optional project root path. Defaults to the script's grandparent-of-grandparent (skill is under <ECOSYSTEM_ROOT>/<template_full>/.cursor/skills/ so root is ../../..).
 
 .EXAMPLE
     .\scripts\tier_setup.ps1 -Operation SETUP -DefinitionPath .\tiers.json
@@ -56,7 +56,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-# Resolve project root. When invoked from .../G:/gald3r_ecosystem/gald3r_template_full/.cursor/skills/g-skl-tier-setup/scripts/,
+# Resolve project root. When invoked from .../<ECOSYSTEM_ROOT>/<template_full>/.cursor/skills/g-skl-tier-setup/scripts/,
 # the project root is four directories up. The -ProjectRoot override is for testing.
 if (-not $ProjectRoot) {
     $here = Split-Path -Parent $PSCommandPath

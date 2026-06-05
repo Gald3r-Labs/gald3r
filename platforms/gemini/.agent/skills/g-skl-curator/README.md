@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [AGENT_ORCHESTRATION]
+---
 # g-skl-curator
 **Skill file**: `SKILL.md`
 

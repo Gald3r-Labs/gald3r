@@ -44,7 +44,7 @@ This capture skill may store source material in the vault for research, provenan
    type: repo_capture
    ingestion_type: manual
    source: https://github.com/owner/repo
-   topics: [inferred]
+   tags: [inferred]
    tags: [repo, {language}, {domain}]
    owner: owner
    repo: repo

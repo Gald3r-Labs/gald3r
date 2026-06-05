@@ -1,4 +1,4 @@
-# g-hk-session-start.ps1 - Cursor hook for session initialization
+﻿# g-hk-session-start.ps1 - Cursor hook for session initialization
 # @subsystems: LOGGING_SYSTEM
 # Triggered when a new composer conversation is created.
 # Injects gald3r context and handles first-time user setup.
@@ -293,7 +293,7 @@ try {
 # ── Cross-project INBOX check ─────────────────────────────────────────────────
 $inboxBanner = ""
 try {
-    $inboxOutput = & "$PSScriptRoot\g-hk-pcac-inbox-check.ps1" -ProjectRoot (Get-Location).Path 2>$null
+    $inboxOutput = & "$PSScriptRoot\g-hk-wpac-inbox-check.ps1" -ProjectRoot (Get-Location).Path 2>$null
     if ($inboxOutput -and $inboxOutput.Trim() -ne "") {
         $inboxBanner = "$inboxOutput`n---`n"
     }

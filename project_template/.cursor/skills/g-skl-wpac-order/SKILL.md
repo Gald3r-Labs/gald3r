@@ -73,7 +73,7 @@ When direct-writing a task, generate a UUIDv4 for the `uuid:` frontmatter field.
 
    b. Create task file at `child/.gald3r/tasks/taskNNN_[descriptive_name].md`:
 
-   **PCAC-priority floor (T166)**: receiving-side tasks default to `priority: high`. If the source order metadata carries an urgency flag (`urgent: true`) OR the order arrived as a `[CONFLICT]` resolution, set `priority: critical` and force `requires_verification: true`. Always write a `wpac_source:` block (audit trail — never strip on status changes). Humans MAY downgrade priority manually after creation; agents MUST NOT auto-downgrade.
+   **WPAC-priority floor (T166)**: receiving-side tasks default to `priority: high`. If the source order metadata carries an urgency flag (`urgent: true`) OR the order arrived as a `[CONFLICT]` resolution, set `priority: critical` and force `requires_verification: true`. Always write a `wpac_source:` block (audit trail — never strip on status changes). Humans MAY downgrade priority manually after creation; agents MUST NOT auto-downgrade.
 
    ```yaml
    ---
@@ -121,7 +121,7 @@ When direct-writing a task, generate a UUIDv4 for the `uuid:` frontmatter field.
    ---
    order_id: "ord-{uuid-short}"            # 8-char uuid suffix is fine
    sent_to: "{child_project_id}"
-   sent_to_path: "G:/path/to/child"
+   sent_to_path: "<path>/to/child"
    sent_at: "YYYY-MM-DD"
    local_depends: [task_id, ...]            # which LOCAL tasks/features gate on this
    remote_task_title: "[broadcast title]"
@@ -197,7 +197,7 @@ When direct-writing a task, generate a UUIDv4 for the `uuid:` frontmatter field.
 
 7. **No local tracking task** (T167 — was: "create local broadcast tracker task"):
 
-   PCAC orders are tracked **exclusively** via the `.gald3r/workspace/sent_orders/order_*.md` ledger written in step 5e (and step 6 fallback for staged orders). Do NOT create a local `[ ]`/`[📋]` "Broadcast tracker" task — children may never respond, and stale tracker tasks pollute the backlog forever.
+   WPAC orders are tracked **exclusively** via the `.gald3r/workspace/sent_orders/order_*.md` ledger written in step 5e (and step 6 fallback for staged orders). Do NOT create a local `[ ]`/`[📋]` "Broadcast tracker" task — children may never respond, and stale tracker tasks pollute the backlog forever.
 
    - **Outbound state lives on the ledger** — frontmatter `status:` (`sent` → `acknowledged` → `in-progress` → `completed` | `blocked` | `abandoned`) is the single source of truth.
    - **Session-start visibility** — `g-rl-25` Step 6b surfaces awaiting + resolved + stale orders at every session open. No local task is needed for the parent to see what's outstanding.

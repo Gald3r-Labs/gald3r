@@ -95,7 +95,7 @@ When `$ARGUMENTS` provides explicit task/bug IDs, use those IDs exactly — skip
 
 ---
 
-## Prompt Template Variables (T1175 — Sandcastle promptArgs pattern)
+## Prompt Template Variables (T1175)
 
 When the `g-go` coordinator dispatches a task to an implementer subagent (`g-go-code`) or to a reviewer subagent (`g-go-review`), the dispatch prompt is **templated**: the coordinator substitutes a fixed set of template variables at runtime before the subagent receives the prompt. This eliminates the "hand-edit the prompt per task" anti-pattern and gives a stable, audit-able dispatch surface.
 
@@ -104,11 +104,11 @@ Supported template variables (resolved at coordinator dispatch time, never insid
 | Variable | Resolved from | Example resolution |
 |----------|---------------|-------------------|
 | `{{TASK_ID}}` | Numeric ID of the queued task (no `T` prefix) | `1175` |
-| `{{TASK_TITLE}}` | `title:` field of the task YAML frontmatter | `Sandcastle g-go pipeline patterns` |
+| `{{TASK_TITLE}}` | `title:` field of the task YAML frontmatter | `the external runner g-go pipeline patterns` |
 | `{{SKILL_PATH}}` | Absolute path to the active gald3r skill folder for the dispatch role | `.claude/skills/g-skl-tasks` |
-| `{{BRANCH_NAME}}` | Worktree branch from `gald3r_worktree.ps1 -Action Create -Json` output | `gald3r/1175/code/gald3r_dev/autopilot-iter9` |
-| `{{TASK_FILE}}` | Path to the active task file under `.gald3r/tasks/**` | `.gald3r/tasks/open/task1175_sandcastle_g_go_pipeline_patterns.md` |
-| `{{WORKTREE_PATH}}` | Absolute worktree path from the helper JSON | `G:/gald3r_ecosystem/.gald3r-worktrees/gald3r_dev/1175-code-autopilot-iter9` |
+| `{{BRANCH_NAME}}` | Worktree branch from `gald3r_worktree.ps1 -Action Create -Json` output | `gald3r/1175/code/<gald3r_source>/autopilot-iter9` |
+| `{{TASK_FILE}}` | Path to the active task file under `.gald3r/tasks/**` | `.gald3r/tasks/open/task1175_external_runner_g_go_pipeline_patterns.md` |
+| `{{WORKTREE_PATH}}` | Absolute worktree path from the helper JSON | `<ECOSYSTEM_ROOT>/.gald3r-worktrees/<gald3r_source>/1175-code-autopilot-iter9` |
 | `{{MODE}}` | Resolved model tier (`fast` | `standard` | task `preferred_model:` override) | `standard` |
 | `{{COORDINATOR_AGENT}}` | Slug of the coordinator agent for audit trail | `autopilot-iter9` |
 
@@ -121,7 +121,7 @@ Supported template variables (resolved at coordinator dispatch time, never insid
 
 **Why this matters**: a structured templating surface lets the coordinator log exactly which payload each subagent received (audit), lets dispatch prompts evolve without rewriting every bucket call-site, and lets future provider adapters (see "Provider-Agnostic Adapter Pattern" below) translate `{{VAR}}` into provider-specific argument shapes (OpenAI tool args, Anthropic content blocks, etc.) at a single chokepoint.
 
-## Swarm Lifecycle Hooks (T1175 — Sandcastle lifecycle pattern)
+## Swarm Lifecycle Hooks (T1175)
 
 `g-go --swarm` (and `g-go-code --swarm` / `g-go-review --swarm`) supports **optional** PowerShell lifecycle hook scripts that fire at bucket transition points. Hooks are advisory observation/notification surfaces — they MUST NOT mutate task state, write to shared `.gald3r/` ledgers, or affect coordinator routing decisions. They are intended for logging, metrics, external notifications (Slack/Rally/PagerDuty), and developer-machine status displays.
 
@@ -165,7 +165,7 @@ if ($hook) {
 
 This command defines the contract. Concrete hook scripts (e.g. "post bucket-complete to Slack", "write a metric to Datadog", "ping Rally with `Rally-Comment`") are NOT shipped in the gald3r template — operators write them per environment. Place hook scripts in the appropriate `<ide>/hooks/` folder using the names above; the coordinator discovers them automatically on the next swarm run.
 
-## Provider-Agnostic Adapter Pattern (T1175 — Sandcastle adapter pattern)
+## Provider-Agnostic Adapter Pattern (T1175)
 
 `g-go` does not own model selection — by design. The gald3r framework is a **prompt orchestrator**: it routes work, partitions buckets, gates safety, and writes shared state, but the actual LLM call is delegated to the host IDE harness (Claude Code, Cursor, Codex, Gemini, OpenCode, Copilot). The provider-agnostic abstraction in gald3r is the `--mode` flag combined with the per-task `preferred_model:` field — see "Model-Tier Selection" below.
 
@@ -178,11 +178,11 @@ This command defines the contract. Concrete hook scripts (e.g. "post bucket-comp
 | Tier → concrete model resolution | Host IDE harness | The IDE maps `fast` → `claude-haiku-4-5` (Claude Code), `fast` → `gpt-4o-mini` or `haiku` (Cursor), etc. See the Mode Mapping table in "Model-Tier Selection" below for current resolutions per IDE. |
 | API call | Host IDE harness | gald3r never opens an HTTPS connection to a model provider. The IDE owns auth, rate limits, retries, and streaming. |
 
-**Why this matters for adoption**: a future IDE adding gald3r support (e.g. a new local-LLM CLI) does not require any gald3r changes. The new IDE adds its own `--mode` → `model-name` mapping; gald3r continues to emit `mode=<tier>` and `preferred_model:` annotations unchanged. The Sandcastle adapter pattern is satisfied because the abstraction lives at the tier-of-intent level, not the model-name level.
+**Why this matters for adoption**: a future IDE adding gald3r support (e.g. a new local-LLM CLI) does not require any gald3r changes. The new IDE adds its own `--mode` → `model-name` mapping; gald3r continues to emit `mode=<tier>` and `preferred_model:` annotations unchanged. The the external runner adapter pattern is satisfied because the abstraction lives at the tier-of-intent level, not the model-name level.
 
 **Limit**: this is a tier-of-intent abstraction, not a runtime model swap. gald3r cannot fail over from one provider to another mid-task if the IDE-configured model is rate-limited. That is properly an IDE-layer concern. Operators who need cross-provider failover should configure it in the IDE (e.g. Cursor's model-fallback settings) — gald3r will inherit it.
 
-## Iteration and Timeout Limits (T1175 — Sandcastle pattern)
+## Iteration and Timeout Limits (T1175)
 
 `g-go` accepts dual stop-conditions in `$ARGUMENTS` that bound the **pipeline** run (both phases combined). **Whichever limit hits first stops new work cleanly**; in-flight items finish, status writes batch, the review-result commit lands, and the pipeline summary is written.
 
@@ -202,7 +202,7 @@ This command defines the contract. Concrete hook scripts (e.g. "post bucket-comp
 
 **Why dual limits**: see the matching section in `g-go-code.md` — iteration alone is brittle for tasks of mixed size; wall-clock alone is brittle when many small items finish cleanly. Together they bound both work and time.
 
-## Completion Signal Convention (T1122 — Sandcastle harvest pattern)
+## Completion Signal Convention (T1122)
 
 A coordinator or parent orchestrator may need to recognize that a `g-go` /
 `g-go-code` / `g-go-review` iteration is finished without polling task files
@@ -217,7 +217,7 @@ text when they consider their work for the current iteration done.
 ```
 
 This is the canonical default. Parent orchestrators (`g-go --swarm` coordinator,
-external `gald3r_agent` daemon, CI runners) scanning agent output SHOULD look
+external `example_agent` daemon, CI runners) scanning agent output SHOULD look
 for this exact tag pair.
 
 ### Recognition rules
@@ -262,7 +262,7 @@ current iteration's task or while a hard-gate blocker is unresolved.
 ### `--completion-signal <tag>` override flag (future orchestrator)
 
 A future external orchestrator may want to use a different signal tag (for
-example, when integrating with sandcastle-style `<promise>COMPLETE</promise>`
+example, when integrating with external-runner-style `<promise>COMPLETE</promise>`
 pipelines or when one shell wraps multiple gald3r runs in a parent loop that
 needs distinct signals per child). The flag is reserved as:
 
@@ -275,8 +275,8 @@ Default: `gald3r-status:COMPLETE`. When supplied, the orchestrator scans for
 emit the supplied tag instead of the default. The current gald3r implementation
 documents the convention only — no PowerShell orchestrator currently parses
 this flag, since the "iteration loop" of `g-go` is the agent itself rather
-than a wrapping process. The flag becomes load-bearing once `gald3r_agent`
-or a sandcastle-style external runner takes over the loop role.
+than a wrapping process. The flag becomes load-bearing once `example_agent`
+or a external runner takes over the loop role.
 
 ### Why a tag, not a file
 
@@ -288,7 +288,7 @@ needs no filesystem coordination, and survives stdout/stderr redirection
 without changing the parent's contract.
 
 
-## Dynamic Context Expansion in Prompts (T1119 — Sandcastle harvest pattern)
+## Dynamic Context Expansion in Prompts (T1119)
 
 `g-go` prompt files (and the dispatch prompts generated by the coordinator
 for `g-go-code` and `g-go-review`) support an inline shell-expansion
@@ -364,18 +364,13 @@ prompts per iteration so re-invocations within the same iteration do
 not re-execute the commands.
 
 The current gald3r implementation documents the convention only — the
-expander itself becomes load-bearing when an external runner
-(`gald3r_agent` or sandcastle-style wrapper) takes over the prompt
+expander itself becomes load-bearing when an external runner takes over the prompt
 dispatch role. Today, when `g-go` IS the agent, the agent SHOULD
 interpret `!\`...\`` expressions itself by running the command via the
 shell tool and substituting the output into its own working context.
 
-### Source
 
-IDEA-HARVEST-215 — mattpocock/sandcastle prompt-file expansion syntax.
-
-
-## Structured Review Verdict (T1120 — Sandcastle Output.object pattern)
+## Structured Review Verdict (T1120)
 
 The `g-go-review` reviewer subagent emits its PASS/FAIL verdict inside
 a single XML tag that the coordinator can parse deterministically.
@@ -475,17 +470,14 @@ in the form:
 (or `[🔍] -> [📋]` for FAIL, with the FAIL marker and the evidence
 summary.)
 
-### Source
-
-IDEA-HARVEST-216 — mattpocock/sandcastle `Output.object()` Zod-validated
-structured extraction pattern.
 
 
 
-## Named Workflow Templates (T1121 — Sandcastle 5-template taxonomy)
+
+## Named Workflow Templates (T1121)
 
 gald3r ships five named workflow templates that map almost perfectly to
-sandcastle's published taxonomy. Naming the patterns makes their
+a clear, named taxonomy. Naming the patterns makes their
 intent discoverable and lets users pick the right one with a single
 flag instead of memorizing flag combinations.
 
@@ -504,7 +496,6 @@ documented composition of existing flags, NOT new orchestration logic.
 This keeps the underlying behavior auditable in terms of the flag
 contract while making the pattern discoverable.
 
-Source: IDEA-HARVEST-217 — mattpocock/sandcastle 5-template taxonomy.
 
 ### Template definitions
 
@@ -650,13 +641,13 @@ not individual commands.
   can now refer to "the `parallel-planner-with-review` template"
   unambiguously instead of "g-go --swarm --review (which is also
   sometimes called swarm-with-review)".
-- **Future external runner alignment** — when `gald3r_agent` or a
-  sandcastle-style external runner takes over orchestration, the
+- **Future external runner alignment** — when `example_agent` or a
+  external runner takes over orchestration, the
   template names become the stable user-facing surface; the flag
   compositions become implementation detail of the runner.
 
 
-## Session Capture & Cross-Sandbox Resume (T1124 — Sandcastle harvest pattern)
+## Session Capture & Cross-Sandbox Resume (T1124)
 
 When a `g-go` iteration runs inside an agent worktree/sandbox, the full Claude Code
 conversation transcript (the session JSONL) can be captured to the host so a later
@@ -667,7 +658,7 @@ for search); JSONL capture preserves the conversation itself.
 ### Capture helper
 
 `gald3r_session_capture.ps1` ships beside `gald3r_worktree.ps1` in each IDE skill folder
-(`.cursor/skills/g-skl-git-commit/scripts/`, `.cursor/...`, `.claude/...`).
+(`.claude/skills/g-skl-git-commit/scripts/`, `.cursor/...`, `.claude/...`).
 
 ```powershell
 # After an iteration completes in a worktree, capture its session JSONL to the host
@@ -708,7 +699,7 @@ stores transcripts elsewhere), the helper reports `no-session-found` and the pip
 continues unaffected.
 
 
-## Shared Sandbox Phase Handoff (`--shared-sandbox`) — T1118 (Sandcastle createSandbox pattern)
+## Shared Sandbox Phase Handoff (`--shared-sandbox`) — T1118
 
 By **default**, `g-go` uses **separate-context handoff**: Phase 1 implements in a `code`
 worktree, reconciles the diff into the primary checkout, creates a code-complete checkpoint
@@ -718,9 +709,9 @@ and Phase 2 below.
 
 `--shared-sandbox` is an **opt-in** flag that keeps the **same `code` worktree alive across
 Phase 1 and Phase 2** instead of spinning up a separate reviewer worktree. This mirrors
-sandcastle's `createSandbox()` multi-run pattern: the sandbox is created once, dependencies
+a persistent multi-run sandbox: the sandbox is created once, dependencies
 are installed once, commits accumulate on a single branch, and a second `run()` (the review
-pass) sees the same filesystem/git state without re-cloning. (IDEA-HARVEST-214 — mattpocock/sandcastle.)
+pass) sees the same filesystem/git state without re-cloning.
 
 ### Lifecycle contract
 
@@ -893,7 +884,7 @@ the existing Clean Controller Gate / member touch-set block mid-pipeline (post-c
    ⚠️  Workspace members have uncommitted changes:
    | repo id            | path                          | modified | untracked |
    |--------------------|-------------------------------|----------|-----------|
-   | gald3r_throne      | G:/gald3r_ecosystem/...throne | 3        | 1         |
+   | example_desktop      | <ECOSYSTEM_ROOT>/...throne | 3        | 1         |
    Commit or stash these before continuing, or pass --skip-member-clean-check.
    ```
 
@@ -943,7 +934,7 @@ Re-run the helper in `-Mode post-write -Apply` immediately after coordinator-own
 
 After the WPAC gate is skipped or passes:
 
-1. At the **orchestration git root** (the repo from which you run this command — normally the Workspace-Control owner, e.g. `gald3r_dev`): run `git status --short`. If anything is listed **outside** this run's explicit coordinator staging allowlist for the active task and bug IDs, **STOP** here. Do not claim tasks or bugs, create or reuse T170 worktrees, partition swarms, or write coordinator-owned updates to `.gald3r/TASKS.md`, `.gald3r/BUGS.md`, other shared `.gald3r` coordination files, `CHANGELOG.md`, generated Copilot prompts, or parity output until unrelated changes are committed, stashed, or moved to a prior focused commit. Preserve any bucket handoff artifacts already produced and list the paths that blocked progress.
+1. At the **orchestration git root** (the repo from which you run this command — normally the Workspace-Control owner, e.g. `<gald3r_source>`): run `git status --short`. If anything is listed **outside** this run's explicit coordinator staging allowlist for the active task and bug IDs, **STOP** here. Do not claim tasks or bugs, create or reuse T170 worktrees, partition swarms, or write coordinator-owned updates to `.gald3r/TASKS.md`, `.gald3r/BUGS.md`, other shared `.gald3r` coordination files, `CHANGELOG.md`, generated Copilot prompts, or parity output until unrelated changes are committed, stashed, or moved to a prior focused commit. Preserve any bucket handoff artifacts already produced and list the paths that blocked progress.
 
 2. **`gald3r_worktree.ps1 -AllowDirty`**: do not use this switch for `g-go`, `g-go-code`, `g-go-review`, or any `--swarm` variant **except** when every dirty path is owned exclusively by the active task/bug scope and a `## Status History` row documents that override. Otherwise clean the checkout first. The same **per-root** `-AllowDirty` discipline applies to every repository included in the touch set below when multi-repo work is in scope.
 
@@ -1265,15 +1256,15 @@ The coordinator commits the review result by default for PASS, FAIL, and mixed v
 
 > **Flags** (pass in `$ARGUMENTS` or inherit from `@g-go-go`):
 > - `--no-auto-merge` — skip auto-merge and use old `[MERGE-BLOCKED]` behavior for all items
-> - `--target-branch <name>` — override merge target (default: `dev`; use `main` to ship directly to main)
+> - `--target-branch <name>` — override merge target (default: `main`; feature-branches-only model, see `g-rl-02`)
 
-After the review-result commit, for every PASS item whose code worktree targets a **member repository** (any `workspace_repos` value that resolves to a repo other than the controller itself), perform the auto-merge step. Default target branch is `dev` (B+C pattern: Bot handles dev, Contributor controls main).
+After the review-result commit, for every PASS item whose code worktree targets a **member repository** (any `workspace_repos` value that resolves to a repo other than the controller itself), perform the auto-merge step. Default target branch is `main` (feature-branches-only model — NO long-lived `dev` branch; see `g-rl-02-git_workflow`).
 
 **Step 1 — Target branch existence check:**
 
 ```powershell
-# Determine target branch (default: dev; override with --target-branch <name>)
-$targetBranch = if ($args -contains "--target-branch") { $args[$args.IndexOf("--target-branch") + 1] } else { "dev" }
+# Determine target branch (default: main; override with --target-branch <name>)
+$targetBranch = if ($args -contains "--target-branch") { $args[$args.IndexOf("--target-branch") + 1] } else { "main" }
 
 # Check if target branch exists in member repo
 $branchExists = git -C <member_path> branch --list $targetBranch
@@ -1299,7 +1290,7 @@ The helper:
 
 **Merge blocked (fallback)**: if merge fails (conflict, unrelated history, or `--no-auto-merge` was passed), preserve the branch and log `[MERGE-BLOCKED] T{id}: <reason>` in the Pipeline Session Summary as a human action item. Do not fail the overall run.
 
-**Target branch missing (fallback)**: if the target branch does not exist in the member repo (neither local nor remote), log `[MERGE-BLOCKED] T{id}: target branch '{targetBranch}' not found — create it first` and preserve the branch. This is the expected fallback for newly bootstrapped member repos before T941 dev-branch setup completes.
+**Target branch missing (fallback)**: if the target branch does not exist in the member repo (neither local nor remote), log `[MERGE-BLOCKED] T{id}: target branch '{targetBranch}' not found — create it first` and preserve the branch. This is the expected fallback for newly bootstrapped member repos whose `main` branch has not yet been created.
 
 **Member dirty**: if the member repo has uncommitted changes unrelated to this task at merge time, log `[MERGE-SKIPPED-DIRTY] T{id}: member dirty` and preserve the branch. Do not attempt the merge.
 
@@ -1370,8 +1361,8 @@ Before writing the Pipeline Session Summary, the coordinator MUST handle all fol
 | BUG-003 | [📋] FAIL | AC-2 not met — {reason} |
 
 ### Member Repo Auto-Merges
-- {member_repo}: T{id} [AUTO-MERGED→dev] (ff)
-- {member_repo}: T{id} [AUTO-MERGED→dev] (no-ff)
+- {member_repo}: T{id} [AUTO-MERGED→main] (ff)
+- {member_repo}: T{id} [AUTO-MERGED→main] (no-ff)
 - Blocked (fallback): T{id} — {reason}
 
 ### Follow-Up Tasks Filed
@@ -1446,7 +1437,7 @@ Coordinator claims each review bucket as `[🕵️]` before spawning reviewers, 
 Each reviewer produces a result payload only: PASS/FAIL, evidence, proposed Status History rows, and any fix-forward patch if explicitly authorized. Reviewers do not write `TASKS.md`, `BUGS.md`, task/bug files, changelog/docs, generated prompts, parity output, or commits.
 Coordinator performs one final shared-write pass for `TASKS.md`, `BUGS.md`, task/bug files, changelog/docs updates, generated prompts, parity sync output, final staging, and the review-result commit. The coordinator commits PASS, FAIL, and mixed review verdicts by default after status writes, unless a narrow non-commit blocker applies.
 
-### Bucket Cancellation Contract (T1123 — sandcastle AbortSignal pattern)
+### Bucket Cancellation Contract (T1123)
 
 The coordinator can abort in-flight bucket agents cleanly — required when a bucket
 times out (`--timeout-minutes`), runs rogue, or the WPAC conflict gate fires mid-run.
@@ -1490,8 +1481,8 @@ times out (`--timeout-minutes`), runs rogue, or the WPAC conflict gate fires mid
 | R-2 | 9 | 0 | 1 |
 
 ### Member Repo Auto-Merges
-- {member_repo}: T{id} [AUTO-MERGED→dev] (ff)
-- {member_repo}: T{id} [AUTO-MERGED→dev] (no-ff)
+- {member_repo}: T{id} [AUTO-MERGED→main] (ff)
+- {member_repo}: T{id} [AUTO-MERGED→main] (no-ff)
 - Blocked (fallback): T{id} — {reason}
 
 ### Follow-Up Tasks Filed
@@ -1521,7 +1512,7 @@ times out (`--timeout-minutes`), runs rogue, or the WPAC conflict gate fires mid
 When `--workspace` is present, the coordinator:
 
 1. Reads `.gald3r/workspace/workspace_manifest.yaml` (the canonical Workspace-Control registry).
-2. Resolves the repository set: orchestration controller (`gald3r_dev`) plus every entry under `repositories:` whose `local_path` exists on disk and whose `lifecycle_status` permits work (e.g. excluding `planned`/`bootstrap_gap`/`frozen` archives).
+2. Resolves the repository set: orchestration controller (`<gald3r_source>`) plus every entry under `repositories:` whose `local_path` exists on disk and whose `lifecycle_status` permits work (e.g. excluding `planned`/`bootstrap_gap`/`frozen` archives).
 3. Filters the queue: each runnable task or bug is included only if every entry in its `workspace_repos:` resolves to a manifest member that is (a) locally available, (b) write-permitted by `allowed_write_policy.write_allowed`, and (c) compatible with the task's `workspace_touch_policy`.
 4. Honors all standard ordering rules: Critical → High → Medium → Low, dependencies (with the rolling-pipeline `[🔍]` checkpoint exception unless `requires_verified_dependencies: true`), `[🚨]` skips, stale claim takeovers, WPAC-derived priority floor, and `ai_safe: false` exclusions.
 5. Logs per-deferral reasons in the session summary. Reasons include: `member-repo path missing`, `lifecycle_status forbids work`, `write_allowed: false`, `unknown repository.id in workspace_repos`, `workspace_touch_policy mismatch`, and `manifest missing or unparseable`.
@@ -1566,10 +1557,10 @@ Both at the periodic 30-minute heartbeats and at the final summary, `--workspace
 ```
 [WORKSPACE] Mode: workspace[+swarm]
 [WORKSPACE] Manifest: .gald3r/workspace/workspace_manifest.yaml
-[WORKSPACE] Considered repos: gald3r_dev, gald3r_template_*, gald3r_throne, ...
-[WORKSPACE] Skipped repos: gald3r_valhalla (lifecycle: frozen_marker_only), external_repo (write_allowed: false)
+[WORKSPACE] Considered repos: <gald3r_source>, gald3r_template_*, example_desktop, ...
+[WORKSPACE] Skipped repos: example_app (lifecycle: frozen_marker_only), external_repo (write_allowed: false)
 [WORKSPACE] Runnable items: {N}    Blocked: {K}    Deferred: {D}
-[WORKSPACE] Per-repo blockers: gald3r_template_full (unrelated dirty: .github/...), ...
+[WORKSPACE] Per-repo blockers: <template_full> (unrelated dirty: .github/...), ...
 [WORKSPACE] Next recommended: {command}
 ```
 
@@ -1577,7 +1568,7 @@ The summary makes it explicit which repos were considered, which were skipped, w
 
 ### Marker-only protection (recap)
 
-Member `.gald3r/` may contain ONLY `.identity` and `PROJECT.md`. `g-skl-workspace`, `g-skl-WPAC-spawn`, `g-skl-WPAC-adopt`, `g-skl-setup`, and `gald3r_install` all consult `.cursor/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1` before any member `.gald3r/` write. `--workspace` runs do NOT add a bypass; the guard is non-negotiable. Any attempted write to a forbidden member `.gald3r/` path is logged as a blocker and excluded from the run.
+Member `.gald3r/` may contain ONLY `.identity` and `PROJECT.md`. `g-skl-workspace`, `g-skl-WPAC-spawn`, `g-skl-WPAC-adopt`, `g-skl-setup`, and `gald3r_install` all consult `.claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1` before any member `.gald3r/` write. `--workspace` runs do NOT add a bypass; the guard is non-negotiable. Any attempted write to a forbidden member `.gald3r/` path is logged as a blocker and excluded from the run.
 
 ---
 

@@ -204,7 +204,7 @@ channel: "{channel}"
 published: "{upload_date}"
 duration_minutes: {duration_min}
 tags: {tags_yaml}
-topics: {topics_yaml}
+tags: {topics_yaml}
 refresh_policy: manual
 source_volatility: snapshot
 analysis_depth: transcript_only

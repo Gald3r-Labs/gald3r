@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [RELEASE_AND_VERSIONING]
 ---
 Archive a feature staging doc. Activates **g-skl-features** → ARCHIVE FEATURE operation.

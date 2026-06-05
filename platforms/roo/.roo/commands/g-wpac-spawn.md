@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
 Spawn a new gald3r project from this project with full setup and WPAC topology linking: $ARGUMENTS
@@ -30,7 +30,7 @@ Delegates to `g-skl-wpac-spawn`.
 
 ```
 # Create a sibling backend project seeded with backend features
-@g-wpac-spawn gald3r_valhalla --sibling --description "Single-user Docker backend" --features .gald3r/features/gald3r_backend
+@g-wpac-spawn example_app --sibling --description "Single-user Docker backend" --features .gald3r/features/gald3r_backend
 
 # Create a child project for a payment subsystem with code
 @g-wpac-spawn gald3r_payments --child --description "Payment processing" --code src/payments/

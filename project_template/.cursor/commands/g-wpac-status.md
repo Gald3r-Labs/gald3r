@@ -5,12 +5,12 @@ Show cross-project coordination status: $ARGUMENTS
 
 ## What This Command Does
 
-Displays the full PCAC (Project Command and Control) status: this project's topology role, linked project health, open INBOX summary, and constraint overlap with peers. Delegates to `g-agnt-pcac-coordinator`.
+Displays the full WPAC (Project Command and Control) status: this project's topology role, linked project health, open INBOX summary, and constraint overlap with peers. Delegates to `g-agnt-wpac-coordinator`.
 
 ## Output Format
 
 ```
-PCAC STATUS — {project_name}
+WPAC STATUS — {project_name}
 ────────────────────────────────────────
 Role: {parent | child | sibling | standalone}
 Project: {project_path}
@@ -46,12 +46,12 @@ CROSS-PROJECT DEPENDENCIES
 ### Awaiting (parent waiting on child)
 | Order ID   | Sent To        | Remote Task                  | Status      | Days Out |
 |------------|----------------|------------------------------|-------------|----------|
-| ord-abc123 | gald3r_valhalla | Implement JWT auth endpoint  | in-progress | 3        |
+| ord-abc123 | example_app | Implement JWT auth endpoint  | in-progress | 3        |
 
 ### Blocking (this project has received orders blocking a parent)
 | Order ID   | From Parent   | Our Local Task        | Status      |
 |------------|---------------|-----------------------|-------------|
-| ord-xyz789 | gald3r_dev    | vault-sync endpoint   | in-progress |
+| ord-xyz789 | <gald3r_source>    | vault-sync endpoint   | in-progress |
 
 ────────────────────────────────────────
 CONSTRAINT OVERLAP
@@ -116,4 +116,4 @@ Display the full status block above. If CONFLICTs exist, recommend running `@g-w
 ```
 
 ## Delegates To
-`g-agnt-pcac-coordinator`
+`g-agnt-wpac-coordinator`

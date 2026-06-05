@@ -2,9 +2,9 @@
 gald3r_rel_version: "1.11.0"
 schema_version: "generic-v1"
 ---
-# Cross-Project Coordination (PCAC) — Linking Directory
+# Cross-Project Coordination (WPAC) — Linking Directory
 
-This directory holds the file-first foundation for cross-project coordination (PCAC = Project Command And Control).
+This directory holds the file-first foundation for cross-project coordination (WPAC = Project Command And Control).
 
 ## Files In This Directory
 
@@ -53,13 +53,13 @@ Body can contain free-form notes about the relationship (contracts, shared conve
 # INBOX — {project_name}
 
 ## [CONFLICT] — Items That Block Work
-<!-- Surfaced by g-hk-pcac-inbox-check.ps1 at session start — must resolve before any other work -->
+<!-- Surfaced by g-hk-wpac-inbox-check.ps1 at session start — must resolve before any other work -->
 
 ## [REQUEST] — Incoming Asks From Children
 <!-- Child projects asking this project to take action -->
 
 ## [BROADCAST] — Orders From Parent
-<!-- Tasks pushed down from parent via g-skl-pcac-order -->
+<!-- Tasks pushed down from parent via g-skl-wpac-order -->
 
 ## [SYNC] — Peer Contract Updates From Siblings
 <!-- Advisory topology/contract updates from sibling projects -->
@@ -73,18 +73,18 @@ Each item uses a one-line `- [ ] YYYY-MM-DD | {from_project} | {summary}` format
 
 | Skill | Trigger | What It Does |
 |-------|---------|-------------|
-| `g-skl-pcac-order` | Parent project | Pushes a task to one or more children |
-| `g-skl-pcac-ask` | Child project | Writes to parent's INBOX + marks local task blocked |
-| `g-skl-pcac-sync` | Either sibling | Updates local copy of peer topology file |
-| `g-skl-pcac-read` | Any project | Reviews and actions all INBOX items |
-| `g-skl-pcac-move` | Any project | Transfers files/folders to another project |
+| `g-skl-wpac-order` | Parent project | Pushes a task to one or more children |
+| `g-skl-wpac-ask` | Child project | Writes to parent's INBOX + marks local task blocked |
+| `g-skl-wpac-sync` | Either sibling | Updates local copy of peer topology file |
+| `g-skl-wpac-read` | Any project | Reviews and actions all INBOX items |
+| `g-skl-wpac-move` | Any project | Transfers files/folders to another project |
 
-`g-hk-pcac-inbox-check.ps1` runs at every session start and surfaces CONFLICT items before any other work.
+`g-hk-wpac-inbox-check.ps1` runs at every session start and surfaces CONFLICT items before any other work.
 
 ---
 
 ## Tracking Decisions
 
 - `linking/` contents are **source-controlled** (config, not secrets)
-- `peers/` files are local advisory copies — update them via `g-skl-pcac-sync`
+- `peers/` files are local advisory copies — update them via `g-skl-wpac-sync`
 - INBOX.md items are never auto-deleted; archive resolved items under a `## [RESOLVED]` section

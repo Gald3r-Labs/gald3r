@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [PLATFORM_INTEGRATION]
+---
 # g-skl-cli-opencode
 **Skill file**: `SKILL.md`
 

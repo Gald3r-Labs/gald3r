@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [PROJECT_IDENTITY_SETUP, VAULT_AND_RESEARCH]
+---
 # g-skl-res-apply
 **Skill file**: `SKILL.md`
 

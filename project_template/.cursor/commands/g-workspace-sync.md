@@ -37,7 +37,7 @@ Dry-run only: no files are written. Member repository writes remain disabled unt
 - Do not call copy, move, delete, git add, git commit --trailer "Made-with: Cursor", parity sync, tier sync, or export scripts from this command.
 - Undeclared member repo writes are forbidden.
 - Member repositories remain separate git roots with independent status, branch, remote, rollback, and worktree boundaries. Branch/worktree names must include the member repo ID for multi-repo isolation.
-- Workspace-Control does not replace PCAC INBOX, order, request, or peer sync flows.
+- Workspace-Control does not replace WPAC INBOX, order, request, or peer sync flows.
 
 ## Usage Examples
 

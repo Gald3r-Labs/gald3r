@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [PLATFORM_INTEGRATION]
+---
 # g-skl-platform-kiro-cli
 **Skill file**: `SKILL.md`
 

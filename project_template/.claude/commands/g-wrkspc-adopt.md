@@ -139,7 +139,7 @@ Any of the following raise a `BLOCK` finding and abort:
 
 - `BLOCK source_repo_dirty_apply_mode` — uncommitted changes / merge in progress / pending worktrees on source; supply `--allow-source-dirty` or commit first
 - `BLOCK control_repo_dirty_apply_mode` — controller has uncommitted changes outside the writes ADOPT itself plans, and `--require-clean-controller` was supplied
-- `BLOCK pcac_conflict_gate_unresolved` — open `[CONFLICT]` in inbox; resolve via `@g-pcac-read` first
+- `BLOCK wpac_conflict_gate_unresolved` — open `[CONFLICT]` in inbox; resolve via `@g-wpac-read` first
 
 **Boundary preservation**
 
@@ -150,9 +150,9 @@ Any of the following raise a `BLOCK` finding and abort:
 ## Usage Examples
 
 ```text
-@g-wrkspc-adopt --discover G:/gald3r_ecosystem/gald3r_valhalla
-@g-wrkspc-adopt --dry-run --source G:/gald3r_ecosystem/gald3r_valhalla --as gald3r_valhalla
-@g-wrkspc-adopt --apply --source G:/gald3r_ecosystem/gald3r_valhalla --as gald3r_valhalla --plan .gald3r/reports/adoption_adopt-20260426-091500-gald3r_valhalla.md
+@g-wrkspc-adopt --discover <ECOSYSTEM_ROOT>/example_app
+@g-wrkspc-adopt --dry-run --source <ECOSYSTEM_ROOT>/example_app --as example_app
+@g-wrkspc-adopt --apply --source <ECOSYSTEM_ROOT>/example_app --as example_app --plan .gald3r/reports/adoption_adopt-20260426-091500-example_app.md
 ```
 
 ## Cross-References
@@ -162,4 +162,4 @@ Any of the following raise a `BLOCK` finding and abort:
 - Sample dry-run fixture: `.gald3r/reports/adoption_dryrun_sample.md`.
 - Archive routing: Task 204 (`@g-task-archive`, `@g-bug-archive`).
 - Manifest registry: `.gald3r/linking/workspace_manifest.yaml`.
-- PCAC adoption (separate, complementary): `@g-pcac-adopt` registers parent/child topology for cross-project messaging; this command updates Workspace-Control state.
+- WPAC adoption (separate, complementary): `@g-wpac-adopt` registers parent/child topology for cross-project messaging; this command updates Workspace-Control state.

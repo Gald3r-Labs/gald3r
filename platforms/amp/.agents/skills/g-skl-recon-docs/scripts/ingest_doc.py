@@ -188,7 +188,7 @@ ingestion_type: periodic
 source: {url}
 title: "{name}"
 tags: {tags_yaml}
-topics: {topics_yaml}
+tags: {topics_yaml}
 refresh_policy: every_{refresh_days}_days
 last_fetched: {today}
 next_refresh: {next_refresh}

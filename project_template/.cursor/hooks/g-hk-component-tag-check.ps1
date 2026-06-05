@@ -1,4 +1,4 @@
-# g-hk-component-tag-check.ps1 - Git pre-commit hook: enforce subsystem tagging on .gald3r_sys components
+﻿# g-hk-component-tag-check.ps1 - Git pre-commit hook: enforce subsystem tagging on .gald3r_sys components
 # @subsystems: PROJECT_IDENTITY_SETUP
 #
 # Blocks commits that add new component files to .gald3r_sys/ without subsystem tagging.

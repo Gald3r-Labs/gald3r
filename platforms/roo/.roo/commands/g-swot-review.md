@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [BUG_AND_QUALITY]
 ---
 Run SWOT analysis on current project phase: $ARGUMENTS

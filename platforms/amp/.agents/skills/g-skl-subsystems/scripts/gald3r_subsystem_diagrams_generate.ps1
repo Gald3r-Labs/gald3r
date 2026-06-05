@@ -79,9 +79,9 @@ Get-ChildItem -Path $subRoot -Recurse -File -Filter '*.md' -ErrorAction Silently
 
 $iso = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHHmmss') + 'Z'
 $banner = @"
-<!-- AUTO-GENERATED - do not hand-edit. Source: .gald3r_sys/skills/g-skl-subsystems/scripts/gald3r_subsystem_diagrams_generate.ps1 -->
+<!-- AUTO-GENERATED - do not hand-edit. Source: .claude/skills/g-skl-subsystems/scripts/gald3r_subsystem_diagrams_generate.ps1 -->
 <!-- Generated (UTC): $iso -->
-<!-- Regenerate: pwsh -NoProfile -File .gald3r_sys/skills/g-skl-subsystems/scripts/gald3r_subsystem_diagrams_generate.ps1 -ProjectRoot (repo root) -->
+<!-- Regenerate: pwsh -NoProfile -File .claude/skills/g-skl-subsystems/scripts/gald3r_subsystem_diagrams_generate.ps1 -ProjectRoot (repo root) -->
 
 "@
 
