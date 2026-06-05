@@ -1,4 +1,4 @@
----
+﻿---
 description: 'UV package manager and virtual environment standards for Python projects'
 globs:
   - '**/*.py'

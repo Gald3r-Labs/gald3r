@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-wpac-ask
 description: Child project requests parent action — writes parent INBOX.md and marks local task as blocked with cross-project metadata.
 token_budget: low
@@ -41,7 +41,7 @@ subsystem_memberships: [WORKSPACE_COORDINATION]
    ---
    order_id: "ord-{uuid-short}"
    sent_to: "{parent_project_id}"
-   sent_to_path: "G:/path/to/parent"
+   sent_to_path: "<path>/to/parent"
    sent_at: "YYYY-MM-DD"
    type: ask                                # T167: type discriminator (was implicit; now explicit)
    local_depends: [task_id, ...]            # which LOCAL tasks gate on the parent acting

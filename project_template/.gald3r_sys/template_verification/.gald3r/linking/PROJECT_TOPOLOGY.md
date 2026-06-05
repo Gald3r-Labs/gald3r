@@ -31,4 +31,4 @@ This project is a **child** of `{parent_project_name}`. Update `role` to `parent
 
 ## Peer Copies
 
-Sibling topology copies live in `peers/{sibling_name}.md`. Keep them fresh with `@g-pcac-sync`.
+Sibling topology copies live in `peers/{sibling_name}.md`. Keep them fresh with `@g-wpac-sync`.

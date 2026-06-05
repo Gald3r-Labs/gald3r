@@ -24,7 +24,7 @@ Start Chrome once with a persistent profile and debug port (do this manually or 
 
 ```bash
 # Windows
-"C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222 --user-data-dir=C:\Users\You\chrome-agent-profile
+"<path-to-chrome>" --remote-debugging-port=9222 --user-data-dir=<AGENT_CHROME_PROFILE>
 # macOS/Linux
 google-chrome --remote-debugging-port=9222 --user-data-dir=$HOME/.chrome-agent-profile
 ```

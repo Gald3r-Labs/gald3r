@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     gald3r Semantic Versioning Engine
     Core release management for gald3r projects.

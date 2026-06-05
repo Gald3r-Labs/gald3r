@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [VAULT_AND_RESEARCH]
+---
 # g-skl-monitor
 **Skill file**: `SKILL.md`
 
@@ -5,7 +8,7 @@
 
 ## What it does
 
-Manage scheduled content monitors for YouTube playlists, docs sites, GitHub repos, and URLs via gald3r_valhalla MCP tools. Requires Docker backend (adv tier). Monitors trigger automatic re-ingestion when new content is detected.
+Manage scheduled content monitors for YouTube playlists, docs sites, GitHub repos, and URLs via example_app MCP tools. Requires Docker backend (adv tier). Monitors trigger automatic re-ingestion when new content is detected.
 
 ## When to use
 

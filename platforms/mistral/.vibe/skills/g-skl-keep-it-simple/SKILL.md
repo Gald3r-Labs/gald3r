@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-keep-it-simple
 description: User-invoked terse mode toggle. Suppresses the active personality pack, response structure scaffolding, and footer metadata so the agent returns bare signal only. Intended for debugging, rapid lookups, and high-volume Q&A sessions where the standard ceremony adds noise. Deactivates at session boundary or on explicit toggle-off.
 triggers:
@@ -119,7 +119,7 @@ personality pack via `@g-pers-pick <pack-id>`, not via this skill.
 ## Companion Command
 
 `@g-keep-it-simple` (or `/g-keep-it-simple`) is the command wrapper. See
-`.gald3r_sys/commands/g-keep-it-simple.md`.
+`.claude/commands/g-keep-it-simple.md`.
 
 ## Source
 

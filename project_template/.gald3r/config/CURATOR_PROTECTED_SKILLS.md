@@ -29,7 +29,7 @@ The Curator re-reads this file at the start of every run.
 - g-skl-workspace
 - g-skl-test
 - g-skl-verify-ladder
-- g-skl-pcac-*
+- g-skl-wpac-*
 - g-skl-platform-*
 - g-skl-cli-*
 - g-skl-status
@@ -40,7 +40,7 @@ The Curator re-reads this file at the start of every run.
 ## Pattern matching
 
 Entries ending in `*` are wildcard patterns. They match all skills whose name begins
-with the prefix (e.g. `g-skl-pcac-*` matches `g-skl-pcac-adopt`, `g-skl-pcac-spawn`,
+with the prefix (e.g. `g-skl-wpac-*` matches `g-skl-wpac-adopt`, `g-skl-wpac-spawn`,
 etc.). Wildcards are evaluated at the end of the name only — interior wildcards are
 not supported.
 

@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Auto-Triage L0 risk calculator for gald3r spec/policy defects.
     Returns a numeric risk score and eligibility verdict.

@@ -1,11 +1,11 @@
-# .claude/skills/g-skl-git-commit/scripts/gald3r_housekeeping_commit.ps1
+﻿# .claude/skills/g-skl-git-commit/scripts/gald3r_housekeeping_commit.ps1
 #
 # Safe controller .gald3r/ housekeeping safety classifier (T531).
 #
 # Used by /g-go, /g-go-code, /g-go-review, /g-go-swarm, /g-go-code-swarm, and
 # /g-go-review-swarm at two points:
 #
-#   1. Preflight (immediately after PCAC inbox check, before Clean Controller Gate
+#   1. Preflight (immediately after WPAC inbox check, before Clean Controller Gate
 #      hard-blocking, claims, worktrees, or swarm partitioning).
 #   2. Post-coordinator-write (immediately after coordinator-owned shared `.gald3r`
 #      writes such as task/bug status updates, review-result writes, sent_orders
@@ -80,7 +80,7 @@ $script:AllowGlobs = @(
     '.gald3r/subsystems/*.md'
     '.gald3r/reports/*.md'
     '.gald3r/reports/*.json'
-    '.gald3r/logs/pcac_auto_actions.log'
+    '.gald3r/logs/wpac_auto_actions.log'
     '.gald3r/linking/sent_orders/*.md'
     '.gald3r/linking/INBOX.md'
 )

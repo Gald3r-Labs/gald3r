@@ -129,7 +129,7 @@ If you omit `duration`, Seedance 1.5 silently defaults to **12 seconds** — 3×
 
 ## Animation Theme Pack Generation
 
-Cloud-based animation content pipeline for gald3r_throne theme packs using Higgsfield models. Zero local GPU required — uses Seedance 2.0, Kling 2.0, and other cloud models.
+Cloud-based animation content pipeline for example_desktop theme packs using Higgsfield models. Zero local GPU required — uses Seedance 2.0, Kling 2.0, and other cloud models.
 
 ### Creative Pipeline (4 stages)
 
@@ -161,7 +161,7 @@ brand system + theme pack
 
 **Output Convention:**
 ```
-<workspace>\gald3r_throne\src-tauri\maestro2\themes\{theme_name}\
+<workspace>\example_desktop\src-tauri\maestro2\themes\{theme_name}\
     style_frames/        ← PNG stills (rawUrl downloads)
     animation_clips/     ← video files
     theme_manifest.json  ← job IDs, model settings, hex palette, prompts used

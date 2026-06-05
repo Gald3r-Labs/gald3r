@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [UI_AND_OUTPUT]
+---
 # g-skl-comfyui
 **Skill file**: `SKILL.md`
 
@@ -5,7 +8,7 @@
 
 ## What it does
 
-ComfyUI V5 agent integration for local GPU image/video generation. Install, launch, manage workflows, and run AnimateDiff/SDXL pipelines via the ComfyUI REST API. Local GPU path — zero cloud costs. Use for gald3r_throne theme pack animation or any offline image/video generation.
+ComfyUI V5 agent integration for local GPU image/video generation. Install, launch, manage workflows, and run AnimateDiff/SDXL pipelines via the ComfyUI REST API. Local GPU path — zero cloud costs. Use for example_desktop theme pack animation or any offline image/video generation.
 
 ## When to use
 

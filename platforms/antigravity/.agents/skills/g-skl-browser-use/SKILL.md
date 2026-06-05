@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-browser-use
 description: >
   Production browser harness for agentic web tasks requiring persistent sessions,
@@ -68,9 +68,9 @@ For cloud tier (BUX), no local installation is needed — connect via CDP URL.
 
 ```bash
 # Windows
-"C:\Program Files\Google\Chrome\Application\chrome.exe" \
+"<path-to-chrome>" \
   --remote-debugging-port=9222 \
-  --user-data-dir=C:\Users\You\chrome-agent-profile
+  --user-data-dir=<AGENT_CHROME_PROFILE>
 
 # macOS / Linux
 google-chrome \
@@ -111,7 +111,7 @@ asyncio.run(run())
 - Log in once — the agent inherits the session until it expires server-side.
 - Use a dedicated agent profile, not your default Chrome profile, to prevent
   interference with normal browsing.
-- Store the profile path in an env var: `AGENT_CHROME_PROFILE=C:\Users\You\chrome-agent-profile`
+- Store the profile path in an env var: `AGENT_CHROME_PROFILE=<AGENT_CHROME_PROFILE>`
 
 ### Verify session before proceeding
 
@@ -332,7 +332,7 @@ date: {today}
 type: competitive_intel
 source: https://competitor.com/pricing
 title: Competitor Pricing Snapshot {today}
-topics: [pricing, competitive-intel, browser-use]
+tags: [pricing, competitive-intel, browser-use]
 ---
 
 # Competitor Pricing — {today}

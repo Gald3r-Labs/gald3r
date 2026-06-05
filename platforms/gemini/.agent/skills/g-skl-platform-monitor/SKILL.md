@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-platform-monitor
 description: Cross-platform health and freshness monitor for the 23 gald3r platforms. Checks per-platform capability gaps against the Cursor reference, scans official docs for breaking changes, validates platform-specific config, and generates the PLATFORM_STATUS / PLATFORM_CAPABILITY_MATRIX living indexes. Owned by g-agnt-platformer.
 token_budget: low
@@ -68,7 +68,7 @@ Respects each platform's `crawl_max_age_days` — skips a doc scan that is still
 
 Confirm the platform's config is platform-specific, not Cursor-copied.
 
-1. Inspect `gald3r_template/.gald3r_sys/platforms/.<platform>/` (the per-platform override dir).
+1. Inspect `project_template/.gald3r_sys/platforms/.<platform>/` (the per-platform override dir).
 2. Check format correctness: is `hooks.json` valid JSON? does `settings.json` match the
    platform's expected structure?
 3. If the override dir is empty or its files are byte-identical to the Cursor copy →

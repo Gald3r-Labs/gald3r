@@ -172,7 +172,7 @@ result = subprocess.run([
 ], capture_output=True, text=True, cwd="/path/to/project")
 ```
 
-Coordinate sub-agents via `.gald3r/linking/INBOX.md` for PCAC messaging.
+Coordinate sub-agents via `.gald3r/linking/INBOX.md` for WPAC messaging.
 Each sub-agent should work on independent task files (`ai_safe: true`).
 
 ## Overnight / CI Best Practices

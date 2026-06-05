@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [BUG_AND_QUALITY]
 ---
 List and review auto-proposed skill drafts, then promote or discard: $ARGUMENTS
@@ -11,7 +11,7 @@ until promoted here.
 
 1. Scan `.gald3r/proposed_skills/*_draft.md`.
 2. For each, show: `{task_id}` · proposed slug · one-line `description` · `proposed_date` · whether a
-   same-named skill already exists in `.gald3r_sys/skills/`.
+   same-named skill already exists in `.claude/skills/`.
 3. If the directory is empty/absent → report "No proposed skills." and exit.
 
 ## REVIEW `<task_id|slug>`
@@ -25,7 +25,7 @@ until promoted here.
 
 1. Route the draft through the skill authoring flow (`create-skill` / `writing-skills`) for final
    polish (proper `name`/`description`, trigger lines, output format, ≤500-line budget).
-2. Write the polished SKILL.md to **`.gald3r_sys/skills/{slug}/SKILL.md`** (canonical source).
+2. Write the polished SKILL.md to **`.claude/skills/{slug}/SKILL.md`** (canonical source).
 3. Run `custom_scripts/platform_parity_sync.ps1 -ApplyFromRoot -Sync` (or the bounded mirror sync)
    so `.cursor/`/`.claude/` receive it — **never** hand-copy a draft directly into a platform dir.
 4. Move the draft to `.gald3r/proposed_skills/promoted/` (provenance) and mark the originating
@@ -42,4 +42,4 @@ IDEA_BOARD entry rejected with a one-line reason.
   and is not synced anywhere until PROMOTE runs.
 - Promotion always goes through `.gald3r_sys/` (canonical) + parity sync, never a direct platform
   write (consistent with the canonical-source migration).
-- This command only ever writes under `.gald3r/proposed_skills/` and (on PROMOTE) `.gald3r_sys/skills/`.
+- This command only ever writes under `.gald3r/proposed_skills/` and (on PROMOTE) `.claude/skills/`.

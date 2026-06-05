@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Auto-Triage L0 runner — assess risk, attempt fix if safe, log outcome.
     Phase 1 (cautious). Only fixes bounded, low-risk spec/schema defects.
@@ -22,7 +22,7 @@
     Optional: 1-based line number where the annotation should be inserted AFTER. If omitted, appends at end.
 
 .PARAMETER ProjectRoot
-    Absolute path to the gald3r_dev project root.
+    Absolute path to the <gald3r_source> project root.
 
 .PARAMETER DryRun
     If set, reports what would happen without writing anything.

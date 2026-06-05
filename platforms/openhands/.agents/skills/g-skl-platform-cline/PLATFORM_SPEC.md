@@ -35,7 +35,7 @@ marked hooks/skills/agents as ❌ and commands as ⚠️ — they are now all **
 
 > **Two platform-specific caveats (do not drop on re-sync):**
 > 1. **Hooks are macOS/Linux only** at time of research (v3.36, Nov 2025) — **no Windows support yet**.
->    The gald3r_templates dev environment is Windows, so verify Windows hook support before relying
+>    The <gald3r_source> dev environment is Windows, so verify Windows hook support before relying
 >    on `g-hk-*` file-watch / pre-tool gating in Cline installs.
 > 2. **Native subagents / teams require the Cline SDK or CLI runtime**, not the bare IDE chat.
 >
@@ -169,7 +169,7 @@ a supported source.)
 Cline now reaches **full parity** with the Cursor reference (`g-skl-platform-cursor`): native
 **commands, rules, agents, skills, hooks, and MCP**, with MCP a **standout strength** (in-editor
 marketplace, STDIO + remote). The two honest caveats are **(a)** hooks are **macOS/Linux only**
-(Windows gap — material for the Windows-based gald3r_templates dev env), and **(b)** native subagents
+(Windows gap — material for the Windows-based <gald3r_source> dev env), and **(b)** native subagents
 / teams require the **Cline SDK / CLI runtime**, not the bare IDE chat.
 
 **Reuse note:** gald3r maps cleanly — rules → `.clinerules/`, commands → `.clinerules/workflows/`,

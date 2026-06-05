@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [BUG_AND_QUALITY]
+---
 # Quality Assurance Rules
 
 > Detailed implementation rules for the gald3r-qa Skill.

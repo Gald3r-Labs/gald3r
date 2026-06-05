@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [PLATFORM_INTEGRATION]
+---
 # g-skl-cli-gemini
 **Skill file**: `SKILL.md`
 

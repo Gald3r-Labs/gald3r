@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Encode gald3r report JSON as TOON (Token-Oriented Object Notation) and export (T1382).
 .DESCRIPTION

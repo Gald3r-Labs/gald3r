@@ -165,7 +165,7 @@ Post-migration checklist:
 @g-migrate g-skl-bugs --from "g-bug-report" --to "g-bug-add" --apply
 
 # Migrate within a specific directory only
-@g-migrate g-skl-pcac-order --from "g-broadcast" --to "g-pcac-order" --scope .cursor/commands/
+@g-migrate g-skl-wpac-order --from "g-broadcast" --to "g-wpac-order" --scope .cursor/commands/
 
 # List all skills available for migration
 @g-migrate --list-skills

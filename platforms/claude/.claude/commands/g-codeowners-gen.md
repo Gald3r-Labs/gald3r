@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
 Generate .github/CODEOWNERS from subsystem owners: $ARGUMENTS
@@ -15,7 +15,7 @@ GitHub network call is ever made (this only reads local specs and writes a file)
 
 ## Behavior
 
-Runs the helper `.gald3r_sys/skills/g-skl-github-pr/scripts/codeowners_gen.ps1`:
+Runs the helper `.claude/skills/g-skl-github-pr/scripts/codeowners_gen.ps1`:
 
 1. Read every `.gald3r/subsystems/**/*.md` spec (skipping `SUBSYSTEM*` index/graph artifacts).
 2. For each spec with a non-empty `owners:` list, emit one CODEOWNERS line per
@@ -26,8 +26,8 @@ Runs the helper `.gald3r_sys/skills/g-skl-github-pr/scripts/codeowners_gen.ps1`:
 5. UTF-8 without BOM.
 
 ```powershell
-pwsh -NoProfile -File .gald3r_sys/skills/g-skl-github-pr/scripts/codeowners_gen.ps1 -DryRun
-pwsh -NoProfile -File .gald3r_sys/skills/g-skl-github-pr/scripts/codeowners_gen.ps1
+pwsh -NoProfile -File .claude/skills/g-skl-github-pr/scripts/codeowners_gen.ps1 -DryRun
+pwsh -NoProfile -File .claude/skills/g-skl-github-pr/scripts/codeowners_gen.ps1
 ```
 
 ## Flags

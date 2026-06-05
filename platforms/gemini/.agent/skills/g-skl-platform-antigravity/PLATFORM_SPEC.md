@@ -170,7 +170,7 @@ Antigravity also has a durable **"memories"** concept (agent state) distinct fro
   **`~/.gemini/antigravity/mcp_config.json`** (global; Settings → Customizations → Open MCP Config).
   Both a **JSON-file config** and a **GUI MCP Store** ("..." dropdown → Browse & Install &
   Authenticate). Trusted/owned-workspace security gating for write-capable servers.
-- gald3r MCP servers (e.g. `gald3r_valhalla`) integrate via the `mcpServers` JSON.
+- gald3r MCP servers (e.g. `example_app`) integrate via the `mcpServers` JSON.
 - Source: https://antigravity.google/docs/mcp
 
 ## 9. Scheduled Tasks — ✅ NATIVE (Antigravity-native bonus)

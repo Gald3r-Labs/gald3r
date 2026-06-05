@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 # _install_helper.ps1 — shared platform installer logic for personality and skill packs
 # Sourced by pack install.ps1 scripts via: . "$PSScriptRoot\..\_install_helper.ps1"
 #

@@ -31,9 +31,9 @@
     Emit a JSON result object instead of human-readable text.
 
 .EXAMPLE
-    .\gald3r_medic_heal.ps1 -ProjectRoot "G:\MyProject" -Heal c023            # dry-run plan
-    .\gald3r_medic_heal.ps1 -ProjectRoot "G:\MyProject" -Heal c023 -Apply     # write release files
-    .\gald3r_medic_heal.ps1 -ProjectRoot "G:\MyProject" -Heal all             # consolidated dry-run
+    .\gald3r_medic_heal.ps1 -ProjectRoot "<project-root>" -Heal c023            # dry-run plan
+    .\gald3r_medic_heal.ps1 -ProjectRoot "<project-root>" -Heal c023 -Apply     # write release files
+    .\gald3r_medic_heal.ps1 -ProjectRoot "<project-root>" -Heal all             # consolidated dry-run
 
 .NOTES
     Task: T1436  Constraint: C-023  Skill: g-skl-medic

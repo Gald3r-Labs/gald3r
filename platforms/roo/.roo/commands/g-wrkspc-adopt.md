@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
 Adopt an existing gald3r project into Workspace-Control: $ARGUMENTS
@@ -150,9 +150,9 @@ Any of the following raise a `BLOCK` finding and abort:
 ## Usage Examples
 
 ```text
-@g-wrkspc-adopt --discover G:/gald3r_ecosystem/gald3r_valhalla
-@g-wrkspc-adopt --dry-run --source G:/gald3r_ecosystem/gald3r_valhalla --as gald3r_valhalla
-@g-wrkspc-adopt --apply --source G:/gald3r_ecosystem/gald3r_valhalla --as gald3r_valhalla --plan .gald3r/reports/adoption_adopt-20260426-091500-gald3r_valhalla.md
+@g-wrkspc-adopt --discover <ECOSYSTEM_ROOT>/example_app
+@g-wrkspc-adopt --dry-run --source <ECOSYSTEM_ROOT>/example_app --as example_app
+@g-wrkspc-adopt --apply --source <ECOSYSTEM_ROOT>/example_app --as example_app --plan .gald3r/reports/adoption_adopt-20260426-091500-example_app.md
 ```
 
 ## Cross-References

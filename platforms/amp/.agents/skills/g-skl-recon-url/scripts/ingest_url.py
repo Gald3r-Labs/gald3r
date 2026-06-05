@@ -193,7 +193,7 @@ title: "{title}"
 author: "{author}"
 published: "{published}"
 tags: {tags_yaml}
-topics: {topics_yaml}
+tags: {topics_yaml}
 refresh_policy: manual
 source_volatility: snapshot
 source_notes: "Captured {today}. Original page may have changed."

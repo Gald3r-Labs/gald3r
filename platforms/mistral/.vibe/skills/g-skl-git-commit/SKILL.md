@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-git-commit
 description: Create well-structured git commits following gald3r conventions, with proper type prefixes, task references, and clean trailers (no AI co-author footers per C-021).
 token_budget: medium
@@ -149,10 +149,10 @@ Use `scripts/gald3r_worktree.ps1` for agent-owned isolated checkouts in the gald
 # Create or reuse a task worktree outside the active checkout
 .\scripts\gald3r_worktree.ps1 -Action Create -TaskId 170 -Role code -Owner cursor
 
-# Integration merge: fast-forward a task's code branch into the target (default dev), then
+# Integration merge: fast-forward a task's code branch into the target (default main), then
 # delete code+review branches and the worktree. Dry-run by default; -Apply to write. (T1443)
-.\scripts\gald3r_worktree.ps1 -Action MergeToMain -TaskId 170 -TargetBranch dev          # dry-run plan
-.\scripts\gald3r_worktree.ps1 -Action MergeToMain -TaskId 170 -TargetBranch dev -Apply   # FF-merge + cleanup
+.\scripts\gald3r_worktree.ps1 -Action MergeToMain -TaskId 170                            # dry-run plan (target main)
+.\scripts\gald3r_worktree.ps1 -Action MergeToMain -TaskId 170 -Apply                     # FF-merge + cleanup
 .\scripts\gald3r_worktree.ps1 -Action MergeToMain -SourceBranch feature/x -TargetBranch main -Json
 ```
 
@@ -161,7 +161,7 @@ Use `scripts/gald3r_worktree.ps1` for agent-owned isolated checkouts in the gald
 `Create` | `Report` | `Remove` | `Cleanup` | `Run` | `Cancel` | `CancelAll` | `Checkpoint` | `Resume` | `Steer` | `Queue` | `LockReport` | `Keep` | **`MergeToMain`**
 
 - **`MergeToMain` (T1443 / BUG-099 recurrence prevention)**: fast-forward the task's code branch
-  (resolved from worktree metadata, or `-SourceBranch`) into `-TargetBranch` (default `dev`).
+  (resolved from worktree metadata, or `-SourceBranch`) into `-TargetBranch` (default `main`).
   **FF-only** — a target that cannot fast-forward is returned `merge-blocked` and is **never**
   force-updated. Dry-run by default (`would-merge` / `merge-blocked` / `noop` plan, read-only);
   `-Apply` performs the merge then deletes the code + review branches and the worktree. Refuses
@@ -206,17 +206,17 @@ Long-horizon implementation work in a worktree can be interrupted by a crash, OO
 
 ```powershell
 # Dry-run: locate the worktree's session JSONL and report what would be captured
-.\scripts\gald3r_session_capture.ps1 -Action Report -WorktreePath ..\.gald3r-worktrees\gald3r_dev\T1124 -TaskId 1124
+.\scripts\gald3r_session_capture.ps1 -Action Report -WorktreePath ..\.gald3r-worktrees\<gald3r_source>\T1124 -TaskId 1124
 
 # Capture: copy + cwd-rewrite + record metadata (writes only with -Apply)
-.\scripts\gald3r_session_capture.ps1 -Action Capture -Apply -WorktreePath ..\.gald3r-worktrees\gald3r_dev\T1124 -TaskId 1124
+.\scripts\gald3r_session_capture.ps1 -Action Capture -Apply -WorktreePath ..\.gald3r-worktrees\<gald3r_source>\T1124 -TaskId 1124
 
 # List captured sessions for a project, or resolve one to its resume command
 .\scripts\gald3r_session_capture.ps1 -Action List
 .\scripts\gald3r_session_capture.ps1 -Action Resolve -SessionId <session-id>
 ```
 
-- **Path encoding**: Claude Code names each project folder by replacing every non-alphanumeric char in the absolute cwd with `-` (e.g. `G:\gald3r_ecosystem\gald3r_dev` → `G--gald3r-ecosystem-gald3r-dev`). The helper reproduces this to find the worktree's session folder.
+- **Path encoding**: Claude Code names each project folder by replacing every non-alphanumeric char in the absolute cwd with `-` (e.g. `<workspace>\<gald3r_source>` → `G--gald3r-ecosystem-gald3r-dev`). The helper reproduces this to find the worktree's session folder.
 - **Locations** (overridable): source = `$env:CLAUDE_CONFIG_DIR\projects` or `~/.claude/projects`; captures land in `$env:GALD3R_SESSIONS_ROOT` or `~/.gald3r-sessions/<project_id>/<task_id>/<session_id>.jsonl`.
 - **Metadata** is upserted to `~/.gald3r-sessions/<project_id>/sessions.json` (`session_id`, `task_id`, `timestamp`, `worktree_path`, `host_repo_path`, `host_jsonl_path`, `cwd_rewrites`).
 - **cwd rewrite** replaces both JSON-escaped (`\\`) and raw worktree path forms with the host repo path across every line, so resumed sessions reference real host files.
@@ -258,7 +258,7 @@ git config --unset core.hooksPath
 
 ## Pre-Push gate (regular | release)
 
-Before `git push`, run **`.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1`** (or `@g-git-push`) so **routine** work is not blocked by release documentation rules, while **release** pushes enforce CHANGELOG/version discipline (`g-rl-26`, `g-rl-02`).
+Before `git push`, run **`.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1`** (or `@g-git-push`) so **routine** work is not blocked by release documentation rules, while **release** pushes enforce CHANGELOG/version discipline (`g-rl-26`, `g-rl-02`).
 
 ### Modes
 
@@ -270,10 +270,10 @@ Before `git push`, run **`.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_pus
 ### Commands
 
 ```powershell
-./.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1                    # interactive mode select
-./.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1 -Release          # release checks
-$env:GALD3R_RELEASE_PUSH='1'; ./.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1 -NonInteractive
-./.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1 -DryRun           # verify wiring; always exit 0
+./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1                    # interactive mode select
+./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1 -Release          # release checks
+$env:GALD3R_RELEASE_PUSH='1'; ./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1 -NonInteractive
+./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1 -DryRun           # verify wiring; always exit 0
 ```
 
 ### Optional pre-push hook
@@ -282,7 +282,7 @@ $env:GALD3R_RELEASE_PUSH='1'; ./.gald3r_sys/skills/g-skl-git-commit/scripts/gald
 
 ### Shared script (DRY)
 
-`.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_git_sanity_common.ps1` supplies secret patterns for **`g-hk-pre-commit.ps1`**; push gate lives in **`.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1`**.
+`.claude/skills/g-skl-git-commit/scripts/gald3r_git_sanity_common.ps1` supplies secret patterns for **`g-hk-pre-commit.ps1`**; push gate lives in **`.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1`**.
 ---
 
 ## Push Modes

@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [BUG_AND_QUALITY]
+---
 # Sample Code Review
 
 This is an example of a comprehensive code review output.

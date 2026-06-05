@@ -28,7 +28,7 @@ Delegates to `g-skl-wpac-adopt`.
 @g-wpac-adopt <workspace>\child_project
 
 # Adopt without touching the other project (remote/read-only)
-@g-wpac-adopt <workspace>\gald3r_mcp --one-way
+@g-wpac-adopt <workspace>\example_mcp --one-way
 ```
 
 ## What Happens

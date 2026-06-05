@@ -1,4 +1,4 @@
----
+﻿---
 description: Claude Code CLI quick reference — headless flags, session continuation, MCP config, permissions, overnight use.
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---

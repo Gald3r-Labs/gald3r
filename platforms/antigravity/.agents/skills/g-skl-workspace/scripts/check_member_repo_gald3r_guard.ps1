@@ -1,4 +1,4 @@
-# .gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1
+# .claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1
 #
 # Workspace-Control member-repo .gald3r/ guard.
 #
@@ -17,7 +17,7 @@
 #     specifications_collection/, features/, releases/, subsystems/, prds/,
 #     or any other orchestration state.
 #
-# Live `.gald3r/` belongs to the workspace control project (e.g. gald3r_dev).
+# Live `.gald3r/` belongs to the workspace control project (e.g. <gald3r_source>).
 # External template repos under gald3r_template_(slim|full|adv) are the legitimate
 # exception - their `.gald3r/` content is intentional install template content.
 #
@@ -40,11 +40,11 @@
 #       the actual filesystem boundary.
 #
 # Usage:
-#   ./.gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath <path>
-#   ./.gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath <path> -DotGald3rPath ".identity"
-#   ./.gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath <path> -DotGald3rPath "TASKS.md"
-#   ./.gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath <path> -AllowMarkerInit
-#   ./.gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath <path> -WarnOnly -Json
+#   ./.claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath <path>
+#   ./.claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath <path> -DotGald3rPath ".identity"
+#   ./.claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath <path> -DotGald3rPath "TASKS.md"
+#   ./.claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath <path> -AllowMarkerInit
+#   ./.claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath <path> -WarnOnly -Json
 
 [CmdletBinding()]
 param(

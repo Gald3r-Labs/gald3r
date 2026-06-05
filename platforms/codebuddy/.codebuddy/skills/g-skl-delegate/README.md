@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [AGENT_ORCHESTRATION]
+---
 # g-skl-delegate
 **Skill file**: `SKILL.md`
 
@@ -5,7 +8,7 @@
 
 ## What it does
 
-Engineering team delegation workflow skill — Gary Tan (YC president) delegation patterns adapted for AI agent orchestration. Task briefs, code review request templates, quality gates, and handoff protocols.
+Engineering team delegation workflow skill — delegation patterns adapted for AI agent orchestration. Task briefs, code review request templates, quality gates, and handoff protocols.
 
 ## When to use
 

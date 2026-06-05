@@ -10,7 +10,7 @@ notes that lack it — `memory.md`, `sessions/*.md`, `decisions/*.md` (+ `decisi
 
 ## Behavior
 
-Runs `.gald3r_sys/skills/g-skl-vault/scripts/frontmatter_fix.ps1`:
+Runs `.claude/skills/g-skl-vault/scripts/frontmatter_fix.ps1`:
 
 1. Resolve the vault from `.gald3r/.identity` `vault_location=` (no-op when `{LOCAL}`/unset).
 2. Walk `projects/*/memory.md`, `projects/*/sessions/`, `projects/*/decisions/`, `knowledge/`.
@@ -20,9 +20,9 @@ Runs `.gald3r_sys/skills/g-skl-vault/scripts/frontmatter_fix.ps1`:
    block (existing content preserved byte-for-byte). UTF-8 without BOM.
 
 ```powershell
-pwsh -NoProfile -File .gald3r_sys/skills/g-skl-vault/scripts/frontmatter_fix.ps1            # dry-run
-pwsh -NoProfile -File .gald3r_sys/skills/g-skl-vault/scripts/frontmatter_fix.ps1 -Apply
-pwsh -NoProfile -File .gald3r_sys/skills/g-skl-vault/scripts/frontmatter_fix.ps1 -File "<path>" -Apply
+pwsh -NoProfile -File .claude/skills/g-skl-vault/scripts/frontmatter_fix.ps1            # dry-run
+pwsh -NoProfile -File .claude/skills/g-skl-vault/scripts/frontmatter_fix.ps1 -Apply
+pwsh -NoProfile -File .claude/skills/g-skl-vault/scripts/frontmatter_fix.ps1 -File "<path>" -Apply
 ```
 
 ## Flags

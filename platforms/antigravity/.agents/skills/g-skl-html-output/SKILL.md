@@ -51,10 +51,10 @@ Compose `html-base.html` with a topic body fragment and write the result.
    expanded once per data row, then the literal template block is removed.
 6. Call VALIDATE; then EXPORT.
 
-Helper: `.gald3r_sys/skills/g-skl-html-output/scripts/render.ps1`
+Helper: `.claude/skills/g-skl-html-output/scripts/render.ps1`
 ```powershell
-pwsh -File .gald3r_sys/skills/g-skl-html-output/scripts/render.ps1 `
-  -Template report -Title "Project Status" -SessionLabel "g-status • gald3r_dev" `
+pwsh -File .claude/skills/g-skl-html-output/scripts/render.ps1 `
+  -Template report -Title "Project Status" -SessionLabel "g-status • <gald3r_source>" `
   -BodyHtml $bodyFragmentHtml -OutDir docs
 ```
 

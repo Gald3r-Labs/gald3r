@@ -99,7 +99,7 @@ source: seedance
 model: seedance-2.0
 ingestion_type: ai-generated
 title: "Prompt: {prompt[:60]}"
-topics: [ai-video, seedance, generated]
+tags: [ai-video, seedance, generated]
 tags: [video, seedance, generated, ai-video]
 analysis_depth: generation_only
 prompt: "{full prompt}"

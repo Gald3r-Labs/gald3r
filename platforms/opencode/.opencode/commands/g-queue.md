@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [TASK_MANAGEMENT]
 ---
 Queue follow-up work into a running g-go-code worktree session, to run after the main goal completes: $ARGUMENTS
@@ -60,7 +60,7 @@ Draining never blocks the `[🔍]` of the main task.
 
 - Command: `g-steer` — one-shot mid-flight steering (interrupts the current trajectory)
 - Command: `g-go-code` — the session that drains `queue.md` (see step 7d + "Mid-Flight Course Correction")
-- Helper: `.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_worktree.ps1` (`-Action Queue`)
+- Helper: `.claude/skills/g-skl-git-commit/scripts/gald3r_worktree.ps1` (`-Action Queue`)
 - Spec: T969 — Worktree /steer + /queue
 - File: `<worktree>/queue.md` (append-only checklist)
 

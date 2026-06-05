@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
 # PowerShell on Windows 10/11

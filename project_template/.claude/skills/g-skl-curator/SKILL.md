@@ -7,7 +7,7 @@ description: >
   writes a structured audit log. Never deletes — only proposes. Safe for unattended
   scheduled runs.
 type: skill
-topics: [skill-management, audit, rubric, consolidation, scheduling]
+tags: [skill-management, audit, rubric, consolidation, scheduling]
 safety: file-read + file-write only; no Shell, no web fetch, no destructive ops
 triggers:
   - "@g-curator"
@@ -150,7 +150,7 @@ The Curator never performs the merge. It only records the proposal.
 
 The Curator reads `.gald3r/config/CURATOR_PROTECTED_SKILLS.md` at the start of every
 run. Each `-` bullet under `## Protected (do not modify or merge)` is a protected
-skill name. Pattern entries (e.g. `g-skl-pcac-*`) match all matching skill names.
+skill name. Pattern entries (e.g. `g-skl-wpac-*`) match all matching skill names.
 
 Protected skills:
 

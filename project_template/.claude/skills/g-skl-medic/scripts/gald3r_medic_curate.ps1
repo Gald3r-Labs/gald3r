@@ -91,7 +91,7 @@ function Get-FeatureArea([string]$fileName) {
     if ($n -match 'agent|gateway|trace|eval|inference|loop|sdk') { return 'gald3r-agent' }
     if ($n -match 'backend|api|mcp|oracle|docker|server|websocket|auth') { return 'gald3r-backend' }
     if ($n -match 'vault|knowledge|recon|harvest|ingest|crawl|memory') { return 'knowledge-vault' }
-    if ($n -match 'workspace|pcac|link|member|template|parity') { return 'workspace-control' }
+    if ($n -match 'workspace|wpac|link|member|template|parity') { return 'workspace-control' }
     if ($n -match 'skill|command|platform|cursor|claude|codex|opencode|gemini|copilot') { return 'platform-surfaces' }
     if ($n -match 'medic|health|status|task|bug|feature|prd|release|plan|constraint|subsystem') { return 'gald3r-control-plane' }
     if ($n -match 'desktop|tauri|electron|frontend|react|web|ui|theme|voice|3d|level') { return 'app-surfaces' }
@@ -101,7 +101,7 @@ function Get-FeatureArea([string]$fileName) {
 
 function Get-SubsystemDomain([string]$fileName) {
     $n = $fileName.ToLowerInvariant()
-    if ($n -match '^adopted_gald3r_web_') { return 'adopted/gald3r_web' }
+    if ($n -match '^adopted_example_web_') { return 'adopted/example_web' }
     if ($n -match '^adopted_gald3r_discord_') { return 'adopted/gald3r_discord' }
     if ($n -match '^gald3r-agent-') { return 'gald3r-agent' }
     if ($n -match 'vault|knowledge|recon|harvest|ingest|crawl|memory') { return 'knowledge-vault' }
@@ -109,7 +109,7 @@ function Get-SubsystemDomain([string]$fileName) {
     if ($n -match 'frontend|web-ui|tauri|electron|theme|voice|3d|level|communications') { return 'apps' }
     if ($n -match 'ai-agent|ai-skill|command|behavioral|platform|parity|skill') { return 'platform-surfaces' }
     if ($n -match 'task|bug|feature|project|idea|release|planning|constraint|medic|health|subsystem') { return 'gald3r-control-plane' }
-    if ($n -match 'workspace|pcac|link|member') { return 'workspace-control' }
+    if ($n -match 'workspace|wpac|link|member') { return 'workspace-control' }
     return 'core'
 }
 

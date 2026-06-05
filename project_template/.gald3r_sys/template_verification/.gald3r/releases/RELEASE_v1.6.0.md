@@ -43,7 +43,7 @@
 - **BUG-107** (partial mitigation): `g-go-go` spec hardened — relabeling a context-pressure halt as a "session checkpoint" / "handing off cleanly" now explicitly named as the forbidden CONTEXT WINDOW PANIC violation.
 - **T1437**: `@g-update --apply` gains version-reconciliation step for `gald3r_version` in consumer `.identity`.
 - `.gitignore`: `/.gald3r_sys` root-anchored entry added (root is a junction; canonical tracked under `project_template/.gald3r_sys`).
-- PCAC → WPAC rename propagated across g-go* command suite (`.claude/commands/`, `.cursor/commands/`, canonical `project_template/.gald3r_sys/`).
+- WPAC → WPAC rename propagated across g-go* command suite (`.claude/commands/`, `.cursor/commands/`, canonical `project_template/.gald3r_sys/`).
 
 ### Fixed
 

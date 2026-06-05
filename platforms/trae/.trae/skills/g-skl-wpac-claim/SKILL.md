@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-wpac-claim
 description: Register another project as the parent of the current project. Creates or updates workspace/topology.md on both sides when the parent is locally accessible.
 token_budget: low
@@ -16,7 +16,7 @@ this project up to another. Run from the **child** project. Mirror of `g-skl-wpa
 ```
 @g-wpac-claim <parent_project_path> [--one-way]
 ```
-- `parent_project_path` — absolute path to the parent project (e.g. `G:\gald3r_ecosystem\gald3r_master_control`)
+- `parent_project_path` — absolute path to the parent project (e.g. `<workspace>\<master_control>`)
 - `--one-way` — update only THIS project's topology; skip writing to the parent (use when parent is remote or read-only)
 
 ## Steps
@@ -170,11 +170,11 @@ last_updated: "<YYYY-MM-DD>"
 ## Typical Usage Pattern
 
 ```
-# In gald3r_dev (child project):
-@g-wpac-claim G:\gald3r_ecosystem\gald3r_master_control
+# In <gald3r_source> (child project):
+@g-wpac-claim <workspace>\<master_control>
 
 # This will:
-#  1. Set gald3r_master_control as parent in gald3r_dev's topology ✓
-#  2. Add gald3r_dev to gald3r_master_control's children[] ✓
+#  1. Set <master_control> as parent in <gald3r_source>'s topology ✓
+#  2. Add <gald3r_source> to <master_control>'s children[] ✓
 #  3. Write peer copies in both projects ✓
 ```

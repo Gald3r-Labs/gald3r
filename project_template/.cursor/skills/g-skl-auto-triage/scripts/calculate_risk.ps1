@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Auto-Triage L0 risk calculator for gald3r spec/policy defects.
     Returns a numeric risk score and eligibility verdict.
@@ -49,7 +49,7 @@ $baseScores = @{
 # --- Hard-block path patterns (infinity-class) ---
 # Any file matching these patterns is an absolute block regardless of score.
 # NOTE: linking/workspace_manifest.yaml is intentionally NOT blocked (it is schema/config,
-# not PCAC coordination state). Only PCAC-specific linking files are blocked.
+# not WPAC coordination state). Only WPAC-specific linking files are blocked.
 $blockPatterns = @(
     [regex]"\\TASKS\.md$",
     [regex]"[\\/]tasks[\\/]",
@@ -60,7 +60,7 @@ $blockPatterns = @(
     [regex]"[\\/]releases[\\/]",
     [regex]"[\\/]prds[\\/]",
     [regex]"[\\/]experiments[\\/]",
-    # PCAC coordination state (not the manifest schema itself)
+    # WPAC coordination state (not the manifest schema itself)
     [regex]"[\\/]linking[\\/]INBOX\.md$",
     [regex]"[\\/]linking[\\/]link_topology\.md$",
     [regex]"[\\/]linking[\\/]sent_orders[\\/]",
