@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Analyze (and optionally apply) compression of the NON-gald3r sections of memory files
   (AGENTS.md / CLAUDE.md / *memory*.md) while strictly preserving gald3r-managed ranges. (T1053)

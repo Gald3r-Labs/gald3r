@@ -13,7 +13,7 @@ First-time gald3r installation in a project. Creates the `.gald3r/` folder struc
 Two layouts:
 
 - **Slim** — what `g-skl-setup` creates by default. Just the seven canonical files plus `tasks/`, `bugs/`, `features/`, `subsystems/`, `reports/`, `logs/`, `specifications_collection/`.
-- **Full** — gald3r_dev only. Adds `config/`, `experiments/`, `linking/`, `vault/`, `phases/`. Do not create these in slim installs.
+- **Full** — <gald3r_source> only. Adds `config/`, `experiments/`, `linking/`, `vault/`, `phases/`. Do not create these in slim installs.
 
 ## When to use
 
@@ -61,18 +61,18 @@ Recomputes SKILL.md hashes against `gald3r-skills-lock.json`. Exits non-zero if 
 
 ```powershell
 .\scripts\gald3r_skills_lock.ps1 -Action UPGRADE -ProjectPath . `
-    -SourceRoot <workspace>\gald3r_dev
+    -SourceRoot <workspace>\<gald3r_source>
 ```
 
 Classifies each skill as `unchanged`, `local-modified`, `upstream-changed`, `both-changed`, `new`, or `removed`.
 
 ## Member-repo gotcha
 
-Workspace-Control member repositories get a **marker-only** `.gald3r/` (only `.identity` + `PROJECT.md`). `g-skl-setup` deliberately refuses to install into members — use `g-skl-pcac-spawn` or `g-wrkspc-adopt` instead. See `g-rl-36`.
+Workspace-Control member repositories get a **marker-only** `.gald3r/` (only `.identity` + `PROJECT.md`). `g-skl-setup` deliberately refuses to install into members — use `g-skl-wpac-spawn` or `g-wrkspc-adopt` instead. See `g-rl-36`.
 
 ## See also
 
 - `gald3r_install` (MCP tool) — the backend this skill prefers when available
 - `g-rl-36` — member-repo marker-only invariant
-- `g-skl-pcac-spawn`, `g-wrkspc-adopt` — the sanctioned install paths for member repos
+- `g-skl-wpac-spawn`, `g-wrkspc-adopt` — the sanctioned install paths for member repos
 - `docs/SKILLS_LOCK_FORMAT.md` — lock file format reference

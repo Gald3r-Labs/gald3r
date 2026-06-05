@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [MEMORY_AND_KNOWLEDGE, VAULT_AND_RESEARCH]
+---
 # Vault Enums & Reference Tables
 
 Canonical reference for vault metadata values. Used by `g-skl-vault` and `g-skl-knowledge-refresh`.

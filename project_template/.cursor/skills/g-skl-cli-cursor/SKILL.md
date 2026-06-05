@@ -65,7 +65,7 @@ Session IDs are shown at session start. Sessions have a TTL (default 24h).
 Cursor agents can spawn sub-agents via task files:
 - Create task files in `.gald3r/tasks/` with `ai_safe: true`
 - Each sub-agent picks up a task independently
-- Coordinate via `.gald3r/linking/INBOX.md` for PCAC messaging
+- Coordinate via `.gald3r/linking/INBOX.md` for WPAC messaging
 
 ## Limitations vs GUI
 

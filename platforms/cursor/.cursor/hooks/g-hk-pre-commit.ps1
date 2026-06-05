@@ -55,7 +55,7 @@ $repoRoot = git rev-parse --show-toplevel 2>$null
 if (-not $repoRoot) {
     $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "../../")).Path
 }
-$commonPath = Join-Path $repoRoot ".gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_git_sanity_common.ps1"
+$commonPath = Join-Path $repoRoot ".cursor/skills/g-skl-git-commit/scripts/gald3r_git_sanity_common.ps1"
 if (Test-Path $commonPath) {
     . $commonPath
 }
@@ -186,7 +186,7 @@ $protectedPatterns = @(
     '^\.opencode/'
     '^\.copilot/'
     '^\.gald3r/'
-    '^\.gald3r_template/'
+    '^\.project_template/'
     '^temp_docs/'
     '^temp_scripts/'
     '^AGENTS\.md$'

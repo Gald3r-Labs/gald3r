@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-res-apply
 version: 1.4
 description: >
@@ -563,8 +563,8 @@ When `g-skl-res-review` has assigned routing suggestions, `g-skl-res-apply` can 
 ### `--target {project-slug}` Flag
 
 ```
-g-res-apply APPLY {slug} --target gald3r_valhalla
-g-res-apply APPLY {slug} --target gald3r_valhalla --mode=approved
+g-res-apply APPLY {slug} --target example_app
+g-res-apply APPLY {slug} --target example_app --mode=approved
 ```
 
 **Behavior when `--target` is set:**
@@ -589,7 +589,7 @@ g-res-apply APPLY {slug} --target gald3r_valhalla --mode=approved
 
 4. **Send PCAC INFO notification** to target project INBOX (`{target_path}/.gald3r/linking/INBOX.md`):
    ```
-   [INFO] g-res-apply APPLY from gald3r_dev: {N} features applied from {slug} harvest.
+   [INFO] g-res-apply APPLY from <gald3r_source>: {N} features applied from {slug} harvest.
    Review: {target_path}/.gald3r/tasks/ for new task files.
    Routing: features in [{domain_tags}] tagged for this project.
    ```
@@ -617,8 +617,8 @@ Interactive routing mode. For each feature group from the harvest:
    ```
    SPLIT APPLY complete:
    → this-project: 5 features (feat-090, feat-091, ...)
-   → gald3r_valhalla: 3 features (feat-040, feat-085, ...)
-   → gald3r_agent: 2 features (feat-029, ...)
+   → example_app: 3 features (feat-040, feat-085, ...)
+   → example_agent: 2 features (feat-029, ...)
    ⚡ new-project suggested: 1 feature (needs real-time-transport capability)
    ```
 
@@ -633,8 +633,8 @@ If the target project path doesn't exist on disk:
 ### Examples
 
 ```bash
-# Apply all approved features to gald3r_valhalla (backend project)
-g-res-apply APPLY external_agent_recon --target gald3r_valhalla --mode=approved
+# Apply all approved features to example_app (backend project)
+g-res-apply APPLY external_agent_recon --target example_app --mode=approved
 
 # Interactive split across multiple projects
 g-res-apply APPLY external_agent_recon --split
@@ -643,5 +643,5 @@ g-res-apply APPLY external_agent_recon --split
 g-res-apply DRY-RUN external_agent_recon --split
 
 # Apply to target with constraint check bypass
-g-res-apply APPLY external_agent_recon --target gald3r_valhalla --force
+g-res-apply APPLY external_agent_recon --target example_app --force
 ```

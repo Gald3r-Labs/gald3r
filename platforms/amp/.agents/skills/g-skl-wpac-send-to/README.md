@@ -1,4 +1,7 @@
-﻿# g-skl-wpac-send-to
+﻿---
+subsystem_memberships: [WORKSPACE_COORDINATION]
+---
+# g-skl-wpac-send-to
 **Skill file**: `SKILL.md`
 
 > Human-facing companion to `SKILL.md`. The LLM agent reads `SKILL.md`; this page is for developers browsing the skill library.

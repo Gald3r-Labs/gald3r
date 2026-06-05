@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [AGENT_ORCHESTRATION]
+---
 # g-skl-keep-it-simple — Terse Mode
 
 A user-invoked toggle that silences gald3r's response ceremony for a
@@ -82,6 +85,6 @@ whole point — explicit user override, scoped to one session.
 
 ## See also
 
-- Skill: `.gald3r_sys/skills/g-skl-keep-it-simple/SKILL.md`
-- Command: `.gald3r_sys/commands/g-keep-it-simple.md`
+- Skill: `.claude/skills/g-skl-keep-it-simple/SKILL.md`
+- Command: `.claude/commands/g-keep-it-simple.md`
 - Related: `@g-pers-pick`, `@g-pers-list`

@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 ---
 Activate `g-skl-subsystem-graph` to generate or refresh `.gald3r/SUBSYSTEM_GRAPH.md`.

@@ -10,7 +10,7 @@ Research content (research/**) additionally: refresh_policy, source_volatility
 knowledge/** notes also get refresh_policy/source_volatility (long-lived reference).
 
 Usage:
-  python vault_frontmatter_retrofit.py --vault G:/gald3r_ecosystem/gald3r_vault
+  python vault_frontmatter_retrofit.py --vault <ECOSYSTEM_ROOT>/example_vault
   python vault_frontmatter_retrofit.py --vault <path> --apply
 """
 from __future__ import annotations

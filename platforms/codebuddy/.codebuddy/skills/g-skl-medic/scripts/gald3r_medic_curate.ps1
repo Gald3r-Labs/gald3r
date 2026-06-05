@@ -101,7 +101,7 @@ function Get-FeatureArea([string]$fileName) {
 
 function Get-SubsystemDomain([string]$fileName) {
     $n = $fileName.ToLowerInvariant()
-    if ($n -match '^adopted_gald3r_web_') { return 'adopted/gald3r_web' }
+    if ($n -match '^adopted_example_web_') { return 'adopted/example_web' }
     if ($n -match '^adopted_gald3r_discord_') { return 'adopted/gald3r_discord' }
     if ($n -match '^gald3r-agent-') { return 'gald3r-agent' }
     if ($n -match 'vault|knowledge|recon|harvest|ingest|crawl|memory') { return 'knowledge-vault' }

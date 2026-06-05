@@ -5,13 +5,14 @@
 <h1 align="center">gald3r — AI Agent Framework for Your Project</h1>
 
 <p align="center">
-  File-based memory, task management, and agent orchestration that installs in minutes.
-  Works in <strong>Cursor</strong> and <strong>Claude Code</strong> (Tier 1), plus
+  File-based memory, task management, and agent orchestration that installs in minutes —
+  now backed by a bundled <strong>file-first engine</strong> (a <code>gald3r</code> CLI + MCP server,
+  zero LLM calls). Works in <strong>Cursor</strong> and <strong>Claude Code</strong> (Tier 1), plus
   <strong>34 AI coding platforms</strong> — no server, no database, no Docker.
 </p>
 
 <p align="center">
-  <a href="https://github.com/wrm3/gald3r/releases/tag/v1.11.0"><img src="https://img.shields.io/badge/version-1.11.0-blue" alt="version 1.11.0" /></a>
+  <a href="https://github.com/wrm3/gald3r/releases/tag/v2.0.0"><img src="https://img.shields.io/badge/version-2.0.0-blue" alt="version 2.0.0" /></a>
   <a href="CHANGELOG.md">Changelog</a> |
   <a href="CONTRIBUTING.md">Contributing</a> |
   <a href="gald3r_supported_platforms.html">All 34 platforms</a>
@@ -31,6 +32,7 @@ Once installed, your AI gains:
 - **37 hooks** that fire on IDE events (session start, file save, commit)
 - **12 rules** that keep the agent disciplined every session
 - **Works in both Cursor and Claude Code** over one shared `.gald3r/` brain — plan in one, code in the other
+- **A bundled file-first engine** (Mode-A, new in 2.0) — every system (tasks, bugs, vault, releases, …) is driven by a deterministic Python core via the `gald3r` CLI or an MCP server, with zero LLM calls. `gald3r doctor` keeps the install healthy. One prerequisite: [`uv`](https://docs.astral.sh/uv/).
 
 Everything is plain markdown files in your repo. No accounts, no API keys beyond what you already have.
 
@@ -79,6 +81,57 @@ your-project/
 ```
 
 **Platform-specific install** (e.g. `-Platform windsurf`): same shared brain, plus the platform's config folder (`.windsurf/rules/` etc.). Cursor and Claude config are skipped.
+
+---
+
+## The engine (CLI + MCP)
+
+New in 2.0: a bundled, file-first Python engine drives every system deterministically — **no LLM,
+no network, no Docker**. It lives in `.gald3r_sys/engine/`. The only prerequisite is
+[`uv`](https://docs.astral.sh/uv/); the first run provisions it automatically.
+
+### Command line
+
+```bash
+# from your project root — the first run builds the engine (a few seconds), then it's instant
+uv run --project .gald3r_sys/engine gald3r doctor          # health check  (add --fail-below 80 for CI)
+```
+
+For brevity, alias the prefix — `alias gald3r='uv run --project .gald3r_sys/engine gald3r'` — then:
+
+```bash
+gald3r task new   --title "Wire up auth" --priority high
+gald3r bug new    --title "Login 500 on empty cart" --severity high
+gald3r goal add   --text "Ship the MVP by Friday"
+gald3r vault ingest --title "JWT notes" --type article --source https://example.com/jwt
+gald3r inbox                                               # absorb staged task/bug drafts into live state
+gald3r prompt get role.code_reviewer                       # load a reasoning brief
+gald3r --json task list                                    # machine-readable output
+```
+
+(`python -m gald3r …` works too, if you'd rather not alias.)
+
+### As an MCP server
+
+Expose the same operations as ~20 MCP tools to any MCP-capable agent. Add to your client's MCP config:
+
+```json
+{
+  "mcpServers": {
+    "gald3r": {
+      "command": "uv",
+      "args": ["run", "--project", ".gald3r_sys/engine", "gald3r", "mcp"]
+    }
+  }
+}
+```
+
+Your agent then calls `gald3r_task_new`, `gald3r_bug_list`, `gald3r_prompt_get`, … directly.
+
+### No engine? Still works.
+
+The engine is **additive**. The `.gald3r/` state is plain markdown, and every slimmed skill keeps a
+`SKILL.full.md` fallback — so a files-only install (no `uv` / Python) runs unchanged.
 
 ---
 

@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [UI_AND_OUTPUT]
 ---
 Open the gald3r theme editor: $ARGUMENTS
@@ -16,6 +16,6 @@ Activates **g-skl-theme-editor**. Edit gald3r HTML themes against
 @g-theme-edit activate <name>      # set html_theme + rewrite _active.css
 ```
 
-Inside gald3r_throne the visual editor opens (live preview, color pickers,
+Inside example_desktop the visual editor opens (live preview, color pickers,
 import/export). Elsewhere the skill uses the file-first fallback. A theme is a
 `:root` token override on `gald3r-dark.css`; never edit structural CSS to restyle.

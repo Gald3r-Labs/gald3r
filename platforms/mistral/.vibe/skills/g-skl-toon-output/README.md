@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [UI_AND_OUTPUT]
+---
 # g-skl-toon-output
 **Skill file**: `SKILL.md`
 

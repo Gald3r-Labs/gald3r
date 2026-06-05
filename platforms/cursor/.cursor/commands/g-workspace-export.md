@@ -36,7 +36,7 @@ Dry-run only: no files are written. Member repository writes remain disabled unt
 
 ## Task 184 Bootstrap Export Helper
 
-`custom_scripts/workspace_template_export.ps1` reads the canonical manifest, plans and applies exports to external workspace member repos `G:/gald3r_ecosystem/gald3r_template_slim`, `G:/gald3r_ecosystem/gald3r_template_full`, and `G:/gald3r_ecosystem/gald3r_template_adv`, and reports:
+`custom_scripts/workspace_template_export.ps1` reads the canonical manifest, plans and applies exports to external workspace member repos `<ECOSYSTEM_ROOT>/<template_slim>`, `<ECOSYSTEM_ROOT>/<template_full>`, and `<ECOSYSTEM_ROOT>/<template_adv>`, and reports:
 
 - source folders and destination member repo paths with independent git roots
 - planned creates, updates, unchanged files, skipped files, and provenance output

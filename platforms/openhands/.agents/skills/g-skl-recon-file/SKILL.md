@@ -54,7 +54,7 @@ This capture skill may store source material in the vault for research, provenan
    ingestion_type: manual
    source: file://{original_path}
    file_format: pdf / docx / xlsx / etc
-   topics: [inferred or user-provided]
+   tags: [inferred or user-provided]
    tags: [file, {format}]
    ---
    ```

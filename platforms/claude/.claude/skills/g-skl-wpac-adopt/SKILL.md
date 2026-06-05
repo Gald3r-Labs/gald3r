@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-wpac-adopt
 description: Register another project as a child of the current project. Creates or updates workspace/topology.md on both sides when the target is locally accessible.
 token_budget: low
@@ -16,7 +16,7 @@ this project and another. Run from the **parent** project. Mirror of `g-skl-wpac
 ```
 @g-wpac-adopt <target_project_path> [--one-way]
 ```
-- `target_project_path` — absolute path to the child project (e.g. `G:\gald3r_ecosystem\child_project`)
+- `target_project_path` — absolute path to the child project (e.g. `<workspace>\child_project`)
 - `--one-way` — update only THIS project's topology; skip writing to the target (use when target is remote or read-only)
 
 ## Steps
@@ -42,7 +42,7 @@ If target `.identity` not found:
 Run the guard helper against the target path **before** any write into the target's `.gald3r/`. Use `-DotGald3rPath linking/` to evaluate the specific path PCAC adopt would write:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath "<target_project_path>" -DotGald3rPath "linking/"
+powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath "<target_project_path>" -DotGald3rPath "linking/"
 ```
 
 - exit `0` — target is not a member (or is the control project / outside workspace / template); bidirectional adoption proceeds normally.
@@ -128,10 +128,10 @@ on the target path:
 
 ```powershell
 # $targetPath = <target_project_path>
-& "<gald3r_template_adv_root>\setup_gald3r_project.ps1" -TargetPath $targetPath -Platforms cursor,claude
+& "<<template_adv>_root>\setup_gald3r_project.ps1" -TargetPath $targetPath -Platforms cursor,claude
 ```
 
-- `setup_gald3r_project.ps1` lives at the root of any `gald3r_template_adv` install
+- `setup_gald3r_project.ps1` lives at the root of any `<template_adv>` install
   (`<template_adv_root>\setup_gald3r_project.ps1`); if this project was installed from an adv
   template the same script is already present at this project's root -- reuse it.
 - Match the platforms the parent project uses (read from the parent's installed IDE dirs).

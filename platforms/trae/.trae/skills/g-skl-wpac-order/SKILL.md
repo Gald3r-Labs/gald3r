@@ -121,7 +121,7 @@ When direct-writing a task, generate a UUIDv4 for the `uuid:` frontmatter field.
    ---
    order_id: "ord-{uuid-short}"            # 8-char uuid suffix is fine
    sent_to: "{child_project_id}"
-   sent_to_path: "G:/path/to/child"
+   sent_to_path: "<path>/to/child"
    sent_at: "YYYY-MM-DD"
    local_depends: [task_id, ...]            # which LOCAL tasks/features gate on this
    remote_task_title: "[broadcast title]"

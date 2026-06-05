@@ -30,6 +30,6 @@ Plans or applies a registry-only member addition in `.gald3r/linking/workspace_m
 ## Usage Examples
 
 ```
-@g-wrkspc-member-add G:/gald3r_ecosystem/gald3r_template_full --id gald3r_template_full --role controlled_member --dry-run
-@g-wrkspc-member-add G:/gald3r_ecosystem/gald3r_template_full --id gald3r_template_full --role controlled_member --apply
+@g-wrkspc-member-add <ECOSYSTEM_ROOT>/<template_full> --id <template_full> --role controlled_member --dry-run
+@g-wrkspc-member-add <ECOSYSTEM_ROOT>/<template_full> --id <template_full> --role controlled_member --apply
 ```

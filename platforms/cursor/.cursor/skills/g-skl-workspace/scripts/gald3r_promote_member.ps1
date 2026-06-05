@@ -1,4 +1,4 @@
-﻿# .gald3r_sys/skills/g-skl-workspace/scripts/gald3r_promote_member.ps1
+# .claude/skills/g-skl-workspace/scripts/gald3r_promote_member.ps1
 #
 # Promote a Workspace-Control `controlled_member` repository to a fully
 # self-managed `autonomous_child` (BUG-097 / T1435 / g-rl-36).

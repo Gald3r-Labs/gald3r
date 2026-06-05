@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [TASK_MANAGEMENT]
 ---
 Steer a running g-go-code worktree session mid-flight without restarting it: $ARGUMENTS
@@ -56,7 +56,7 @@ If no gald3r-owned worktree exists for `T{id}` / role / owner, the helper errors
 
 - Command: `g-queue` — append follow-up work processed after the main goal completes
 - Command: `g-go-code` — the session that polls for `steer.md` (see "Mid-Flight Course Correction")
-- Helper: `.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_worktree.ps1` (`-Action Steer`)
+- Helper: `.claude/skills/g-skl-git-commit/scripts/gald3r_worktree.ps1` (`-Action Steer`)
 - Spec: T969 — Worktree /steer + /queue
 - File: `<worktree>/steer.md` (one-shot, deleted after injection)
 

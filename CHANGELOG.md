@@ -6,11 +6,64 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [2.0.0] - 2026-06-04
+
+The **gald3r engine** release. gald3r gains a bundled, file-first Python core that backs every
+system deterministically — while staying 100% markdown-on-disk. Existing installs keep working;
+the engine is additive, and every slimmed component ships a no-engine fallback.
+
+### Added
+- **Bundled gald3r engine** (`.gald3r_sys/engine/`) — a pure, file-first state backend for every
+  system: tasks, bugs, features, goals, prds, ideas, vocab, constraints, subsystems, vault,
+  release, workspace, and inbox. **Mode-A**: deterministic, no LLM, no network, no Docker. One
+  prerequisite — [`uv`](https://docs.astral.sh/uv/).
+- **`gald3r` CLI** (and `python -m gald3r`) — drive every system from the shell: `gald3r task new`,
+  `gald3r bug new`, `gald3r goal add`, `gald3r vault ingest`, `gald3r release new`,
+  `gald3r workspace …`, `gald3r prompt get …`.
+- **MCP server** (`gald3r mcp`) — ~20 Model Context Protocol tools exposing the same operations to
+  any MCP-capable agent.
+- **`gald3r doctor`** — read-only health check (structure, per-system index integrity, skill
+  frontmatter, `.ps1` encoding) with an overall functionality score and a `--fail-below` CI gate.
+- **Engine-absorbed operations** — five maintenance scripts reimplemented as pure engine verbs,
+  each keeping its original `.ps1` as a no-engine (L0) fallback: `gald3r inbox` · `gald3r doctor` ·
+  `gald3r platform status` · `gald3r tier show|set` · `gald3r sync --check|--apply` (alias
+  `gald3r parity`).
+- **Judgment / prompt layer** — 15 reasoning assets (Norse persona, role briefs, review rubrics,
+  marketing voice) served by the engine (`gald3r prompt get role.code_reviewer`), so a brief is
+  authored once and shared across platforms.
+
+### Changed
+- **Thinned component shims** — judgment skills and agents are slimmed to load their brief from the
+  engine's prompt assets. Skills keep a full `SKILL.full.md` fallback; agents reference the shipped
+  asset directly (no `.full.md` sidecar — it would register as a duplicate component).
+- **Task status vocabulary** — `task_file.v1.schema.yaml` realigned to mirror the engine's enforced
+  vocabulary (`pending → in-progress → awaiting-verification → completed …`). The YAML previously
+  listed a never-implemented pipeline as "current" and the real vocabulary as "legacy."
+
+### Fixed
+- **Windows PowerShell 5.1 parse crash** — 1,055 shipped `.ps1` files were UTF-8 without a BOM, so
+  `powershell.exe` mis-read multi-byte characters and failed to parse (including the installer
+  itself). All BOM-protected (installer ASCII-cleaned); the build generators now emit safe `.ps1`
+  and `gald3r doctor` flags any regression.
+- **Duplicate component names** — removed the per-agent `*.full.md` sidecars and the deprecated
+  `g-skl-medkit` (named `g-skl-medic`, colliding with the real skill). 106 skills + 13 agents now
+  audit clean (no duplicate `name:`, no dangling shim references).
+- **`doctor` / `bug sync` index mis-parse** — the id-scan matched the `## Next Bug ID:` counter line
+  (and any title mentioning it), producing false phantom/orphan rows and a non-converging
+  `bug sync`. Anchored to the counter heading.
+- **Malformed component frontmatter** — added missing `name`/`description` to 5 skills and agents.
+
+### Engineering
+- 97 engine unit tests (pytest). The engine is the new source of truth; `.gald3r_sys/schemas/`
+  mirrors it.
+
+---
+
 ## [1.11.0] - 2026-06-04
 
 ### Added
 - **`platforms/` folder**: all 34 platform thin adapters now live directly in `gald3r`.
-  No need to clone `gald3r_template_adv` for Windsurf, Cline, Copilot, etc.
+  No need to clone `<template_adv>` for Windsurf, Cline, Copilot, etc.
 - **`-Platform <name>` installer arg**: `setup_gald3r_project.ps1` now accepts any of 34
   platforms. Default (no arg) = Cursor + Claude Code (unchanged). `-Platform windsurf` etc.
   copies the shared brain (without .cursor/.claude) + the platform's thin config overlay.
@@ -26,7 +79,7 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 ### Architecture
 - **Realignment with gald3r ADV**: both repos now share the same `project_template/`
   structure and `platforms/` thin-adapter model. `gald3r` is the primary install for all
-  34 platforms. `gald3r_template_adv` is the reference archive for the explicit
+  34 platforms. `<template_adv>` is the reference archive for the explicit
   shared-base + platform-overlay pattern (useful for tooling and multi-platform automation).
 
 ## [1.11.0] - 2026-06-03
@@ -289,4 +342,4 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
-*gald3r is built with gald3r. The development history of this framework lives in the gald3r_dev source repository.*
+*gald3r is built with gald3r. The development history of this framework lives in the <gald3r_source> source repository.*

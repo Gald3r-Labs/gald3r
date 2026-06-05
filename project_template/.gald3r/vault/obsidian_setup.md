@@ -12,7 +12,7 @@ This vault is designed to work as an Obsidian vault out of the box. No plugins r
 
 1. Open Obsidian
 2. Click **Open folder as vault**
-3. Select your `vault_location` folder (e.g. `<workspace>\gald3r_vault`)
+3. Select your `vault_location` folder (e.g. `<workspace>\example_vault`)
 4. Done — all notes are immediately browsable
 
 ---

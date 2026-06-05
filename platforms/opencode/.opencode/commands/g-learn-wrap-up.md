@@ -10,7 +10,7 @@ Manually flush session learning artifacts before ending a conversation — or an
 1. **Chat log** — runs `g-hk-cursor-chat-logger.py` against the current session transcript
 2. **Learned facts extraction** — runs `gald3r_nightly_learn.ps1` (force mode, bypasses the 5-stop counter)
 3. **Vocab checkpoint** — confirms `.gald3r/vocab.md` is up to date
-4. **Memory capture** — offers `memory_capture_session` summary via gald3r_valhalla MCP (optional, requires Docker)
+4. **Memory capture** — offers `memory_capture_session` summary via example_app MCP (optional, requires Docker)
 
 ## Usage
 

@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-toon-output
 description: Emit gald3r output as TOON (Token-Oriented Object Notation) — a compact, lossless, LLM-friendly format that states record keys once (tabular arrays) to cut tokens vs markdown/JSON. Operations ENCODE, DECODE, VALIDATE, EXPORT. Invoked by --toon flag commands (T1382). Coordination state files stay markdown.
 token_budget: low
@@ -86,7 +86,7 @@ Edge-case coverage beyond the inline VALIDATE smoke-test lives in
 single-element / scalar arrays, null & empty-string tabular cells, pipe-escaped cells,
 numeric/bool-looking strings (preserved as strings), and safe special characters:
 ```powershell
-pwsh -File .gald3r_sys/skills/g-skl-toon-output/scripts/toon_test.ps1   # exit 0 = all pass
+pwsh -File .claude/skills/g-skl-toon-output/scripts/toon_test.ps1   # exit 0 = all pass
 ```
 
 ### EXPORT
@@ -94,9 +94,9 @@ Save under `html_output_dir` (default `docs/`) per `g-rl-01` with a `.toon` exte
 `YYYYMMDD_HHMMSS_<IDE>_<TOPIC>.toon`. `.toon` files are vault-ingestable via
 `g-skl-vault` / `g-skl-recon-file`.
 
-Helper: `.gald3r_sys/skills/g-skl-toon-output/scripts/toon_output.ps1`
+Helper: `.claude/skills/g-skl-toon-output/scripts/toon_output.ps1`
 ```powershell
-pwsh -File .gald3r_sys/skills/g-skl-toon-output/scripts/toon_output.ps1 `
+pwsh -File .claude/skills/g-skl-toon-output/scripts/toon_output.ps1 `
   -Command g-status -Schema status -DataJson $jsonString -OutDir docs -Topic STATUS
 # add -Compare to print markdown-vs-TOON token estimate; -Stdout to skip the file write
 ```

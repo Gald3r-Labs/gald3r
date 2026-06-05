@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [PROJECT_IDENTITY_SETUP, AGENT_ORCHESTRATION]
+---
 # g-skl-medic
 **Skill file**: `SKILL.md`
 

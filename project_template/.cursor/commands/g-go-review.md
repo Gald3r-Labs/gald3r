@@ -68,7 +68,7 @@ Re-run the helper in `-Mode post-write -Apply` immediately after coordinator-own
 
 After the WPAC gate is skipped or passes:
 
-1. At the **orchestration git root** (the repo from which you run this command — normally the Workspace-Control owner, e.g. `gald3r_dev`): run `git status --short`. If anything is listed **outside** this run's explicit coordinator staging allowlist for the active task and bug IDs, **STOP** here. Do not claim tasks or bugs, create or reuse T170 worktrees, partition swarms, or write coordinator-owned updates to `.gald3r/TASKS.md`, `.gald3r/BUGS.md`, other shared `.gald3r` coordination files, `CHANGELOG.md`, generated Copilot prompts, or parity output until unrelated changes are committed, stashed, or moved to a prior focused commit. Preserve any bucket handoff artifacts already produced and list the paths that blocked progress.
+1. At the **orchestration git root** (the repo from which you run this command — normally the Workspace-Control owner, e.g. `<gald3r_source>`): run `git status --short`. If anything is listed **outside** this run's explicit coordinator staging allowlist for the active task and bug IDs, **STOP** here. Do not claim tasks or bugs, create or reuse T170 worktrees, partition swarms, or write coordinator-owned updates to `.gald3r/TASKS.md`, `.gald3r/BUGS.md`, other shared `.gald3r` coordination files, `CHANGELOG.md`, generated Copilot prompts, or parity output until unrelated changes are committed, stashed, or moved to a prior focused commit. Preserve any bucket handoff artifacts already produced and list the paths that blocked progress.
 
 2. **`gald3r_worktree.ps1 -AllowDirty`**: do not use this switch for `g-go`, `g-go-code`, `g-go-review`, or any `--swarm` variant **except** when every dirty path is owned exclusively by the active task/bug scope and a `## Status History` row documents that override. Otherwise clean the checkout first. The same **per-root** `-AllowDirty` discipline applies to every repository included in the touch set below when multi-repo work is in scope.
 
@@ -271,7 +271,7 @@ For each `[🕵️]` task claimed by this verifier:
 
 ```powershell
 # Reports (exit 1) if any changed text file needs encoding normalization; writes nothing.
-.cursor/hooks/g-hk-encoding-normalize.ps1 -Scan
+.claude/hooks/g-hk-encoding-normalize.ps1 -Scan
 ```
 
 This surfaces stray BOMs / CRLF / UTF-16 drift before they reach the integration branch. It is **advisory by default** — a non-clean scan is recorded in the review note (`Step E: N file(s) need encoding normalization`) and is informational, not an automatic FAIL (the pre-commit hook fixes these on commit). Projects that want it enforced can treat a non-zero scan as a FAIL via `encoding_scan_enforced: true` in `AGENT_CONFIG.md`.
@@ -331,7 +331,7 @@ This surfaces stray BOMs / CRLF / UTF-16 drift before they reach the integration
 **Per-task output format:**
 ```
 REVIEW: Task 014 — g-go role separation
-  ✅ g-go-code.md created in G:/gald3r_ecosystem/gald3r_template_full/.cursor/commands/
+  ✅ g-go-code.md created in <ECOSYSTEM_ROOT>/<template_full>/.cursor/commands/
   ✅ g-go-review.md created with NEW-SESSION warning
   ❌ g-go.md not updated — self-review banner missing
   → RESULT: FAIL — moved back to [📋] — reason recorded in task file
@@ -635,7 +635,7 @@ verdict and before the review-result commit** — it never blocks or alters the 
 **Step (post-PASS, pre-commit):**
 
 1. The reviewer asks itself: *"Did this implementation solve a problem type that is NOT covered by
-   any existing skill in `.cursor/skills/`? Was there a novel, generalizable multi-step
+   any existing skill in `.gald3r_sys/skills/`? Was there a novel, generalizable multi-step
    technique that would help a future agent on a similar task?"* Answer is **No** for routine work
    — most tasks produce no proposal. This is a deliberately high bar.
 2. **If yes**, draft a SKILL.md into **`.gald3r/proposed_skills/{task_id}_{slug}_draft.md`**
@@ -666,7 +666,7 @@ verdict and before the review-result commit** — it never blocks or alters the 
 4. Note the proposal in the review summary (one line) and the task `## Status History`.
 
 **Hard gate — human approval required for promotion.** A draft in `proposed_skills/` is **never**
-auto-promoted to `.cursor/skills/` (and therefore never synced to `.cursor/`/`.claude/`). Promotion
+auto-promoted to `.gald3r_sys/skills/` (and therefore never synced to `.cursor/`/`.claude/`). Promotion
 is a separate, human-invoked action via **`@g-skill-review`** (see that command), which routes the
 polished draft through the skill-creator/writing-skills flow and then a normal parity sync. The
 reviewer's job ends at writing the draft + the IDEA_BOARD link.

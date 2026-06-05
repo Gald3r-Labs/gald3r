@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [AGENT_ORCHESTRATION]
+---
+
 # Fallback System Quick Start Guide
 
 Get up and running with the fallback and error handling system in 5 minutes.

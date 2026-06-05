@@ -1,48 +1,33 @@
 ---
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 ---
-# g-rule-new - Scaffold a new gald3r rule with mandatory subsystem tagging
+# g-rule-new - Scaffold a new rule in YOUR project
 
-Creates a new `.cursor/rules/g-rl-<NN>-<slug>.md` using the canonical
-rule template with the next sequential rule number, `alwaysApply:`, and
-`subsystem_memberships:` pre-filled.
+Creates a new rule for your own project. You choose where it lives - your AI platform folder
+(e.g. `.cursor/rules/`, `.claude/` rules, `AGENTS.md`) or somewhere in your repo's contents.
+Never writes to `.gald3r_sys/`.
 
 ## Usage
 
 ```
-@g-rule-new <slug> [group]
-@g-rule-new "no-empty-agents"
-@g-rule-new "no-empty-agents" AGENT_ORCHESTRATION
+@g-rule-new <slug>
+@g-rule-new "no-console-logs"
 ```
 
-- `<slug>` — descriptive slug without number prefix (e.g. `no-empty-agents`)
-  The rule number (NN) is assigned automatically as highest existing + 1
-- `[group]` — optional subsystem group; prompted interactively if omitted
+- `<slug>` - kebab-case slug for the rule.
 
 ## Steps
 
-Activates **g-skl-gald3r-component-new** with `type: rule`.
+Activates **g-skl-gald3r-component-new**.
 
-1. Scan `.cursor/rules/` to determine the next rule number
-2. Collect slug, group, `alwaysApply` (true/false), and `description:` line
-3. Write `.cursor/rules/g-rl-<NN>-<slug>.md` from the rule template
-4. Verify `subsystem_memberships:` and `description:` are present
-5. Offer to run `platform_parity_sync.ps1 -Sync` to propagate to all IDE `.cursor/rules/` targets
-6. Offer to regenerate `PRODUCT_SYSTEMS.md`
-7. Offer CHANGELOG entry (g-rl-26)
-
-## After creation
-
-The rule file must be synced to all IDE targets:
-```powershell
-pwsh custom_scripts\platform_parity_sync.ps1 -Sync
-```
-
-For `alwaysApply: true` rules, the IDE must restart (or rules must be reloaded) before
-the rule takes effect in new conversations.
+1. Ask **where** to create it:
+   - **(a) Platform folder** - e.g. `.cursor/rules/<slug>.mdc` (Cursor), a rules entry for Claude, etc.
+   - **(b) Repo contents** - a path you specify inside your project.
+2. Collect the rule description and whether it always applies or is scoped to file globs.
+3. Write the rule file from the template at the chosen location.
+4. Offer a CHANGELOG entry if your project keeps one.
 
 ## Related
 
-- Skill: `g-skl-gald3r-component-new` (implementation + template)
-- Rule: `g-rl-38` (always-applied creation standards)
-- Hook: `g-hk-component-tag-check` (git pre-commit enforcement)
+- Skill: `g-skl-gald3r-component-new` (implementation)
+- Maintainer-only equivalent (edits gald3r itself): `@g-gald3r-rule-new`

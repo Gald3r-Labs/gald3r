@@ -127,7 +127,7 @@ Read `vault_location=` from `.gald3r/.identity`:
 ✅ PASS  vault/location    — vault_location={LOCAL} (local vault mode)
 ⚠️ WARN  vault/index       — vault/_index.yaml missing
          💡 Run @g-vault-lint to regenerate the index
-❌ FAIL  vault/directory   — Vault directory not found: G:\my_vault
+❌ FAIL  vault/directory   — Vault directory not found: <vault_path>
          💡 Update vault_location in .gald3r/.identity or create the directory
 ```
 
@@ -150,7 +150,7 @@ Missing platforms → `⚠️ WARN` with fix suggestion (not `❌ FAIL`).
 
 **Missing `token_budget:` declaration**
 
-Scan all canonical SKILL.md files under `.cursor/skills/` and `.gald3r_sys/skill_packs/`,
+Scan all canonical SKILL.md files under `.claude/skills/` and `.gald3r_sys/skill_packs/`,
 plus the IDE mirrors `.cursor/skills/`, `.claude/skills/`, `.codex/skills/`,
 `.opencode/skills/`, `.agent/skills/`. For each SKILL.md, read the YAML frontmatter
 and check for the `token_budget:` field.
@@ -195,7 +195,7 @@ gald3r doctor — Environment Health Report
 ✅ PASS  identity/.identity fields     — project_id, gald3r_version, vault_location all present
 ⚠️ WARN  mcp/health-endpoint          — MCP server not reachable at http://localhost:8092/health
          💡 Run: cd docker && docker compose up -d
-❌ FAIL  vault/directory               — Vault directory not found: G:\shared_vault
+❌ FAIL  vault/directory               — Vault directory not found: <shared_vault>
          💡 Update vault_location in .gald3r/.identity or create the directory
 
 ==================================================

@@ -1,3 +1,6 @@
+---
+subsystem_memberships: [TASK_MANAGEMENT]
+---
 # g-skl-tasks
 
 > Human-facing companion to `SKILL.md`. The LLM agent reads `SKILL.md`; this

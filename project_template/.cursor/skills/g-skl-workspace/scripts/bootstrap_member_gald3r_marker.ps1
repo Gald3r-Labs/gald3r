@@ -1,4 +1,4 @@
-# .cursor/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1
+﻿# .claude/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1
 #
 # Bootstrap the marker-only `.gald3r/` for a Workspace-Control member
 # repository. Creates `.gald3r/.identity` (if absent) tying the member back
@@ -132,7 +132,7 @@ with the workspace controller's documentation conventions._
 
 - Live tasks, bugs, plans, releases: workspace controller (``$ControllerPath``)
 - This member's source code, build configuration, runtime files: this repository
-- Cross-project coordination (PCAC, INBOX, orders): workspace controller
+- Cross-project coordination (WPAC, INBOX, orders): workspace controller
 
 ## Why marker-only?
 
@@ -347,7 +347,7 @@ if ($violations.Count -gt 0) {
     $blocker = [pscustomobject]@{
         Status         = 'block'
         Reason         = 'member_gald3r_has_control_plane'
-        Message        = "Member .gald3r/ already contains non-marker content. Bootstrap refuses to proceed until remediation is run. Forbidden entries: $($violations -join ', '). Use .cursor/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1 -MemberPath '$MemberPath' --dry-run, then -Apply, before re-running bootstrap."
+        Message        = "Member .gald3r/ already contains non-marker content. Bootstrap refuses to proceed until remediation is run. Forbidden entries: $($violations -join ', '). Use .claude/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1 -MemberPath '$MemberPath' --dry-run, then -Apply, before re-running bootstrap."
         Actions        = $actions
         MemberPath     = $normalMember
         MemberId       = $MemberId

@@ -62,7 +62,7 @@
 | `g-agnt-ideas-goals` | Idea capture and goal management |
 | `g-agnt-verifier` | Verify completed task work |
 | `g-agnt-project-initializer` | First-time project scaffolding |
-| `g-agnt-pcac-coordinator` | Cross-project coordination — topology, inbox, broadcast, sync |
+| `g-agnt-wpac-coordinator` | Cross-project coordination — topology, inbox, broadcast, sync |
 
 ---
 
@@ -103,14 +103,14 @@ Commands use `@g-` in Cursor, `/g-` in Claude Code.
 
 | Command | Description |
 |---------|-------------|
-| `g-pcac-adopt` | Register a project as a **child** of this project (bidirectional topology update) |
-| `g-pcac-ask` | Send a request to the parent project |
-| `g-pcac-claim` | Register a project as the **parent** of this project (bidirectional topology update) |
-| `g-pcac-move` | Transfer files/folders to another project in the topology |
-| `g-pcac-order` | Push a task to child projects (with configurable cascade depth) |
-| `g-pcac-read` | Review and action the cross-project INBOX (CONFLICTs first) |
-| `g-pcac-status` | Show topology role, open INBOX items, linked project health |
-| `g-pcac-sync` | Initiate or respond to sibling contract sync (advisory) |
+| `g-wpac-adopt` | Register a project as a **child** of this project (bidirectional topology update) |
+| `g-wpac-ask` | Send a request to the parent project |
+| `g-wpac-claim` | Register a project as the **parent** of this project (bidirectional topology update) |
+| `g-wpac-move` | Transfer files/folders to another project in the topology |
+| `g-wpac-order` | Push a task to child projects (with configurable cascade depth) |
+| `g-wpac-read` | Review and action the cross-project INBOX (CONFLICTs first) |
+| `g-wpac-status` | Show topology role, open INBOX items, linked project health |
+| `g-wpac-sync` | Initiate or respond to sibling contract sync (advisory) |
 | `g-workspace-status` | Show Workspace-Control manifest status, including per-repo git/worktree boundaries |
 | `g-workspace-validate` | Validate Workspace-Control manifest, routing metadata, and independent git-root boundaries |
 | `g-workspace-export` | Show Workspace-Control export dry-run plan with per-member git/worktree preflight |
@@ -122,7 +122,7 @@ See `docs/COMMANDS.md` for the full list.
 
 ## Task Management
 
-PCAC inbox conflicts gate task claiming, implementation, verification, planning, status work, and swarm partitioning; commands rerun `g-hk-pcac-inbox-check.ps1 -BlockOnConflict` before work and swarm coordinators rerun it every 30 minutes plus before final summaries. `g-medic` L1 is the exception: it runs a non-blocking inbox check, records conflict severity in health scoring, then stops before L2-L4 or any claim/implementation/review/planning work.
+WPAC inbox conflicts gate task claiming, implementation, verification, planning, status work, and swarm partitioning; commands rerun `g-hk-wpac-inbox-check.ps1 -BlockOnConflict` before work and swarm coordinators rerun it every 30 minutes plus before final summaries. `g-medic` L1 is the exception: it runs a non-blocking inbox check, records conflict severity in health scoring, then stops before L2-L4 or any claim/implementation/review/planning work.
 
 
 ### Task Status Indicators

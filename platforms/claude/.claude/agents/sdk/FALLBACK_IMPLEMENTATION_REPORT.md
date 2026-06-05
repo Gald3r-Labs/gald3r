@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [AGENT_ORCHESTRATION]
+---
+
 # Fallback and Error Handling Implementation Report
 
 **Task 052 Component**: Fallback and Error Handling System

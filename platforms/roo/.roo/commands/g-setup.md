@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 ---
 Initialize the gald3r system: $ARGUMENTS
@@ -35,7 +35,7 @@ The user needs to run the installer from their `gald3r_template` download:
 
 If no template was downloaded, advise the user:
 > "To set up gald3r for the first time, clone or download the gald3r template from
-> https://github.com/wrc3/gald3r_template_adv (or _full, or _slim) and run
+> https://github.com/wrc3/<template_adv> (or _full, or _slim) and run
 > setup_gald3r_project.ps1 from that folder, pointing it at your project directory.
 > Then start a new IDE session so the skills and rules load into context."
 

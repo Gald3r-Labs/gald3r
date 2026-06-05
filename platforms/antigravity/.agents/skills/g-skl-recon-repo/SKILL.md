@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-recon-repo
 description: Capture a GitHub repository into the vault as a structured summary note. Produces research/repos/ notes and _index.yaml. Optional --deep flag triggers full g-skl-res-deep analysis pass.
 token_budget: medium
@@ -44,7 +44,7 @@ This capture skill may store source material in the vault for research, provenan
    type: repo_capture
    ingestion_type: manual
    source: https://github.com/owner/repo
-   topics: [inferred]
+   tags: [inferred]
    tags: [repo, {language}, {domain}]
    owner: owner
    repo: repo

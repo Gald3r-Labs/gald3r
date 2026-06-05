@@ -1,4 +1,4 @@
----
+﻿---
 name: g-skl-res-review
 description: Analyze external sources (GitHub repos, URLs) for adoptable patterns and improvements. Vault-aware — reads from {vault}/research/recon/ when a shared vault is configured, else falls back to local research/harvests/. Uses _recon_index.yaml for cross-project dedup. Produces structured harvest reports and optional IDEA_BOARD suggestions. Zero-change-without-approval.
 token_budget: very_high
@@ -334,10 +334,10 @@ Harvest report with topology routing adds `Routing` and `Similarity Risk` column
 
 | # | Finding | Complexity | Sim. Risk | Routing | Notes |
 |---|---------|------------|-----------|---------|-------|
-| 1 | Platform adapter pattern | Medium | low | → gald3r_valhalla | gald3r_valhalla owns communications subsystem |
-| 2 | Fast Mode execution profile | Low | medium | → this-project | gald3r_dev owns autonomous-coding capability |
+| 1 | Platform adapter pattern | Medium | low | → example_app | example_app owns communications subsystem |
+| 2 | Fast Mode execution profile | Low | medium | → this-project | <gald3r_source> owns autonomous-coding capability |
 | 3 | gRPC streaming transport | High | high | ⚡ new-project | No peer owns real-time-transport capability |
-| 4 | iMessage gateway | Medium | critical | → multiple:gald3r_valhalla,gald3r_agent | ⛔ APPLY blocked — legal review required |
+| 4 | iMessage gateway | Medium | critical | → multiple:example_app,example_agent | ⛔ APPLY blocked — legal review required |
 ```
 
 **User override**: user can manually change routing before APPLY by typing the target slug when prompted.

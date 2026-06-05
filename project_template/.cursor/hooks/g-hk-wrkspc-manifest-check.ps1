@@ -34,7 +34,7 @@ if ([string]::IsNullOrWhiteSpace($content)) {
     exit 2
 }
 
-$required = @("schema:", "workspace:", "repositories:", "controlled_members:", "routing_policy:", "pcac_relationship:")
+$required = @("schema:", "workspace:", "repositories:", "controlled_members:", "routing_policy:", "wpac_relationship:")
 $missing = @()
 foreach ($key in $required) {
     if ($content -notmatch "(?m)^$([regex]::Escape($key))") {

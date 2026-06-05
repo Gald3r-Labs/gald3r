@@ -7,7 +7,7 @@ subsystem_memberships: [WORKSPACE_COORDINATION]
 
 > **Multi-agent framework (T1094):** Broadcast — one-to-many [INFO] notification, no task created.
 
-# g-skl-wpac-notify — PCAC Freeform Notifications
+# g-skl-wpac-notify — WPAC Freeform Notifications
 
 ## When to Use
 
@@ -85,7 +85,7 @@ Multiple flags are allowed: `--parent --all-siblings` notifies parent and all si
 .gald3r/workspace/pending_requests/info_[target_project_name].md
 ```
 
-Staged notifications are delivered the next time any PCAC command accesses that project.
+Staged notifications are delivered the next time any WPAC command accesses that project.
 
 ## What This Does NOT Do (T167)
 

@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [RELEASE_AND_VERSIONING]
 ---
 # @g-ship — Ship a Release

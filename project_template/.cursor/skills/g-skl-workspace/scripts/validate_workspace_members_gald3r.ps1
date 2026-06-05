@@ -1,4 +1,4 @@
-# .cursor/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1
+﻿# .claude/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1
 #
 # Workspace-Control member-marker AND license-posture validator
 # (BUG-021 / Task 213 / g-rl-36 + Task 804 / C-020).
@@ -27,7 +27,7 @@
 #   2 - manifest error
 #
 # Used by:
-#   * Standalone audit run before adopting new members like gald3r_valhalla.
+#   * Standalone audit run before adopting new members like example_app.
 #   * @g-wrkspc-validate as a workspace-validation extension.
 #   * CI checks, dry-run gates, and operator review.
 #
@@ -320,7 +320,7 @@ else {
     Write-Output ("  manifest         : {0}" -f $manifestFile)
     Write-Output ("  member count     : {0}" -f $results.Count)
     if ($templateSkippedCount -gt 0) {
-        Write-Output ("  template_skipped : {0}  (gald3r_template_slim|full|adv carry intentional install .gald3r/)" -f $templateSkippedCount)
+        Write-Output ("  template_skipped : {0}  (<template_slim>|full|adv carry intentional install .gald3r/)" -f $templateSkippedCount)
     }
     Write-Output ("  clean            : {0}" -f $cleanCount)
     Write-Output ("  has_violations   : {0}" -f $violationsCount)

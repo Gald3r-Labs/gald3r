@@ -1,6 +1,0 @@
-{
-  "model": "qwen-coder-plus",
-  "context": {
-    "rules": [".agent/rules/"]
-  }
-}

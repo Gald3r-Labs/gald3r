@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [AGENT_ORCHESTRATION]
+---
+
 # Fallback and Error Handling System
 
 **Task 052 Component: Ensuring System Reliability**

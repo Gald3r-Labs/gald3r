@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 ---
 Update project goals. Activates **g-project** → UPDATE PROJECT.MD (Goals section).

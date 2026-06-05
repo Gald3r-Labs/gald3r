@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
 Promote a controlled_member repository to a fully self-managed autonomous_child: $ARGUMENTS
@@ -34,11 +34,11 @@ Delegates to `g-skl-workspace` PROMOTE operation.
 ## Examples
 
 ```
-# Preview what promoting gald3r_agent would do
-@g-wpac-promote gald3r_agent --dry-run
+# Preview what promoting example_agent would do
+@g-wpac-promote example_agent --dry-run
 
 # Promote it for real
-@g-wpac-promote gald3r_agent --apply
+@g-wpac-promote example_agent --apply
 ```
 
 ## What Happens
@@ -62,7 +62,7 @@ Delegates to `g-skl-workspace` PROMOTE operation.
 ## Underlying Script
 
 ```
-.gald3r_sys/skills/g-skl-workspace/scripts/gald3r_promote_member.ps1 -MemberPath <path> [-Apply]
+.claude/skills/g-skl-workspace/scripts/gald3r_promote_member.ps1 -MemberPath <path> [-Apply]
 ```
 
 ## Companion Commands

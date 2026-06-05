@@ -1,4 +1,4 @@
-# g-hk-pre-tool-call-member-gald3r-guard.ps1
+﻿# g-hk-pre-tool-call-member-gald3r-guard.ps1
 # @subsystems: WORKSPACE_COORDINATION
 # Pre-tool-call guard: refuse Edit/Write to a Workspace-Control member
 # repository's .gald3r/ that targets anything other than the marker pair
@@ -165,7 +165,7 @@ if ($markerFiles -contains $suffix) {
 $msg = "Member .gald3r/ marker-only guard: refused Edit/Write to '$suffix' inside member repository '$hit'. " +
        "Workspace-Control member repositories may keep ONLY .gald3r/.identity and .gald3r/PROJECT.md. " +
        "Live control-plane state (TASKS.md, tasks/, BUGS.md, PLAN.md, ...) is forbidden in members. " +
-       "Use the workspace controller (gald3r_dev) for orchestration writes. " +
+       "Use the workspace controller (<gald3r_source>) for orchestration writes. " +
        "See .claude/rules/g-rl-36-workspace-member-gald3r-guard.md and BUG-021."
 @{
     permission    = "deny"

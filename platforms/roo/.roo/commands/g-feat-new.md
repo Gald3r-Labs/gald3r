@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [RELEASE_AND_VERSIONING]
 ---
 > **Deprecated**: Use `@g-feat-add` instead. This alias is kept for backward compatibility.

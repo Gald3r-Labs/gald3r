@@ -44,7 +44,8 @@ Compare one platform's declared capability support against the Cursor reference.
 5. If `g-skl-platform-<platform>/SKILL.md` does not exist (antigravity) → report
    `NO SKILL — create via T1465` and mark all cells `❓`.
 
-Delegates the read/report mechanics to `custom_scripts/check_platform_status.ps1 -Platform <name>`.
+Delegates the read/report mechanics to the engine: `gald3r platform status --platform <name>`
+(falls back to `scripts/check_platform_status.ps1 -Platform <name>` where the engine is unavailable).
 
 ### SCAN_DOCS `<platform>`
 
@@ -108,5 +109,5 @@ Given a `SCAN_DOCS` result, propose specific config changes to gald3r's platform
 
 - Agent owner: `g-agnt-platformer`.
 - Commands: `@g-platform-check`, `@g-platform-scan-docs`, `@g-platform-status`.
-- Script: `custom_scripts/check_platform_status.ps1` (CHECK / status-read entry point).
+- Engine: `gald3r platform status [--platform <name>]` (CHECK entry point); fallback `scripts/check_platform_status.ps1`.
 - Medic: g-medic L2 calls `g-skl-platform-monitor CHECK <current-platform>` for platform health.

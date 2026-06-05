@@ -1,3 +1,7 @@
+---
+subsystem_memberships: [AGENT_ORCHESTRATION]
+---
+
 # Agent SDK Base Infrastructure - Implementation Report
 
 **Task**: Task 052 - Anthropic Agent SDK Integration (Base Infrastructure)

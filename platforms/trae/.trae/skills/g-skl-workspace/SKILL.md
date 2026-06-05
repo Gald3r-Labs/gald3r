@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-workspace
 description: Workspace-Control Mode skill. Reads .gald3r/linking/workspace_manifest.yaml as the canonical registry and provides STATUS, VALIDATE, MEMBER LIST, SPAWN, ADOPT, EXPORT/SYNC dry-run planning, and member `.gald3r/` marker bootstrap/remediate/validate operations for manifest-declared repositories.
 operations: [STATUS, VALIDATE, MEMBER_LIST, INIT_PLAN, INIT_APPLY, MEMBER_ADD_PLAN, MEMBER_ADD_APPLY, MEMBER_REMOVE_PLAN, MEMBER_REMOVE_APPLY, SPAWN_PLAN, SPAWN_APPLY, EXPORT_PLAN, SYNC_PLAN, PARSE_MANIFEST, ENFORCE_SCOPE, ADOPT_DISCOVER, ADOPT_DRY_RUN, ADOPT_APPLY, MEMBER_MARKER_BOOTSTRAP, MEMBER_MARKER_REMEDIATE, MEMBER_MARKER_VALIDATE, PROMOTE_PLAN, PROMOTE_APPLY]
@@ -24,7 +24,7 @@ Do not infer workspace members from sibling folder names, inferred `gald3r_templ
 
 `g-skl-workspace` is the read-only Workspace-Control Mode entry point. It lets agents inspect a configured workspace, validate the manifest and routing metadata, list controlled members, and explain export/sync plans before any future task authorizes writes. Every manifest repository is treated as an independent git root with its own status, branch, remote, rollback, and worktree context.
 
-Task 170 defines the shared worktree primitive for those git boundaries. When a workflow needs isolation, it must call the Gald3r worktree helper per repository, not once at the workspace root. In gald3r_dev the helper is `scripts/gald3r_worktree.ps1`; installed templates carry the same helper in the `g-skl-git-commit/scripts/` skill directory for each IDE target. Worktree root defaults to `$env:GALD3R_WORKTREE_ROOT` or `<repo-parent>/.gald3r-worktrees/<repo-name>`, branch names use `gald3r/{task_id}/{role}/{repo_slug}/{owner}-{suffix}`, and cleanup may only remove directories that contain `.gald3r-worktree.json` ownership metadata.
+Task 170 defines the shared worktree primitive for those git boundaries. When a workflow needs isolation, it must call the Gald3r worktree helper per repository, not once at the workspace root. In <gald3r_source> the helper is `scripts/gald3r_worktree.ps1`; installed templates carry the same helper in the `g-skl-git-commit/scripts/` skill directory for each IDE target. Worktree root defaults to `$env:GALD3R_WORKTREE_ROOT` or `<repo-parent>/.gald3r-worktrees/<repo-name>`, branch names use `gald3r/{task_id}/{role}/{repo_slug}/{owner}-{suffix}`, and cleanup may only remove directories that contain `.gald3r-worktree.json` ownership metadata.
 
 ### g-go blast-radius clean gates (T495 / T496)
 
@@ -141,7 +141,7 @@ Default [1] autonomous_child. Choose [1/2]:
 
   ```powershell
   # $memberPath = <absolute_member_path>
-  & "<gald3r_template_adv_root>\setup_gald3r_project.ps1" -TargetPath $memberPath -Platforms cursor,claude
+  & "<<template_adv>_root>\setup_gald3r_project.ps1" -TargetPath $memberPath -Platforms cursor,claude
   ```
 
   Verify `.claude/`, `.cursor/`, `.gald3r_sys/`, `CLAUDE.md` exist on the target afterward. For an already-populated gald3r repo prefer the PROMOTE path (`@g-wpac-promote`) which performs the same installer step.
@@ -157,7 +157,7 @@ Apply may update only `.gald3r/linking/workspace_manifest.yaml`. It must not ini
 
 Creates and registers a new local Workspace-Control member project. This mirrors the simplicity of `@g-pcac-spawn`, but it is strictly local workspace membership, not PCAC topology.
 
-Use SPAWN when the destination folder is new or intentionally empty and the control project needs a clean independent git root for future work, such as `gald3r_throne`. Do not use SPAWN for existing gald3r projects with task/bug history; use `@g-wrkspc-adopt`. Do not use SPAWN for an already-created repo that only needs registry metadata; use `@g-wrkspc-member-add`.
+Use SPAWN when the destination folder is new or intentionally empty and the control project needs a clean independent git root for future work, such as `example_desktop`. Do not use SPAWN for existing gald3r projects with task/bug history; use `@g-wrkspc-adopt`. Do not use SPAWN for an already-created repo that only needs registry metadata; use `@g-wrkspc-member-add`.
 
 ### Required Arguments
 
@@ -215,21 +215,21 @@ SPAWN_APPLY may run only when all gates pass:
 
      ```powershell
      # Confirm member-init is allowed
-     powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath "<absolute_target_path>" -AllowMarkerInit
+     powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath "<absolute_target_path>" -AllowMarkerInit
      # Bootstrap .gald3r/.identity and .gald3r/PROJECT.md
-     powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1 -MemberPath "<absolute_target_path>" -MemberId "<repo_id>" -Apply
+     powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1 -MemberPath "<absolute_target_path>" -MemberId "<repo_id>" -Apply
      ```
 
-     The guard at exit `1` (BLOCK) refuses apply with `BLOCK spawn_member_repo_gald3r_guard_block`. Exit `2` (ERROR) refuses with `BLOCK spawn_member_repo_gald3r_guard_error`. Bootstrap may itself BLOCK with `BLOCK spawn_member_gald3r_has_control_plane` when the existing `.gald3r/` already contains forbidden content — in that case point the user to `.gald3r_sys/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1` first. Only the combination of guard ALLOW + bootstrap success completes SPAWN_APPLY.
+     The guard at exit `1` (BLOCK) refuses apply with `BLOCK spawn_member_repo_gald3r_guard_block`. Exit `2` (ERROR) refuses with `BLOCK spawn_member_repo_gald3r_guard_error`. Bootstrap may itself BLOCK with `BLOCK spawn_member_gald3r_has_control_plane` when the existing `.gald3r/` already contains forbidden content — in that case point the user to `.claude/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1` first. Only the combination of guard ALLOW + bootstrap success completes SPAWN_APPLY.
 
    - **`autonomous_child`** — full-framework deploy (T1452): the marker-only guard does NOT apply. After the git root and manifest entry are created, run the full installer on the target so the child gets `.claude/`, `.cursor/`, `.gald3r_sys/`, root docs, and a full `.gald3r/`:
 
      ```powershell
      # $memberPath = <absolute_target_path>
-     & "<gald3r_template_adv_root>\setup_gald3r_project.ps1" -TargetPath $memberPath -Platforms cursor,claude
+     & "<<template_adv>_root>\setup_gald3r_project.ps1" -TargetPath $memberPath -Platforms cursor,claude
      ```
 
-     Verify `.claude/`, `.cursor/`, `.gald3r_sys/`, `CLAUDE.md` exist on the target afterward. `setup_gald3r_project.ps1` lives at the root of any `gald3r_template_adv` install (reuse the controller's copy when it was installed from an adv template).
+     Verify `.claude/`, `.cursor/`, `.gald3r_sys/`, `CLAUDE.md` exist on the target afterward. `setup_gald3r_project.ps1` lives at the root of any `<template_adv>` install (reuse the controller's copy when it was installed from an adv template).
 
 Allowed apply writes:
 
@@ -271,9 +271,9 @@ SPAWN raises any of the following BLOCK findings with a single-line remediation:
 - `BLOCK spawn_apply_without_explicit_flag`
 - `BLOCK spawn_active_task_not_authorized`
 - `BLOCK spawn_manifest_write_policy_refused`
-- `BLOCK spawn_member_repo_gald3r_guard_block` — `.gald3r_sys/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1` returned exit 1 for the target path (member repos cannot receive live control plane; only `.identity` + `PROJECT.md` are allowed)
+- `BLOCK spawn_member_repo_gald3r_guard_block` — `.claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1` returned exit 1 for the target path (member repos cannot receive live control plane; only `.identity` + `PROJECT.md` are allowed)
 - `BLOCK spawn_member_repo_gald3r_guard_error` — guard helper returned exit 2 (manifest unparseable or other error); resolve before retrying
-- `BLOCK spawn_member_gald3r_has_control_plane` — bootstrap helper refused because the existing `.gald3r/` already contains forbidden content; run `.gald3r_sys/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1` (dry-run, then `-Apply`) first
+- `BLOCK spawn_member_gald3r_has_control_plane` — bootstrap helper refused because the existing `.gald3r/` already contains forbidden content; run `.claude/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1` (dry-run, then `-Apply`) first
 
 ## Operation: MEMBER REMOVE PLAN / MEMBER REMOVE APPLY
 
@@ -416,15 +416,15 @@ When a repository has `os_paths`:
 ### Suggested Output
 
 ```text
-Workspace: gald3r_dev Workspace-Control Bootstrap (active_bootstrap)  [schema v1.1.0]
+Workspace: <gald3r_source> Workspace-Control Bootstrap (active_bootstrap)  [schema v1.1.0]
 Manifest: .gald3r/linking/workspace_manifest.yaml
-Owner: gald3r_dev
+Owner: <gald3r_source>
 
 Repositories:
-- gald3r_dev: active, control_project, path present, git root present, branch main, dirty N, remotes N, writes allowed
-- gald3r_world_tree (git_repo): active_member, controlled_member, path present G:/gald3r_ecosystem/gald3r_world_tree, git root OK, branch main
-    ✈️ [remote:wrm3-kubuntu via ssh:10.0.0.185 path:/data/repos/gald3r_world_tree]
-- gald3r_template_slim: planned_clean_member, controlled_member, path missing (planned gap), writes blocked
+- <gald3r_source>: active, control_project, path present, git root present, branch main, dirty N, remotes N, writes allowed
+- example_lib (git_repo): active_member, controlled_member, path present <ECOSYSTEM_ROOT>/example_lib, git root OK, branch main
+    ✈️ [remote:wrm3-kubuntu via ssh:10.0.0.185 path:/data/repos/example_lib]
+- <template_slim>: planned_clean_member, controlled_member, path missing (planned gap), writes blocked
 - some_api_service (service_http): active_member, path N/A
     ✈️ [remote:prod via https:api.example.com/v1]
 ```
@@ -520,7 +520,7 @@ For each repository:
 
 - Report whether `local_path` exists.
 - If it exists, reject symlink or junction paths unless the active task explicitly treats the path as a migration source for read-only inspection.
-- If it exists, run `git rev-parse --show-toplevel` from that path and verify the returned root equals `repository.local_path`. A nested checkout inside `gald3r_dev` is a blocking member-boundary finding unless `lifecycle_status: migration_source`.
+- If it exists, run `git rev-parse --show-toplevel` from that path and verify the returned root equals `repository.local_path`. A nested checkout inside `<gald3r_source>` is a blocking member-boundary finding unless `lifecycle_status: migration_source`.
 - If it exists, report branch or detached state, `git status --short` dirty count, remotes, and `git worktree list --porcelain` count for that repository only.
 - If it is a controlled member and missing, report as a planned/bootstrap gap, not a failure, when `lifecycle_status` is `planned_clean_member`.
 - If it is a controlled member and present but not an independent git root, block validation for member-write readiness.
@@ -577,7 +577,7 @@ Output findings use `PASS`, `WARN`, or `BLOCK`. Any `BLOCK` prevents task creati
 
 ### Git and Worktree Boundary Rules
 
-- Resolve git roots per `repositories[].local_path`; never derive a member repo root by walking upward from `gald3r_dev`.
+- Resolve git roots per `repositories[].local_path`; never derive a member repo root by walking upward from `<gald3r_source>`.
 - Dirty/clean checks, branch checks, remotes, rollback instructions, and worktree metadata are per repository.
 - Tasks 170-172 own the shared worktree primitive and coding/review integration. Workspace-Control only requires those primitives to run per manifest repository, with branch and worktree names that include the member ID for multi-repo work.
 - Commit preparation must describe separate commits per member repository unless a later orchestration task explicitly coordinates a multi-repo release.
@@ -600,8 +600,8 @@ Workspace validation: PASS|FAIL
 Manifest: .gald3r/linking/workspace_manifest.yaml
 Findings:
 - [PASS] required top-level keys present
-- [FAIL] repositories[2].id duplicates gald3r_template_full
-- [INFO] gald3r_template_slim path missing; allowed while lifecycle_status=planned_clean_member
+- [FAIL] repositories[2].id duplicates <template_full>
+- [INFO] <template_slim> path missing; allowed while lifecycle_status=planned_clean_member
 ```
 
 Use `PASS` only when there are no blocking findings. Informational findings do not block.
@@ -617,7 +617,7 @@ workspace:
   id: broken_workspace
 controlled_members:
   repository_ids:
-    - gald3r_template_full
+    - <template_full>
 ```
 
 Expected findings:
@@ -670,14 +670,14 @@ A future apply task must prove all of these before writing a member repo:
 - The active task has a compatible `workspace_touch_policy`.
 - The manifest `allowed_write_policy.write_allowed` allows the operation or the task explicitly overrides it.
 - The member repo path exists or creation is explicitly authorized.
-- The member repo git status, branch, remotes, rollback boundary, and worktree context have been reviewed independently from `gald3r_dev`.
+- The member repo git status, branch, remotes, rollback boundary, and worktree context have been reviewed independently from `<gald3r_source>`.
 - No `.env`, vault data, `.git/`, local-only personality assets, private backend state, caches, or logs are staged for output.
 - Generated output names its canonical source and generation task.
 - Parity/tier checks have been run when IDE template content is involved.
 
 ### Task 184 Bootstrap/Export Helper
 
-For `gald3r_dev` maintainers implementing Task 184, the concrete dry-run/apply helper is:
+For `<gald3r_source>` maintainers implementing Task 184, the concrete dry-run/apply helper is:
 
 ```powershell
 .\custom_scripts\workspace_template_export.ps1
@@ -685,9 +685,9 @@ For `gald3r_dev` maintainers implementing Task 184, the concrete dry-run/apply h
 
 The helper uses `uv run python custom_scripts/workspace_template_export.py` to parse the canonical manifest with PyYAML, then plans or applies exports from:
 
-- `G:/gald3r_ecosystem/gald3r_template_slim`
-- `G:/gald3r_ecosystem/gald3r_template_full`
-- `G:/gald3r_ecosystem/gald3r_template_adv`
+- `<ECOSYSTEM_ROOT>/<template_slim>`
+- `<ECOSYSTEM_ROOT>/<template_full>`
+- `<ECOSYSTEM_ROOT>/<template_adv>`
 
 Default invocation is dry-run only. It reports source folders, destination member repo paths, planned creates/updates, unchanged files, skipped files, provenance output, symlink/junction checks, git-root, branch, clean-status, remote, worktree-context, rollback-boundary checks, hygiene findings, and apply blockers.
 
@@ -703,7 +703,7 @@ Apply mode exists only behind explicit helper flags and must rerun preflight imm
 - `@g-wrkspc-adopt --dry-run --source {path} --as {member_id}` — generates `.gald3r/reports/adoption_{adopt-id}.md`.
 - `@g-wrkspc-adopt --apply --source {path} --as {member_id} --plan {report-path}` — gated apply that writes only the control project's `.gald3r/` and the manifest.
 
-ADOPT brings an existing gald3r-managed project (one that already has a populated `.gald3r/` folder with tasks, bugs, features, PRDs, subsystem specs, plans, constraints, and linking data) into a Workspace-Control control project. It is the Workspace-Control mode operation for projects like `gald3r_valhalla` that pre-date adoption and must remain independent git roots with their own ongoing work.
+ADOPT brings an existing gald3r-managed project (one that already has a populated `.gald3r/` folder with tasks, bugs, features, PRDs, subsystem specs, plans, constraints, and linking data) into a Workspace-Control control project. It is the Workspace-Control mode operation for projects like `example_app` that pre-date adoption and must remain independent git roots with their own ongoing work.
 
 ADOPT is not PCAC. It is not a task delegation. It does not write the source `.gald3r/`. It does not write member repository files. It only updates control-project state and the workspace manifest.
 
@@ -718,7 +718,7 @@ ADOPT distinguishes four mutually-exclusive named modes so agents and reviewers 
 | `clean_member_registration`   | `@g-wrkspc-member-add`           | Path exists or is planned, contains no `.gald3r/` control plane, no app source to import         | Registry-only; never writes inside the member                                                  |
 | `spawned_member_creation`     | `@g-wrkspc-spawn`                | Path is absent or is an existing empty directory; needs a fresh independent git root            | Creates the folder + `git init` + minimal `.gitignore`/`README.md` + member marker; no history |
 | `marker_only_member_repair`   | `MEMBER_MARKER_BOOTSTRAP/REMEDIATE/VALIDATE` | Path exists, may have legacy `.gald3r/` content, must end in marker-only shape       | Bootstrap writes only `.identity` + `PROJECT.md`; remediation quarantines forbidden content    |
-| **`populated_gald3r_adoption`** | `@g-wrkspc-adopt --discover/--dry-run/--apply` | Path is an existing **full** gald3r project with active `.gald3r/` task/bug/feature history (e.g. `gald3r_valhalla`) — never empty, never just a marker | Source `.gald3r/` is read-only at every phase; controller imports active items + archives terminal items + leaves source independent |
+| **`populated_gald3r_adoption`** | `@g-wrkspc-adopt --discover/--dry-run/--apply` | Path is an existing **full** gald3r project with active `.gald3r/` task/bug/feature history (e.g. `example_app`) — never empty, never just a marker | Source `.gald3r/` is read-only at every phase; controller imports active items + archives terminal items + leaves source independent |
 
 When a candidate path looks ambiguous (e.g. has `.gald3r/.identity` but no `TASKS.md`), default to refusing the operation and ask the user to choose explicitly. Do not silently route a populated source through SPAWN or MEMBER_ADD; doing so loses task/bug/feature/PRD history and breaks Task 213 / BUG-021 boundary policy.
 
@@ -726,7 +726,7 @@ The remaining ADOPT phases below all describe the `populated_gald3r_adoption` mo
 
 ### Mode: `populated_gald3r_adoption` — Existing Full Gald3r Project Adoption
 
-This is the only ADOPT submode at present. It is the canonical path for adopting mature standalone gald3r projects (the prototype target is `G:/gald3r_ecosystem/gald3r_valhalla`) that already manage their own tasks, bugs, features, PRDs, releases, constraints, subsystems, plans, and PCAC linking data.
+This is the only ADOPT submode at present. It is the canonical path for adopting mature standalone gald3r projects (the prototype target is `<ECOSYSTEM_ROOT>/example_app`) that already manage their own tasks, bugs, features, PRDs, releases, constraints, subsystems, plans, and PCAC linking data.
 
 The mode name `populated_gald3r_adoption` is a stable identifier and may appear in:
 
@@ -861,8 +861,8 @@ When an adopted member repository is later finalized to marker-only (`.gald3r/` 
 
 ```yaml
 adoption:
-  source_artifact_path: "G:/gald3r_ecosystem/gald3r_web/.gald3r/tasks/task013_features_comparison_page.md"  # authoritative pre-finalization path; KEPT verbatim
-  source_artifact_archive_path: "G:/gald3r_ecosystem/gald3r_web/.gald3r_archive_20260429.zip!tasks/task013_features_comparison_page.md"  # archive-aware fallback (BUG-034)
+  source_artifact_path: "<ECOSYSTEM_ROOT>/example_web/.gald3r/tasks/task013_features_comparison_page.md"  # authoritative pre-finalization path; KEPT verbatim
+  source_artifact_archive_path: "<ECOSYSTEM_ROOT>/example_web/.gald3r_archive_20260429.zip!tasks/task013_features_comparison_page.md"  # archive-aware fallback (BUG-034)
 ```
 
 Resolution order for verifiers, audit tooling, and `@g-pcac-status` lookups:
@@ -873,7 +873,7 @@ Resolution order for verifiers, audit tooling, and `@g-pcac-status` lookups:
 
 The original `source_artifact_path` is never rewritten — it remains the authoritative pre-finalization record-of-origin. `source_artifact_archive_path` is purely additive.
 
-Workspace-Control finalization MUST record `source_artifact_archive_path` on every controller-side adopted mirror whose source member it is finalizing, in the same finalization operation that produces the archive zip. Backfill of pre-existing adopted mirrors (e.g. T227–T232 from `gald3r_web` per BUG-034) is a one-shot bug-fix operation and uses the same field shape.
+Workspace-Control finalization MUST record `source_artifact_archive_path` on every controller-side adopted mirror whose source member it is finalizing, in the same finalization operation that produces the archive zip. Backfill of pre-existing adopted mirrors (e.g. T227–T232 from `example_web` per BUG-034) is a one-shot bug-fix operation and uses the same field shape.
 
 ### Per-Artifact Adoption Plan (Five Classes)
 
@@ -1117,9 +1117,9 @@ Apply runs only when all gates pass; any failure aborts with no partial writes:
 7. Manifest `allowed_write_policy` permits the manifest update for the active task (re-checked via ENFORCE_SCOPE).
 8. **Member `.gald3r/` marker-only guard (BUG-021 / Task 213 v1.1 / g-rl-36)**: ADOPT writes go to the control project, never to the member's live control plane. Apply must:
 
-   a. Run the validate helper against the source/member path: `.gald3r_sys/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1`. If the member entry shows `has_violations`, refuse with `BLOCK adoption_member_repo_live_control_plane` and direct the user to `.gald3r_sys/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1` followed by re-adoption.
+   a. Run the validate helper against the source/member path: `.claude/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1`. If the member entry shows `has_violations`, refuse with `BLOCK adoption_member_repo_live_control_plane` and direct the user to `.claude/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1` followed by re-adoption.
 
-   b. After the controller's `.gald3r/` is updated and the member's history has been imported into the controller (per the populated-gald3r adoption flow), call `.gald3r_sys/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1 -MemberPath {source_path} -MemberId {member_id} -Apply` to ensure the member ends in the marker-only shape (`.identity` + `PROJECT.md` present, control plane absent).
+   b. After the controller's `.gald3r/` is updated and the member's history has been imported into the controller (per the populated-gald3r adoption flow), call `.claude/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1 -MemberPath {source_path} -MemberId {member_id} -Apply` to ensure the member ends in the marker-only shape (`.identity` + `PROJECT.md` present, control plane absent).
 
    c. Refuse with `BLOCK adoption_member_repo_gald3r_guard_error` if either helper returns exit `2`.
 
@@ -1150,10 +1150,10 @@ target path:
 
 ```powershell
 # $memberPath = <absolute_member_path>
-& "<gald3r_template_adv_root>\setup_gald3r_project.ps1" -TargetPath $memberPath -Platforms cursor,claude
+& "<<template_adv>_root>\setup_gald3r_project.ps1" -TargetPath $memberPath -Platforms cursor,claude
 ```
 
-`setup_gald3r_project.ps1` is at the root of any `gald3r_template_adv` install (reuse the controller's
+`setup_gald3r_project.ps1` is at the root of any `<template_adv>` install (reuse the controller's
 copy when it was installed from an adv template). Verify `.claude/`, `.cursor/`, `.gald3r_sys/`,
 `CLAUDE.md` exist on the target afterward.
 
@@ -1219,14 +1219,14 @@ A synthetic offline sample dry-run report at `.gald3r/reports/adoption_dryrun_sa
 
 ## Operations: MEMBER_MARKER_BOOTSTRAP / MEMBER_MARKER_REMEDIATE / MEMBER_MARKER_VALIDATE (BUG-021 / Task 213 v1.1 / g-rl-36)
 
-Workspace-Control member repositories may keep ONLY a slim `.gald3r/` marker — `.identity` plus a parity-maintained `PROJECT.md`. Live gald3r control-plane content (TASKS.md, BUGS.md, PLAN.md, FEATURES.md, SUBSYSTEMS.md, RELEASES.md, CONSTRAINTS.md, IDEA_BOARD.md, PRDS.md, prds/, features/, releases/, subsystems/, config/, linking/, experiments/, logs/, reports/, archive/, specifications_collection/, learned-facts.md, etc.) is forbidden inside member `.gald3r/`. The workspace controller (e.g. `gald3r_dev`) is the source of truth for live state.
+Workspace-Control member repositories may keep ONLY a slim `.gald3r/` marker — `.identity` plus a parity-maintained `PROJECT.md`. Live gald3r control-plane content (TASKS.md, BUGS.md, PLAN.md, FEATURES.md, SUBSYSTEMS.md, RELEASES.md, CONSTRAINTS.md, IDEA_BOARD.md, PRDS.md, prds/, features/, releases/, subsystems/, config/, linking/, experiments/, logs/, reports/, archive/, specifications_collection/, learned-facts.md, etc.) is forbidden inside member `.gald3r/`. The workspace controller (e.g. `<gald3r_source>`) is the source of truth for live state.
 
-Three companion helpers ship in `scripts/` (and `G:/gald3r_ecosystem/gald3r_template_full/scripts/` for installed projects):
+Three companion helpers ship in `scripts/` (and `<ECOSYSTEM_ROOT>/<template_full>/scripts/` for installed projects):
 
 ### MEMBER_MARKER_BOOTSTRAP — only sanctioned writer of member `.gald3r/`
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1 `
+powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1 `
     -MemberPath "<absolute_member_path>" `
     -MemberId "<manifest_repo_id>" `
     [-ControllerPath "<absolute_controller_path>"] `   # optional; defaults to upward manifest discovery
@@ -1247,23 +1247,23 @@ Called by: SPAWN_APPLY (after git init + minimal `.gitignore`/`README.md`), MEMB
 
 ```powershell
 # Dry-run
-powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1 `
+powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1 `
     -MemberPath "<absolute_member_path>"
 
 # Apply (quarantines forbidden entries; never deletes)
-powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1 `
+powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1 `
     -MemberPath "<absolute_member_path>" `
     -Apply
 ```
 
 Behavior: scans the member's `.gald3r/`, categorises each entry as marker-safe (`.identity`, `PROJECT.md`) or forbidden control plane, and on `-Apply` moves forbidden entries to `<member>/.gald3r-quarantine/<timestamp>/` (or `-BackupTo <path>`). Marker entries are preserved in place. Nothing is permanently deleted; the user controls final disposition of the quarantine folder.
 
-Used for: cleaning up historical violations (e.g. `gald3r_throne` / Task 197), pre-adoption preflight before adopting populated gald3r projects (e.g. `gald3r_valhalla`).
+Used for: cleaning up historical violations (e.g. `example_desktop` / Task 197), pre-adoption preflight before adopting populated gald3r projects (e.g. `example_app`).
 
 ### MEMBER_MARKER_VALIDATE — workspace-wide audit
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1
 ```
 
 Scans every controlled_member and migration_source from the manifest and reports per-member compliance: `clean` / `marker_missing` / `marker_incomplete` / `has_violations` / `not_yet_created`. Exit `0` if all clean, `1` if any has_violations (use `-WarnOnly` for advisory mode, `-Json` for machine-readable output). Required as part of pre-adoption preflight before any new member is added.
@@ -1330,13 +1330,13 @@ files PROMOTE scaffolds. Run the full installer on the promoted path (T1452):
 
 ```powershell
 # $memberPath = <absolute_member_path>
-& "<gald3r_template_adv_root>\setup_gald3r_project.ps1" -TargetPath $memberPath -Platforms cursor,claude
+& "<<template_adv>_root>\setup_gald3r_project.ps1" -TargetPath $memberPath -Platforms cursor,claude
 ```
 
 This deploys `.claude/`, `.cursor/` (skills, agents, commands, rules, hooks), `.gald3r_sys/`, and
 root docs (`CLAUDE.md`, `AGENTS.md`, `WORKFLOW.md`, `GUARDRAILS.md`, `GALD3R-PROMPT.md`,
 `GALD3R-MIGRATION.md`, `scripts/`). `setup_gald3r_project.ps1` lives at the root of any
-`gald3r_template_adv` install; the same script is already present at the controller's project root
+`<template_adv>` install; the same script is already present at the controller's project root
 when it was installed from an adv template -- reuse it. `@g-skl-setup --upgrade-existing` is the
 equivalent skill-driven path. After the install, verify `.claude/`, `.cursor/`, `.gald3r_sys/`, and
 `CLAUDE.md` exist on the target, then run `@g-wrkspc-validate` to confirm.
@@ -1345,14 +1345,14 @@ equivalent skill-driven path. After the install, verify `.claude/`, `.cursor/`, 
 
 ```powershell
 # Dry-run (default)
-powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/gald3r_promote_member.ps1 `
+powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/g-skl-workspace/scripts/gald3r_promote_member.ps1 `
     -MemberPath "<absolute_member_path>" `
     [-MemberId "<manifest_repo_id>"] `      # inferred from manifest/.identity when omitted
     [-ControllerPath "<absolute_controller_path>"] `
     [-ManifestPath "<absolute_manifest_path>"]
 
 # Apply
-powershell -NoProfile -ExecutionPolicy Bypass -File .gald3r_sys/skills/g-skl-workspace/scripts/gald3r_promote_member.ps1 `
+powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/g-skl-workspace/scripts/gald3r_promote_member.ps1 `
     -MemberPath "<absolute_member_path>" `
     -Apply
 ```
@@ -1417,7 +1417,7 @@ Scope: current repository only. Do not inspect or write sibling workspace member
 
 ```yaml
 workspace_repos:
-  - gald3r_dev
+  - <gald3r_source>
 workspace_touch_policy: docs_only
 ```
 
@@ -1432,9 +1432,9 @@ Blocked: source changes, member repo writes, generated output.
 
 ```yaml
 workspace_repos:
-  - gald3r_template_slim
+  - <template_slim>
 workspace_touch_policy: generated_output
-canonical_source: gald3r_dev/gald3r_template_slim
+canonical_source: <gald3r_source>/<template_slim>
 ```
 
 Agent behavior:
@@ -1447,8 +1447,8 @@ Allowed only in future apply mode with explicit task authorization, clean member
 
 ```yaml
 workspace_repos:
-  - gald3r_dev
-  - gald3r_template_full
+  - <gald3r_source>
+  - <template_full>
 workspace_touch_policy: multi_repo
 ```
 
@@ -1486,24 +1486,24 @@ Status and report surfaces may embed a compact Workspace-Control snapshot by reu
 - Show manifest path, workspace identity, owner ID, controlled member count/IDs, member lifecycle status, path reachability, write policy summary, and per-member git root/branch/dirty/remotes/worktree context when paths are reachable.
 - Show active task/bug `workspace_repos` and `workspace_touch_policy` metadata when present; omitted metadata means current repository only.
 - Distinguish PCAC topology/INBOX/order/request state from Workspace-Control member registry state.
-- Cite Task 177 boundaries when users might expect backend, UI, Docker/Kubernetes/MCP, `gald3r_valhalla`, `yggdrasil`, dashboards, or control-plane status. Those systems are deferred and should not be treated as missing bootstrap components.
+- Cite Task 177 boundaries when users might expect backend, UI, Docker/Kubernetes/MCP, `example_app`, `yggdrasil`, dashboards, or control-plane status. Those systems are deferred and should not be treated as missing bootstrap components.
 
 ### Template Parity Tooling
 
 `platform_parity_sync.ps1` (run without `-Sync` for a report-only parity check; with `-Sync` to apply), `tier_sync.ps1`, `g-skl-tier-setup`, and `g-skl-template-export` remain the existing parity/export surfaces. `g-skl-workspace` reports how those tools would interact with member repos; it does not change propagation semantics or run scripts.
 
-For the `gald3r_dev` source repository only, edits to core gald3r framework/platform surfaces are self-hosting changes. If a task changes reusable files under `.cursor/`, `.claude/`, `.agent/`, `.codex/`, `.opencode/`, `.copilot/`, `.github/prompts/`, shared rules, skills, commands, agents, hooks, or generated Copilot instructions, completion requires one of:
+For the `<gald3r_source>` source repository only, edits to core gald3r framework/platform surfaces are self-hosting changes. If a task changes reusable files under `.cursor/`, `.claude/`, `.agent/`, `.codex/`, `.opencode/`, `.copilot/`, `.github/prompts/`, shared rules, skills, commands, agents, hooks, or generated Copilot instructions, completion requires one of:
 
-- Run `custom_scripts/platform_parity_sync.ps1 -SelfHostingRootSource` and, when approved, `custom_scripts/platform_parity_sync.ps1 -SelfHostingRootSource -Sync`. This uses the root `.cursor/` tree as the maintainer source, syncs root platform folders and `G:/gald3r_ecosystem/gald3r_template_adv`, then runs `custom_scripts/tier_sync.ps1` so `G:/gald3r_ecosystem/gald3r_template_full` and `G:/gald3r_ecosystem/gald3r_template_slim` receive tier-filtered content.
+- Run `custom_scripts/platform_parity_sync.ps1 -SelfHostingRootSource` and, when approved, `custom_scripts/platform_parity_sync.ps1 -SelfHostingRootSource -Sync`. This uses the root `.cursor/` tree as the maintainer source, syncs root platform folders and `<ECOSYSTEM_ROOT>/<template_adv>`, then runs `custom_scripts/tier_sync.ps1` so `<ECOSYSTEM_ROOT>/<template_full>` and `<ECOSYSTEM_ROOT>/<template_slim>` receive tier-filtered content.
 - Record an explicit root-only exception, e.g. `g-skl-gald3r-export` maintainer tooling, proprietary local skills, or personality content intentionally shipped through `personality_packs/` instead of templates.
 
-`gald3r_dev-only` command wording means the command is executed only from the source/control repository; it does not by itself exempt reusable framework edits from template parity.
+`<gald3r_source>-only` command wording means the command is executed only from the source/control repository; it does not by itself exempt reusable framework edits from template parity.
 
 ### Scoped Dirty-State Handling
 
 Workspace-Control dirty checks are path-scoped. A dirty repository is a hard blocker only when dirty paths overlap planned writes, protected control files, or a requested member write. Unrelated dirty or untracked paths are advisory and must be reported, not used as a blanket stop sign. Examples:
 
-- `G:/gald3r_ecosystem/gald3r_template_full/temp_docs/` is unrelated to a planned command/skill parity write: warn, do not block.
+- `<ECOSYSTEM_ROOT>/<template_full>/temp_docs/` is unrelated to a planned command/skill parity write: warn, do not block.
 - A dirty `.cursor/skills/g-skl-workspace/SKILL.md` in a target template overlaps a planned parity write: block unless the active task explicitly authorizes merging that path.
 - A dirty `.gald3r/linking/workspace_manifest.yaml` overlaps control-plane writes: block or require an explicit controller-write decision.
 
@@ -1582,7 +1582,7 @@ Before claiming Workspace-Control work is ready for review:
 
 `STATUS`, `VALIDATE`, and `MEMBER LIST` operations surface each member's posture and any drift (LICENSE missing, content does not match canonical template, manifest entry missing the `license:` key). License drift is a hard `g-wrkspc-validate` failure unless `-WarnOnly` is passed.
 
-The authoritative posture map is `g:\gald3r_ecosystem\LICENSING_STRATEGY.md` and `.gald3r/CONSTRAINTS.md` C-020. License posture changes require updating all three: strategy doc, manifest entries, and per-repo `LICENSE`/`NOTICE` files in a single coordinated task. Bare LICENSE edits without a manifest update violate C-020.
+The authoritative posture map is `<workspace>\LICENSING_STRATEGY.md` and `.gald3r/CONSTRAINTS.md` C-020. License posture changes require updating all three: strategy doc, manifest entries, and per-repo `LICENSE`/`NOTICE` files in a single coordinated task. Bare LICENSE edits without a manifest update violate C-020.
 
-The license check is implemented inside `.gald3r_sys/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1` (alongside the existing T213 marker check). Pass `-SkipLicenseCheck` to suppress the license sweep when only marker diagnostics are wanted.
+The license check is implemented inside `.claude/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1` (alongside the existing T213 marker check). Pass `-SkipLicenseCheck` to suppress the license sweep when only marker diagnostics are wanted.
 

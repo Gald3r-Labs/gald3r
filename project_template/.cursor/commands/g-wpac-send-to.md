@@ -29,16 +29,16 @@ Delegates to `g-skl-wpac-send-to`.
 
 ```
 # Send backend features to a sibling project
-@g-wpac-send-to --sibling gald3r_valhalla --what .gald3r/features/gald3r_backend --type features
+@g-wpac-send-to --sibling example_app --what .gald3r/features/gald3r_backend --type features
 
 # Send a code folder to a child project
 @g-wpac-send-to --child gald3r_payments --what src/payments/ --type code --message "Ready for extraction"
 
 # Forward a feature to the parent template project
-@g-wpac-send-to --parent gald3r_dev --what .gald3r/features/feat-012_auth.md --type features
+@g-wpac-send-to --parent <gald3r_source> --what .gald3r/features/feat-012_auth.md --type features
 
 # Dry run preview
-@g-wpac-send-to --sibling gald3r_vault --what research/ --type docs --dry-run
+@g-wpac-send-to --sibling example_vault --what research/ --type docs --dry-run
 ```
 
 ## Content Type → Default Destination
