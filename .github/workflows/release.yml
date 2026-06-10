@@ -38,20 +38,18 @@ jobs:
       - name: Create release archive
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          # Package the template directories (what users actually copy into their projects)
+          # Core content lives in project_template/ — always included
+          ZIP_ARGS=("project_template/" "README.md" "CHANGELOG.md" "LICENSE")
+          # Include platforms/ only in the flagship repo (not present in platform repos)
+          [ -d "platforms" ] && ZIP_ARGS+=("platforms/")
+          # Include setup scripts only if they exist
+          [ -f "setup_gald3r_project.ps1" ] && ZIP_ARGS+=("setup_gald3r_project.ps1")
+          [ -f "setup_gald3r_project.bat" ] && ZIP_ARGS+=("setup_gald3r_project.bat")
+          [ -f "setup_gald3r_project.sh" ]  && ZIP_ARGS+=("setup_gald3r_project.sh")
+          [ -f "instructions_new_project.md" ]      && ZIP_ARGS+=("instructions_new_project.md")
+          [ -f "instructions_existing_project.md" ] && ZIP_ARGS+=("instructions_existing_project.md")
           zip -r "gald3r-template-v${VERSION}.zip" \
-            .cursor/ \
-            .claude/ \
-            .agent/ \
-            .codex/ \
-            .opencode/ \
-            .gald3r/ \
-            AGENTS.md \
-            CLAUDE.md \
-            GEMINI.md \
-            README.md \
-            CHANGELOG.md \
-            LICENSE \
+            "${ZIP_ARGS[@]}" \
             -x "*.git*" \
             -x "*__pycache__*" \
             -x "*.pyc"
