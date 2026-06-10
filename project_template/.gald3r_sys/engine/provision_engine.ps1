@@ -10,7 +10,7 @@ param([switch]$NoInstall, [switch]$Quiet)
 
 $engineDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 function Say($m, $c = 'Gray') { if (-not $Quiet) { Write-Host $m -ForegroundColor $c } }
-$isWin = ($IsWindows -eq $true) -or ($env:OS -like '*Windows*')
+$isWin = ($env:OS -like '*Windows*') -or ($IsWindows -eq $true)
 
 # 1) ensure uv is available
 $uv = Get-Command uv -ErrorAction SilentlyContinue

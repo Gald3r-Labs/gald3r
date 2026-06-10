@@ -1,5 +1,5 @@
-﻿---
-gald3r_rel_version: "1.11.0"
+---
+gald3r_rel_version: "2.0.1"
 project: {project_slug}
 last_updated: {YYYY-MM-DD}
 schema_version: 1

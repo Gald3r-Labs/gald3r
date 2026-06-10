@@ -90,23 +90,11 @@ See `g-skl-auto-triage/SKILL.md` for the full risk formula and Phase 1 hard limi
 total_pages = len(items) / page_size  # should use ceil division
 ```
 
-```javascript
-// BUG[BUG-07]: Race condition on concurrent writes — see .gald3r/bugs/bug007_write_race.md
-await saveRecord(data);
-```
-
-```typescript
-// BUG[BUG-09]: Missing null guard on user.profile — see .gald3r/bugs/bug009_null_profile.md
-return user.profile.name;
-```
-
-```sql
--- BUG[BUG-12]: NULL guard missing — divide-by-zero possible — see .gald3r/bugs/bug012_null_divide.md
-```
-
 ```powershell
 # BUG[BUG-14]: Path assumes Windows drive letter — see .gald3r/bugs/bug014_path_assumption.md
 ```
+
+For JS/TS use `//`, for SQL use `--`. Same format, same `.gald3r/bugs/` reference path.
 
 The `BUG[BUG-{id}]` format intentionally mirrors `TODO[TASK-X→TASK-Y]` from `g-rl-34` for a uniform annotation system.
 

@@ -102,10 +102,8 @@ If a single completed task has multiple stubs, each stub gets:
 
 | Rationalization | Reality |
 |---|---|
-| "It's just a temporary stub, everyone knows" | In 3 weeks nobody knows. The comment costs 5 seconds. |
+| "It's just a temporary stub, everyone knows" | In 3 weeks nobody knows. Context rots. The task ID and follow-up task are permanent. |
 | "The task is done, the stub is a separate concern" | If you shipped a stub, the task is not done. Annotate it. |
-| "I'll remember to fix it later" | You won't. The follow-up task ensures it lives in the backlog. |
-| "The TODO is obvious from context" | Context rots. The task ID is permanent. |
 | "It's a test/dev stub, not production" | Dev stubs reach production. Every. Single. Time. |
 | "Creating a task takes too long" | Fast-path task creation takes 60 seconds. Debugging a mystery stub takes hours. |
 

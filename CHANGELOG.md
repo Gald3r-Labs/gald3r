@@ -6,6 +6,40 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+_Pending release notes accumulate here as tasks and bugs are completed. At publish time this
+section is renamed to `[X.Y.Z] - YYYY-MM-DD` and a fresh `[Unreleased]` block is opened._
+
+### Added
+
+### Changed
+
+### Fixed
+
+---
+
+## [2.0.1] - 2026-06-10
+
+Patch release — copyright transfer, release pipeline org fix, and workspace engine bug fix.
+
+### Changed
+- **Copyright transferred to Gald3r Labs LLC** — all repository LICENSE files updated from
+  `Warren R. Martel III` to `Gald3r Labs LLC` following company formation.
+- **`push_repos.ps1` default org updated** — `GitHubOrg` default changed from `wrm3` to
+  `Gald3r-Labs` to reflect the completed GitHub organization transfer.
+- **Platform repos now get GitHub Releases by default** — previously required `-GitHubReleaseAll`
+  flag; now all platform repos receive a tagged GitHub Release on every `push_repos.ps1` run.
+  Use new `-SkipPlatformRelease` flag to opt out.
+
+### Fixed
+- **BUG-128**: `workspace.py status()` always returned `role: standalone` due to misspelled
+  dict key `pcac_relationship` (should be `wpac_relationship`). WPAC topology was completely
+  invisible — every project appeared standalone regardless of configured parent/child
+  relationships. (`WORKSPACE_COORDINATION`)
+
+---
+
 ## [2.0.0] - 2026-06-04
 
 The **gald3r engine** release. gald3r gains a bundled, file-first Python core that backs every

@@ -89,11 +89,17 @@ The autopilot maintains a single run-state marker that the stop hook reads. The 
 
 1. **At INIT** — write the marker with the run config:
    ```json
-   { "active": true, "iter": 0, "budget_remaining": 12,
+   { "active": true, "platform": "windsurf",
+     "iter": 0, "budget_remaining": 12,
      "authorized_hard_stop": "", "reinvoke_count": 0,
      "updated_at": "<iso-8601>",
      "completed_iterations": [] }
    ```
+   Set `"platform"` to `"windsurf"` (matches the value the stop hook detects from
+   its script location). The `session_id` field is NOT written at INIT; the stop
+   hook captures it on the first stop via the stop-event stdin payload
+   (first-touch registration). Stops from a different platform or session are
+   always allowed through without re-invocation.
 2. **Each iteration** — refresh `iter` and `budget_remaining` (the hook reads the latest values to bound re-invokes).
 3. **On a genuine hard stop** — BEFORE emitting the final summary, write the exact hard-stop table row verbatim into `authorized_hard_stop`. This is the ONLY way to legitimately end the run. A blank `authorized_hard_stop` means "the loop has no authorized reason to stop".
 4. **At clean EXIT** (budget exhausted, no runnable work) — set `active` to `false` or delete the marker. The hook also clears it automatically on authorized hard stop, budget exhaustion, or re-invoke-cap.
@@ -517,3 +523,4 @@ The defaults (workspace mode, 12-iteration budget, 30-minute heartbeat) are tune
 **For supervised pipeline runs (one batch only), use `@g-go --swarm --workspace` instead — that is one iteration of this loop.**
 
 Let's go.
+

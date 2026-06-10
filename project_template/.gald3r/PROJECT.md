@@ -1,5 +1,5 @@
-﻿---
-gald3r_rel_version: "1.11.0"
+---
+gald3r_rel_version: "2.0.1"
 schema_version: "PROJECT-md-v1"
 ---
 # PROJECT.md — {PROJECT_NAME}

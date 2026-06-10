@@ -1,4 +1,4 @@
-﻿# <!-- gald3r AGENTS.md START -->
+# <!-- gald3r AGENTS.md START -->
 # agents.md - {project_name}
 
 > This file follows the agents.md format for AI agent instructions.
@@ -226,7 +226,7 @@ bucket is editing. File-lock manifests enforce this (T1059):
 
 ## gald3r Version
 
-**gald3r version**: 1.11.0
+**gald3r version**: 2.0.1
 **Supported IDEs**: Cursor, Claude Code, Gemini, Codex, OpenCode
 
 ---

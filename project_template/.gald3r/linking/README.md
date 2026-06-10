@@ -1,5 +1,5 @@
-﻿---
-gald3r_rel_version: "1.11.0"
+---
+gald3r_rel_version: "2.0.1"
 schema_version: "generic-v1"
 ---
 # Cross-Project Coordination (WPAC) — Linking Directory

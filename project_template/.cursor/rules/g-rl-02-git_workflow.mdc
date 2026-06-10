@@ -37,31 +37,14 @@ Phase: {N}
 
 ## Protected Files (NEVER commit these)
 
-Before every `git add` or `git commit`, verify NONE of these are staged:
+Before every `git add` or `git commit`, verify NONE of these are staged
+(all are gitignored — if staged, verify `.gitignore` still contains the entry):
 
-| Pattern | Why |
-|---|---|
-| `/.agent/` | Personal IDE config (gitignored) |
-| `/.claude/` | Personal IDE config (gitignored) |
-| `/.codex/` | Personal IDE config (gitignored) |
-| `/.cursor/` | Personal IDE config (gitignored) |
-| `/.opencode/` | Personal IDE config (gitignored) |
-| `/.gald3r/` | Live project state (gitignored) |
-| `/.project_template/` | Root-level template copy (gitignored) |
-| `/temp_docs/` | Scratch files (gitignored) |
-| `/temp_scripts/` | Scratch files (gitignored) |
-| `/AGENTS.md` | Personalized per-user (gitignored) |
-| `/CLAUDE.md` | Personalized per-user (gitignored) |
-| `/GEMINI.md` | Personalized per-user (gitignored) |
-| `/GUARDRAILS.md` | Personalized per-user (gitignored) |
-| `/.env` | Secrets (gitignored) |
-| `/.mcp.json` | Machine-specific MCP config (gitignored) |
+`/.agent/` `/.claude/` `/.codex/` `/.cursor/` `/.opencode/`
+`/.gald3r/` `/.project_template/` `/temp_docs/` `/temp_scripts/`
+`/AGENTS.md` `/CLAUDE.md` `/GEMINI.md` `/GUARDRAILS.md` `/.env` `/.mcp.json`
 
-If `git status` shows ANY of these as staged or untracked-to-be-added:
-1. **STOP** — do not commit
-2. Remove from staging: `git reset HEAD <file>`
-3. Verify `.gitignore` still contains the entry
-4. Warn the user that a protected file was almost committed
+If `git status` shows ANY of these staged: stop, run `git reset HEAD <file>`, verify `.gitignore`, warn user.
 
 ## Branch Model (feature-branches-only — NO long-lived `dev`/`test`)
 
@@ -88,7 +71,6 @@ Use `scripts/gald3r_worktree.ps1` as the shared primitive for agent-owned worktr
 - Default root: `$env:GALD3R_WORKTREE_ROOT`, or `<repo-parent>/.gald3r-worktrees/<repo-name>` when unset.
 - Never create worktrees inside the active repository checkout.
 - `Create` blocks on a dirty active checkout unless an explicit `-AllowDirty` override is used after recording ownership.
-- For `g-go*`, `g-go-code*`, `g-go-review*`, and `--swarm` flows, follow `g-rl-33` **Clean Controller Gate** and **Pre-Reconciliation Clean Gate** on the **computed touch set** of git roots (orchestration + manifest members from `workspace_repos:` and v2 expansions per `g-rl-33`) before claims, worktrees, and coordinator shared writes; do not use `-AllowDirty` there except with documented task/bug ownership in `## Status History` **per root** that policy allows.
 - Task claims created from worktrees should record `worktree_path`, `worktree_branch`, `worktree_created_at`, and `worktree_owner`.
 - Cleanup is report-only unless `-Apply` is provided and may remove only directories with `.gald3r-worktree.json` ownership metadata.
 

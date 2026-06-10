@@ -104,9 +104,6 @@ if ((Test-Path (Join-Path $TargetPath ".gald3r")) -and -not $Force -and -not $Dr
 }
 
 # -- Copy-Layer helper ---------------------------------------------------------
-# Copies all files from $SourceDir into $TargetDir.
-# $SkipTopDirs : top-level dirs to exclude entirely (e.g. skip .cursor when installing windsurf)
-# $Protected   : top-level dirs that exist in target and should never be overwritten
 function Copy-Layer {
     param(
         [string]   $SourceDir,
@@ -133,9 +130,6 @@ function Copy-Layer {
 
 $protected = @(".gald3r")
 
-# -- Determine what to install -------------------------------------------------
-# In gald3r: .cursor/ and .claude/ live inside project_template/ (Tier 1 = no overlay needed)
-# In <template_adv>: project_template/ has NO platform dirs - overlay always required
 $tier1 = if (-not $RequirePlatform) { @("cursor", "claude") } else { @() }
 $isTier1 = (-not $Platform) -or ($Platform -in $tier1)
 
@@ -151,14 +145,12 @@ Write-Host ""
 
 $total = 0
 
-# Step 1: shared base from project_template/
 $skipDirs = if ($isTier1) {
-    # Cursor: skip .claude; Claude: skip .cursor; default: skip nothing
     if ($Platform -eq "cursor") { @(".claude") }
     elseif ($Platform -eq "claude") { @(".cursor") }
     else { @() }
 } else {
-    @(".cursor", ".claude")   # non-Tier1: skip platform-specific dirs, brain only
+    @(".cursor", ".claude")
 }
 
 $n1 = Copy-Layer -SourceDir $templateDir -TargetDir $TargetPath `
@@ -166,7 +158,6 @@ $n1 = Copy-Layer -SourceDir $templateDir -TargetDir $TargetPath `
 $total += $n1
 Write-Host "  Base   : $n1 files  (project_template/)"
 
-# Step 2: platform overlay (only for non-Tier1 or explicit single platform)
 if ($Platform -and $Platform -notin $tier1 -and (Test-Path $platformsDir)) {
     $platDir = Join-Path $platformsDir $Platform
     if (Test-Path $platDir) {
@@ -176,17 +167,12 @@ if ($Platform -and $Platform -notin $tier1 -and (Test-Path $platformsDir)) {
     }
 }
 
-# -- Summary -------------------------------------------------------------------
 Write-Host ""
 if ($DryRun) {
     Write-Host "  Dry run -- would copy $total files." -ForegroundColor Yellow
 } else {
     Write-Host "  Done. $total files installed." -ForegroundColor Green
 
-    # -- Provision the bundled gald3r engine (uv) ------------------------------
-    # Makes the slimmed skills' preferred path (`gald3r <verb>`) work out of the box.
-    # Fully optional: -NoEngine skips it, and any failure is non-fatal because every
-    # slimmed skill ships a SKILL.full.md fallback that works without the engine.
     if (-not $NoEngine) {
         $provPs1 = Join-Path $TargetPath ".gald3r_sys/engine/provision_engine.ps1"
         if (Test-Path $provPs1) {
@@ -197,9 +183,6 @@ if ($DryRun) {
                 Write-Host "  (Skills still work via their SKILL.full.md fallback.)" -ForegroundColor DarkGray
             }
         }
-    } else {
-        Write-Host "  Engine provisioning skipped (-NoEngine). Skills use their SKILL.full.md fallback;" -ForegroundColor DarkGray
-        Write-Host "  provision later with: pwsh .gald3r_sys/engine/provision_engine.ps1" -ForegroundColor DarkGray
     }
 
     Write-Host ""
@@ -213,9 +196,6 @@ if ($DryRun) {
     if ($Platform -and $Platform -notin $tier1) {
         Write-Host "   $Platform : open project in $Platform -- .gald3r/ brain and AGENTS.md are ready"
     }
-    Write-Host ""
-    Write-Host "   Engine     : slimmed skills call the bundled engine at .gald3r_sys/engine/" -ForegroundColor DarkGray
-    Write-Host "                (re/provision anytime: pwsh .gald3r_sys/engine/provision_engine.ps1)" -ForegroundColor DarkGray
     Write-Host ""
     Write-Host "  Docs: https://github.com/wrm3/gald3r" -ForegroundColor DarkGray
 }
