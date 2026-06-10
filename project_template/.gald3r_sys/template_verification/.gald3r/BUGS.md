@@ -1,5 +1,5 @@
-﻿---
-gald3r_rel_version: "1.11.0"
+---
+gald3r_rel_version: "2.0.1"
 schema_version: "BUGS-md-v1"
 ---
 # BUGS.md — {PROJECT_NAME} Bug Tracker

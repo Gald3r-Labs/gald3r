@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/wrm3/gald3r/releases/tag/v2.0.0"><img src="https://img.shields.io/badge/version-2.0.0-blue" alt="version 2.0.0" /></a>
+  <a href="https://github.com/wrm3/gald3r/releases/tag/v2.0.1"><img src="https://img.shields.io/badge/version-2.0.1-blue" alt="version 2.0.1" /></a>
   <a href="CHANGELOG.md">Changelog</a> |
   <a href="CONTRIBUTING.md">Contributing</a> |
   <a href="gald3r_supported_platforms.html">All 34 platforms</a>
@@ -35,6 +35,10 @@ Once installed, your AI gains:
 - **A bundled file-first engine** (Mode-A, new in 2.0) — every system (tasks, bugs, vault, releases, …) is driven by a deterministic Python core via the `gald3r` CLI or an MCP server, with zero LLM calls. `gald3r doctor` keeps the install healthy. One prerequisite: [`uv`](https://docs.astral.sh/uv/).
 
 Everything is plain markdown files in your repo. No accounts, no API keys beyond what you already have.
+
+<!-- PENDING_RELEASE_START -->
+<!-- Pending release highlights (user-facing). Filled as features ship; cleared at publish. -->
+<!-- PENDING_RELEASE_END -->
 
 ---
 
@@ -217,4 +221,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Issues and PRs welcome.
 
 ---
 
-*Powered by gald3r v1.11.0 · [Changelog](CHANGELOG.md) · [Roadmap](ROADMAP.md)*
+*Powered by gald3r v2.0.1 · [Changelog](CHANGELOG.md) · [Roadmap](ROADMAP.md)*
