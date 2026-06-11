@@ -86,7 +86,7 @@ Edge-case coverage beyond the inline VALIDATE smoke-test lives in
 single-element / scalar arrays, null & empty-string tabular cells, pipe-escaped cells,
 numeric/bool-looking strings (preserved as strings), and safe special characters:
 ```powershell
-pwsh -File .claude/skills/g-skl-toon-output/scripts/toon_test.ps1   # exit 0 = all pass
+uv run python .claude/skills/g-skl-toon-output/scripts/toon_test.py   # exit 0 = all pass
 ```
 
 ### EXPORT
@@ -96,7 +96,7 @@ Save under `html_output_dir` (default `docs/`) per `g-rl-01` with a `.toon` exte
 
 Helper: `.claude/skills/g-skl-toon-output/scripts/toon_output.ps1`
 ```powershell
-pwsh -File .claude/skills/g-skl-toon-output/scripts/toon_output.ps1 `
+uv run python .claude/skills/g-skl-toon-output/scripts/toon_output.py `
   -Command g-status -Schema status -DataJson $jsonString -OutDir docs -Topic STATUS
 # add -Compare to print markdown-vs-TOON token estimate; -Stdout to skip the file write
 ```

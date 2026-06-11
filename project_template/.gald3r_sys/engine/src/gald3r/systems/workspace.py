@@ -38,7 +38,7 @@ INBOX_SECTIONS = ["CONFLICT", "REQUEST", "BROADCAST", "SYNC", "RESOLVED"]
 _TOPOLOGY_NAMES = ["topology.md", "link_topology.md", "PROJECT_TOPOLOGY.md"]
 # Workspace-Control manifest contract (PARSE_MANIFEST / VALIDATE in g-skl-workspace).
 _MANIFEST_TOP_KEYS = ["schema", "workspace", "repositories", "controlled_members",
-                      "routing_policy", "pcac_relationship"]
+                      "routing_policy", "wpac_relationship"]
 _MANIFEST_WORKSPACE_KEYS = ["id", "display_name", "lifecycle_status",
                             "owner_repository_id", "bootstrap_member_ids"]
 
@@ -303,7 +303,7 @@ schema_version: "generic-v1"
             return {"active": False, "role": "standalone", "member_count": 0,
                     "valid": False, "summary": "no manifest — current repository only"}
         members = self.member_list()
-        rel = m.get("pcac_relationship") or {}
+        rel = m.get("wpac_relationship") or {}
         role = rel.get("role", "standalone") if isinstance(rel, dict) else "standalone"
         errs = self.validate_manifest()
         active = bool(members) or role != "standalone"

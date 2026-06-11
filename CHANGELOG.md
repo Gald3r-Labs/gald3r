@@ -12,10 +12,35 @@ _Pending release notes accumulate here as tasks and bugs are completed. At publi
 section is renamed to `[X.Y.Z] - YYYY-MM-DD` and a fresh `[Unreleased]` block is opened._
 
 ### Added
+- **All skill scripts ported to Python** (T1585) — every `.ps1` under `skills/*/scripts/`
+  (48 scripts incl. the 1,765-line `gald3r_worktree.ps1`, decomposed into a `worktree_lib/`
+  package) now has a `.py` sibling; SKILL.md/command invocations rewritten from
+  `powershell/pwsh -File <script>.ps1` to `uv run python <script>.py` across all platform
+  mirrors. PS1 files remain as transition fallbacks; ports prefer `.py` siblings for
+  cross-script calls with `pwsh` fallback.
+- **All platform hooks ported to Python** (T1584) — every `g-hk-*.ps1` hook (27 scripts)
+  now has a `.py` sibling plus a shared `_hook_common.py` bootstrap; hook configs
+  (`.claude/hooks.json`, `.cursor/hooks.json`, and all platform-overlay configs) now invoke
+  `python <hook>.py` instead of `pwsh -File <hook>.ps1`. macOS/Linux installs get fully
+  functional hooks without PowerShell. The `.ps1` files remain as transition fallbacks.
+- **`setup_gald3r_project.py` cross-platform installer** (T1586) — Python port of the
+  first-run setup with `--non-interactive` mode, `--dry-run`, UUID4 project_id generation,
+  and new `setup_gald3r_project.sh` shim; `setup_gald3r_project.bat` now calls the Python
+  version. `install_git_hooks.py` ports the git-hook installer (`core.hooksPath`,
+  POSIX chmod +x).
+- **`gald3r.utils` cross-platform utility module** (T1583) — new engine sub-package with
+  `console` (colored output, NO_COLOR/FORCE_COLOR support), `fs` (`copy_tree` robocopy
+  replacement, `clear_dir_except_git`, `replace_in_file_tree`, `ensure_dir`), `process`
+  (`run_cmd`/`run_git` with dry-run and `RunResult`), and `paths` (`temp_file`,
+  `gald3r_root`, `ecosystem_root`). Foundation for the PS1 → Python migration (T1581):
+  ported scripts import from here instead of re-implementing PowerShell patterns.
 
 ### Changed
 
 ### Fixed
+- **Workspace manifest validator typo re-fixed in the canonical engine** (BUG-128) — the
+  documented `pcac_relationship` → `wpac_relationship` fix had not landed in
+  `project_template/.gald3r_sys/engine`; `validate_manifest()` and `status()` corrected.
 
 ---
 
