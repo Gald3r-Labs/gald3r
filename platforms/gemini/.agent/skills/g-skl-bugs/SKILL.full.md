@@ -259,7 +259,7 @@ in the framework template and changes between releases. Use the canonical restor
 1. **Preferred (engine):** run the framework restore engine, which sources the pristine copy
    from `.gald3r_sys/template_verification/.gald3r/`:
    ```powershell
-   pwsh -File .gald3r_sys/scripts/migrate_schemas.ps1 -ProjectPath <proj> -RestoreMissing -Apply
+   uv run python .gald3r_sys/scripts/migrate_schemas.py -ProjectPath <proj> -RestoreMissing -Apply
    ```
    (omit `-Apply` to see what it would restore). This restores any missing `.gald3r/` root file,
    including `BUGS.md`, with correct `schema_version` / `gald3r_rel_version` frontmatter.

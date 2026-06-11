@@ -869,7 +869,7 @@ in the framework template and changes between releases. Use the canonical restor
 1. **Preferred (engine):** run the framework restore engine, which sources the pristine copy
    from `.gald3r_sys/template_verification/.gald3r/`:
    ```powershell
-   pwsh -File .gald3r_sys/scripts/migrate_schemas.ps1 -ProjectPath <proj> -RestoreMissing -Apply
+   uv run python .gald3r_sys/scripts/migrate_schemas.py -ProjectPath <proj> -RestoreMissing -Apply
    ```
    (omit `-Apply` to see what it would restore). This restores any missing `.gald3r/` root file,
    including `TASKS.md`, with correct `schema_version` / `gald3r_rel_version` frontmatter.
@@ -1268,7 +1268,7 @@ snapshot once and use it as the source of truth for valid statuses + symbols:
 # Resolves the hybrid activation chain (task frontmatter > PROJECT.md >
 # .identity project_type= > freeform) and prints a JSON snapshot.
 # -TaskFile lets a per-task workflow_profile: override win.
-pwsh -NoProfile -File .claude/skills/g-skl-project-types/scripts/load_profile.ps1 `
+uv run python .claude/skills/g-skl-project-types/scripts/load_profile.py `
     -TaskFile .gald3r/tasks/open/task<id>_<slug>.md
 ```
 

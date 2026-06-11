@@ -159,7 +159,7 @@ gald3r write); fall back to the co-located script only where the engine is unava
 gald3r inbox            # or: python -m gald3r inbox
 
 # Fallback (L0, no engine) — the co-located script, behaviour-identical
-powershell -NoProfile -ExecutionPolicy Bypass -File skills\g-skl-tasks\scripts\hot_inbox_intake.ps1 -ProjectRoot . -Quiet
+uv run python skills\g-skl-tasks\scripts\hot_inbox_intake.py -ProjectRoot . -Quiet
 ```
 
 If `N > 0` items were ingested: log `"Ingested N task(s) / M bug(s) from inbox"` and continue.

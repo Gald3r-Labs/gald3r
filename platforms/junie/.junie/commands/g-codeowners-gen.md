@@ -26,8 +26,8 @@ Runs the helper `.claude/skills/g-skl-github-pr/scripts/codeowners_gen.ps1`:
 5. UTF-8 without BOM.
 
 ```powershell
-pwsh -NoProfile -File .claude/skills/g-skl-github-pr/scripts/codeowners_gen.ps1 -DryRun
-pwsh -NoProfile -File .claude/skills/g-skl-github-pr/scripts/codeowners_gen.ps1
+uv run python .claude/skills/g-skl-github-pr/scripts/codeowners_gen.py -DryRun
+uv run python .claude/skills/g-skl-github-pr/scripts/codeowners_gen.py
 ```
 
 ## Flags

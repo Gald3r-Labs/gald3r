@@ -29,7 +29,7 @@ First-time setup of gald3r in a project. @g-setup command.
 **Before any folder or file creation**, verify the target install path is not a Workspace-Control controlled_member or migration_source repository. `g-skl-setup` is for installing a full standalone gald3r project; member repositories use a marker-only `.gald3r/` shape that is owned by `g-wrkspc-spawn` / `g-wrkspc-adopt` plus the bootstrap helper, NOT full setup.
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath "<absolute_install_target>"
+uv run python .claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.py -TargetPath "<absolute_install_target>"
 ```
 
 Outcomes:
@@ -288,7 +288,7 @@ The template (`assets/gitattributes-lfs.template`) covers: `.psd .ai .fbx .obj
      ```powershell
      $hookFile = ".git/hooks/post-commit"
      # use the active platform's hook path (.cursor/hooks/, .claude/hooks/, ...)
-     $hookLine = "powershell -NoProfile -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-graph-update.ps1"
+     $hookLine = "uv run python .cursor/hooks/g-hk-graph-update.py"
      $existing = if (Test-Path $hookFile) { Get-Content $hookFile -Raw } else { "" }
      if ($existing -notlike "*$hookLine*") { Add-Content -Path $hookFile -Value $hookLine }
      ```
@@ -297,7 +297,7 @@ The template (`assets/gitattributes-lfs.template`) covers: `.psd .ai .fbx .obj
      ```bash
      HOOK_FILE=".git/hooks/post-commit"
      # use the active platform's hook path (.cursor/hooks/, .claude/hooks/, ...)
-     HOOK_LINE="powershell -NoProfile -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-graph-update.ps1"
+     HOOK_LINE="uv run python .cursor/hooks/g-hk-graph-update.py"
      grep -qF "$HOOK_LINE" "$HOOK_FILE" 2>/dev/null || { printf '%s\n' "$HOOK_LINE" >> "$HOOK_FILE"; chmod +x "$HOOK_FILE"; }
      ```
      Re-running setup does not duplicate the line; the hook exits 0 on all platforms even if indexing fails. See the **Codebase Graph (gald3r_muninn)** section below.

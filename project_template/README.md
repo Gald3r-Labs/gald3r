@@ -1,4 +1,4 @@
-# {project_name}
+﻿# {project_name}
 
 This project runs on **[Gald3r](https://github.com/wrm3/gald3r) Unity** -- a hybrid setup for
 **both Cursor and Claude Code** over one shared `.gald3r/` brain. Plan in Cursor, code & review
