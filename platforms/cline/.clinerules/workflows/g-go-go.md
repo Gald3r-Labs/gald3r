@@ -153,7 +153,7 @@ Before the PCAC gate, before any claim, run the inbox intake to absorb any tasks
 dropped into the gitignored staging zones during this or a prior run:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File custom_scripts\hot_inbox_intake.ps1 -ProjectRoot . -Quiet
+uv run python custom_scripts\hot_inbox_intake.py -ProjectRoot . -Quiet
 ```
 
 If `N > 0` items were ingested: log `"Ingested N task(s) / M bug(s) from inbox"` and continue.

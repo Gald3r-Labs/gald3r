@@ -108,10 +108,10 @@ is illustrative:
 {
   "version": 1,
   "hooks": {
-    "sessionStart": [{"command": "powershell -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-session-start.ps1", "_hook_md": ".cursor/hooks/g-hk-session-start.md"}],
-    "stop": [{"command": "powershell -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-agent-complete.ps1", "_hook_md": ".cursor/hooks/g-hk-agent-complete.md"}],
-    "beforeShellExecution": [{"command": "powershell -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-validate-shell.ps1", "_hook_md": ".cursor/hooks/g-hk-validate-shell.md"}],
-    "preToolUse": [{"matcher": "Edit|Write|MultiEdit|Patch", "command": "powershell -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-pre-tool-call-gald3r-guard.ps1", "_hook_md": ".cursor/hooks/g-hk-pre-tool-call-gald3r-guard.md"}]
+    "sessionStart": [{"command": "uv run python .cursor/hooks/g-hk-session-start.py", "_hook_md": ".cursor/hooks/g-hk-session-start.md"}],
+    "stop": [{"command": "uv run python .cursor/hooks/g-hk-agent-complete.py", "_hook_md": ".cursor/hooks/g-hk-agent-complete.md"}],
+    "beforeShellExecution": [{"command": "uv run python .cursor/hooks/g-hk-validate-shell.py", "_hook_md": ".cursor/hooks/g-hk-validate-shell.md"}],
+    "preToolUse": [{"matcher": "Edit|Write|MultiEdit|Patch", "command": "uv run python .cursor/hooks/g-hk-pre-tool-call-gald3r-guard.py", "_hook_md": ".cursor/hooks/g-hk-pre-tool-call-gald3r-guard.md"}]
   }
 }
 ```

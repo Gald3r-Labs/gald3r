@@ -1,4 +1,4 @@
----
+﻿---
 subsystem_memberships: [BUG_AND_QUALITY]
 gald3r_rel_version: "2.0.1"
 schema_version: "BUGS-md-v1"
@@ -7,7 +7,7 @@ schema_version: "BUGS-md-v1"
   EXAMPLE ONLY — illustrative BUGS.md in current schema format.
 
   This is NOT a reset/restore source. To reset or restore a real BUGS.md:
-    - run  pwsh -File .gald3r_sys/scripts/migrate_schemas.ps1 -ProjectPath <proj> -RestoreMissing -Apply
+    - run  uv run python .gald3r_sys/scripts/migrate_schemas.py -ProjectPath <proj> -RestoreMissing -Apply
     - or copy  .gald3r_sys/template_verification/.gald3r/BUGS.md
   Never reconstruct BUGS.md from memory or from this example. See g-skl-bugs
   "Operation: RESET / RESTORE BUGS.md".

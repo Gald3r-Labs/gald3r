@@ -191,7 +191,7 @@ Restore order for any missing required file:
 2. **Engine shell-out (optional)** — for a batch restore of all missing single-file artifacts,
    shell out to the canonical engine rather than re-implementing the copy:
    ```
-   pwsh -File .gald3r_sys/scripts/migrate_schemas.ps1 -ProjectPath <proj> -RestoreMissing -Apply
+   uv run python .gald3r_sys/scripts/migrate_schemas.py -ProjectPath <proj> -RestoreMissing -Apply
    ```
    (`-RestoreMissing` without `-Apply` reports what it would restore — use for `--dry-run`.)
    The engine resolves the same `template_verification/.gald3r/` canonical source.

@@ -142,7 +142,7 @@ gald3r --json doctor                # machine-readable summary for dashboards / 
 gald3r doctor --only tasks,bugs     # subset of system groups
 
 # Fallback (L0, no engine) — the co-located script (also writes a markdown report under .gald3r/reports/)
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/gald3r_system_test.ps1 -ProjectRoot . -FailBelow 80
+uv run python scripts/gald3r_system_test.py -ProjectRoot . -FailBelow 80
 ```
 
 > The engine `doctor` covers the deterministic, read-only checks (structure + per-system

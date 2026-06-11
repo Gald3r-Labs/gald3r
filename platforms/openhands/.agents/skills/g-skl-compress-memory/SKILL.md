@@ -30,7 +30,7 @@ The apply path refuses to write unless the protected ranges are **byte-identical
 
 ### SCAN (default, dry-run — never writes)
 ```bash
-pwsh -File .claude/skills/g-skl-compress-memory/scripts/gald3r_compress_memory.ps1
+uv run python .claude/skills/g-skl-compress-memory/scripts/gald3r_compress_memory.py
 # or a specific file: -Path AGENTS.md   ; machine-readable: -Json
 ```
 Reports per file: `status` (`compressible` | `skip` | `warn`), total / protected / compressible
@@ -51,7 +51,7 @@ Produce a **full new file** with the protected gald3r range left byte-identical.
 
 ### APPLY (writes — requires confirmation)
 ```bash
-pwsh -File .../gald3r_compress_memory.ps1 -Path AGENTS.md -Apply -CompressedFile new_full.md -Confirm
+uv run python .../gald3r_compress_memory.py -Path AGENTS.md -Apply -CompressedFile new_full.md -Confirm
 ```
 The helper re-detects the gald3r ranges in both files and **refuses to write** unless they match
 byte-for-byte. No `-Confirm` ⇒ no write. Always show the user a diff + the dry-run token delta first.

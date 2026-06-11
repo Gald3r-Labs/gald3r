@@ -9,57 +9,57 @@
   "hooks": {
     "sessionStart": [
       {
-        "command": "pwsh -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-session-start.ps1",
+        "command": "python .cursor/hooks/g-hk-session-start.py",
         "_hook_md": ".cursor/hooks/g-hk-session-start.md"
       }
     ],
     "stop": [
       {
-        "command": "pwsh -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-agent-complete.ps1",
+        "command": "python .cursor/hooks/g-hk-agent-complete.py",
         "_hook_md": ".cursor/hooks/g-hk-agent-complete.md"
       },
       {
-        "command": "pwsh -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-nightly-learn.ps1",
+        "command": "python .cursor/hooks/g-hk-nightly-learn.py",
         "_hook_md": ".cursor/hooks/g-hk-nightly-learn.md"
       },
       {
-        "command": "pwsh -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-session-end.ps1",
+        "command": "python .cursor/hooks/g-hk-session-end.py",
         "_hook_md": ".cursor/hooks/g-hk-session-end.md"
       },
       {
-        "command": "pwsh -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-encoding-normalize.ps1 -Quiet",
+        "command": "python .cursor/hooks/g-hk-encoding-normalize.py -Quiet",
         "_hook_md": ".cursor/hooks/g-hk-encoding-normalize.md"
       },
       {
-        "command": "pwsh -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-ggo-stop-detect.ps1",
+        "command": "python .cursor/hooks/g-hk-ggo-stop-detect.py",
         "_hook_md": ".cursor/hooks/g-hk-ggo-stop-detect.md"
       }
     ],
     "beforeShellExecution": [
       {
-        "command": "pwsh -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-validate-shell.ps1",
+        "command": "python .cursor/hooks/g-hk-validate-shell.py",
         "_hook_md": ".cursor/hooks/g-hk-validate-shell.md"
       }
     ],
     "preToolUse": [
       {
         "matcher": "Edit|Write|MultiEdit|NotebookEdit|Patch|ApplyPatch|str_replace_editor",
-        "command": "pwsh -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-pre-tool-call-gald3r-guard.ps1",
+        "command": "python .cursor/hooks/g-hk-pre-tool-call-gald3r-guard.py",
         "_hook_md": ".cursor/hooks/g-hk-pre-tool-call-gald3r-guard.md"
       },
       {
         "matcher": "Edit|Write|MultiEdit|NotebookEdit|Patch|ApplyPatch|str_replace_editor",
-        "command": "pwsh -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-pre-tool-call-prd-freeze.ps1",
+        "command": "python .cursor/hooks/g-hk-pre-tool-call-prd-freeze.py",
         "_hook_md": ".cursor/hooks/g-hk-pre-tool-call-prd-freeze.md"
       },
       {
         "matcher": "Edit|Write|MultiEdit|NotebookEdit|Patch|ApplyPatch|str_replace_editor",
-        "command": "pwsh -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-pre-tool-call-member-gald3r-guard.ps1",
+        "command": "python .cursor/hooks/g-hk-pre-tool-call-member-gald3r-guard.py",
         "_hook_md": ".cursor/hooks/g-hk-pre-tool-call-member-gald3r-guard.md"
       },
       {
         "matcher": "Bash|Shell|Terminal|run_terminal_cmd",
-        "command": "pwsh -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-pre-tool-call.ps1",
+        "command": "python .cursor/hooks/g-hk-pre-tool-call.py",
         "_hook_md": ".cursor/hooks/g-hk-pre-tool-call.md"
       }
     ]

@@ -59,7 +59,7 @@ extension: `YYYYMMDD_HHMMSS_<IDE>_<TOPIC>.json`. Return the path.
 
 Helper: `.claude/skills/g-skl-json-output/scripts/json_output.ps1`
 ```powershell
-pwsh -File .claude/skills/g-skl-json-output/scripts/json_output.ps1 `
+uv run python .claude/skills/g-skl-json-output/scripts/json_output.py `
   -Command g-status -Schema status -DataJson $jsonString -OutDir docs -Topic STATUS
 ```
 

@@ -1,4 +1,4 @@
-# <!-- gald3r AGENTS.md START -->
+﻿# <!-- gald3r AGENTS.md START -->
 # agents.md - {project_name}
 
 > This file follows the agents.md format for AI agent instructions.
