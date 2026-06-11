@@ -147,7 +147,7 @@ commit proceeds.
 
 ```bash
 # Wire as a git post-commit hook (optional)
-echo 'powershell -NoProfile -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-graph-update.ps1' > .git/hooks/post-commit
+echo 'uv run python .cursor/hooks/g-hk-graph-update.py' > .git/hooks/post-commit
 ```
 
 ## Language Support

@@ -215,9 +215,9 @@ SPAWN_APPLY may run only when all gates pass:
 
      ```powershell
      # Confirm member-init is allowed
-     powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath "<absolute_target_path>" -AllowMarkerInit
+     uv run python .claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.py -TargetPath "<absolute_target_path>" -AllowMarkerInit
      # Bootstrap .gald3r/.identity and .gald3r/PROJECT.md
-     powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1 -MemberPath "<absolute_target_path>" -MemberId "<repo_id>" -Apply
+     uv run python .claude/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.py -MemberPath "<absolute_target_path>" -MemberId "<repo_id>" -Apply
      ```
 
      The guard at exit `1` (BLOCK) refuses apply with `BLOCK spawn_member_repo_gald3r_guard_block`. Exit `2` (ERROR) refuses with `BLOCK spawn_member_repo_gald3r_guard_error`. Bootstrap may itself BLOCK with `BLOCK spawn_member_gald3r_has_control_plane` when the existing `.gald3r/` already contains forbidden content — in that case point the user to `.claude/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1` first. Only the combination of guard ALLOW + bootstrap success completes SPAWN_APPLY.
@@ -1226,7 +1226,7 @@ Three companion helpers ship in `scripts/` (and `<ECOSYSTEM_ROOT>/<template_full
 ### MEMBER_MARKER_BOOTSTRAP — only sanctioned writer of member `.gald3r/`
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1 `
+uv run python .claude/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.py `
     -MemberPath "<absolute_member_path>" `
     -MemberId "<manifest_repo_id>" `
     [-ControllerPath "<absolute_controller_path>"] `   # optional; defaults to upward manifest discovery
@@ -1247,11 +1247,11 @@ Called by: SPAWN_APPLY (after git init + minimal `.gitignore`/`README.md`), MEMB
 
 ```powershell
 # Dry-run
-powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1 `
+uv run python .claude/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.py `
     -MemberPath "<absolute_member_path>"
 
 # Apply (quarantines forbidden entries; never deletes)
-powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1 `
+uv run python .claude/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.py `
     -MemberPath "<absolute_member_path>" `
     -Apply
 ```
@@ -1263,7 +1263,7 @@ Used for: cleaning up historical violations (e.g. `example_desktop` / Task 197),
 ### MEMBER_MARKER_VALIDATE — workspace-wide audit
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1
+uv run python .claude/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.py
 ```
 
 Scans every controlled_member and migration_source from the manifest and reports per-member compliance: `clean` / `marker_missing` / `marker_incomplete` / `has_violations` / `not_yet_created`. Exit `0` if all clean, `1` if any has_violations (use `-WarnOnly` for advisory mode, `-Json` for machine-readable output). Required as part of pre-adoption preflight before any new member is added.
@@ -1345,14 +1345,14 @@ equivalent skill-driven path. After the install, verify `.claude/`, `.cursor/`, 
 
 ```powershell
 # Dry-run (default)
-powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/g-skl-workspace/scripts/gald3r_promote_member.ps1 `
+uv run python .claude/skills/g-skl-workspace/scripts/gald3r_promote_member.py `
     -MemberPath "<absolute_member_path>" `
     [-MemberId "<manifest_repo_id>"] `      # inferred from manifest/.identity when omitted
     [-ControllerPath "<absolute_controller_path>"] `
     [-ManifestPath "<absolute_manifest_path>"]
 
 # Apply
-powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/g-skl-workspace/scripts/gald3r_promote_member.ps1 `
+uv run python .claude/skills/g-skl-workspace/scripts/gald3r_promote_member.py `
     -MemberPath "<absolute_member_path>" `
     -Apply
 ```

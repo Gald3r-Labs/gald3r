@@ -11,33 +11,33 @@
     "_gap_sessionStart": "SUSPECT (PLATFORM_SPEC §6/§9 gap #1): lowercase 'sessionStart' is the Cursor-era name; the official Claude Code event is 'SessionStart' in settings.json. May not fire here. Verify before relying on it.",
     "sessionStart": [
       {
-        "command": "pwsh -ExecutionPolicy Bypass -File .claude/hooks/g-hk-session-start.ps1",
+        "command": "python .claude/hooks/g-hk-session-start.py",
         "_hook_md": ".claude/hooks/g-hk-session-start.md"
       }
     ],
     "_gap_stop": "SUSPECT (PLATFORM_SPEC §6/§9 gap #1/#2): lowercase 'stop' is the Cursor-era name; the official Claude Code event is 'Stop' in settings.json (where a live chat-logger Stop hook may already exist -> possible double-fire/no-fire ambiguity). Verify before relying on it.",
     "stop": [
       {
-        "command": "pwsh -ExecutionPolicy Bypass -File .claude/hooks/g-hk-agent-complete.ps1",
+        "command": "python .claude/hooks/g-hk-agent-complete.py",
         "_hook_md": ".claude/hooks/g-hk-agent-complete.md"
       },
       {
-        "command": "pwsh -ExecutionPolicy Bypass -File .claude/hooks/g-hk-nightly-learn.ps1",
+        "command": "python .claude/hooks/g-hk-nightly-learn.py",
         "_hook_md": ".claude/hooks/g-hk-nightly-learn.md"
       },
       {
-        "command": "pwsh -ExecutionPolicy Bypass -File .claude/hooks/g-hk-encoding-normalize.ps1 -Quiet",
+        "command": "python .claude/hooks/g-hk-encoding-normalize.py -Quiet",
         "_hook_md": ".claude/hooks/g-hk-encoding-normalize.md"
       },
       {
-        "command": "pwsh -ExecutionPolicy Bypass -File .claude/hooks/g-hk-ggo-stop-detect.ps1",
+        "command": "python .claude/hooks/g-hk-ggo-stop-detect.py",
         "_hook_md": ".claude/hooks/g-hk-ggo-stop-detect.md"
       }
     ],
     "_gap_beforeShellExecution": "SUSPECT (PLATFORM_SPEC §6/§9 gap #1): 'beforeShellExecution' is a Cursor-era event name with NO official Claude Code equivalent. The closest Claude Code mechanism is a 'PreToolUse' matcher targeting the Bash tool (see the PreToolUse 'Bash|Shell|...' block below). This entry likely does NOT fire on Claude Code; preserved pending verification.",
     "beforeShellExecution": [
       {
-        "command": "pwsh -ExecutionPolicy Bypass -File .claude/hooks/g-hk-validate-shell.ps1",
+        "command": "python .claude/hooks/g-hk-validate-shell.py",
         "_hook_md": ".claude/hooks/g-hk-validate-shell.md"
       }
     ],
@@ -48,17 +48,17 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -ExecutionPolicy Bypass -File .claude/hooks/g-hk-pre-tool-call-gald3r-guard.ps1",
+            "command": "python .claude/hooks/g-hk-pre-tool-call-gald3r-guard.py",
             "_hook_md": ".claude/hooks/g-hk-pre-tool-call-gald3r-guard.md"
           },
           {
             "type": "command",
-            "command": "pwsh -ExecutionPolicy Bypass -File .claude/hooks/g-hk-pre-tool-call-prd-freeze.ps1",
+            "command": "python .claude/hooks/g-hk-pre-tool-call-prd-freeze.py",
             "_hook_md": ".claude/hooks/g-hk-pre-tool-call-prd-freeze.md"
           },
           {
             "type": "command",
-            "command": "pwsh -ExecutionPolicy Bypass -File .claude/hooks/g-hk-pre-tool-call-member-gald3r-guard.ps1",
+            "command": "python .claude/hooks/g-hk-pre-tool-call-member-gald3r-guard.py",
             "_hook_md": ".claude/hooks/g-hk-pre-tool-call-member-gald3r-guard.md"
           }
         ]
@@ -68,7 +68,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pwsh -ExecutionPolicy Bypass -File .claude/hooks/g-hk-pre-tool-call.ps1",
+            "command": "python .claude/hooks/g-hk-pre-tool-call.py",
             "_hook_md": ".claude/hooks/g-hk-pre-tool-call.md"
           }
         ]

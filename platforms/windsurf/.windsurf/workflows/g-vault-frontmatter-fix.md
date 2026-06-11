@@ -20,9 +20,9 @@ Runs `.claude/skills/g-skl-vault/scripts/frontmatter_fix.ps1`:
    block (existing content preserved byte-for-byte). UTF-8 without BOM.
 
 ```powershell
-pwsh -NoProfile -File .claude/skills/g-skl-vault/scripts/frontmatter_fix.ps1            # dry-run
-pwsh -NoProfile -File .claude/skills/g-skl-vault/scripts/frontmatter_fix.ps1 -Apply
-pwsh -NoProfile -File .claude/skills/g-skl-vault/scripts/frontmatter_fix.ps1 -File "<path>" -Apply
+uv run python .claude/skills/g-skl-vault/scripts/frontmatter_fix.py            # dry-run
+uv run python .claude/skills/g-skl-vault/scripts/frontmatter_fix.py -Apply
+uv run python .claude/skills/g-skl-vault/scripts/frontmatter_fix.py -File "<path>" -Apply
 ```
 
 ## Flags

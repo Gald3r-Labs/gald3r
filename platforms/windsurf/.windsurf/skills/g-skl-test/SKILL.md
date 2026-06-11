@@ -135,16 +135,16 @@ functionality percentage.
 
 ```powershell
 # Full run against the current install (writes .gald3r/reports/system_test_YYYYMMDD_HHMMSS.md)
-pwsh -NoProfile -ExecutionPolicy Bypass -File custom_scripts/gald3r_system_test.ps1
+uv run python custom_scripts/gald3r_system_test.py
 
 # CI gate: exit non-zero when overall score < 80%
-pwsh -NoProfile -ExecutionPolicy Bypass -File custom_scripts/gald3r_system_test.ps1 -ProjectRoot . -FailBelow 80
+uv run python custom_scripts/gald3r_system_test.py -ProjectRoot . -FailBelow 80
 
 # Machine-readable summary for dashboards / agent handoff
-pwsh -NoProfile -ExecutionPolicy Bypass -File custom_scripts/gald3r_system_test.ps1 -Json
+uv run python custom_scripts/gald3r_system_test.py -Json
 
 # Subset of systems
-pwsh -NoProfile -ExecutionPolicy Bypass -File custom_scripts/gald3r_system_test.ps1 -Systems "task,bug,hooks,git_hooks,schema"
+uv run python custom_scripts/gald3r_system_test.py -Systems "task,bug,hooks,git_hooks,schema"
 ```
 
 **Systems under test (13):** task, bug, platform_spec, parity, hooks, git_hooks, schema,

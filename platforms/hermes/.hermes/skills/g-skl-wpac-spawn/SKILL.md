@@ -83,7 +83,7 @@ Run the guard helper against the planned new-project path **before Step 2** mate
 
 ```powershell
 $newProjectPath = Join-Path $ecosystemRoot $new_project_name
-powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1 -TargetPath $newProjectPath
+uv run python .claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.py -TargetPath $newProjectPath
 ```
 
 - exit `0` — proceed (target is not a workspace member).

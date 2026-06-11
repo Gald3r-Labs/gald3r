@@ -7,7 +7,7 @@ writes do not silently fail.
 ## Fires On
 
 Sourced and invoked by `g-hk-session-start.ps1` while building the Vault Context
-banner. Can also be run standalone (`powershell -File g-hk-vault-verify.ps1`) to
+banner. Can also be run standalone (`uv run python g-hk-vault-verify.py`) to
 print the status line.
 
 ## What It Does

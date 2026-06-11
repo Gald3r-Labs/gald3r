@@ -53,7 +53,7 @@ Compose `html-base.html` with a topic body fragment and write the result.
 
 Helper: `.claude/skills/g-skl-html-output/scripts/render.ps1`
 ```powershell
-pwsh -File .claude/skills/g-skl-html-output/scripts/render.ps1 `
+uv run python .claude/skills/g-skl-html-output/scripts/render.py `
   -Template report -Title "Project Status" -SessionLabel "g-status • <gald3r_source>" `
   -BodyHtml $bodyFragmentHtml -OutDir docs
 ```
