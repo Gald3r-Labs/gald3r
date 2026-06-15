@@ -13,6 +13,7 @@
 
 <p align="center">
   <a href="https://github.com/wrm3/gald3r/releases/tag/v2.0.1"><img src="https://img.shields.io/badge/version-2.0.1-blue" alt="version 2.0.1" /></a>
+  <a href="#"><img src="https://img.shields.io/badge/status-alpha-orange" alt="status: alpha" /></a>
   <a href="CHANGELOG.md">Changelog</a> |
   <a href="CONTRIBUTING.md">Contributing</a> |
   <a href="gald3r_supported_platforms.html">All 34 platforms</a>
