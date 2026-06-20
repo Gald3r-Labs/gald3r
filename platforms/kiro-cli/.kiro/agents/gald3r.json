@@ -1,0 +1,21 @@
+{
+  "name": "gald3r",
+  "description": "gald3r-aware Kiro CLI agent. Lifecycle hooks delegate to the shared canonical event core (g_hk_core.py) via thin STDIN-JSON .ps1 shims, so behavior matches every other gald3r platform.",
+  "hooks": {
+    "agentSpawn": [
+      { "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File .kiro/hooks-impl/g-hk-kiro-cli-session-start.ps1" }
+    ],
+    "userPromptSubmit": [
+      { "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File .kiro/hooks-impl/g-hk-kiro-cli-user-prompt-submit.ps1" }
+    ],
+    "preToolUse": [
+      { "matcher": "*", "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File .kiro/hooks-impl/g-hk-kiro-cli-tool-start.ps1" }
+    ],
+    "postToolUse": [
+      { "matcher": "*", "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File .kiro/hooks-impl/g-hk-kiro-cli-tool-end.ps1" }
+    ],
+    "stop": [
+      { "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File .kiro/hooks-impl/g-hk-kiro-cli-stop.ps1" }
+    ]
+  }
+}

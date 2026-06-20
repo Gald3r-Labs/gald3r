@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 ---
 Generate project status overview: $ARGUMENTS
@@ -115,6 +115,15 @@ If the manifest is absent, workspace output stays quiet unless you explicitly as
   frontmatter. **Omit the column entirely** when no task has a `pr_url` (keeps non-software /
   integration-off projects clean). This is a **pure display read** — never makes a GitHub API
   call. `@g-status --pr-detail` shows full URLs and (if cached) check status.
+
+### 🚀 Release Pipeline (T419 — only when `tasks/awaiting-verification/` has content)
+- Shown only when there are awaiting-verification tasks (the awaiting state folder).
+- Group awaiting tasks by their `release_hold` frontmatter field:
+  - **Ready for staging**: `release_hold: none` (or omitted)
+  - **Held — manual**: `release_hold: manual` (with `release_hold_reason`)
+  - **Held — sync_required**: `release_hold: sync_required` (with `sync_with` partner)
+- **Nudge**: when ≥1 awaiting task has `release_hold: none`, add `💡 N task(s) ready to ship — run @g-ship`.
+- Read-only display; set/clear holds with `@g-task set-release-hold` / `@g-task clear-release-hold`.
 
 ### 🐛 Bug Summary
 - Open bugs: X (Y critical, Z high)

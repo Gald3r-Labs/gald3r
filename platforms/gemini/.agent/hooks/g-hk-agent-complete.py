@@ -108,8 +108,21 @@ def main():
 
     # ── Chat transcript logger (synchronous, 30s timeout) ───────────────────
     try:
-        logger_script = SCRIPT_DIR / "g-hk-cursor-chat-logger.py"
-        if logger_script.is_file():
+        # BUG-133 fix: probe for whichever chat logger actually ships in
+        # this hook directory. g-hk-cursor-chat-logger.py does not ship in
+        # every deployment (the .claude install ships g-hk-claude-chat-
+        # logger.py); the previous hardcoded name was a silent no-op there.
+        logger_script = None
+        for _logger_name in ("g-hk-cursor-chat-logger.py",
+                             "g-hk-claude-chat-logger.py"):
+            _candidate = SCRIPT_DIR / _logger_name
+            if _candidate.is_file():
+                logger_script = _candidate
+                break
+        if logger_script is None:
+            _diag(project_root,
+                  "logger skipped: no chat logger ships in this deployment")
+        if logger_script is not None:
             # The PS1 probes for py/python/python3; here the running
             # interpreter is the natural equivalent.
             logger_args = [

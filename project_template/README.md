@@ -20,4 +20,4 @@ Open in **Cursor** or **Claude Code** and run **`@g-setup`** (Cursor) / **`/g-se
 Full catalog on the [Gald3r Wiki](https://github.com/wrm3/gald3r/wiki/Commands).
 
 ---
-*Replace this README with your own as your project grows. Powered by gald3r v2.0.1.*
+*Replace this README with your own as your project grows. Powered by gald3r v2.1.0.*

@@ -12,8 +12,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/wrm3/gald3r/releases/tag/v2.0.1"><img src="https://img.shields.io/badge/version-2.0.1-blue" alt="version 2.0.1" /></a>
-  <a href="#"><img src="https://img.shields.io/badge/status-alpha-orange" alt="status: alpha" /></a>
+  <a href="https://github.com/wrm3/gald3r/releases/tag/v2.1.0"><img src="https://img.shields.io/badge/version-2.1.0-blue" alt="version 2.1.0" /></a>
   <a href="CHANGELOG.md">Changelog</a> |
   <a href="CONTRIBUTING.md">Contributing</a> |
   <a href="gald3r_supported_platforms.html">All 34 platforms</a>
@@ -39,6 +38,25 @@ Everything is plain markdown files in your repo. No accounts, no API keys beyond
 
 <!-- PENDING_RELEASE_START -->
 <!-- Pending release highlights (user-facing). Filled as features ship; cleared at publish. -->
+### Coming in the next release
+
+**Safe self-update — CLI and in-app**
+
+```bash
+gald3r version-check        # see if a newer gald3r version is available (offline-safe)
+gald3r upgrade              # safe update: auto-backup → migrate → rollback on failure
+gald3r upgrade --apply      # confirm and apply (--dry-run is the default)
+gald3r init --name "My App" # scaffold a fresh gald3r project in any folder
+gald3r setup all            # initialize agent + throne against your shared install home
+```
+
+- **`gald3r version-check`** queries the gald3r server and reports your version vs. the latest — degrades gracefully offline.
+- **`gald3r upgrade`** backs up your `.gald3r/` folder with a timestamp, migrates it to the latest format, and rolls back byte-for-byte if anything goes wrong. Your tasks, bugs, and plans are **never touched**.
+- **Throne in-app update** — gald3r_throne shows an "update available" badge when a new version is detected and can apply the update entirely from within the app (no Python required, compiled Rust updater with full backup + rollback).
+- **Centralized install home** + a global `gald3r` command, with a USB-portable mode (`--portable`).
+- **`gald3r init` / `gald3r update`** scaffold and update projects in any folder, idempotently.
+
+> **Note:** `gald3r install agent` and `gald3r install throne` are coming soon — precompiled installers for all platforms are in progress (tracked as T528/T529). Until then, see [RELEASE.md](RELEASE.md) for the developer build path.
 <!-- PENDING_RELEASE_END -->
 
 ---
@@ -222,4 +240,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Issues and PRs welcome.
 
 ---
 
-*Powered by gald3r v2.0.1 · [Changelog](CHANGELOG.md) · [Roadmap](ROADMAP.md)*
+*Powered by gald3r v2.1.0 · [Changelog](CHANGELOG.md) · [Roadmap](ROADMAP.md)*

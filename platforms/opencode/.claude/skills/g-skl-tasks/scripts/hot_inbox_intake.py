@@ -87,24 +87,41 @@ def _read_text(path: Path) -> str:
         return ""
 
 
-def get_next_task_id(tasks_md: Path) -> int:
+def _max_id_in_tree(root: Path, file_glob: str, name_re) -> int:
+    """Max numeric id from `<prefix><NNN>_*.md` filenames under a folder tree."""
     max_id = 0
-    if tasks_md.is_file():
-        for m in re.finditer(r"\[T(\d+)\]", _read_text(tasks_md)):
-            n = int(m.group(1))
-            if n > max_id:
-                max_id = n
-    return max_id + 1
+    if root.is_dir():
+        for p in root.rglob(file_glob):
+            m = name_re.match(p.name)
+            if m:
+                max_id = max(max_id, int(m.group(1)))
+    return max_id
 
 
-def get_next_bug_id(bugs_md: Path) -> int:
-    max_id = 0
-    if bugs_md.is_file():
-        for m in re.finditer(r"BUG-(\d+)", _read_text(bugs_md)):
-            n = int(m.group(1))
-            if n > max_id:
-                max_id = n
-    return max_id + 1
+def get_next_task_id(gald_path: Path) -> int:
+    """Next task id = (max id across ALL task folders) + 1.
+
+    Scans `tasks/` AND `archive/tasks/` for `task<NNN>_*.md` filenames — the
+    files are the ground truth. TASKS.md is intentionally NOT consulted: its id
+    format is regenerator-dependent (`[NNN]` vs a stray `[T NNN]`), which caused
+    the T585-T596 inbox collision when one `[T572]` row was the only regex match.
+    Folder scanning is immune to that and sees completed/paused/archived ids too.
+    """
+    name_re = re.compile(r"task0*(\d+)_")
+    return max(
+        _max_id_in_tree(gald_path / "tasks", "task*.md", name_re),
+        _max_id_in_tree(gald_path / "archive" / "tasks", "task*.md", name_re),
+    ) + 1
+
+
+def get_next_bug_id(gald_path: Path) -> int:
+    """Next bug id = (max id across ALL bug folders) + 1. Scans `bugs/` AND
+    `archive/bugs/` for `bug<NNN>_*.md` filenames (ground truth, not BUGS.md)."""
+    name_re = re.compile(r"bug0*(\d+)_")
+    return max(
+        _max_id_in_tree(gald_path / "bugs", "bug*.md", name_re),
+        _max_id_in_tree(gald_path / "archive" / "bugs", "bug*.md", name_re),
+    ) + 1
 
 
 # -- Parse inbox draft ----------------------------------------------------------
@@ -200,7 +217,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         drafts = sorted(task_inbox.glob("*.md"), key=lambda p: p.name)
         for draft in drafts:
             d = read_draft(draft)
-            task_id = get_next_task_id(tasks_md)
+            task_id = get_next_task_id(gald_path)
             slug = make_slug(d.title)
             filename = f"task{task_id}_{slug}.md"
             dest_path = tasks_dir / filename
@@ -269,7 +286,7 @@ source: inbox_intake
         drafts = sorted(bug_inbox.glob("*.md"), key=lambda p: p.name)
         for draft in drafts:
             d = read_draft(draft)
-            bug_num = get_next_bug_id(bugs_md)
+            bug_num = get_next_bug_id(gald_path)
             bug_id = f"BUG-{bug_num}"
             slug = make_slug(d.title)
             filename = f"bug{bug_num}_{slug}.md"

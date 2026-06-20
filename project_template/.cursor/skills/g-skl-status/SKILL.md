@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-status
 description: Show project status — session context, active tasks, phase progress, goals, ideas.
 token_budget: low
@@ -100,6 +100,27 @@ Only when WPAC is active, call `g-hk-wpac-inbox-check.ps1 -BlockOnConflict` when
      📋 Ready:   task103_api_endpoints, task104_db_migrate
      ❌ Blocked: task105_deploy (waiting on task103)
    ```
+
+4a. **Release Pipeline block (T419)** — rendered **only when `tasks/awaiting-verification/` has content** (the awaiting state folder; the spec's `tasks/awaiting/` is the awaiting-verification status). Read each awaiting task's `release_hold` frontmatter field and group:
+
+   ```
+   🚀 Release Pipeline
+      awaiting-verification/ (ready for staging):  2
+         T1273 - copilot-instructions from template rules
+         T1278 - gald3r_install graph init offer
+      Held - manual:         1
+         T1055 - plugin lifecycle hooks
+      Held - sync_required:  1
+         T0890 - API contract (sync: gald3r_agent/T890)
+   ```
+
+   - "ready for staging" = `release_hold: none` (or field omitted). "Held" = `manual` / `sync_required`.
+   - **Nudge (required)**: whenever ≥1 awaiting task has `release_hold: none`, append:
+     ```
+     💡 {N} task(s) ready to ship (release_hold: none) — run @g-ship to stage them.
+     ```
+   - Omit the entire block when `tasks/awaiting-verification/` is empty (keeps the report clean).
+   - Read-only — never mutates `release_hold`. Set/clear via `@g-task set-release-hold` / `clear-release-hold`.
 
 5. **Health indicators**:
    - Any tasks in `[🔄]` for > 8 hours → flag as stale

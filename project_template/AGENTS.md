@@ -226,7 +226,7 @@ bucket is editing. File-lock manifests enforce this (T1059):
 
 ## gald3r Version
 
-**gald3r version**: 2.0.1
+**gald3r version**: 2.1.0
 **Supported IDEs**: Cursor, Claude Code, Gemini, Codex, OpenCode
 
 ---
@@ -273,7 +273,7 @@ Read `.gald3r/CONSTRAINTS.md` — load all constraints into active context. Cons
 After completing any task, always offer a git commit before ending the response.
 
 ### .gald3r/ Folder Gate
-Never read or write `.gald3r/` files without following the appropriate skill workflow. Use `g-skl-tasks` for task operations, `g-skl-qa` for bugs, `g-skl-plan` for planning files.
+Never read or write `.gald3r/` files without following the appropriate skill workflow. Use `g-skl-tasks` for task operations, `g-skl-qa` for bugs, `g-skl-plan` for planning files. Tasks are filed by status into `tasks/<status>/` subfolders — notably, paused tasks live in `tasks/paused/`.
 
 ### Documentation Placement
 All `.md` documentation files go in `docs/` — never in the project root. Exceptions: `AGENTS.md`, `README.md`, `LICENSE`, `CLAUDE.md`, `CHANGELOG.md`, `GEMINI.md`, `GUARDRAILS.md`.

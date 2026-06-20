@@ -279,6 +279,15 @@ Write new `gald3r_version` to `.gald3r/.identity`. Append to `.gald3r/reports/UP
   - All fresh → `Platform docs: ✅ all N platforms fresh`
   - Any stale → `Platform docs: ⚠️ M of N platforms overdue — run @g-platform-scan`
   Pure read of one file; never writes. If `PLATFORM_STATUS.md` does not exist, skip the check silently (no warning).
+- **Platform Roster Parity** (T516): if `PLATFORM_REGISTRY.yaml` exists (single source of truth for the platform roster), run `.claude/skills/g-skl-medic/scripts/check_roster_parity.py` (a `.cursor/` twin exists for parity). It asserts that the four rosters agree — **overlays == registry == specs == STATUS rows** — and fails **loudly** on HARD drift:
+  - an overlay dir with no registry entry (or a registry `overlay_dir` with no overlay)
+  - a non-`redundant` registry platform with NO `PLATFORM_SPEC.md` in any skill tree
+  - a `PLATFORM_STATUS.md` row that is neither a registry platform nor a registered `alias_of`
+  Documented drift (a registry platform with no STATUS row yet; a registered alias like `vibe -> mistral` that has a STATUS row) is a **soft** warning, not a failure. Report format:
+  - No drift → `Platform roster: ✅ overlays == registry == specs == STATUS (N platforms)`
+  - Hard drift → `Platform roster: 🚨 HARD DRIFT — <count> mismatch(es), see check_roster_parity.py` (HARD drift is a critical L1 finding — surface every error line; exit 2 from the script)
+  - Soft drift only → `Platform roster: ⚠️ N platforms, M documented soft-drift item(s)`
+  Pure read; never writes. Run with `--json` for CI/agent consumption. Skip silently if `PLATFORM_REGISTRY.yaml` is absent (registry not installed).
 - **Health Score**:
   ```
   base  = (completed / total_non_cancelled_non_paused) × 100
@@ -672,6 +681,37 @@ With `--apply`:
   ```
   <!-- BUG[MEDIC-L3]: Interface mismatch — A outputs {format}; B expects {format} -->
   ```
+
+### L3-G: Structural Release Upgrade (T430 — engine op)
+
+In **UPGRADE mode** (`.identity` `gald3r_version` < current framework version), L3 can apply
+the **structural** diff between two `.gald3r/` release snapshots — complementing the L1-L
+per-file schema migration. This is delegated to the canonical engine op `gald3r upgrade`
+(shell-out only; never re-implement the diff/merge logic):
+
+```
+# dry-run plan (zero writes) — part of the L3 report
+gald3r --root <proj> upgrade --from-dir <from_snapshot/.gald3r> --to-dir <to_snapshot/.gald3r> --json
+# with --apply (L3 requires explicit --apply): execute + write .gald3r/logs/upgrade_*.log
+gald3r --root <proj> upgrade --from-dir <from/.gald3r> --to-dir <to/.gald3r> --apply
+```
+
+Per-file classification: **[ADD]** (new in target) / **[MERGE]** (frontmatter/schema changed —
+user data preserved, new template keys added, `schema_version`/`gald3r_rel_version` bumped) /
+**[DEPRECATE]** (removed in target — archived with `_deprecated_YYYYMMDD`). The engine enforces
+an **ABSOLUTE user-data denylist** (`tasks/**`, `bugs/**`, `PLAN.md`, `IDEA_BOARD.md`, `BUGS.md`,
+`TASKS.md`) that is **never** touched, and the operation is **idempotent** (a second `--apply`
+reports zero changes).
+
+> **Safety**: L3-G runs only in UPGRADE mode and only with `--apply` (consistent with the L3
+> "explicit --apply required" rule). In `--dry-run` it reports the planned ADD/MERGE/DEPRECATE
+> actions without writing. The engine writes a migration log under `.gald3r/logs/` on apply.
+> **Snapshot prerequisite**: the framework currently ships only the single current canonical
+> snapshot (`.gald3r_sys/template_verification/.gald3r/`); versioned `vN/` snapshots are a
+> tracked prerequisite (T430 finding) — until then, `--from-dir`/`--to-dir` are supplied explicitly.
+
+Engine source: `.gald3r_sys/engine/src/gald3r/systems/upgrade.py` (op: `Gald3r.upgrade`,
+CLI: `gald3r upgrade`). Tests: `.gald3r_sys/engine/tests/test_upgrade.py`.
 
 ### L3 Output
 

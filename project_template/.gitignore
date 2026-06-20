@@ -24,6 +24,7 @@ __pycache__/
 *.so
 .venv/
 venv/
+.pytest_cache/
 *.egg-info/
 dist/
 build/

@@ -673,6 +673,37 @@ With `--apply`:
   <!-- BUG[MEDIC-L3]: Interface mismatch — A outputs {format}; B expects {format} -->
   ```
 
+### L3-G: Structural Release Upgrade (T430 — engine op)
+
+In **UPGRADE mode** (`.identity` `gald3r_version` < current framework version), L3 can apply
+the **structural** diff between two `.gald3r/` release snapshots — complementing the L1-L
+per-file schema migration. This is delegated to the canonical engine op `gald3r upgrade`
+(shell-out only; never re-implement the diff/merge logic):
+
+```
+# dry-run plan (zero writes) — part of the L3 report
+gald3r --root <proj> upgrade --from-dir <from_snapshot/.gald3r> --to-dir <to_snapshot/.gald3r> --json
+# with --apply (L3 requires explicit --apply): execute + write .gald3r/logs/upgrade_*.log
+gald3r --root <proj> upgrade --from-dir <from/.gald3r> --to-dir <to/.gald3r> --apply
+```
+
+Per-file classification: **[ADD]** (new in target) / **[MERGE]** (frontmatter/schema changed —
+user data preserved, new template keys added, `schema_version`/`gald3r_rel_version` bumped) /
+**[DEPRECATE]** (removed in target — archived with `_deprecated_YYYYMMDD`). The engine enforces
+an **ABSOLUTE user-data denylist** (`tasks/**`, `bugs/**`, `PLAN.md`, `IDEA_BOARD.md`, `BUGS.md`,
+`TASKS.md`) that is **never** touched, and the operation is **idempotent** (a second `--apply`
+reports zero changes).
+
+> **Safety**: L3-G runs only in UPGRADE mode and only with `--apply` (consistent with the L3
+> "explicit --apply required" rule). In `--dry-run` it reports the planned ADD/MERGE/DEPRECATE
+> actions without writing. The engine writes a migration log under `.gald3r/logs/` on apply.
+> **Snapshot prerequisite**: the framework currently ships only the single current canonical
+> snapshot (`.gald3r_sys/template_verification/.gald3r/`); versioned `vN/` snapshots are a
+> tracked prerequisite (T430 finding) — until then, `--from-dir`/`--to-dir` are supplied explicitly.
+
+Engine source: `.gald3r_sys/engine/src/gald3r/systems/upgrade.py` (op: `Gald3r.upgrade`,
+CLI: `gald3r upgrade`). Tests: `.gald3r_sys/engine/tests/test_upgrade.py`.
+
 ### L3 Output
 
 Write `MEDIC_REPORT_L3.md` to `.gald3r/reports/` with full findings + remediation plan.
