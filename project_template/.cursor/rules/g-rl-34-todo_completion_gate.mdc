@@ -7,6 +7,13 @@ subsystem_memberships: [TASK_MANAGEMENT]
 
 # TODO/Stub Lifecycle Enforcement
 
+> **Deterministic enforcement (T520):** the task *file* contract behind the completion gate —
+> valid frontmatter (`status`/`type`/`priority`/`created_date`), canonical status tokens, and
+> correct `tasks/<status>/` placement — is now ENFORCED by `gald3r validate` (run as a
+> fail-closed pre-commit hook on staged `.gald3r/tasks/**`). This rule advises *what* to do
+> before marking a task complete; the gate guarantees the task file itself is well-formed.
+> Run `gald3r validate --fix` to normalize fixable issues.
+
 Stubs and TODOs are tracked from the **moment they are written** — not just at completion. This rule has two phases:
 
 ## Phase 1: Creation-Time (fires when writing any stub or TODO)

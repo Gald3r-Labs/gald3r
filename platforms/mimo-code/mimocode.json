@@ -1,0 +1,21 @@
+{
+    "$schema": "https://mimo.xiaomi.com/config.json",
+    "instructions": [
+        "AGENTS.md",
+        "GUARDRAILS.md",
+        "MEMORY.md"
+    ],
+    "mcp": {
+        "gald3r": {
+            "type": "local",
+            "command": "uv",
+            "args": [
+                "run",
+                "--project",
+                ".gald3r_sys/engine",
+                "gald3r",
+                "mcp"
+            ]
+        }
+    }
+}

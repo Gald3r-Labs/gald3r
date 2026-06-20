@@ -1,0 +1,358 @@
+# PLATFORM_REGISTRY.yaml — single source of truth for the gald3r platform roster (T516)
+#
+# This file is the ONE canonical list of every shipped platform. Every consumer
+# (the check_platform_status status/matrix tooling, the PLATFORM_STATUS.md and
+# PLATFORM_CAPABILITY_MATRIX.md row sets, the roster-parity gate wired into g-medic)
+# derives its roster from here. Edit the roster HERE and nowhere else.
+#
+# Schema (one entry per platform under `platforms:`):
+#   name           canonical id (matches the platforms/<dir> overlay name; lowercase, hyphenated)
+#   display_name   human-facing product name
+#   overlay_dir    the gald3r_templates/gald3r_core/platforms/<dir> overlay directory name
+#   spec_path      the canonical PLATFORM_SPEC.md skill folder (relative to a .claude|.cursor
+#                  skills root), or null for alias/redundant entries that ship no own spec
+#   lifecycle      active | abandoned | off_target | redundant | stub
+#                    active      — supported, shipped, spec present
+#                    abandoned   — upstream development paused/frozen/discontinued
+#                    off_target  — real product but not an IDE/coding-agent gald3r targets
+#                    redundant   — an alias/duplicate of another entry (see alias_of)
+#                    stub        — shipped overlay with only a stub spec (no verified capabilities)
+#   alias_of       canonical name this entry duplicates (e.g. vibe -> mistral); null otherwise
+#   support_level  tier1 | tier2 | tier3 | none   (rough operational support intent)
+#   notes          free-form; owner-confirmable lifecycle defaults are flagged here
+#
+# Lifecycle seeds below come from the T516 task "Lifecycle seed" section (2026-06-02 STATUS
+# scan). They are DEFAULTS pending the owner's GitHub-traffic comparison — every seeded
+# retire/weak decision is flagged "owner-confirmable" in notes. No overlay is deleted by this
+# registry; lifecycle only records intent for the parity gate and future curation.
+#
+# Roster invariant (enforced by check_roster_parity): the set of `name` values whose
+# alias_of is null MUST equal the set of platforms/<dir> overlay directories.
+
+schema_version: 1
+generated_by: T516
+last_updated: 2026-06-18
+
+platforms:
+  # ---- Tier-1 reference + full-parity platforms -------------------------------
+  - name: cursor
+    display_name: Cursor
+    overlay_dir: cursor
+    spec_path: g-skl-platform-cursor/PLATFORM_SPEC.md
+    lifecycle: active
+    alias_of: null
+    support_level: tier1
+    notes: Reference platform — all six primitives native.
+  - name: claude
+    display_name: Claude Code
+    overlay_dir: claude
+    spec_path: g-skl-platform-claude/PLATFORM_SPEC.md
+    lifecycle: active
+    alias_of: null
+    support_level: tier1
+    notes: Native commands/rules/skills/hooks/MCP; reads CLAUDE.md (import @AGENTS.md).
+  - name: copilot
+    display_name: GitHub Copilot
+    overlay_dir: copilot
+    spec_path: g-skl-platform-copilot/PLATFORM_SPEC.md
+    lifecycle: active
+    alias_of: null
+    support_level: tier1
+    notes: Native prompt-file commands/instructions/agents/skills/CLI-hooks/MCP.
+  - name: codex
+    display_name: OpenAI Codex
+    overlay_dir: codex
+    spec_path: g-skl-platform-codex/PLATFORM_SPEC.md
+    lifecycle: active
+    alias_of: null
+    support_level: tier1
+    notes: Full native parity; reads AGENTS.md; 10-event hooks.
+  - name: antigravity
+    display_name: Google Antigravity
+    overlay_dir: antigravity
+    spec_path: g-skl-platform-antigravity/PLATFORM_SPEC.md
+    lifecycle: active
+    alias_of: null
+    support_level: tier1
+    notes: Agent-first IDE/CLI — all 6 primitives native post-2.0.
+  - name: windsurf
+    display_name: Windsurf (Cascade)
+    overlay_dir: windsurf
+    spec_path: g-skl-platform-windsurf/PLATFORM_SPEC.md
+    lifecycle: active
+    alias_of: null
+    support_level: tier1
+    notes: Near-full parity; native hooks/rules/skills/commands/MCP.
+  - name: gemini
+    display_name: Gemini CLI
+    overlay_dir: gemini
+    spec_path: g-skl-platform-gemini/PLATFORM_SPEC.md
+    lifecycle: active
+    alias_of: null
+    support_level: tier1
+    notes: Native commands (TOML), GEMINI.md memory, lifecycle hooks, first-class MCP.
+  - name: cline
+    display_name: Cline
+    overlay_dir: cline
+    spec_path: g-skl-platform-cline/PLATFORM_SPEC.md
+    lifecycle: active
+    alias_of: null
+    support_level: tier1
+    notes: Native commands/rules/skills/hooks/MCP; hooks macOS/Linux only.
+  - name: opencode
+    display_name: OpenCode
+    overlay_dir: opencode
+    spec_path: g-skl-platform-opencode/PLATFORM_SPEC.md
+    lifecycle: active
+    alias_of: null
+    support_level: tier1
+    notes: Full native parity; discovers .claude/.agents skills.
+  - name: openhands
+    display_name: OpenHands
+    overlay_dir: openhands
+    spec_path: g-skl-platform-openhands/PLATFORM_SPEC.md
+    lifecycle: active
+    alias_of: null
+    support_level: tier1
+    notes: V1 SDK native commands/rules/agents/skills/hooks/MCP.
+  - name: kiro
+    display_name: Kiro (Amazon IDE)
+    overlay_dir: kiro
+    spec_path: g-skl-platform-kiro/PLATFORM_SPEC.md
+    lifecycle: active
+    alias_of: null
+    support_level: tier1
+    notes: Native commands/rules/agents/skills/hooks/MCP under .kiro/.
+  - name: kiro-cli
+    display_name: Kiro CLI (Q Developer CLI)
+    overlay_dir: kiro-cli
+    spec_path: g-skl-platform-kiro-cli/PLATFORM_SPEC.md
+    lifecycle: active
+    alias_of: null
+    support_level: tier1
+    notes: Amazon Q Developer CLI rebrand; native full surface under .kiro/.
+  - name: augment
+    display_name: Augment Code
+    overlay_dir: augment
+    spec_path: g-skl-platform-augment/PLATFORM_SPEC.md
+    lifecycle: active
+    alias_of: null
+    support_level: tier1
+    notes: Full parity (Auggie CLI); reuses Claude-Code artifacts.
+  - name: goose
+    display_name: Goose (Block)
+    overlay_dir: goose
+    spec_path: g-skl-platform-goose/PLATFORM_SPEC.md
+    lifecycle: active
+    alias_of: null
+    support_level: tier1
+    notes: Native Recipes/rules/subagents/skills/hooks/MCP.
+  - name: junie
+    display_name: JetBrains Junie
+    overlay_dir: junie
+    spec_path: g-skl-platform-junie/PLATFORM_SPEC.md
+    lifecycle: active
+    alias_of: null
+    support_level: tier1
+    notes: Native slash commands/skills/subagents/MCP; hooks EAP SessionStart-only.
+  - name: openclaw
+    display_name: OpenClaw
+    overlay_dir: openclaw
+    spec_path: g-skl-platform-openclaw/PLATFORM_SPEC.md
+    lifecycle: active
+    alias_of: null
+    support_level: tier1
+    notes: Self-hosted agent gateway; native commands/rules/skills/hooks/MCP.
+  - name: qwen
+    display_name: Qwen Code (Alibaba)
+    overlay_dir: qwen
+    spec_path: g-skl-platform-qwen/PLATFORM_SPEC.md
+    lifecycle: active
+    alias_of: null
+    support_level: tier1
+    notes: Gemini-CLI fork; native commands/skills/subagents/hooks/MCP.
+
+  # ---- Active but weak / partial (owner-confirmable per T516 lifecycle seed) ----
+  - name: aider
+    display_name: Aider
+    overlay_dir: aider
+    spec_path: g-skl-platform-aider/PLATFORM_SPEC.md
+    lifecycle: active
+    alias_of: null
+    support_level: tier3
+    notes: >-
+      Weak-but-active (1/5 native per 2026-06-02 scan) — owner-confirmable. Only rules native
+      (CONVENTIONS.md); no SKILL.md/MCP; no AGENTS.md/CLAUDE.md auto-read.
+  - name: mistral
+    display_name: Mistral Vibe CLI
+    overlay_dir: mistral
+    spec_path: g-skl-platform-mistral/PLATFORM_SPEC.md
+    lifecycle: active
+    alias_of: null
+    support_level: tier2
+    notes: >-
+      Weak-but-active (2/5 native) — owner-confirmable. The .vibe alias points here (see vibe).
+  - name: warp
+    display_name: Warp (AI terminal)
+    overlay_dir: warp
+    spec_path: g-skl-platform-warp/PLATFORM_SPEC.md
+    lifecycle: active
+    alias_of: null
+    support_level: tier2
+    notes: >-
+      Weak-but-active (no lifecycle hooks) — owner-confirmable. Native rules/skills/agents/MCP;
+      commands partial.
+  - name: replit
+    display_name: Replit Agent
+    overlay_dir: replit
+    spec_path: g-skl-platform-replit/PLATFORM_SPEC.md
+    lifecycle: active
+    alias_of: null
+    support_level: tier2
+    notes: >-
+      Weak-but-active (no hooks/commands) — owner-confirmable. Cloud IDE; native Agent Skills + MCP.
+      Spec folder name is g-skl-platform-replit (override .replit-gald3r at the override-tree level).
+  - name: deepcode
+    display_name: DeepCode (DeepSeek-V4 terminal agent)
+    overlay_dir: deepcode
+    spec_path: g-skl-platform-deepcode/PLATFORM_SPEC.md
+    lifecycle: stub
+    alias_of: null
+    support_level: tier3
+    notes: >-
+      Weak-but-active (no lifecycle hooks) — owner-confirmable. Stub spec generated by T516
+      (capabilities untested/all-❓ pending @g-platform-scan-docs deepcode).
+  - name: trae
+    display_name: TRAE (ByteDance)
+    overlay_dir: trae
+    spec_path: g-skl-platform-trae/PLATFORM_SPEC.md
+    lifecycle: stub
+    alias_of: null
+    support_level: tier3
+    notes: >-
+      Weak-but-active (no hooks) — owner-confirmable. Stub spec generated by T516
+      (all-❓ pending @g-platform-scan-docs trae).
+  - name: kilo-code
+    display_name: Kilo Code
+    overlay_dir: kilo-code
+    spec_path: g-skl-platform-kilo-code/PLATFORM_SPEC.md
+    lifecycle: stub
+    alias_of: null
+    support_level: tier3
+    notes: >-
+      Weak-but-active (no lifecycle hooks) — owner-confirmable. Stub spec generated by T516
+      (all-❓ pending @g-platform-scan-docs kilo-code).
+
+  # ---- Newer ghost overlays now given stub specs (capabilities untested) -------
+  - name: amp
+    display_name: Amp
+    overlay_dir: amp
+    spec_path: g-skl-platform-amp/PLATFORM_SPEC.md
+    lifecycle: stub
+    alias_of: null
+    support_level: tier3
+    notes: Stub spec generated by T516 (all-❓ pending @g-platform-scan-docs amp).
+  - name: codebuddy
+    display_name: Tencent CodeBuddy Code
+    overlay_dir: codebuddy
+    spec_path: g-skl-platform-codebuddy/PLATFORM_SPEC.md
+    lifecycle: stub
+    alias_of: null
+    support_level: tier3
+    notes: Stub spec generated by T516 (all-❓ pending @g-platform-scan-docs codebuddy).
+  - name: hermes
+    display_name: Hermes
+    overlay_dir: hermes
+    spec_path: g-skl-platform-hermes/PLATFORM_SPEC.md
+    lifecycle: stub
+    alias_of: null
+    support_level: tier3
+    notes: Stub spec generated by T516 (all-❓ pending @g-platform-scan-docs hermes).
+  - name: kimi
+    display_name: Kimi Code CLI (Moonshot)
+    overlay_dir: kimi
+    spec_path: g-skl-platform-kimi/PLATFORM_SPEC.md
+    lifecycle: stub
+    alias_of: null
+    support_level: tier3
+    notes: Stub spec generated by T516 (all-❓ pending @g-platform-scan-docs kimi).
+  - name: qoder
+    display_name: Qoder (Alibaba)
+    overlay_dir: qoder
+    spec_path: g-skl-platform-qoder/PLATFORM_SPEC.md
+    lifecycle: stub
+    alias_of: null
+    support_level: tier3
+    notes: Stub spec generated by T516 (all-❓ pending @g-platform-scan-docs qoder).
+  - name: continue
+    display_name: Continue
+    overlay_dir: continue
+    spec_path: g-skl-platform-continue/PLATFORM_SPEC.md
+    lifecycle: active
+    alias_of: null
+    support_level: tier3
+    notes: >-
+      Live spec already present (g-skl-platform-continue) outside the canonical 23 — registered here
+      as active. No AGENTS.md/CLAUDE.md (rules layer); hooks CLI-only.
+  - name: mimo-code
+    display_name: MiMo Code (Xiaomi, OpenCode fork)
+    overlay_dir: mimo-code
+    spec_path: g-skl-platform-mimo/PLATFORM_SPEC.md
+    lifecycle: active
+    alias_of: null
+    support_level: tier3
+    notes: >-
+      Overlay dir is mimo-code; the canonical spec folder is g-skl-platform-mimo (short name).
+      Previously fully invisible (no spec, no STATUS row) — now registered.
+
+  # ---- Retire candidates (owner-confirmable per T516 lifecycle seed) -----------
+  - name: subq
+    display_name: SubQ Code
+    overlay_dir: subq
+    spec_path: g-skl-platform-subq/PLATFORM_SPEC.md
+    lifecycle: off_target
+    alias_of: null
+    support_level: none
+    notes: >-
+      Retire candidate — owner-confirmable. Plugin-into-host (Claude Code/Codex/Cursor), 0/5 native;
+      install targets the host, not SubQ. Spec present (honest all-❌).
+  - name: roo
+    display_name: Roo Code
+    overlay_dir: roo
+    spec_path: g-skl-platform-roo/PLATFORM_SPEC.md
+    lifecycle: abandoned
+    alias_of: null
+    support_level: none
+    notes: Retire candidate — owner-confirmable. DISCONTINUED 2026-05-15 (frozen); migrate to Cline/Kilo.
+  - name: void
+    display_name: Void (VS Code fork)
+    overlay_dir: void
+    spec_path: g-skl-platform-void/PLATFORM_SPEC.md
+    lifecycle: stub
+    alias_of: null
+    support_level: tier3
+    notes: >-
+      Retire candidate — owner-confirmable. Dev PAUSED, 2/5 native (rules + MCP only).
+      Stub spec generated by T516 (all-❓ pending a live re-check).
+  - name: astrbot
+    display_name: AstrBot
+    overlay_dir: astrbot
+    spec_path: g-skl-platform-astrbot/PLATFORM_SPEC.md
+    lifecycle: off_target
+    alias_of: null
+    support_level: none
+    notes: >-
+      Retire candidate — owner-confirmable. IM chatbot/agent runtime (AGPL-v3), not an IDE;
+      hooks are message events, no AGENTS.md/CLAUDE.md. Stub spec generated by T516 (all-❓).
+
+  # ---- Aliases / duplicates (NOT counted in the overlay invariant) -------------
+  - name: vibe
+    display_name: Mistral Vibe (alias)
+    overlay_dir: null
+    spec_path: null
+    lifecycle: redundant
+    alias_of: mistral
+    support_level: none
+    notes: >-
+      Redundant alias of mistral (.vibe ↔ .mistral, same doc source). Has a PLATFORM_STATUS.md row
+      historically but no overlay dir. Resolved here via alias_of so no consumer double-counts it.

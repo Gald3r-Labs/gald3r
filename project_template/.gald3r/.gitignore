@@ -1,4 +1,4 @@
-﻿# gald3r_rel_version: 1.11.0
+﻿# gald3r_rel_version: 2.0.1
 # schema_version: generic-v1
 # .gald3r/.gitignore — gald3r system local files
 # This file is safe to overwrite on upgrades; it covers only the .gald3r/ subtree.
@@ -6,6 +6,15 @@
 # Hook-generated logs (audit, shell commands, reflection hints)
 logs/
 *.log
+
+# Hot-inbox staging zones (T1573 / g-go-go intake) — drop draft task/bug .md files
+# into tasks/inbox/ or bugs/inbox/ and `gald3r inbox` absorbs them into tracked state,
+# deleting the draft. Drafts are transient, so ignore their contents but keep the
+# .gitkeep so the staging zones ship pre-seeded and discoverable.
+tasks/inbox/*
+!tasks/inbox/.gitkeep
+bugs/inbox/*
+!bugs/inbox/.gitkeep
 
 # Backup archives created by gald3r_install on upgrade
 *.zip

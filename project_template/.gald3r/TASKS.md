@@ -1,5 +1,5 @@
 ﻿---
-gald3r_rel_version: "2.0.1"
+gald3r_rel_version: "2.1.0"
 schema_version: "TASKS-md-v1"
 ---
 # TASKS.md — {PROJECT_NAME}
@@ -25,7 +25,7 @@ schema_version: "TASKS-md-v1"
 - `[⏳]` = Resource-Gated (waiting on GPU/storage/API credits/external service)
 - `[✅]` = Completed (verified by different agent)
 - `[❌]` = Failed/Cancelled
-- `[⏸️]` = Paused
+- `[⏸️]` = Paused (task file lives in `tasks/paused/`)
 
 ---
 

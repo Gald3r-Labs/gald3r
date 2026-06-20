@@ -1,0 +1,50 @@
+{
+  "_doc": {
+    "t510_canonical_core": "T510: goose uses the Open Plugins hooks spec — hooks live in a plugin dir (.agents/plugins/<name>/hooks/hooks.json), NOT a root hooks.json. Each goose native event is mapped to the shared canonical entrypoint g-hk-on-<event>.py, which delegates to g_hk_core.dispatch(). goose passes the event payload as JSON on stdin and sets PLUGIN_ROOT in the command env. Native event -> canonical: SessionStart->session-start, SessionEnd->session-end, UserPromptSubmit->user-prompt-submit, PreToolUse->tool-start, PostToolUse->tool-end, Stop->stop. Source: goose-docs.ai/docs/guides/context-engineering/hooks (verified 2026-06-18).",
+    "schema": "goose runs commands via `sh -c`; ${PLUGIN_ROOT} resolves to this plugin dir. timeout is in seconds (default 30)."
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "python ${PLUGIN_ROOT}/hooks/g-hk-on-session-start.py", "timeout": 30 }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          { "type": "command", "command": "python ${PLUGIN_ROOT}/hooks/g-hk-on-session-end.py", "timeout": 30 }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          { "type": "command", "command": "python ${PLUGIN_ROOT}/hooks/g-hk-on-user-prompt-submit.py", "timeout": 30 }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          { "type": "command", "command": "python ${PLUGIN_ROOT}/hooks/g-hk-on-tool-start.py", "timeout": 30 }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          { "type": "command", "command": "python ${PLUGIN_ROOT}/hooks/g-hk-on-tool-end.py", "timeout": 30 }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "python ${PLUGIN_ROOT}/hooks/g-hk-on-stop.py", "timeout": 30 }
+        ]
+      }
+    ]
+  }
+}

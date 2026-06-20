@@ -1,90 +1,25 @@
 {
-  "version": 1,
-  "_doc": {
-    "hook_md_contract": "T1171: Each hook script ('.ps1') has a companion '.md' self-description file at the same path (e.g. '.claude/hooks/g-hk-session-start.md' for '.claude/hooks/g-hk-session-start.ps1'). The hook.md uses the 5-section template (# Hook / ## Fires On / ## What It Does / ## Side Effects / ## Related Tasks) defined by '/g-hook-create'. The runtime contract is: when a hook fires under PreToolUse (or any other event), the harness SHOULD read the matching hook.md and inject its content as additional_context so the agent knows what the hook just did or why a tool call was blocked. See 'skills/g-skl-platform-claude/SKILL.md' Section 3 and 'skills/g-skl-platform-cursor/SKILL.md' Section 11.",
-    "hook_md_authoring": "Use '/g-hook-create <hook-name> <event>' to scaffold a new pair atomically. See 'commands/g-hook-create.md'.",
-    "hook_md_source_of_truth": "Source the human-facing hook description from the 'hook.md' file; this 'hooks.json' is for wiring only.",
-    "event_names": "Claude Code official PascalCase event names: SessionStart, SessionEnd, Stop, SubagentStop, PreToolUse, PostToolUse, UserPromptSubmit, Notification, PreCompact. 'beforeShellExecution' is a Cursor-era name with no Claude Code equivalent — use PreToolUse with a Bash|Shell matcher instead.",
-    "gald3r_lifecycle_events": "T1055: In addition to the harness-native events wired above, gald3r defines four gald3r-internal lifecycle events: 'pre_skill', 'post_skill', 'pre_session', 'post_session'. Cursor and Claude Code do NOT expose native skill-boundary or gald3r-session-boundary events, so these are dispatched by the gald3r skill/command runner (or fired manually) and are NOT auto-wired here.",
-    "hooks_json_is_supported": "Claude Code reads this top-level .claude/hooks.json file directly (confirmed current method). The settings.json 'hooks' key is an alternate surface; hooks.json is preferred by gald3r for explicit wiring with _hook_md companion references."
-  },
-  "hooks": {
-    "SessionStart": [
+  "gald3r-canonical-hooks": {
+    "PreToolUse": [
       {
+        "matcher": "*",
         "hooks": [
-          {
-            "type": "command",
-            "command": "python .claude/hooks/g-hk-session-start.py",
-            "_hook_md": ".claude/hooks/g-hk-session-start.md"
-          }
+          { "type": "command", "command": "python .agents/hooks/g-hk-ag-dispatch.py tool-start", "timeout": 30 }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "python .agents/hooks/g-hk-ag-dispatch.py tool-end", "timeout": 30 }
         ]
       }
     ],
     "Stop": [
       {
         "hooks": [
-          {
-            "type": "command",
-            "command": "python .claude/hooks/g-hk-agent-complete.py",
-            "_hook_md": ".claude/hooks/g-hk-agent-complete.md"
-          },
-          {
-            "type": "command",
-            "command": "python .claude/hooks/g-hk-nightly-learn.py",
-            "_hook_md": ".claude/hooks/g-hk-nightly-learn.md"
-          },
-          {
-            "type": "command",
-            "command": "python .claude/hooks/g-hk-session-end.py",
-            "_hook_md": ".claude/hooks/g-hk-session-end.md"
-          },
-          {
-            "type": "command",
-            "command": "python .claude/hooks/g-hk-encoding-normalize.py -Quiet",
-            "_hook_md": ".claude/hooks/g-hk-encoding-normalize.md"
-          },
-          {
-            "type": "command",
-            "command": "python .claude/hooks/g-hk-ggo-stop-detect.py",
-            "_hook_md": ".claude/hooks/g-hk-ggo-stop-detect.md"
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Patch|ApplyPatch|str_replace_editor",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python .claude/hooks/g-hk-pre-tool-call-gald3r-guard.py",
-            "_hook_md": ".claude/hooks/g-hk-pre-tool-call-gald3r-guard.md"
-          },
-          {
-            "type": "command",
-            "command": "python .claude/hooks/g-hk-pre-tool-call-prd-freeze.py",
-            "_hook_md": ".claude/hooks/g-hk-pre-tool-call-prd-freeze.md"
-          },
-          {
-            "type": "command",
-            "command": "python .claude/hooks/g-hk-pre-tool-call-member-gald3r-guard.py",
-            "_hook_md": ".claude/hooks/g-hk-pre-tool-call-member-gald3r-guard.md"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash|Shell|Terminal|run_terminal_cmd",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python .claude/hooks/g-hk-validate-shell.py",
-            "_hook_md": ".claude/hooks/g-hk-validate-shell.md"
-          },
-          {
-            "type": "command",
-            "command": "python .claude/hooks/g-hk-pre-tool-call.py",
-            "_hook_md": ".claude/hooks/g-hk-pre-tool-call.md"
-          }
+          { "type": "command", "command": "python .agents/hooks/g-hk-ag-dispatch.py stop", "timeout": 30 }
         ]
       }
     ]
