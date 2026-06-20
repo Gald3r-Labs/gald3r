@@ -52,7 +52,11 @@ tier:
   profile: single               # single | dual | triple
   current_tier: dev             # dev | test | public (which tier THIS repo IS)
   dev_to_test_history: squash-to-release-tag   # carry | squash-to-release-tag
-  # test_to_public_history is always "scrub" — non-configurable for security
+  # publish_history_mode (T423): carry | scrub — controls public-publish git history.
+  #   carry (DEFAULT, safe) keeps history; scrub (Mode A) publishes with zero history for IP
+  #   protection. scrub is OFF by default, opt-in at setup, and requires explicit -ConfirmScrub
+  #   at publish time. (Supersedes the prior "test_to_public_history is always scrub" rule — a
+  #   silent, non-configurable destructive default was the wrong safety posture; see T423.)
 
 # ── Display ───────────────────────────────────────────────────────────────────
 

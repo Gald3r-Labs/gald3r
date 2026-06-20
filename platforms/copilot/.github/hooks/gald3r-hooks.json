@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "_doc": "T510: GitHub Copilot CLI reads hook config from `.github/hooks/*.json` ({version:1, hooks:{...}}; camelCase event names; command hooks carry bash/powershell/command; `command` is the cross-platform fallback copied to both; preToolUse `deny` blocks the tool). Each native event routes to a thin canonical entrypoint `python .github/hooks/g-hk-on-<event>.py` which calls `g_hk_core.dispatch(\"<event>\")`. The shared core `.github/hooks/g_hk_core.py` is byte-identical across every platform overlay and runs the per-event CONCERN_CHAIN (concern hooks self-gate on payload). Native->canonical map (g_hk_core.PLATFORM_EVENT_MAP['copilot']): sessionStart->session-start, sessionEnd->session-end, userPromptSubmitted->user-prompt-submit, preToolUse->tool-start, postToolUse->tool-end. Copilot has no stop event (graceful degradation). Hooks are agent-session scope only (NOT git hooks / CI). Schema verified against https://docs.github.com/en/copilot/reference/hooks-configuration .",
+  "hooks": {
+    "sessionStart": [
+      {
+        "type": "command",
+        "command": "python .github/hooks/g-hk-on-session-start.py",
+        "timeoutSec": 60
+      }
+    ],
+    "sessionEnd": [
+      {
+        "type": "command",
+        "command": "python .github/hooks/g-hk-on-session-end.py",
+        "timeoutSec": 60
+      }
+    ],
+    "userPromptSubmitted": [
+      {
+        "type": "command",
+        "command": "python .github/hooks/g-hk-on-user-prompt-submit.py",
+        "timeoutSec": 60
+      }
+    ],
+    "preToolUse": [
+      {
+        "type": "command",
+        "command": "python .github/hooks/g-hk-on-tool-start.py",
+        "timeoutSec": 60
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "command": "python .github/hooks/g-hk-on-tool-end.py",
+        "timeoutSec": 60
+      }
+    ]
+  }
+}

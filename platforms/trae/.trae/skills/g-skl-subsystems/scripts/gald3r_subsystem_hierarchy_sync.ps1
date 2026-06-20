@@ -55,7 +55,7 @@ function Get-YamlStringList([string]$block, [string]$key) {
                 $inner = $Matches[1].Trim()
                 if ($inner.Length -eq 0) { return @() }
                 foreach ($p in ($inner -split ',')) { $items.Add($p.Trim().Trim("'`"")) }
-                return , $items.ToArray()
+                return $items.ToArray()
             }
         }
         else {
@@ -64,7 +64,7 @@ function Get-YamlStringList([string]$block, [string]$key) {
             elseif ($line -match "^\s{2,}\-\s+(.+)$") { $items.Add($Matches[1].Trim().Trim("'`"")) }
         }
     }
-    return , $items.ToArray()
+    return $items.ToArray()
 }
 
 $gald3rDir = Join-Path $ProjectRoot '.gald3r'

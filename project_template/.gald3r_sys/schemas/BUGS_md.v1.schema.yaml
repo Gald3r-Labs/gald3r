@@ -1,6 +1,6 @@
 ﻿schema_id: BUGS-md
 schema_version: v1
-gald3r_rel_version: "2.0.1"
+gald3r_rel_version: "2.1.0"
 description: >-
   Schema for the .gald3r/BUGS.md active bug index (markdown document with a
   status legend and bug rows; table or bullet form). Source of truth for full

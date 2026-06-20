@@ -456,6 +456,7 @@ def main():
 
     vault = resolve_vault(project_root)
     vault_path = vault["vault_path"]
+    repos_path = vault["repos_path"]
     vault_messages = vault["messages"]
 
     vault_note_count = _markdown_count(vault_path)
@@ -472,15 +473,17 @@ def main():
         except OSError:
             pass
 
-    # NOTE: the "$VaultPath"/"$ReposPath" literals below replicate the PS1
-    # exactly — its here-string escapes (`$VaultPath`) render the literal
-    # variable name, not the value. Verified against the live PS1 output.
+    # BUG-132 fix: interpolate the resolved vault/repos paths (the PS1
+    # interpolates $VaultPath/$ReposPath; the backtick escapes were a PS1
+    # rendering bug). Trailing newline added to match the PS1 here-string,
+    # which terminates the recent-activity line before the vault-verify line.
     vault_banner = (
         "## Vault Context\n"
-        "- Vault path: $VaultPath\n"
-        "- Repos path: $ReposPath\n"
+        "- Vault path: %s\n"
+        "- Repos path: %s\n"
         "- Notes: %d\n"
-        "- Recent activity: %s" % (vault_note_count, recent_vault_activity)
+        "- Recent activity: %s\n"
+        % (vault_path, repos_path, vault_note_count, recent_vault_activity)
     )
 
     # ── Vault existence / structure verification (T1456) ────────────────────

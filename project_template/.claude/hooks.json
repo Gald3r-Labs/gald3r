@@ -6,7 +6,8 @@
     "hook_md_source_of_truth": "Source the human-facing hook description from the 'hook.md' file; this 'hooks.json' is for wiring only.",
     "event_names": "Claude Code official PascalCase event names: SessionStart, SessionEnd, Stop, SubagentStop, PreToolUse, PostToolUse, UserPromptSubmit, Notification, PreCompact. 'beforeShellExecution' is a Cursor-era name with no Claude Code equivalent — use PreToolUse with a Bash|Shell matcher instead.",
     "gald3r_lifecycle_events": "T1055: In addition to the harness-native events wired above, gald3r defines four gald3r-internal lifecycle events: 'pre_skill', 'post_skill', 'pre_session', 'post_session'. Cursor and Claude Code do NOT expose native skill-boundary or gald3r-session-boundary events, so these are dispatched by the gald3r skill/command runner (or fired manually) and are NOT auto-wired here.",
-    "hooks_json_is_supported": "Claude Code reads this top-level .claude/hooks.json file directly (confirmed current method). The settings.json 'hooks' key is an alternate surface; hooks.json is preferred by gald3r for explicit wiring with _hook_md companion references."
+    "hooks_json_is_supported": "Claude Code reads this top-level .claude/hooks.json file directly (confirmed current method). The settings.json 'hooks' key is an alternate surface; hooks.json is preferred by gald3r for explicit wiring with _hook_md companion references.",
+    "t424_canonical_core": "T424: gald3r is consolidating to a canonical reduced event set of 6 ('session-start','session-end','user-prompt-submit','tool-start','tool-end','stop') with ONE shared Python core 'g_hk_core.py'; thin entrypoints 'g-hk-on-<event>.py' delegate to 'g_hk_core.dispatch(<event>)'. The new 'PostToolUse' (-> g-hk-on-tool-end) and 'UserPromptSubmit' (-> g-hk-on-user-prompt-submit) entries are the first canonical-event wirings in Claude. Pre-existing per-concern entries are retained during the rebuild; re-pointing them at the canonical entrypoints is the AC4 fan-out follow-up."
   },
   "hooks": {
     "SessionStart": [
@@ -84,6 +85,28 @@
             "type": "command",
             "command": "python .claude/hooks/g-hk-pre-tool-call.py",
             "_hook_md": ".claude/hooks/g-hk-pre-tool-call.md"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/g-hk-on-tool-end.py",
+            "_hook_md": ".claude/hooks/g-hk-on-tool-end.md"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/g-hk-on-user-prompt-submit.py",
+            "_hook_md": ".claude/hooks/g-hk-on-user-prompt-submit.md"
           }
         ]
       }

@@ -86,9 +86,21 @@ try {
 # Write a local chat transcript synchronously (with timeout to avoid race condition on Cursor exit).
 try {
     $projectPath   = (Get-Location).Path
-    $loggerScript  = Join-Path $PSScriptRoot "g-hk-cursor-chat-logger.py"
+    # BUG-133 fix: probe for whichever chat logger actually ships in this
+    # hook directory. g-hk-cursor-chat-logger.py does not ship in every
+    # deployment (the .claude install ships g-hk-claude-chat-logger.py); the
+    # previous hardcoded name was a silent no-op there.
+    $loggerScript = $null
+    foreach ($loggerName in @("g-hk-cursor-chat-logger.py", "g-hk-claude-chat-logger.py")) {
+        $candidate = Join-Path $PSScriptRoot $loggerName
+        if (Test-Path $candidate) { $loggerScript = $candidate; break }
+    }
+    if (-not $loggerScript) {
+        "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') logger skipped: no chat logger ships in this deployment" |
+            Add-Content -Path ".gald3r/logs/hook_diag.log" -Encoding UTF8 -ErrorAction SilentlyContinue
+    }
 
-    if (Test-Path $loggerScript) {
+    if ($loggerScript) {
         $pythonCmd = $null
         if (Get-Command py -ErrorAction SilentlyContinue) {
             $pythonCmd = "py"

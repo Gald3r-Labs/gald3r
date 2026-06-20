@@ -27,10 +27,10 @@ current goal or losing the worktree's context.
    Default `--role code` and `--owner` to the current session owner when not supplied.
 2. Invoke the worktree helper to append the item:
    ```powershell
-   .\.gald3r_sys\skills\g-skl-git-commit\scripts\gald3r_worktree.ps1 -Action Queue -TaskId {id} -Role code -Owner {owner} -QueueText "<follow-up prompt>" -Json
+   .\.cursor\skills\g-skl-git-commit\scripts\gald3r_worktree.ps1 -Action Queue -TaskId {id} -Role code -Owner {owner} -QueueText "<follow-up prompt>" -Json
    ```
-   Installed templates may call the helper from the `g-skl-git-commit/scripts/gald3r_worktree.ps1`
-   skill directory when no root `scripts/` copy exists.
+   Checkouts that ship a root `scripts/gald3r_worktree.ps1` copy (the gald3r source repo)
+   may call the helper from there instead.
 3. The helper creates `queue.md` with a header on first write, then appends `- [ ] <prompt>` (internal
    newlines collapsed so each item stays on one row).
 4. Confirm to user: `📥 Queued for T{id} — will be processed after the main goal completes ({pending_count} pending).`
@@ -38,7 +38,7 @@ current goal or losing the worktree's context.
 ### List the queue (`@g-queue T{id} --list`)
 
 ```powershell
-.\.gald3r_sys\skills\g-skl-git-commit\scripts\gald3r_worktree.ps1 -Action Queue -TaskId {id} -Role code -Owner {owner} -Json
+.\.cursor\skills\g-skl-git-commit\scripts\gald3r_worktree.ps1 -Action Queue -TaskId {id} -Role code -Owner {owner} -Json
 ```
 
 Returns `pending_count` and the `items` array. Display each pending item; report `(empty)` when none.

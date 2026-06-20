@@ -94,7 +94,12 @@ class FolderSystem:
         return sorted(self.base_dir.rglob(f"{self.spec.file_prefix}*.md")) if self.base_dir.exists() else []
 
     def _load(self, path: Path) -> Optional[Item]:
-        fm, body = self.store.read_doc(path)
+        try:
+            fm, body = self.store.read_doc(path)
+        except Exception:
+            # Malformed YAML frontmatter must not crash `bug list` (etc.) for the whole
+            # store (T521). Skip here; `gald3r validate` reports it as a violation to repair.
+            return None
         if "id" not in fm:
             return None
         return Item(fm=fm, body=body.strip(), path=path)

@@ -107,8 +107,32 @@ class Gald3r:
         return SyncSystem(self.config)
 
     @property
+    def validate(self) -> "ValidateSystem":
+        """Deterministic validation gate over task/bug files: schema + status
+        normalization + folder placement + index agreement (T520). Read-only unless
+        run with fix=True; backs the `gald3r validate` command and the pre-commit hook."""
+        from gald3r.systems.validate import ValidateSystem
+        return ValidateSystem(self)
+
+    @property
+    def merge(self) -> "MergeSystem":
+        """Cross-project item merge keyed on the stable uuid (T522 AC5): same-uuid skip,
+        different-uuid + colliding display-id renumber-incoming. Pure planning over item
+        collections; the caller persists + rewrites references."""
+        from gald3r.merge import MergeSystem
+        return MergeSystem(self.config)
+
+    @property
     def release(self) -> ReleaseSystem:
         return ReleaseSystem(self.config)
+
+    @property
+    def upgrade(self) -> "UpgradeSystem":
+        """Self-update: version-check against world_tree + safe `.gald3r/` migration
+        (timestamped gitignored backup -> ADD/MERGE/DEPRECATE migration -> rollback on
+        failure). Shared core for the agent (T473) and template-installed projects (T475)."""
+        from gald3r.systems.upgrade import UpgradeSystem
+        return UpgradeSystem(self.config)
 
     @property
     def prompts(self) -> PromptLibrary:

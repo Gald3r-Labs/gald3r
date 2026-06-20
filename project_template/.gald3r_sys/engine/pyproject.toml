@@ -1,6 +1,6 @@
 [project]
 name = "gald3r"
-version = "2.0.0"
+version = "2.1.0"
 description = "gald3r engine — file-first agent OS (tier-gated, Mode A pure core): 12 file-backed systems + the prompt/judgment layer, over CLI + MCP."
 readme = "README.md"
 requires-python = ">=3.10"

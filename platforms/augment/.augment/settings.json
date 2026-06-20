@@ -1,0 +1,60 @@
+{
+  "_doc": {
+    "t510_canonical_core": "T510: Augment (Auggie CLI) reads lifecycle hooks from the `hooks` object in `.augment/settings.json` (Claude-Code-style: per-event array of { matcher, hooks:[{type:command,command,timeout}] }). IMPORTANT: Augment's `command` MUST be a path to a script with a supported extension (.ps1/.cmd/.bat/.sh) -- a bare `python x.py` is NOT accepted. So each native event points at a thin `.ps1` shim `g-hk-augment-<event>.ps1` that pipes the STDIN payload to the canonical entrypoint `python .augment/hooks/g-hk-on-<event>.py`, which calls `g_hk_core.dispatch(\"<event>\")`. The shared core `.augment/hooks/g_hk_core.py` is byte-identical across every platform overlay and runs the per-event CONCERN_CHAIN (concern hooks self-gate on payload). Native->canonical map (g_hk_core.PLATFORM_EVENT_MAP['augment']): SessionStart->session-start, SessionEnd->session-end, PreToolUse->tool-start, PostToolUse->tool-end, Stop->stop. matcher is optional for PreToolUse/PostToolUse (defaults to .*); not used for session/stop events. timeout is in milliseconds. Schema verified against https://docs.augmentcode.com/cli/hooks .",
+    "unix_note": "T510: shims are PowerShell (.ps1), matching the kiro-cli precedent in this repo. On Unix, Auggie dispatches .ps1 via PowerShell -- ensure `pwsh` is installed, or add parallel .sh shims if a POSIX-only install is required (follow-up)."
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".augment/hooks/g-hk-augment-session-start.ps1"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".augment/hooks/g-hk-augment-session-end.ps1"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".augment/hooks/g-hk-augment-tool-start.ps1"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".augment/hooks/g-hk-augment-tool-end.ps1"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".augment/hooks/g-hk-augment-stop.ps1"
+          }
+        ]
+      }
+    ]
+  }
+}

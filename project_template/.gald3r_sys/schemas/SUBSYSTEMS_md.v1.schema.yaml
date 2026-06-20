@@ -1,6 +1,6 @@
 ﻿schema_id: SUBSYSTEMS-md
 schema_version: v1
-gald3r_rel_version: "2.0.1"
+gald3r_rel_version: "2.1.0"
 description: >-
   Schema for .gald3r/SUBSYSTEMS.md, the subsystem registry and interconnection
   graph (markdown document with a registry table and a mermaid graph).

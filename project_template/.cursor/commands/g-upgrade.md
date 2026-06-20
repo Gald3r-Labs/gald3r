@@ -45,8 +45,25 @@ v1.2.1
 The session-start version check skips the notification if `latestVersion` appears in this file.
 This file is gitignored (host-local user preference).
 
+### Engine-CLI equivalent (offline / no-MCP path — T473/T475)
+
+When the world_tree MCP is not reachable, the same check + safe upgrade run **fully offline** via the
+engine CLI (one shared core for the agent and template-installed projects — no fork):
+
+```
+gald3r version-check            # query world_tree's T112 version surface (degrades gracefully offline)
+gald3r upgrade                  # dry-run: version delta + planned ADD/MERGE/DEPRECATE
+gald3r upgrade --apply          # BACKUP .gald3r/ to a timestamped gitignored .zip -> migrate -> ROLLBACK on failure
+```
+
+`gald3r upgrade --apply` writes a timestamped backup to `.gald3r/_backups/.gald3r_backup_*.zip`
+(covered by the `.gald3r/.gitignore` `*.zip` rule — never committed) **before** migrating, and
+restores from it if the migration fails. **T422:** this is the minimal version-check + backup/
+rollback wrapper; it does not duplicate the deferred T422 consumer-upgrade subsystem
+(managed-manifest + conflict-resolver), which consumes/extends it when it lands.
+
 ### Notes
 
-- Upgrade uses `gald3r_install mode=upgrade` which preserves all `.gald3r/` project data
+- Upgrade uses `gald3r_install mode=upgrade` (MCP) or `gald3r upgrade --apply` (CLI); both preserve all `.gald3r/` user data (tasks/bugs/PLAN/etc. are on an absolute denylist)
 - After upgrade, any cached skill/rule content in the current session should be treated as potentially stale — re-read skills before relying on them
 - The `--force` flag is useful in CI or non-interactive contexts

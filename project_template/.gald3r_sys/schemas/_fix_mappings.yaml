@@ -1,4 +1,4 @@
-﻿gald3r_rel_version: "2.0.1"
+﻿gald3r_rel_version: "2.1.0"
 schema_version: "fix-mappings-v1"
 description: >-
   Canonical, extensible enum auto-fix mappings consumed by g-medic's L1 schema

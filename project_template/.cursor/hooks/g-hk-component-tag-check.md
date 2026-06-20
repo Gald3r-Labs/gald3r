@@ -30,7 +30,7 @@ New-Item -ItemType Directory -Path $gitHooksDir -Force | Out-Null
 # Write a thin pre-commit caller (no .ps1 extension — git expects bare filename)
 Set-Content "$gitHooksDir\pre-commit" @'
 #!/bin/sh
-pwsh -NoProfile -ExecutionPolicy Bypass -File ".cursor/hooks/g-hk-component-tag-check.ps1"
+python ".cursor/hooks/g-hk-component-tag-check.py"
 '@
 
 # Register with git
@@ -43,4 +43,4 @@ Run setup once; it persists in `.git/config`. After that every `git commit` runs
 - T1458 — subsystem sprawl prevention enforcement
 - T1459 — aggregate_subsystems.ps1 aggregation script
 - Rule: `g-rl-38` — component creation standards (always-applied)
-- Skill: `g-skl-gald3r-component-new` — scaffolds correctly-tagged templates
+- Commands: `@g-skill-new` / `@g-command-new` / `@g-rule-new` / `@g-create-hook` / `@g-agent-hire` — scaffold correctly-tagged components

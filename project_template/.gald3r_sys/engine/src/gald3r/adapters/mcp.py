@@ -31,6 +31,16 @@ def tool_impls(g: Gald3r) -> Dict[str, Callable[..., Any]]:
         """Update a task's status/title/priority/type."""
         return g.tasks.update(id, status=status, title=title, priority=priority, type=type).to_dict()
 
+    def gald3r_task_set_release_hold(id: int, hold: str, reason: str = "",
+                                     sync_with: Optional[list] = None) -> Dict[str, Any]:
+        """Set a task's release-staging hold (T419). hold: none|manual|sync_required.
+        sync_with is a list of {project, task, reason} dicts (sync_required only)."""
+        return g.tasks.set_release_hold(id, hold, reason=reason, sync_with=sync_with).to_dict()
+
+    def gald3r_task_clear_release_hold(id: int) -> Dict[str, Any]:
+        """Clear a task's release-staging hold (T419) — equivalent to release_hold: none."""
+        return g.tasks.clear_release_hold(id).to_dict()
+
     def gald3r_task_sync() -> Dict[str, Any]:
         """Regenerate TASKS.md from the task files; report phantom/orphan drift."""
         return g.tasks.sync()
@@ -194,6 +204,8 @@ def tool_impls(g: Gald3r) -> Dict[str, Callable[..., Any]]:
         "gald3r_task_new": gald3r_task_new,
         "gald3r_task_list": gald3r_task_list,
         "gald3r_task_update": gald3r_task_update,
+        "gald3r_task_set_release_hold": gald3r_task_set_release_hold,
+        "gald3r_task_clear_release_hold": gald3r_task_clear_release_hold,
         "gald3r_task_sync": gald3r_task_sync,
         "gald3r_goal_add": gald3r_goal_add,
         "gald3r_goal_list": gald3r_goal_list,
