@@ -48,6 +48,37 @@ def find_crawl_script():
     return str(Path(__file__).parent.parent.parent.parent / ".cursor" / "skills" / "g-skl-crawl" / "scripts" / "crawl_url.py")
 
 
+def find_moc_script() -> Path | None:
+    """
+    Locate gen_vault_moc.py (BUG-126 fix).
+
+    Canonical home is the sibling g-skl-vault skill's scripts/ dir; previously the
+    resolver only walked parent-of-parent /scripts/ dirs, where the script never
+    lived after the gald3r_dev->templates split, so MOC rebuild silently skipped.
+
+    Checks, in priority order:
+      1. sibling skill: <skills>/g-skl-vault/scripts/gen_vault_moc.py
+      2. this skill's own scripts/ dir
+      3. legacy parent-walk fallback: <parent>/scripts/gen_vault_moc.py
+    """
+    here = Path(__file__).resolve()
+    candidates: list[Path] = []
+    # 1. sibling g-skl-vault/scripts (parents[1]=this skill dir, parents[2]=skills/)
+    if len(here.parents) > 2:
+        candidates.append(here.parents[2] / "g-skl-vault" / "scripts" / "gen_vault_moc.py")
+    # 2. this skill's own scripts/ dir
+    candidates.append(here.parent / "gen_vault_moc.py")
+    # 3. legacy parent-walk fallback (back-compat)
+    for depth in range(2, 12):
+        if depth >= len(here.parents):
+            break
+        candidates.append(here.parents[depth] / "scripts" / "gen_vault_moc.py")
+    for cand in candidates:
+        if cand.is_file():
+            return cand
+    return None
+
+
 def load_index(platforms_dir: Path) -> list:
     index_path = platforms_dir / INDEX_FILE
     if not index_path.exists():
@@ -157,15 +188,7 @@ def main():
 
     # After batch refresh, regenerate MOC hubs (T045 / g-platform-crawl)
     if ok > 0:
-        moc_script = None
-        here = Path(__file__).resolve()
-        for depth in range(2, 12):
-            if depth >= len(here.parents):
-                break
-            cand = here.parents[depth] / "scripts" / "gen_vault_moc.py"
-            if cand.is_file():
-                moc_script = cand
-                break
+        moc_script = find_moc_script()
         if moc_script and moc_script.exists():
             r = subprocess.run(
                 [sys.executable, str(moc_script), "--vault-path", args.vault_path, "--auto"],

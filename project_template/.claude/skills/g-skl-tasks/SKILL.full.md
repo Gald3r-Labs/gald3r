@@ -1168,6 +1168,41 @@ They are `null` / absent on non-software projects and on software projects with 
 - Database model holds three nullable columns (`issue_ref`, `pr_url`, `pr_status`); migration is a separate epic.
 - Fields stay `null` until populated by their respective GitHub commands (`g-pr-open` → T1287).
 
+### Release Staging — `release_hold` Field (T419)
+
+Optional task frontmatter controlling whether an awaiting-verification task is swept into a release by `g-ship`. The state folder for awaiting tasks is `tasks/awaiting-verification/` (status `awaiting-verification`).
+
+```yaml
+release_hold: none            # default; g-ship picks this up (omitting = none)
+release_hold: manual          # human-gated hold; g-ship skips; must be explicitly cleared
+release_hold: sync_required   # ship coordinated with another component; g-ship skips
+sync_with:                    # only meaningful with release_hold: sync_required
+  - project: gald3r_agent
+    task: T890
+    reason: "API contract change -- both sides must ship together"
+release_hold_reason: "Holding for coordinated deploy"   # optional, free text
+```
+
+**Valid `release_hold` values:** `none` (default / omitted), `manual`, `sync_required`. Any other value is a validation error (engine `schema/task.py` `RELEASE_HOLD_VALUES`). `sync_with` is a list of `{project, task, reason}` entries; carry it only with `sync_required`.
+
+#### SET RELEASE_HOLD
+
+Engine-backed (`TaskSystem.set_release_hold`). Sets `release_hold` (and optional `release_hold_reason` / `sync_with`) on a task, re-validates, rewrites the task file, and regenerates `TASKS.md`. `set-release-hold <id> none` is equivalent to CLEAR.
+
+- **CLI:** `uv run --project .gald3r_sys/engine gald3r task set-release-hold <id> <none|manual|sync_required> [--reason "..."] [--sync-project <id> --sync-task <id>]`
+- **MCP:** `gald3r_task_set_release_hold(id, hold, reason="", sync_with=[{project, task, reason}])`
+- **Command:** `@g-task set-release-hold <id> <none|manual|sync_required> "<reason>"` (see `@g-task-upd`)
+
+#### CLEAR RELEASE_HOLD
+
+Engine-backed (`TaskSystem.clear_release_hold`). Removes `release_hold`, `release_hold_reason`, and `sync_with` from the task (equivalent to `release_hold: none`), rewrites the file, regenerates `TASKS.md`.
+
+- **CLI:** `uv run --project .gald3r_sys/engine gald3r task clear-release-hold <id>`
+- **MCP:** `gald3r_task_clear_release_hold(id)`
+- **Command:** `@g-task clear-release-hold <id>` (see `@g-task-upd`)
+
+**Manual fallback (no engine):** add/remove the `release_hold` / `sync_with` / `release_hold_reason` frontmatter keys by hand, then run SYNC CHECK. `g-ship` and `g-status` read these fields directly.
+
 ### [🕵️] Verification Claim Rules
 
 `[🕵️]` prevents multiple review agents from verifying the same task at once.

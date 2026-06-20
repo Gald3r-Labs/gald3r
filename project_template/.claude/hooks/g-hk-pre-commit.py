@@ -127,6 +127,28 @@ def load_secret_patterns(repo_root: str) -> list:
     return list(DEFAULT_SECRET_PATTERNS)
 
 
+def load_engine(repo_root: str):
+    """Return the gald3r `Gald3r` class if the engine is importable, else None.
+
+    Tries the ambient import first, then the installed engine source at
+    `<repo>/.gald3r_sys/engine/src`. Returns None (so the validation gate degrades to a
+    skip/WARN, never blocking) when the engine or its deps aren't available."""
+    try:
+        from gald3r.core import Gald3r  # type: ignore
+        return Gald3r
+    except Exception:
+        pass
+    src = Path(repo_root) / ".gald3r_sys" / "engine" / "src"
+    if src.is_dir():
+        sys.path.insert(0, str(src))
+        try:
+            from gald3r.core import Gald3r  # type: ignore
+            return Gald3r
+        except Exception:
+            return None
+    return None
+
+
 def main(argv: list) -> int:
     parser = argparse.ArgumentParser(
         description="gald3r pre-commit sanity hook (Python port of g-hk-pre-commit.ps1)"
@@ -347,6 +369,39 @@ def main(argv: list) -> int:
         block = True
     else:
         print("Stub annotation: PASS")
+
+    # --- 6. .gald3r VALIDATION GATE (BLOCK) — T520 ---
+    # Run the deterministic engine validator on staged task/bug files: schema, status
+    # vocabulary, and folder placement. The engine ENFORCES what g-rl-34/35/38 advise.
+    staged_gald3r = [
+        f for f in staged_files
+        if re.search(r"\.gald3r[/\\](tasks|bugs)[/\\].*\.md$", f.replace("\\", "/"), re.IGNORECASE)
+    ]
+    if staged_gald3r:
+        Gald3r = load_engine(repo_root)
+        if Gald3r is None:
+            warns.append("WARN: staged .gald3r task/bug files but the engine isn't importable — validation skipped.")
+            print("validate gate: SKIP (engine not importable)")
+        else:
+            try:
+                g = Gald3r(root=repo_root)
+                abs_paths = [str((Path(repo_root) / f)) for f in staged_gald3r]
+                rep = g.validate.run(paths=abs_paths)
+                if rep["ok"]:
+                    print(f"validate gate: PASS ({rep['checked']} staged file(s))")
+                else:
+                    print(f"validate gate: BLOCK — {rep['errors']} error(s), "
+                          f"{rep['fixable']} fixable in staged .gald3r files:")
+                    shown = [v for v in rep["violations"] if v["kind"] in ("error", "fixable")]
+                    for v in shown[:10]:
+                        print(f"  [{v['kind']}] {v['file']}: {v['message']}")
+                    if len(shown) > 10:
+                        print(f"  ... and {len(shown) - 10} more")
+                    print("  -> run `gald3r validate --fix` for fixable items, then repair errors.")
+                    block = True
+            except Exception as e:
+                warns.append(f"WARN: validate gate errored ({e.__class__.__name__}); skipped.")
+                print("validate gate: SKIP (validator error)")
 
     print()
 

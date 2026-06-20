@@ -1,6 +1,6 @@
 ﻿schema_id: bug-file
 schema_version: v1
-gald3r_rel_version: "2.0.1"
+gald3r_rel_version: "2.1.0"
 description: "Schema for individual bug files under .gald3r/bugs/**/*.md (YAML frontmatter)."
 applies_to: ".gald3r/bugs/**/*.md"
 
@@ -20,10 +20,28 @@ required:
     description: "Bug severity."
   status:
     type: enum
-    values: [open, in-progress, fixed, verified, closed, cancelled, wont_fix]
-    description: "Bug lifecycle status."
+    # Derived from gald3r.schema.status.BugStatus (T519 single source of truth). Keep in
+    # lockstep with the engine: tests/test_status_vocab.py fails if these drift. Canonical
+    # tokens first, then accepted aliases (wont-fix -> wont_fix).
+    values: [open, pending, in-progress, awaiting-verification, verification-in-progress, requires-user-attention, resolved, fixed, completed, documented, verified, closed, archived, paused, cancelled, wont_fix, wont-fix]
+    description: "Bug lifecycle status (canonical BugStatus values + accepted aliases)."
 
 optional:
+  uuid:
+    type: string
+    format: "uuid"
+    auto_populate: uuid4_on_create
+    description: "Stable cross-project primary key (T522, RFC-4122 UUIDv4). The display id
+      (BUG-###) is repo-local and renumbers on merge; uuid is the durable merge key. Auto-stamped
+      on `bug new`; existing files backfilled by gald3r.ids.backfill_dir."
+  resolution:
+    type: string
+    description: "Structured resolution detail (T521) — what fixed it / why closed. Lives on
+      the bug file so a regenerated index need not carry free-text resolution prose."
+  resolved_date:
+    type: date
+    format: "YYYY-MM-DD"
+    description: "Date the bug reached a terminal status."
   reported_date:
     type: date
     format: "YYYY-MM-DD"

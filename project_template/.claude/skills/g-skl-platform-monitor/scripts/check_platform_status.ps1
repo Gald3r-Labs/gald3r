@@ -5,7 +5,8 @@
 
 .DESCRIPTION
     Reads .gald3r/PLATFORM_STATUS.md and reports the current capability state for one platform
-    (-Platform <name>) or all 23 (default). This is the T1460 SKELETON: it parses and reports the
+    (-Platform <name>) or every registry platform (default; roster from PLATFORM_REGISTRY.yaml,
+    T516). This is the T1460 SKELETON: it parses and reports the
     status table today; deep per-platform gap analysis and doc-diff are placeholder calls to the
     future g-skl-platform-monitor operations (CHECK / SCAN_DOCS), completed by T1461-T1483.
 
@@ -13,7 +14,7 @@
     The platform name (e.g. cursor, claude, windsurf). Default "all" reports every platform.
 
 .PARAMETER GenerateMatrix
-    T1543: Instead of the status report, read all 23 canonical PLATFORM_SPEC.md files
+    T1543: Instead of the status report, read each registry platform's canonical PLATFORM_SPEC.md file
     (.gald3r_sys/platforms/.<platform>/PLATFORM_SPEC.md), derive each capability cell
     (Hooks / Rules / Skills / Commands / MCP / Docs Fresh), and (re)write
     .gald3r/PLATFORM_CAPABILITY_MATRIX.md with the populated cells. Reads PLATFORM_STATUS.md
@@ -41,23 +42,105 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-# Resolve the project root (parent of custom_scripts/) and the status file.
-$repoRoot   = (Get-Item $PSScriptRoot).Parent.FullName
+# Resolve the project root via an anchored walk-up (BUG-161 fix). The script moved from the
+# legacy custom_scripts/ (one level under the repo root) into the skill tree, so the old
+# (Get-Item $PSScriptRoot).Parent resolved to the skill folder and every probe missed.
+function Get-ProjectRoot {
+    param([string]$Start)
+    # Prefer the ancestor that actually holds .gald3r/PLATFORM_STATUS.md (the file this reads).
+    $dir = Get-Item $Start
+    while ($null -ne $dir) {
+        if (Test-Path (Join-Path $dir.FullName ".gald3r\PLATFORM_STATUS.md")) { return $dir.FullName }
+        $dir = $dir.Parent
+    }
+    # Then any .gald3r project marker.
+    $dir = Get-Item $Start
+    while ($null -ne $dir) {
+        if (Test-Path (Join-Path $dir.FullName ".gald3r")) { return $dir.FullName }
+        $dir = $dir.Parent
+    }
+    # Legacy fallback — identical to the pre-BUG-161 behavior.
+    return (Get-Item $Start).Parent.FullName
+}
+$repoRoot   = Get-ProjectRoot $PSScriptRoot
 $statusPath = Join-Path $repoRoot ".gald3r\PLATFORM_STATUS.md"
 
-# The 23 supported platforms (matches PLATFORM_STATUS.md rows and T1461-T1483).
-$KNOWN_PLATFORMS = @(
-    "cursor","claude","copilot","codex","antigravity","windsurf","gemini","cline","roo",
-    "opencode","openhands","kiro","aider","augment","goose","junie","kiro-cli","mistral",
-    "openclaw","qwen","replit","subq","warp"
-)
+# The supported platforms — derived from the single source of truth,
+# PLATFORM_REGISTRY.yaml (T516), via the shared platform_registry.py reader. No hardcoded
+# roster lives here anymore; the .ps1 shells out to the Python reader so YAML parsing is
+# not duplicated. If Python or the registry is unavailable, fall back to the original
+# 23-platform list so this script still runs (AC2 safe fallback).
+function Get-KnownPlatforms {
+    $fallback = @(
+        "cursor","claude","copilot","codex","antigravity","windsurf","gemini","cline","roo",
+        "opencode","openhands","kiro","aider","augment","goose","junie","kiro-cli","mistral",
+        "openclaw","qwen","replit","subq","warp"
+    )
+    $readerPath = Join-Path $PSScriptRoot "platform_registry.py"
+    if (-not (Test-Path $readerPath)) { return $fallback }
+    try {
+        $out = & python $readerPath --list 2>$null
+        if ($LASTEXITCODE -eq 0 -and $out) {
+            $names = @($out | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' })
+            if ($names.Count -gt 0) { return $names }
+        }
+    } catch {
+        # Python not on PATH or reader failed — fall through to the baked-in fallback.
+    }
+    return $fallback
+}
 
-# Platform name -> canonical PLATFORM_SPEC.md folder (leading-dot). Most are ".<name>";
-# the only exception is replit -> ".replit-gald3r".
+$KNOWN_PLATFORMS = Get-KnownPlatforms
+
+# Platform name -> legacy override-tree PLATFORM_SPEC.md folder (leading-dot). Most are
+# ".<name>"; the only exception is replit -> ".replit-gald3r".
 function Get-SpecFolderName {
     param([string]$PlatformName)
     if ($PlatformName -eq "replit") { return ".replit-gald3r" }
     return ".$PlatformName"
+}
+
+# Walk up from a start dir to find the repo root that contains PLATFORM_REGISTRY.yaml
+# (or a .gald3r/). Used so the registry-driven spec resolution can reach the skill trees,
+# since $repoRoot above is the skill folder (pre-existing path quirk).
+function Get-RegistryRepoRoot {
+    param([string]$Start)
+    $dir = Get-Item $Start
+    while ($dir -ne $null) {
+        foreach ($rel in @(
+            "gald3r_templates\gald3r_core\platforms\PLATFORM_REGISTRY.yaml",
+            "gald3r_core\platforms\PLATFORM_REGISTRY.yaml",
+            ".gald3r_sys\platforms\PLATFORM_REGISTRY.yaml",
+            "platforms\PLATFORM_REGISTRY.yaml")) {
+            if (Test-Path (Join-Path $dir.FullName $rel)) { return $dir.FullName }
+        }
+        $dir = $dir.Parent
+    }
+    return $null
+}
+
+# Resolve a platform's PLATFORM_SPEC.md (T516). Prefer the legacy override tree
+# (.gald3r_sys/platforms/.<x>/) when present; else resolve from the registry skill trees
+# (absorbed layout). Returns the path or $null.
+function Resolve-SpecPath {
+    param([string]$Platform, [string]$SpecsRoot, [string]$RegistryRoot)
+    $legacy = Join-Path $SpecsRoot (Join-Path (Get-SpecFolderName $Platform) 'PLATFORM_SPEC.md')
+    if (Test-Path $legacy) { return $legacy }
+    if (-not $RegistryRoot) { return $null }
+    # Candidate skill-folder suffixes: the name, plus the -code-stripped short name.
+    $suffixes = @($Platform)
+    if ($Platform.EndsWith('-code')) { $suffixes += $Platform.Substring(0, $Platform.Length - 5) }
+    $trees = @(
+        "gald3r_templates\gald3r_core\project_template\.claude\skills",
+        "gald3r_templates\gald3r_core\project_template\.cursor\skills",
+        ".claude\skills", ".cursor\skills")
+    foreach ($s in $suffixes) {
+        foreach ($t in $trees) {
+            $cand = Join-Path $RegistryRoot (Join-Path $t (Join-Path "g-skl-platform-$s" 'PLATFORM_SPEC.md'))
+            if (Test-Path $cand) { return $cand }
+        }
+    }
+    return $null
 }
 
 # ============================================================================
@@ -74,9 +157,19 @@ if ($GenerateMatrix) {
     Write-Host "  output: $matrixPath" -ForegroundColor DarkGray
     Write-Host ""
 
+    # The row set is registry-driven (KNOWN_PLATFORMS, T516). Spec files resolve per platform
+    # via Resolve-SpecPath: legacy override tree first, then the registry skill trees.
+    $registryRoot = Get-RegistryRepoRoot $PSScriptRoot
     if (-not (Test-Path $specsRoot)) {
-        Write-Host "  ERROR: canonical platforms spec root not found at $specsRoot" -ForegroundColor Red
-        exit 1
+        $anySpec = $false
+        foreach ($p in $KNOWN_PLATFORMS) {
+            if (Resolve-SpecPath -Platform $p -SpecsRoot $specsRoot -RegistryRoot $registryRoot) { $anySpec = $true; break }
+        }
+        if (-not $anySpec) {
+            Write-Host "  ERROR: no PLATFORM_SPEC.md found via legacy $specsRoot or the registry skill trees." -ForegroundColor Red
+            exit 1
+        }
+        Write-Host "  NOTE: legacy $specsRoot absent — resolving specs from PLATFORM_REGISTRY.yaml against the skill trees." -ForegroundColor DarkYellow
     }
 
     $validCells = @('✅','⚠️','❌','❓')
@@ -197,10 +290,9 @@ if ($GenerateMatrix) {
     $tally = @{ '✅' = 0; '⚠️' = 0; '❌' = 0; '❓' = 0 }
 
     foreach ($p in $KNOWN_PLATFORMS) {
-        $folder   = Get-SpecFolderName $p
-        $specPath = Join-Path $specsRoot (Join-Path $folder 'PLATFORM_SPEC.md')
+        $specPath = Resolve-SpecPath -Platform $p -SpecsRoot $specsRoot -RegistryRoot $registryRoot
 
-        if (-not (Test-Path $specPath)) {
+        if (-not $specPath -or -not (Test-Path $specPath)) {
             $missingSpecFolders += $p
             $row = [ordered]@{ Platform = $p; Hooks='❓'; Rules='❓'; Skills='❓'; Commands='❓'; MCP='❓'; DocsFresh='❓' }
             $matrixRows += [pscustomobject]$row
@@ -291,7 +383,7 @@ if ($GenerateMatrix) {
     [void]$sb.AppendLine('# PLATFORM_CAPABILITY_MATRIX.md — Feature Comparison Across Platforms')
     [void]$sb.AppendLine('')
     [void]$sb.AppendLine('**Generated by** `check_platform_status.ps1 -GenerateMatrix` (T1543). Owned by `g-agnt-platformer`.')
-    [void]$sb.AppendLine('23 platforms × 6 capability columns. Cells sourced from each platform''s canonical `PLATFORM_SPEC.md`')
+    [void]$sb.AppendLine(("Registry-driven: {0} platforms × 6 capability columns (row set from ``PLATFORM_REGISTRY.yaml``, T516). Cells sourced from each platform's canonical ``PLATFORM_SPEC.md``" -f $matrixRows.Count))
     [void]$sb.AppendLine('(`## Capability Summary` table + frontmatter `last_doc_scan`). Cross-checked against `PLATFORM_STATUS.md`.')
     [void]$sb.AppendLine('')
     [void]$sb.AppendLine('Legend: ✅ verified working · ⚠️ partial / Cursor-generic · ❌ not supported · ❓ untested.')

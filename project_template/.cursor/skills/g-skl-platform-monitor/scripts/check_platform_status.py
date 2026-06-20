@@ -5,12 +5,13 @@ Read and report the gald3r cross-platform capability index. Entry point for
 @g-platform-check; CHECK delegate for g-skl-platform-monitor.
 
 Reads .gald3r/PLATFORM_STATUS.md and reports the current capability state for
-one platform (-Platform <name>) or all 23 (default). T1460 SKELETON: parses
-and reports the status table today; deep per-platform gap analysis and
-doc-diff are placeholder calls to the future g-skl-platform-monitor
+one platform (-Platform <name>) or every registry platform (default). The roster
+is registry-driven (PLATFORM_REGISTRY.yaml, T516) — see platform_registry.py.
+T1460 SKELETON: parses and reports the status table today; deep per-platform gap
+analysis and doc-diff are placeholder calls to the future g-skl-platform-monitor
 operations (CHECK / SCAN_DOCS), completed by T1461-T1483.
 
--GenerateMatrix (T1543): reads all 23 canonical PLATFORM_SPEC.md files,
+-GenerateMatrix (T1543): reads each registry platform's canonical PLATFORM_SPEC.md,
 derives each capability cell (Hooks / Rules / Skills / Commands / MCP /
 Docs Fresh), and (re)writes .gald3r/PLATFORM_CAPABILITY_MATRIX.md. Reads
 PLATFORM_STATUS.md read-only to cross-check (warns on disagreement; NEVER
@@ -76,22 +77,93 @@ def say(msg: str, color: Optional[str] = None) -> None:
         print(msg)
 
 
-# The 23 supported platforms (matches PLATFORM_STATUS.md rows and T1461-T1483).
-KNOWN_PLATFORMS = [
-    "cursor", "claude", "copilot", "codex", "antigravity", "windsurf", "gemini",
-    "cline", "roo", "opencode", "openhands", "kiro", "aider", "augment", "goose",
-    "junie", "kiro-cli", "mistral", "openclaw", "qwen", "replit", "subq", "warp",
-]
+# The supported platforms — derived from the single source of truth,
+# PLATFORM_REGISTRY.yaml (T516), via the shared platform_registry reader. No hardcoded
+# roster lives here anymore. If the registry file is missing, the reader returns a
+# baked-in fallback roster so this tool still runs (AC2 safe fallback).
+def _load_known_platforms() -> List[str]:
+    try:
+        from platform_registry import known_platforms  # script-adjacent import
+    except ImportError:
+        # Make this script's own folder importable (covers odd invocation cwds).
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        try:
+            from platform_registry import known_platforms
+        except ImportError:
+            # Last-resort fallback if the shared reader is unavailable: the original
+            # 23-platform list, so the tool degrades gracefully rather than crashing.
+            return [
+                "cursor", "claude", "copilot", "codex", "antigravity", "windsurf",
+                "gemini", "cline", "roo", "opencode", "openhands", "kiro", "aider",
+                "augment", "goose", "junie", "kiro-cli", "mistral", "openclaw",
+                "qwen", "replit", "subq", "warp",
+            ]
+    return list(known_platforms())
+
+
+KNOWN_PLATFORMS = _load_known_platforms()
 
 VALID_CELLS = ["✅", "⚠️", "❌", "❓"]  # ✅ ⚠️ ❌ ❓
 _OK, _WARN, _NO, _UNK = VALID_CELLS
 
 
 def get_spec_folder_name(platform_name: str) -> str:
-    """Platform name -> canonical PLATFORM_SPEC.md folder (leading-dot)."""
+    """Platform name -> legacy override-tree PLATFORM_SPEC.md folder (leading-dot)."""
     if platform_name == "replit":
         return ".replit-gald3r"
     return f".{platform_name}"
+
+
+# Skill trees (relative to repo root) where canonical PLATFORM_SPEC.md files live in the
+# absorbed layout. Probed in order; first hit wins.
+_REL_SPEC_TREES = (
+    Path("gald3r_templates") / "gald3r_core" / "project_template" / ".claude" / "skills",
+    Path("gald3r_templates") / "gald3r_core" / "project_template" / ".cursor" / "skills",
+    Path(".claude") / "skills",
+    Path(".cursor") / "skills",
+)
+
+
+def _registry_spec_suffixes(platform_name: str) -> List[str]:
+    """Candidate g-skl-platform-<suffix> names for a platform, sourced from the registry
+    `spec_path` when available, else derived (name + -code-stripped short name)."""
+    suffixes: List[str] = []
+    try:
+        from platform_registry import all_entries
+    except ImportError:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        try:
+            from platform_registry import all_entries
+        except ImportError:
+            all_entries = None  # type: ignore
+    if all_entries is not None:
+        for e in all_entries():
+            if str(e.get("name")) == platform_name:
+                sp = e.get("spec_path")
+                if sp:
+                    suffixes.append(str(sp).split("/")[0].replace("g-skl-platform-", ""))
+                break
+    suffixes.append(platform_name)
+    if platform_name.endswith("-code"):
+        suffixes.append(platform_name[:-5])
+    # de-dup, preserve order
+    seen: set = set()
+    return [s for s in suffixes if s and not (s in seen or seen.add(s))]
+
+
+def resolve_spec_path(repo_root: Path, specs_root: Path, platform_name: str) -> Optional[Path]:
+    """Resolve a platform's PLATFORM_SPEC.md. Prefer the legacy override tree
+    (.gald3r_sys/platforms/.<x>/) when present; otherwise resolve from the registry
+    spec_path against the skill trees (the absorbed layout). Returns None if not found."""
+    legacy = specs_root / get_spec_folder_name(platform_name) / "PLATFORM_SPEC.md"
+    if legacy.exists():
+        return legacy
+    for suffix in _registry_spec_suffixes(platform_name):
+        for rel in _REL_SPEC_TREES:
+            cand = repo_root / rel / f"g-skl-platform-{suffix}" / "PLATFORM_SPEC.md"
+            if cand.exists():
+                return cand
+    return None
 
 
 def split_table_row(line: str) -> Optional[List[str]]:
@@ -214,9 +286,18 @@ def generate_matrix(repo_root: Path, status_path: Path, crawl_max_age_days: int)
     say(f"  output: {matrix_path}", "darkgray")
     say("")
 
+    # The row set is registry-driven (KNOWN_PLATFORMS, T516). Spec files are resolved per
+    # platform via resolve_spec_path, which prefers the legacy override tree and falls back
+    # to the registry spec_path against the skill trees (absorbed layout). Only error out
+    # when NEITHER source can supply a single spec.
     if not specs_root.exists():
-        say(f"  ERROR: canonical platforms spec root not found at {specs_root}", "red")
-        return 1
+        any_spec = any(resolve_spec_path(repo_root, specs_root, p) for p in KNOWN_PLATFORMS)
+        if not any_spec:
+            say(f"  ERROR: no PLATFORM_SPEC.md found via legacy {specs_root} or the registry "
+                f"skill trees — cannot build the matrix.", "red")
+            return 1
+        say(f"  NOTE: legacy {specs_root} absent — resolving specs from the registry "
+            f"(PLATFORM_REGISTRY.yaml) against the skill trees.", "darkyellow")
 
     # ---- Cross-check source: PLATFORM_STATUS.md (READ ONLY; never overwritten). ----
     status_by_platform: Dict[str, Dict[str, str]] = {}
@@ -231,9 +312,9 @@ def generate_matrix(repo_root: Path, status_path: Path, crawl_max_age_days: int)
     tally: Dict[str, int] = {_OK: 0, _WARN: 0, _NO: 0, _UNK: 0}
 
     for p in KNOWN_PLATFORMS:
-        spec_path = specs_root / get_spec_folder_name(p) / "PLATFORM_SPEC.md"
+        spec_path = resolve_spec_path(repo_root, specs_root, p)
 
-        if not spec_path.exists():
+        if spec_path is None:
             missing_spec_folders.append(p)
             matrix_rows.append({
                 "Platform": p, "Hooks": _UNK, "Rules": _UNK, "Skills": _UNK,
@@ -325,7 +406,8 @@ def generate_matrix(repo_root: Path, status_path: Path, crawl_max_age_days: int)
     lines.append("")
     lines.append("**Generated by** `check_platform_status.py --generate-matrix` (T1543). "
                  "Owned by `g-agnt-platformer`.")
-    lines.append("23 platforms × 6 capability columns. Cells sourced from each "
+    lines.append(f"Registry-driven: {len(matrix_rows)} platforms × 6 capability columns "
+                 "(row set from `PLATFORM_REGISTRY.yaml`, T516). Cells sourced from each "
                  "platform's canonical `PLATFORM_SPEC.md`")
     lines.append("(`## Capability Summary` table + frontmatter `last_doc_scan`). "
                  "Cross-checked against `PLATFORM_STATUS.md`.")
@@ -420,6 +502,28 @@ def status_report(status_path: Path, platform: str) -> int:
     return 0
 
 
+def _find_root(start: Optional[Path] = None) -> Path:
+    """Resolve the project root by walking up from this script (BUG-161 fix).
+
+    The script moved from the legacy ``custom_scripts/`` (one level under the repo
+    root) into ``…/skills/g-skl-platform-monitor/scripts/``, so the old
+    ``Path(__file__).resolve().parent.parent`` resolved to the skill folder — and every
+    ``.gald3r/PLATFORM_STATUS.md`` / ``.gald3r_sys`` probe missed, making the status
+    report and ``-GenerateMatrix`` exit early. Prefer the ancestor that actually holds
+    ``.gald3r/PLATFORM_STATUS.md`` (the exact file this tool reads); then any ``.gald3r``
+    project marker; else fall back to the identical legacy expression so no
+    previously-working layout can regress.
+    """
+    here = (start or Path(__file__)).resolve()
+    for root in here.parents:
+        if (root / ".gald3r" / "PLATFORM_STATUS.md").is_file():
+            return root
+    for root in here.parents:
+        if (root / ".gald3r").is_dir():
+            return root
+    return here.parent.parent  # legacy fallback — identical to pre-BUG-161 behavior
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     """Entry point — mirrors the PS1 param() block."""
     if hasattr(sys.stdout, "reconfigure"):
@@ -440,9 +544,10 @@ def main(argv: Optional[List[str]] = None) -> int:
                         help="Docs-freshness threshold in days (default 7).")
     args = parser.parse_args(argv)
 
-    # Resolve the project root (parent of the scripts/ folder, matching the PS1's
-    # `(Get-Item $PSScriptRoot).Parent` — originally custom_scripts/ at repo root).
-    repo_root = Path(__file__).resolve().parent.parent
+    # Resolve the project root via an anchored walk-up (BUG-161 fix). The script lives in
+    # the skill tree now, not the legacy custom_scripts/ one level under the repo root, so
+    # the old Path(__file__).parent.parent resolved to the skill folder and every probe missed.
+    repo_root = _find_root()
     status_path = repo_root / ".gald3r" / "PLATFORM_STATUS.md"
 
     if args.generate_matrix:

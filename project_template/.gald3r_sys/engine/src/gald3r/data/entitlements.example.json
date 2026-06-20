@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "entitlements": [
+    {
+      "feature_id": "themes.export",
+      "tier": "solo-paid",
+      "allowlist": [],
+      "enabled": true,
+      "audience_window": {"start": null, "end": null}
+    },
+    {
+      "feature_id": "agents.parallel_swarm",
+      "tier": "team-company-paid",
+      "allowlist": ["acct-early-001", "acct-early-002"],
+      "enabled": true,
+      "audience_window": {"start": "2026-01-01T00:00:00+00:00", "end": null}
+    },
+    {
+      "feature_id": "labs.experimental_inference",
+      "tier": "free-logged-in",
+      "allowlist": [],
+      "enabled": false,
+      "audience_window": {"start": null, "end": null}
+    }
+  ]
+}

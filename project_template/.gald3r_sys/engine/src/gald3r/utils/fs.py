@@ -19,6 +19,10 @@ DEFAULT_TEXT_EXTENSIONS = {
     ".ts", ".mdc",
 }
 
+# Directory names that must never be copied into a generated tree — Python
+# build artifacts that pollute output (and bloat it badly in the .venv case).
+_ALWAYS_EXCLUDE_DIRS = {".venv", "__pycache__", ".pytest_cache"}
+
 
 def _longpath(p: Path) -> str:
     """Return a string path safe for >260-char paths on Windows."""
@@ -62,7 +66,10 @@ def copy_tree(
     src, dest = Path(src), Path(dest)
     if not src.is_dir():
         raise FileNotFoundError(f"copy_tree source not found: {src}")
-    xd = {d.casefold() for d in (exclude_dirs or [])}
+    # Build artifacts are never copyable output — a stray .venv/cache in the
+    # source once added ~52 MB of junk to every generated repo. Pruned always,
+    # regardless of caller-supplied excludes.
+    xd = {d.casefold() for d in (exclude_dirs or [])} | _ALWAYS_EXCLUDE_DIRS
     xf = [f.casefold() for f in (exclude_files or [])]
     copied = 0
     for root, dirs, files in os.walk(src):

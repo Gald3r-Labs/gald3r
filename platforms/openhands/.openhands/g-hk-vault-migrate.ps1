@@ -76,7 +76,7 @@ function Merge-LogFile {
         if (Test-Path $path) {
             $raw = Get-Content $path -Raw -Encoding UTF8
             if ($raw) {
-                $raw -split "(?=^## )" -im | ForEach-Object {
+                $raw -split "(?im)(?=^## )" | ForEach-Object {
                     $block = $_.Trim()
                     if ($block) {
                         $blocks += $block
@@ -98,7 +98,7 @@ $skipped = 0
 $conflicts = @()
 
 $sourceFiles = Get-ChildItem -Path $SourcePath -Recurse -File -ErrorAction SilentlyContinue |
-    Where-Object { $_.FullName -notmatch "\\.obsidian(\|\\)" }
+    Where-Object { $_.FullName -notmatch "\\.obsidian($|\\)" }
 
 foreach ($file in $sourceFiles) {
     $relativePath = $file.FullName.Substring($SourcePath.Length).TrimStart('\')

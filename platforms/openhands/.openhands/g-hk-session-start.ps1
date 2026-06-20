@@ -108,7 +108,7 @@ Your last session had $sessionSize turns. Consider running **``@g-status``** to 
 
 $vaultNoteCount = @(
     Get-ChildItem -Path $VaultPath -Recurse -Filter "*.md" -ErrorAction SilentlyContinue |
-    Where-Object { $_.FullName -notmatch "\\.obsidian(\|\\)" }
+    Where-Object { $_.FullName -notmatch "\\.obsidian($|\\)" }
 ).Count
 
 $recentVaultActivity = "none yet"
@@ -122,8 +122,8 @@ if (Test-Path $vaultLogPath) {
 
 $vaultBanner = @"
 ## Vault Context
-- Vault path: `$VaultPath`
-- Repos path: `$ReposPath`
+- Vault path: $VaultPath
+- Repos path: $ReposPath
 - Notes: $vaultNoteCount
 - Recent activity: $recentVaultActivity
 "@

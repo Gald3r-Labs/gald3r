@@ -1,5 +1,5 @@
 ﻿---
-gald3r_rel_version: "2.0.1"
+gald3r_rel_version: "2.1.0"
 schema_version: "generic-v1"
 ---
 # Release Profiles

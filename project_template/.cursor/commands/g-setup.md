@@ -19,7 +19,7 @@ Before doing anything else, detect whether this project has a `.gald3r_sys/` fol
 
 ### Case A: `.gald3r_sys/` EXISTS (gald3r already installed)
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File setup_gald3r_project.ps1 -Platform auto
+python setup_gald3r_project.py --platform auto
 ```
 This regenerates the current platform's dirs from `.gald3r_sys/`. Proceed to Step 1.
 
@@ -115,6 +115,26 @@ user_name={user_name}
 gald3r_version=1.4
 vault_location={LOCAL}
 ```
+
+---
+
+## Step 4b: Public-Publish History Mode (T423 — OFF by default)
+
+Ask **only** if the project may publish to a public repo (multi-tier graduation, or the user
+wants a public sibling). Skip silently otherwise — the safe default needs no prompt. Also offered
+on `@g-setup --upgrade-existing`.
+
+```
+Public publish: how should git history be handled when you publish to a public repo?
+  1. carry (default) — keep full git history (non-destructive, safe)
+  2. scrub (Mode A)  — publish with ZERO git history for IP protection
+                       (DESTRUCTIVE: public history replaced; requires -ConfirmScrub at publish)
+[1]
+```
+
+- Enter / decline / no answer = **`carry`** (never scrub by default).
+- Write to `.gald3r/.identity` as `publish_history_mode=<carry|scrub>` (lowercase). Absent = `carry`.
+- `scrub` here only records the intent; publish still requires explicit `-ConfirmScrub`.
 
 ---
 

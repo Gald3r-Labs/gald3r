@@ -1,6 +1,6 @@
 ﻿schema_id: task-file
 schema_version: v1
-gald3r_rel_version: "2.0.1"
+gald3r_rel_version: "2.1.0"
 description: "Schema for individual task files under .gald3r/tasks/**/*.md (YAML frontmatter)."
 applies_to: ".gald3r/tasks/**/*.md"
 
@@ -60,6 +60,13 @@ required:
     description: "Date the task file was first created."
 
 optional:
+  uuid:
+    type: string
+    format: "uuid"
+    auto_populate: uuid4_on_create
+    description: "Stable cross-project primary key (T522, RFC-4122 UUIDv4). The display id
+      (T###) is repo-local and renumbers on merge; uuid is the durable merge key. Auto-stamped
+      on `task new`; existing files backfilled by gald3r.ids.backfill_dir."
   workspace_repos:
     type: list
     description: "Manifest repository.id values this task's blast radius spans."

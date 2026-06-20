@@ -19,7 +19,7 @@ Before doing anything else, detect whether this project has a `.gald3r_sys/` fol
 
 ### Case A: `.gald3r_sys/` EXISTS (gald3r already installed)
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File setup_gald3r_project.ps1 -Platform auto
+python setup_gald3r_project.py --platform auto
 ```
 This regenerates the current platform's dirs from `.gald3r_sys/`. Proceed to Step 1.
 

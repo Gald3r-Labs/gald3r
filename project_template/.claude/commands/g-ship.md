@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [RELEASE_AND_VERSIONING]
 ---
 # @g-ship — Ship a Release
@@ -19,6 +19,7 @@ Ship the current [Unreleased] content as a versioned release.
 1. Shows the current `[Unreleased]` CHANGELOG section
 2. Calculates the new version number (MAJOR.MINOR.PATCH)
 3. Asks for a short theme/title for the release (optional)
+3a. **Release sweep (T419)** — before tagging, scans `tasks/awaiting-verification/` and reports which tasks ship (`release_hold: none`) vs. which are skipped (`manual`, `sync_required` with their sync partner). Held tasks are not included in the release; clear the hold with `@g-task clear-release-hold <id>` to ship.
 4. Promotes `[Unreleased]` → `[X.Y.Z] - YYYY-MM-DD`
 5. Writes a new empty `[Unreleased]` at the top
 6. Bumps the `VERSION` file

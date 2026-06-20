@@ -1,6 +1,6 @@
 ﻿---
 name: g-skl-platform-monitor
-description: Cross-platform health and freshness monitor for the 23 gald3r platforms. Checks per-platform capability gaps against the Cursor reference, scans official docs for breaking changes, validates platform-specific config, and generates the PLATFORM_STATUS / PLATFORM_CAPABILITY_MATRIX living indexes. Owned by g-agnt-platformer.
+description: Cross-platform health and freshness monitor for the registry-driven gald3r platform roster (PLATFORM_REGISTRY.yaml — single source of truth, T516). Checks per-platform capability gaps against the Cursor reference, scans official docs for breaking changes, validates platform-specific config, and generates the PLATFORM_STATUS / PLATFORM_CAPABILITY_MATRIX living indexes. Owned by g-agnt-platformer.
 token_budget: low
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
@@ -11,15 +11,35 @@ Activate when checking platform capability gaps, scanning platform docs for brea
 validating platform config, or (re)generating `PLATFORM_STATUS.md` /
 `PLATFORM_CAPABILITY_MATRIX.md`. The `g-agnt-platformer` agent is the primary caller.
 
-## The 23 Platforms
+## The Platform Roster — registry-driven (single source of truth, T516)
 
-`cursor`, `claude`, `copilot`, `codex`, `antigravity`, `windsurf`, `gemini`, `cline`, `roo`,
-`opencode`, `openhands`, `kiro`, `aider`, `augment`, `goose`, `junie`, `kiro-cli`, `mistral`,
-`openclaw`, `qwen`, `replit`, `subq`, `warp`.
+The roster of shipped platforms is defined **once** in
+`gald3r_templates/gald3r_core/platforms/PLATFORM_REGISTRY.yaml`. Every consumer derives from it —
+there is no hand-typed list anywhere else:
+
+- `scripts/check_platform_status.py` / `.ps1` load `KNOWN_PLATFORMS` from the registry via the shared
+  reader `scripts/platform_registry.py` (the `.ps1` shells out to it so YAML parsing is not
+  duplicated). If the registry file is missing, the reader returns a baked-in fallback roster so the
+  tooling still runs.
+- The `-GenerateMatrix` path iterates the registry roster and resolves each platform's
+  `PLATFORM_SPEC.md` from its registry `spec_path`, so `PLATFORM_STATUS.md` and
+  `PLATFORM_CAPABILITY_MATRIX.md` share one roster.
+- A roster-parity gate (`g-medic` L1-J → `g-skl-medic/scripts/check_roster_parity.py`) asserts
+  **overlays == registry == specs == STATUS rows** and fails loudly on drift.
+
+**Registry entry fields:** `name` (canonical id = overlay dir), `display_name`, `overlay_dir`,
+`spec_path`, `lifecycle` (`active|abandoned|off_target|redundant|stub`), `alias_of`
+(e.g. `vibe → mistral`), `support_level`, `notes`. **Edit the roster in the registry and nowhere
+else.** To add a platform: add its overlay dir, add a registry entry, run the parity gate, then
+generate at least a stub `PLATFORM_SPEC.md` (honest all-❓). Aliases are resolved via `alias_of` and
+never double-counted.
 
 Reference implementation = `g-skl-platform-cursor`. Source-of-truth per platform =
-`g-skl-platform-<name>/SKILL.md` (and its `docs_url:` frontmatter). Status indexes live at
+`g-skl-platform-<name>/PLATFORM_SPEC.md` (and its `docs_url:` frontmatter). Status indexes live at
 `.gald3r/PLATFORM_STATUS.md` and `.gald3r/PLATFORM_CAPABILITY_MATRIX.md`.
+
+Inspect the roster: `python scripts/platform_registry.py --list` (canonical names) /
+`--list --all` (incl. aliases) / `--json` (full registry).
 
 > **Scaffolding note (T1460):** the operation contracts below are fully specified, but the heavy
 > doc-diff / config-introspection logic is intentionally deferred to the per-platform tasks
@@ -79,9 +99,10 @@ Confirm the platform's config is platform-specific, not Cursor-copied.
 
 ### GENERATE_MATRIX
 
-(Re)build `.gald3r/PLATFORM_CAPABILITY_MATRIX.md` — 23 platforms × 6 capability columns
-(Hooks, Rules, Skills, Commands, MCP, Docs Fresh). Cells: ✅ / ⚠️ / ❌ / ❓. Source the cell
-values from each platform's CHECK result. Generated, never hand-maintained.
+(Re)build `.gald3r/PLATFORM_CAPABILITY_MATRIX.md` — the registry roster (PLATFORM_REGISTRY.yaml)
+× 6 capability columns (Hooks, Rules, Skills, Commands, MCP, Docs Fresh). Cells: ✅ / ⚠️ / ❌ / ❓.
+Source the cell values from each platform's `PLATFORM_SPEC.md` (resolved via the registry
+`spec_path`). Generated, never hand-maintained.
 
 ### UPGRADE `<platform>`
 
@@ -110,4 +131,6 @@ Given a `SCAN_DOCS` result, propose specific config changes to gald3r's platform
 - Agent owner: `g-agnt-platformer`.
 - Commands: `@g-platform-check`, `@g-platform-scan-docs`, `@g-platform-status`.
 - Engine: `gald3r platform status [--platform <name>]` (CHECK entry point); fallback `scripts/check_platform_status.ps1`.
+- Roster source of truth: `gald3r_templates/gald3r_core/platforms/PLATFORM_REGISTRY.yaml` (T516), read via `scripts/platform_registry.py`.
+- Roster-parity gate: `g-skl-medic/scripts/check_roster_parity.py`, wired into `g-medic` L1-J — fails loudly when overlays / registry / specs / STATUS rows disagree.
 - Medic: g-medic L2 calls `g-skl-platform-monitor CHECK <current-platform>` for platform health.

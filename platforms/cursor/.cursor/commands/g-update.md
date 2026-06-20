@@ -108,6 +108,59 @@ inheritable constraints would be merged into `CONSTRAINTS.md`.
 
 ---
 
+## Structural Upgrade (T430/T473/T475 — engine op, now implemented)
+
+`@g-update --apply` migrates **data/config** (steps 4-8 above). The complementary
+**structural** upgrade — diffing two `.gald3r/` release snapshots and applying safe,
+idempotent ADD/MERGE/DEPRECATE migrations — is delegated to the canonical engine op
+`gald3r upgrade` (now implemented in `gald3r.systems.upgrade` / `g.upgrade`, T473/T475). The
+command **shells out** to the engine; it never re-implements the diff/merge logic (same
+shell-out contract as `migrate_schemas.ps1` and g-medic).
+
+```powershell
+# version-check: query world_tree's T112 version surface (offline-safe — degrades gracefully)
+gald3r --root <proj> version-check                 # current vs latest + update-available
+gald3r --root <proj> version-check --base-url http://host:8000   # or GALD3R_WORLD_TREE_URL env
+# dry-run (the DEFAULT for `upgrade`): print the version delta + planned actions, zero writes
+gald3r --root <proj> upgrade
+# apply: BACKUP .gald3r/ to a timestamped gitignored .zip, THEN ADD new files,
+#        MERGE frontmatter (preserve user data, add new template keys, bump schema/rel version),
+#        DEPRECATE removed files (archive with _deprecated_YYYYMMDD). ROLLBACK from the backup on failure.
+gald3r --root <proj> upgrade --apply
+gald3r --root <proj> upgrade --from-dir <from/.gald3r> --to-dir <to/.gald3r> --apply  # explicit snapshots
+gald3r --root <proj> upgrade --json ...                                              # machine-readable result
+```
+
+**Safe self-update (T473 agent / T475 templates).** Before applying anything, `gald3r upgrade
+--apply` writes a timestamped backup of the whole `.gald3r/` tree to
+`.gald3r/_backups/.gald3r_backup_YYYYMMDD_HHMMSS.zip` — covered by the existing `.gald3r/.gitignore`
+`*.zip` rule, so backups are **never committed**. On any migration failure it **restores from that
+backup (rollback)** and reports. The agent (T473) and template-installed projects (T475) invoke the
+**same** engine command; there is no fork. **T422:** this is the minimal version-check + backup/
+rollback wrapper around the migration engine — it does **not** duplicate the deferred T422
+consumer-upgrade subsystem (managed-manifest + conflict-resolver); T422 consumes/extends this
+wrapper when it lands.
+
+| Classification | Behavior |
+|----------------|----------|
+| `[ADD]` | file new in the target release → copied into the project |
+| `[MERGE]` | file in both, frontmatter/schema changed → user data preserved, new template keys added with defaults, `schema_version` upgraded, `gald3r_rel_version` bumped |
+| `[DEPRECATE]` | file removed in the target release → project copy archived with a `_deprecated_YYYYMMDD` suffix |
+| `[SKIP user-data]` | path on the ABSOLUTE denylist (`tasks/**`, `bugs/**`, `PLAN.md`, `IDEA_BOARD.md`, `BUGS.md`, `TASKS.md`) → **never touched** |
+
+- **`--dry-run`** (engine default — omit `--apply`): prints `[DRY]`-prefixed actions, **zero file writes**.
+- **`--apply`**: writes a migration log to `.gald3r/logs/upgrade_YYYYMMDD_HHMMSS.log`.
+- **Idempotent**: a second `--apply` reports 0 added / 0 updated / 0 deprecated.
+- **User-data protection is ABSOLUTE** — enforced in the engine denylist and asserted by `tests/test_upgrade.py`.
+
+> **Snapshot prerequisite (T430/T463)**: the engine diffs any two snapshot directories. When
+> `--to-dir` is omitted, `g.upgrade.resolve_to_dir()` resolves the target automatically: a T463
+> versioned snapshot (`.gald3r_sys/snapshots/<v>/.gald3r`) when one is present, **else** the single
+> current canonical snapshot at `.gald3r_sys/template_verification/.gald3r/` (the only one the
+> framework ships today — a real fallback, not a stub). `--from-dir` defaults to the live project
+> `.gald3r/`. You may still pass both explicitly (e.g. a prior template tag vs. the current
+> `template_verification/.gald3r`).
+
 ## Version Feed Format
 
 **Remote** (GitHub Releases API):
@@ -120,7 +173,7 @@ inheritable constraints would be merged into `CONSTRAINTS.md`.
 {
   "latest_version": "1.3.0",
   "release_date": "2026-05-01",
-  "release_notes_url": "https://github.com/gald3r/gald3r/releases/tag/v2.0.1"
+  "release_notes_url": "https://github.com/gald3r/gald3r/releases/tag/v2.1.0"
 }
 ```
 

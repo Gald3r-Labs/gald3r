@@ -1,0 +1,65 @@
+{
+  "_doc": {
+    "t510_canonical_core": "T510: Gemini CLI reads lifecycle hooks from the `hooks` object in `.gemini/settings.json` (Claude-style: per-event array of { matcher, hooks:[{type:command,command,...}] }; tool-event matchers are regex, lifecycle matchers exact, `*` or `` matches all; timeout in ms). Each native event routes to a thin canonical entrypoint `python .gemini/hooks/g-hk-on-<event>.py` which calls `g_hk_core.dispatch(\"<event>\")`. The shared core `.gemini/hooks/g_hk_core.py` is byte-identical across every platform overlay and runs the per-event CONCERN_CHAIN (concern hooks self-gate on payload). Native->canonical map (g_hk_core.PLATFORM_EVENT_MAP['gemini']): SessionStart->session-start, SessionEnd->session-end, BeforeTool->tool-start, AfterTool->tool-end, AfterAgent->stop. Schema verified against https://geminicli.com/docs/hooks/ .",
+    "overlay_note": "T510: gemini's REAL native dot-dir is `.gemini/` (this file). The pre-existing `platforms/gemini/.agent/` overlay is a Claude-format clone the gemini product does NOT read; reconciling/removing it is tracked separately (see T510 Status History) and is OUT OF SCOPE for the hook fan-out."
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .gemini/hooks/g-hk-on-session-start.py",
+            "name": "gald3r-session-start"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .gemini/hooks/g-hk-on-session-end.py",
+            "name": "gald3r-session-end"
+          }
+        ]
+      }
+    ],
+    "BeforeTool": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .gemini/hooks/g-hk-on-tool-start.py",
+            "name": "gald3r-tool-start"
+          }
+        ]
+      }
+    ],
+    "AfterTool": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .gemini/hooks/g-hk-on-tool-end.py",
+            "name": "gald3r-tool-end"
+          }
+        ]
+      }
+    ],
+    "AfterAgent": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .gemini/hooks/g-hk-on-stop.py",
+            "name": "gald3r-stop"
+          }
+        ]
+      }
+    ]
+  }
+}

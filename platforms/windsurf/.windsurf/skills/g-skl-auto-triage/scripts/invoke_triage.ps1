@@ -92,8 +92,12 @@ function Update-BugFrontmatter {
             # Update existing field
             $content = $content -replace "(?m)^$key:.*$", "$key: $val"
         } else {
-            # Insert after opening ---
-            $content = $content -replace "(?m)^---\r?\n", "---`n$key`: $val`n"
+            # Insert after the OPENING --- only (first fence). A bare -replace
+            # hit every --- fence (closing fence + body horizontal rules),
+            # duplicating fields outside the frontmatter block. Limit to the
+            # first match so the field lands inside the first --- ... --- pair.
+            $re = [regex]"(?m)^---\r?\n"
+            $content = $re.Replace($content, "---`n$key`: $val`n", 1)
         }
     }
 

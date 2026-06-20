@@ -18,16 +18,9 @@ Never writes to `.gald3r_sys/`.
 
 ## Steps
 
-Activates **g-skl-gald3r-component-new**.
-
 1. Ask **where** to create it:
    - **(a) Platform folder** - e.g. `.cursor/rules/<slug>.mdc` (Cursor), a rules entry for Claude, etc.
    - **(b) Repo contents** - a path you specify inside your project.
 2. Collect the rule description and whether it always applies or is scoped to file globs.
 3. Write the rule file from the template at the chosen location.
 4. Offer a CHANGELOG entry if your project keeps one.
-
-## Related
-
-- Skill: `g-skl-gald3r-component-new` (implementation)
-- Maintainer-only equivalent (edits gald3r itself): `@g-gald3r-rule-new`

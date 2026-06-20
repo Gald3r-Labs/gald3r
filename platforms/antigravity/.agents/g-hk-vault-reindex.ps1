@@ -27,7 +27,7 @@ $indexMdPath = Join-Path $VaultPath "index.md"
 
 $files = Get-ChildItem -Path $VaultPath -Recurse -Filter "*.md" -ErrorAction SilentlyContinue |
     Where-Object {
-        $_.FullName -notmatch "\\.obsidian(\|\\)" -and
+        $_.FullName -notmatch "\\.obsidian($|\\)" -and
         $_.Name -notin @("_index.yaml", "index.md", "log.md", "VAULT_SCHEMA.md")
     } |
     Sort-Object FullName
@@ -141,7 +141,7 @@ foreach ($group in $typeGroups) {
     $indexMd += "## $($group.Name)"
     $indexMd += ""
     foreach ($entry in ($group.Group | Sort-Object title)) {
-        $indexMd += "- [[${($entry.path -replace '\.md$', '')}|$($entry.title)]]"
+        $indexMd += "- [[$($entry.path -replace '\.md$', '')|$($entry.title)]]"
     }
     $indexMd += ""
 }
@@ -149,7 +149,7 @@ foreach ($group in $typeGroups) {
 $indexMd += "## Recent Updates"
 $indexMd += ""
 foreach ($entry in $recentEntries) {
-    $indexMd += "- $($entry.date) - [[${($entry.path -replace '\.md$', '')}|$($entry.title)]]"
+    $indexMd += "- $($entry.date) - [[$($entry.path -replace '\.md$', '')|$($entry.title)]]"
 }
 $indexMd += ""
 

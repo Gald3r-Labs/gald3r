@@ -244,5 +244,13 @@
     "rulesDir": "rules",
     "skillsDir": null,
     "_added": "from PLATFORM_SPEC 06-02 (backfill T#5)"
+  },
+  ".kilo": {
+    "hasRules": true,
+    "rulesExt": ".md",
+    "hasSkills": true,
+    "rulesDir": "rules",
+    "skillsDir": "skills",
+    "_added": "kilo-code stub population (replaces legacy .kilocode/; also reads .claude/skills + .agents/skills)"
   }
 }

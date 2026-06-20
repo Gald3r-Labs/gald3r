@@ -34,13 +34,16 @@
             Desc   = 'paths_overlap / case-sensitivity regression (BUG-030); also runs at L3 release'
             AlsoLevels = @('L3')
         },
-        @{
-            Name   = 'queue_compute_functions'
-            Level  = 'L1'
-            Runner = 'pwsh'
-            Path   = 'custom_scripts/tests/test_queue_compute_functions.ps1'
-            Desc   = 'Resolve-WorkspaceQueue + Get-RunnableTaskQueue extracted queue-compute units (T1553, T1532 AC4)'
-        },
+        # RETIRED (T435, 2026-06-16): 'queue_compute_functions' entry removed.
+        # The functions under test (Resolve-WorkspaceQueue, Get-RunnableTaskQueue)
+        # were extracted from the unrecoverable legacy g_go_go_queue_compute.ps1 temp
+        # script (T1553) into queue_compute.ps1 modules that were NEVER restored to the
+        # shipped tree -- no .gald3r_sys/skills/g-skl-{workspace,tasks}/scripts/queue_compute.ps1
+        # exists anywhere in the canonical template. The test dot-sources those absent
+        # modules and dies at load with "Resolve-WorkspaceQueue is not recognized" (exit 1).
+        # Genuinely dead source -> retire rather than port a test for code that does not exist
+        # (T1582 audit dead-code flag was right in OUTCOME, wrong in REASON: it was a live
+        # manifest entry, but for a non-existent function). See task435_*.md for full rationale.
         @{
             Name   = 'gald3r_housekeeping_commit'
             Level  = 'L2'

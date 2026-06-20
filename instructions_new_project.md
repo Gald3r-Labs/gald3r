@@ -19,25 +19,25 @@ Find your tool in the list below and note the folder name:
 | OpenCode | opencode/ | Tier 1 |
 | Windsurf | windsurf/ | Tier 1 |
 | Cline | cline/ | Tier 1 |
-| Roo Code | oo/ | Tier 1 |
+| Roo Code | roo/ | Tier 1 |
 | Codex CLI | codex/ | Tier 1 |
 | CodeBuddy (Tencent) | codebuddy/ | Tier 1 |
 | Amp Code (Sourcegraph) | amp/ | Tier 1 |
 | Continue | continue/ | Tier 1 |
 | Kimi Code (Moonshot AI) | kimi/ | Tier 1 |
 | TRAE (ByteDance) | trae/ | Tier 1 |
-| Aider | ider/ | Tier 2 |
-| Augment | ugment/ | Tier 2 |
+| Aider | aider/ | Tier 2 |
+| Augment | augment/ | Tier 2 |
 | Goose | goose/ | Tier 2 |
 | Warp | warp/ | Tier 2 |
 | OpenHands | openhands/ | Tier 2 |
 | Kiro | kiro/ | Tier 2 |
 | Kiro CLI | kiro-cli/ | Tier 2 |
 | Junie | junie/ | Tier 2 |
-| Replit | eplit/ | Tier 2 |
+| Replit | replit/ | Tier 2 |
 | Gemini CLI | gemini/ | Tier 2 |
 | Mistral | mistral/ | Tier 3 |
-| Antigravity | ntigravity/ | Tier 3 |
+| Antigravity | antigravity/ | Tier 3 |
 | OpenClaw | openclaw/ | Tier 3 |
 | Qwen | qwen/ | Tier 3 |
 | SubQ | subq/ | Tier 3 |
@@ -60,7 +60,7 @@ cd my-new-project
 ```
 
 **Option B - Download zip:**
-1. Click **Code â†’ Download ZIP** on GitHub
+1. Click **Code → Download ZIP** on GitHub
 2. Unzip and copy just the <your-tool>/ folder to your new project location
 
 ---

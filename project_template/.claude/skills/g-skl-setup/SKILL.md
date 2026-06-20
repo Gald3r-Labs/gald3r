@@ -204,6 +204,29 @@ The template (`assets/gitattributes-lfs.template`) covers: `.psd .ai .fbx .obj
      and Command Set are active (e.g. GitHub integration activates only for
      `software_development`).
 
+4c. **Public-publish history mode** (T423 — explicit, OFF-by-default safety toggle):
+   Ask only when the project may graduate/publish to a public repo (i.e. `graduation_tier`
+   is `dual`/`triple`, or the user asks for a public sibling). Otherwise skip silently and
+   leave the safe default in place. This is **also asked on `@g-setup --upgrade-existing`**
+   so existing projects can opt in deliberately.
+   ```
+   Public publish: how should git history be handled when you publish to a public repo?
+     1. carry  (default) — keep full git history. Non-destructive, safe.
+     2. scrub  (Mode A)  — publish with ZERO git history for IP protection.
+                            DESTRUCTIVE: the public repo's history is replaced and cannot
+                            be recovered there. Requires explicit confirmation at publish time.
+   [1]
+   ```
+   - Default selection (enter / no answer / declining the prompt) = **`carry`** — never scrub by default.
+   - Honor a `--publish-history=<carry|scrub>` CLI flag to skip the prompt.
+   - Write the chosen value to `.gald3r/.identity` as `publish_history_mode=<carry|scrub>`
+     (key=value, lowercase). If the project never publishes publicly, the key may be omitted
+     (readers treat an absent value as `carry`).
+   - Choosing `scrub` here only RECORDS the intent; the destructive operation still requires an
+     explicit `-ConfirmScrub` (or engine equivalent) at publish time (g-skl-release / graduate).
+   - Confirm: `Public-publish history mode set to: {value}` (and, for scrub, a one-line reminder
+     that publish will still require -ConfirmScrub).
+
 5. **Verify structure** (slim v3 layout — ground truth from <project-root>\.gald3r):
    ```
    .gald3r/ ✅

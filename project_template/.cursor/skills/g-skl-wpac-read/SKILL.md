@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-wpac-read
 description: Review and action all incoming cross-project coordination items — conflicts (block planning), requests from children, broadcasts from parents, and peer syncs from siblings.
 token_budget: medium
@@ -11,11 +11,21 @@ subsystem_memberships: [WORKSPACE_COORDINATION]
 ## When to Use
 `@g-wpac-read` command. Session start when INBOX items exist. After receiving a cross-project task. After `g-hk-wpac-inbox-check.ps1` reports items.
 
+## Inbox layout (T428)
+
+The inbox is a lightweight **index** at `.gald3r/linking/INBOX.md` (marked `<!-- WPAC-INDEX-V1 -->`) backed by one file per message under `.gald3r/linking/messages/msg_{id}_{type}_{source}.md`. Each message file has YAML frontmatter (`id`, `type`, `source_project`, `subject`, `status`, `created_at`, `actioned_at`) plus the full body. Resolved messages are archived to `.gald3r/linking/messages/archive/` via `@g-wpac-archive-inbox`.
+
+- **Read the index** for the row list (Status, ID, Type, Source, Subject, Age, File).
+- **Open the linked message file** for full body when actioning an item.
+- **Ack/update** = set the message file's `status:`/`actioned_at:` frontmatter AND flip the index row's status cell `[OPEN]` -> `[DONE]` in place.
+- **Backward-compat (`--legacy`)**: if `INBOX.md` is still the legacy flat-body format (no `WPAC-INDEX-V1` marker), run `@g-wpac-archive-inbox` (which auto-migrates first) or `.gald3r_sys/scripts/gald3r_wpac_inbox.ps1 -Migrate` to convert it, then proceed. If `messages/` is absent, the inbox-check hook creates it silently.
+
 ## Steps
 
-1. **Read `.gald3r/workspace/inbox.md`**
+1. **Read `.gald3r/linking/INBOX.md`** (the index)
    - If empty or not exists → "INBOX clear — no cross-project items pending"
-   - Categorize items: CONFLICT | request | broadcast | peer_sync | info
+   - If still legacy flat-body format → migrate first (see Inbox layout above), then re-read
+   - Categorize rows by Type: CONFLICT | request | broadcast | peer_sync | info
 
 2. **Display grouped by urgency**:
    ```
@@ -33,8 +43,8 @@ subsystem_memberships: [WORKSPACE_COORDINATION]
    - Show both conflicting instructions side by side
    - Show which subsystem is affected
    - Prompt human: "How to resolve? Options: Follow A / Follow B / Follow both / Ignore both / Custom"
-   - Record resolution in INBOX.md: `**Resolution:** [human's answer]` + `**Resolved by:** [date]`
-   - Change status from `[CONFLICT]` to `[DONE]`
+   - Record resolution in the message file body: `**Resolution:** [human's answer]` + `**Resolved by:** [date]`, and set its frontmatter `status: done` + `actioned_at`
+   - Change the index row status cell from `[CONFLICT]` to `[DONE]`
    - If task was created for conflicted subsystem: update it with the resolution
 
 4. **Handle REQUESTS** (child needs parent to act):
@@ -85,7 +95,7 @@ subsystem_memberships: [WORKSPACE_COORDINATION]
      ```
    - No task to create, no approval needed
    - Ask: "Acknowledge and mark done? [y/n]" (default: yes)
-   - On acknowledgment: change `[OPEN]` to `[DONE]` in INBOX.md
+   - On acknowledgment: set the message file `status: done` + `actioned_at`, and flip the index row `[OPEN]` -> `[DONE]` (INFO/SYNC are also auto-actioned this way by the inbox-check hook)
    - Staging: after INBOX processing, report any pending staged info entries:
      "⚠️ N staged INFO notification(s) in pending_requests/ for [project] — not yet delivered"
    - Also check `pending_orders/` and surface count: "⚠️ N broadcast(s) staged in pending_orders/ for [project] — not yet accessible"
@@ -103,7 +113,7 @@ subsystem_memberships: [WORKSPACE_COORDINATION]
      ```
    - If no peer snapshots exist: skip silently
 
-9. **Update INBOX.md** — change reviewed items to `[DONE]`, add resolution notes
+9. **Update the index + message files** — set each reviewed message file's `status: done` + `actioned_at`, add resolution notes to its body, and flip the matching index row to `[DONE]`. When the active index carries more than 50 `[DONE]` rows, run `@g-wpac-archive-inbox` to keep it lean.
 
 10. **Report**:
    ```

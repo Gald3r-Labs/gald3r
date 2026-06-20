@@ -19,7 +19,7 @@ You only need one folder - not the whole repo.
 
 **Option A - GitHub Download (no git required):**
 1. Browse to https://github.com/wrm3/gald3r/tree/main/<your-tool>/
-2. Click **Code â†’ Download ZIP** (downloads the full repo)
+2. Click **Code → Download ZIP** (downloads the full repo)
 3. Unzip and find <your-tool>/ inside
 
 **Option B - Sparse checkout (advanced):**

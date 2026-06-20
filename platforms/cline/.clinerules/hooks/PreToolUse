@@ -1,0 +1,5 @@
+#!/usr/bin/env python3
+# cline hook shim (PreToolUse -> canonical 'tool-start'). cline runs this file directly (no extension, executable).
+import os, sys, subprocess
+_d = os.path.dirname(os.path.abspath(__file__))
+sys.exit(subprocess.run([sys.executable, os.path.join(_d, '_cline_adapter.py'), 'tool-start']).returncode)

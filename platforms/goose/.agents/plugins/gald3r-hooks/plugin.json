@@ -1,0 +1,5 @@
+{
+  "name": "gald3r-hooks",
+  "version": "1.0.0",
+  "description": "gald3r canonical lifecycle hooks for goose — routes goose hook events through the shared g_hk_core dispatcher (T510)."
+}

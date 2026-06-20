@@ -1,0 +1,20 @@
+---
+subsystem_memberships: [PROJECT_IDENTITY_SETUP]
+---
+# g-skl-features
+**Skill file**: `SKILL.md`
+
+> Human-facing companion to `SKILL.md`. The LLM agent reads `SKILL.md`; this page is for developers browsing the skill library.
+
+## What it does
+
+Own and manage all feature data — FEATURES.md index, features/ individual files, staging lifecycle (staging→specced→committed→shipped), harvest source collection, and feature promotion. Single source of truth for everything feature-related.
+
+## When to use
+
+- Invoke via `@g-skl-features` (or when the agent determines this skill is relevant)
+- See the **When to Use** / trigger section of `SKILL.md` for the authoritative list
+
+## Related skills
+
+- See `SKILL.md` and the gald3r skill index for related skills

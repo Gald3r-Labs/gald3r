@@ -1,17 +1,88 @@
-﻿# Changelog
+# Changelog
 
 All notable changes to gald3r are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
-
 ## [Unreleased]
 
 _Pending release notes accumulate here as tasks and bugs are completed. At publish time this
-section is renamed to `[X.Y.Z] - YYYY-MM-DD` and a fresh `[Unreleased]` block is opened._
+section is renamed to [X.Y.Z] - YYYY-MM-DD and a fresh [Unreleased] block is opened._
+
+### Fixed
+- **Build hygiene: generated repos no longer ship Python build artifacts** (T507) — the build's copy primitive (`fs.copy_tree`) now always prunes `.venv`, `__pycache__`, and `.pytest_cache`, and the engine's dev-only pytest suite (`.gald3r_sys/engine/tests`) is excluded from every shipped `project_template` (runtime test fixtures under `g-skl-test` are preserved). A stray `.venv` had been adding ~52 MB of junk to each generated repo. Removed the duplicate `platforms/vibe` (it duplicated Mistral's `.vibe` config surface; Mistral retains it).
 
 ### Added
+- **Canonical hook event set + shared-core handlers** (T424, reference increment) — gald3r is
+  consolidating Cursor's ~18 native hook events down to a **canonical reduced set of 6**
+  (`session-start`, `session-end`, `user-prompt-submit`, `tool-start`, `tool-end`, `stop`) served by
+  **one shared Python core** (`g_hk_core.py`, built on the T1584 `_hook_common.py`). Six thin
+  event-first entrypoints `g-hk-on-<event>.py` delegate to `g_hk_core.dispatch(<event>)` — behavior
+  is authored once and every platform's trigger layer calls the same core. Wired the first canonical
+  events additively into **Cursor** (`postToolUse`, `beforeSubmitPrompt`) and **Claude**
+  (`PostToolUse`, `UserPromptSubmit`); added the **Kiro IDE** `.kiro.hook` file-event trigger and the
+  **kiro-cli** agent-JSON `hooks` field + STDIN `.ps1` shims as the third/fourth trigger models. New
+  `.cursor/hooks/README.md` + `.claude/hooks/README.md` document the model. Existing per-concern hook
+  wiring is retained intact; fan-out to the remaining hook-capable platforms is tracked as T510.
+- **More platforms now route through the shared hook core** (T510, fan-out of T424) — seven more
+  hook-capable platforms now run gald3r hook behavior through the one shared `g_hk_core.py` via their
+  **real native trigger config** (each replaced a broken Claude-format clone, or was newly authored,
+  and was pinned against the platform's authoritative hook docs): **codex** (`.codex/hooks.json`),
+  **qwen** (`.qwen/settings.json`), **windsurf** (`.windsurf/hooks.json`), **openhands**
+  (`.openhands/hooks.json`), **augment** (`.augment/settings.json` + `.ps1` shims), **copilot**
+  (`.github/hooks/gald3r-hooks.json`), and **gemini** (`.gemini/settings.json`). Each wires only the
+  native events it supports (graceful degradation) and ships its own byte-identical copy of the core +
+  six `g-hk-on-<event>.py` entrypoints + the concern-chain hooks, with a per-platform hooks `README.md`.
+  **kiro-cli** now carries the full concern chain (its canonical handlers run real behavior, not
+  pass-through), and the **cursor** platform overlay's stale pre-canonical `hooks.json` was synced to
+  the reference. **goose** (Open-Plugins model: `.agents/plugins/gald3r-hooks/` with `plugin.json` +
+  `hooks/hooks.json`) and **antigravity** (`.agents/hooks.json` + a thin `g-hk-ag-dispatch.py`
+  adapter that translates antigravity's `{decision}` I/O contract) are now wired too — **9/9
+  hook-capable platforms**. Antigravity is authored to its launch-day docs and flagged PENDING
+  live-install verification. Still pending (tracked in T510): antigravity live-verify, root live-repo
+  tree propagation, and a forge rebuild.
+- **Install gald3r_agent / gald3r_throne from the CLI** (T472, epic T470) — new `gald3r install agent|throne|all` detects the host OS (`windows`/`macos`/`linux`) and installs each product the right way: **agent** via `uv sync`; **throne** by locating the per-OS Tauri bundle (`npm run tauri:build` output — Windows NSIS/MSI, macOS .dmg/.app, Linux .deb/.AppImage/.rpm). `gald3r setup agent|throne|all` then initializes each product against the shared install home (vault, settings, log). `--dry-run` prints the full plan (artifact, target paths, PATH changes); `--json` emits it structured; `--products-root` / `GALD3R_PRODUCTS_ROOT` override the source root. Fail-loud (never a silent stub): a missing per-OS throne bundle raises a clear error with the exact build command and the paths searched. 27 unit tests.
+- **Centralized install home + global `gald3r` CLI + USB-portable variant** (T471, epic T470) — new shared install home (`settings/`, `logs/`, `gald3r_vault/`, `VERSION`) resolved by precedence `override > portable > GALD3R_HOME > per-OS default` (Windows `%LOCALAPPDATA%\gald3r`, Linux `$XDG_DATA_HOME/gald3r`, macOS `~/Library/Application Support/gald3r`). USB-portable mode (`--portable` / `GALD3R_PORTABLE=1`) relocates the home to a removable medium with no outside writes. New `gald3r home [--portable] [--ensure] [--json]` subcommand + an idempotent, `--dry-run`-capable `install_global_cli` (Windows `gald3r.cmd` + user-PATH; POSIX `~/.local/bin` shim) so `gald3r --version` works from any directory. ADR-016. 26 unit tests.
+- **Self-update: `gald3r version-check` + `gald3r upgrade`** (T473 agent + T475 templates, epic T470) — one shared engine serves both the agent and template-installed projects. `gald3r version-check` queries world_tree's version surface (`GET /api/v1/gald3r/version`) and reports current vs latest (offline-first: any unreachable/auth/timeout failure degrades to a clear message, never a crash or fabricated version). `gald3r upgrade` takes a timestamped gitignored backup of `.gald3r/`, migrates to the latest format (idempotent ADD/MERGE/DEPRECATE; user data — `tasks/**`, `bugs/**`, `TASKS.md`, `PLAN.md`, … — is never touched), and **rolls back from the backup on any failure**. `--dry-run` (default) previews; `--apply` performs; `--json` for both. 12 offline unit tests.
+- **gald3r_throne: in-app version check + "update available" indicator** (T474, epic T470) — Throne now queries world_tree's version endpoint (`GET /api/v1/gald3r/version`) on connect and surfaces **current vs. latest** with an "update available" badge directly in the UI. Replaced the hardcoded `BUNDLED_LATEST_VERSION="1.2.0"` Rust constant with a live authenticated query via the existing `worldTreeFetch` client; project-relative version is read from `.gald3r/.identity`. Offline-first: unreachable / 401 / non-2xx world_tree → `reachable: false`, no throw, file-first status preserved. Includes a pre-apply preview modal (shows version delta before confirming). 11 Vitest tests.
+- **gald3r_throne: in-app update APPLY in compiled Rust** (T481, epic T470) — Throne can now apply a `.gald3r/` update entirely from within the app, with no Python or engine dependency. Completes the T474 version-check half: `apply_create` writes real new-file content from the bundled template snapshot; `FileChange::Merge` performs a real frontmatter/key merge consistent with the engine's ADD/MERGE/DEPRECATE semantics. The full safety envelope is preserved: backup ZIP → integrity-verify → apply → registry-limited migrations → audit report → **byte-for-byte rollback on any failure**. User-data denylist (`tasks/**`, `bugs/**`, `TASKS.md`, `PLAN.md`, …) mirrors the Python engine — both implementations agree on what is never overwritten. 34 Rust `cargo test --lib project_update` tests. No process-spawn of Python. Offline-first preserved.
+- **Local install folder auto-provisions the vault + inherits identity defaults** (T476, epic T470) — one shared `gald3r.provision` resolution used by both agent and throne (no fork): idempotently creates `gald3r_vault` at the configured `vault_location` (else the install home), and writes `.gald3r/.identity` by layering `install-home defaults -> user identity -> per-project overrides`. Any credential/token/password/secret/api_key-looking key is stripped before the identity is written (host-only secret state stays in the gitignored `.user_prefs.yaml`/`.env`). 26 unit tests.
+- **Project scaffold against a target folder: `gald3r init` + `gald3r update`** (T477, epic T470) — `gald3r init` scaffolds a fresh gald3r project into a target folder (current dir by default, or `--target <folder>`) via the same canonical installer `@g-setup` uses, with new PROJECT.md param-seeding (`--name`, `--description`, `--vision`, `--tech-stack`); a user-edited section is never clobbered (idempotent), and an existing project routes to the update path instead of re-init. `gald3r update` routes a target folder through the T473 safe-update core (backup → migrate → rollback). `--dry-run`/`--json` for both. 23 unit tests.
+- **CRASH activation tracking** (T433) — datetime invocation statistics for the five gald3r
+  extension-point types (Commands, Rules, Agents, Skills, Hooks). New engine module
+  `gald3r/crash.py` appends one JSON line per activation to `.gald3r/logs/crash_activations.jsonl`
+  (`{component_type, component_name, activated_at, session_id, trigger_source, elapsed_ms}`) and
+  computes Most Active / Least Active / Never Activated / "Should Be Called But Isn't" stats (the
+  last from rules' `fires_on:` / skills' `activate_for:` intent metadata). New `@g-crash-stats`
+  command + `gald3r crash-stats` subcommand render the report on demand; `--crash-stats-reset`
+  archives the log and starts fresh; `GALD3R_CRASH_STATS=show_in_response|show_in_log|show_in_terminal`
+  surfaces a compact 3-5 line signature (zero overhead when unset/`off`). New `g-hk-crash-record`
+  hook is the explicit recording path for Skill/Agent/Hook/Rule activations (which have no native
+  IDE harness event). Integrates with T432 debug mode: a command dispatch writes the debug trace
+  and the CRASH record in the same event.
+- **Versioned `.gald3r/` snapshots for the upgrade engine** (T463) — each release cut now persists
+  the canonical `.gald3r/` template as a stored, versioned snapshot
+  (`gald3r_core/project_template/.gald3r_sys/snapshots/v<X.Y.Z>/.gald3r`, user data excluded) via
+  `gald3r.systems.upgrade.capture_snapshot`, invoked by `@g-gald3r-publish`'s finalize step. The
+  `gald3r upgrade` op gains `--from-version` / `--to-version` flags that resolve those stored
+  snapshots automatically (`resolve_version_dir`), so a real vN→vN+1 migration can run against
+  genuine historical sources instead of only synthetic fixtures.
+- **Human-prose wishlist → task mining** (T453) — new `@g-wishlist-mine` command + `g-skl-wishlist-mine`
+  skill productize the DELIVERABLES.md pattern: a non-technical user keeps a free-form, plain-language
+  intent/wishlist document (no schema), and gald3r mines the READY, concrete wants into formal tasks.
+  Mining is **READ-ONLY against the prose doc** (never rewritten/checklist-ified), dedups against
+  existing `.gald3r/TASKS.md` entries, routes broad vision to a single epic, reports unsure items as
+  backlog candidates (not over-created), and emits a created-tasks table + backlog-candidates list.
+  Supports `--dry-run`, a configurable/default doc path (`.gald3r/DELIVERABLES.md`), and a WPAC
+  controller cascade path via `@g-wpac-order`.
+- **Turnkey hot-inbox staging zones** (T480) — fresh installs now ship pre-seeded
+  `.gald3r/tasks/inbox/.gitkeep` and `.gald3r/bugs/inbox/.gitkeep` so the "drop a draft task/bug
+  while g-go-go runs" zones are discoverable out of the box. The template `.gald3r/.gitignore` now
+  declares them as gitignored staging zones (`tasks/inbox/*` + `!tasks/inbox/.gitkeep`, same for
+  `bugs/inbox/`), matching the "gitignored staging zones" language in `g-go-go.md`: draft contents
+  stay untracked (the `gald3r inbox` intake deletes them after absorbing), while the `.gitkeep`
+  keeps the folder shipped.
 - **All skill scripts ported to Python** (T1585) — every `.ps1` under `skills/*/scripts/`
   (48 scripts incl. the 1,765-line `gald3r_worktree.ps1`, decomposed into a `worktree_lib/`
   package) now has a `.py` sibling; SKILL.md/command invocations rewritten from
@@ -36,8 +107,21 @@ section is renamed to `[X.Y.Z] - YYYY-MM-DD` and a fresh `[Unreleased]` block is
   ported scripts import from here instead of re-implementing PowerShell patterns.
 
 ### Changed
+- **User scaffolding commands no longer reference maintainer-only commands** (BUG-137) — the
+  shipped `@g-command-new` / `@g-rule-new` / `@g-skill-new` commands (48 files across 16 platform
+  trees) dropped their `## Related` "Maintainer-only equivalent: `@g-gald3r-*-new`" bullet. These
+  are end-user commands scoped to the user's own project; the maintainer `@g-gald3r-*` commands
+  edit gald3r itself and have no place in a shipped user template (C-009 policy).
 
 ### Fixed
+- **CRASH hook component metadata** (BUG-160, partial) — `g-hk-crash-record.md` was missing its
+  `subsystem_memberships:` frontmatter (g-rl-38); added `[LOGGING_SYSTEM]` to match the hook's
+  `.ps1` tag. The larger CRASH shipping gaps (engine `crash.py` absent from the shipped
+  `project_template` engine, `.cursor` hook parity, `.py` port) are tracked in T511.
+- **Stale `gald3r_rel_version` stamp in template `.gald3r/.gitignore`** (T480) — corrected the
+  `# gald3r_rel_version: 2.1.0` header to `2.0.1` in both the canonical `project_template/.gald3r/.gitignore`
+  and the `.gald3r_sys/template_verification/.gald3r/.gitignore` reference copy. (The forge does not
+  re-stamp extensionless `.gitignore` files on build, so the canonical source carried the only stamp.)
 - **Workspace manifest validator typo re-fixed in the canonical engine** (BUG-128) — the
   documented `pcac_relationship` → `wpac_relationship` fix had not landed in
   `project_template/.gald3r_sys/engine`; `validate_manifest()` and `status()` corrected.
@@ -118,30 +202,18 @@ the engine is additive, and every slimmed component ships a no-engine fallback.
 
 ---
 
-## [1.11.0] - 2026-06-04
+## [1.10] - 2026-06-02 (Cursor + Claude Unity Edition)
+
+<!-- BUG-157 reconciliation (2026-06-18): the two entries below were mislabeled `## [1.11.0]`
+     (dated 2026-06-03 and 2026-06-04). GitHub (Gald3r-Labs/gald3r) never published a 1.11.0;
+     this work shipped under tag `v1.10`. Merged and relabeled to match the real release set. -->
 
 ### Added
 - **`platforms/` folder**: all 34 platform thin adapters now live directly in `gald3r`.
-  No need to clone `<template_adv>` for Windsurf, Cline, Copilot, etc.
+  No need to clone a separate advanced template for Windsurf, Cline, Copilot, etc.
 - **`-Platform <name>` installer arg**: `setup_gald3r_project.ps1` now accepts any of 34
   platforms. Default (no arg) = Cursor + Claude Code (unchanged). `-Platform windsurf` etc.
   copies the shared brain (without .cursor/.claude) + the platform's thin config overlay.
-
-### Fixed
-- **Personality rule extension**: renamed `gald3r_personality.md` →
-  `gald3r_personality.mdc` in `project_template/.cursor/rules/`. Cursor only loads
-  `.mdc` files from the rules folder; the Norse personality was silently not loading.
-- **License reference in README**: corrected from `[MIT]` to `[Fair Source License 1.1
-  (FSL-1.1-Apache)]`. The actual LICENSE file was always FSL — only the README link was wrong.
-- **README**: updated version badge, installer docs, and platform table.
-
-### Architecture
-- **Realignment with gald3r ADV**: both repos now share the same `project_template/`
-  structure and `platforms/` thin-adapter model. `gald3r` is the primary install for all
-  34 platforms. `<template_adv>` is the reference archive for the explicit
-  shared-base + platform-overlay pattern (useful for tooling and multi-platform automation).
-
-## [1.11.0] - 2026-06-03
 
 ### Changed
 - **Restructured install model**: deliverable is now `project_template/` — copy its contents to
@@ -152,10 +224,81 @@ the engine is additive, and every slimmed component ships a no-engine fallback.
   and `g-rl-36` (workspace-guard) removed from the shipped template — these are framework-build
   tools, not end-user config. Shipped set: 11 lightweight rules + `gald3r_personality`.
 - **Updated README**: reflects actual structure and accurate component counts (110 skills,
-  177 commands, 37 hooks, 12 rules).
+  177 commands, 37 hooks, 12 rules); version badge, installer docs, and platform table.
 
 ### Fixed
-- **BUG-099 safety fix**: All platform scaffold `gald3r_worktree.ps1` scripts and `development.yaml` files defaulted `TargetBranch`/`default_branch` to `dev` instead of `main`. This caused new projects created from any platform template to target a long-lived `dev` branch for worktree merges — a data-loss trap. Flipped 78 files (44 worktree scripts + 34 development.yaml) to `main`. Affects all 34+ platform scaffolds.
+- **Personality rule extension**: renamed `gald3r_personality.md` →
+  `gald3r_personality.mdc` in `project_template/.cursor/rules/`. Cursor only loads
+  `.mdc` files from the rules folder; the Norse personality was silently not loading.
+- **License reference in README**: corrected from `[MIT]` to `[Fair Source License 1.1
+  (FSL-1.1-Apache)]`. The actual LICENSE file was always FSL — only the README link was wrong.
+- **BUG-099 safety fix**: All platform scaffold `gald3r_worktree.ps1` scripts and `development.yaml`
+  files defaulted `TargetBranch`/`default_branch` to `dev` instead of `main` — a data-loss trap for
+  new projects created from any platform template. Flipped 78 files (44 worktree scripts + 34
+  development.yaml) to `main`. Affects all 34+ platform scaffolds.
+
+---
+
+## [1.9.0] - 2026-05-31 (Platforms/ Folder + Post-Push Verify + Plugin System Foundation)
+
+### Added
+- **Plugin system foundation** (T1557–T1559): `@g-plugin-install` lands — install a gald3r plugin
+  from a local path (GitHub-URL path implemented, not yet network-tested). Backed by ADR-015, a
+  `gald3r-plugin.yaml` manifest schema + validator, and a security-first installer: validates the
+  manifest, enforces `gald3r_min_version`, **refuses to overwrite gald3r-core components**, stamps
+  installed components with `plugin_source:`, records a `installed.yaml` ledger, and **never
+  auto-runs plugin lifecycle scripts** (opt-in `-RunInstallScript`, previews first).
+- `scan_platform_docs.ps1 -WithHtml` / `-HappyPath` (T1545): after a platform's `PLATFORM_SPEC.md`
+  is updated by a doc scan, auto-regenerates its `docs/platforms/<name>_guide.html` and stamps
+  `last_html_generated:` for staleness visibility.
+- `check_platform_status.ps1 -GenerateMatrix` (T1543): auto-populates
+  `.gald3r/PLATFORM_CAPABILITY_MATRIX.md` from the canonical `PLATFORM_SPEC.md` capability tables,
+  cross-checks each cell against the hand-verified `PLATFORM_STATUS.md`, and warns on disagreement.
+- `post_push_verify.ps1` (T1572): 11-check post-push gate that verifies a release landed correctly
+  (VERSION, CHANGELOG depth, releases/ file, git tag, GitHub release body, public repo VERSION/README,
+  wiki freshness, plus a 10-pattern secrets scan of the release diff).
+
+### Changed
+- **`gald3r` public repo restructured**: 34 platform directories moved from repo root into a
+  `platforms/` subfolder (T1556). `platform_parity_sync.ps1 -SyncToGald3r` updated to target it.
+- `platform_parity_sync.ps1` now discovers platforms by scanning
+  `project_template/.gald3r_sys/platforms/` dynamically rather than a hardcoded list.
+
+### Removed
+- `@g-kamikaze` and `@g-juggernaut` commands (T1548): both were pure aliases for `@g-mission` with
+  no added behavior. Deleted across all platform targets; use `@g-mission` directly.
+
+---
+
+## [1.8.0] - 2026-05-30 (Wiki Launch + GitHub Discussions + Test Harness + 35-Platform Sweep)
+
+### Added
+- **GitHub wiki launched** (T1550): 7 pages auto-generated from `.gald3r_sys/` — Home, Quickstart,
+  Commands, Skills, Agents, Rules, Hooks.
+- GitHub Discussions enabled as the community Q&A and announcement channel.
+- Batch-11 platform specs consolidated into the canonical
+  `project_template/.gald3r_sys/platforms/.<platform>/PLATFORM_SPEC.md` single-source location
+  (T1544); `platforms/` now holds 35 platform specs.
+- gald3r systems functional test harness `gald3r_system_test.ps1` (T1540): per-system
+  PASS/PARTIAL/FAIL + overall "N% functional" score across 13 gald3r systems; `-FailBelow <N>` CI
+  gate. Added as the **FUNCTIONAL (L0)** operation in `g-skl-test`.
+- Two-layer release system (T1528-T1530) + native tier graduation scripts in `g-skl-release/scripts/`.
+- Framework constraints C-041..C-043 (destructive git gate, content scrub, public main-only).
+
+### Changed
+- `scan_platform_docs.ps1` now discovers platforms by scanning
+  `project_template/.gald3r_sys/platforms/` (no hardcoded 23-platform list; T1544 AC6). Verified at
+  35 platforms under powershell.exe 5.1.
+- **Branch model: feature-branches-only → `main` (USER-SAFETY, T1535)**. Retired the long-lived
+  `dev`/`test` promotion branches (root cause of repeated history-loss incidents, BUG-099 class).
+  `g-go`/`g-go-go` auto-merge default flipped `dev` → `main`; `gald3r_worktree.ps1`,
+  `development.yaml`, and `g-skl-setup` realigned to `main`.
+
+### Fixed
+- **Eliminated the stale-`dev` auto-merge data-loss hazard (BUG-099, USER-SAFETY)**: gald3r no longer
+  defaults swarm/autopilot auto-merge to a long-lived `dev` integration branch. Existing user repos
+  are offered a safe, confirmation-gated migration — never an automatic branch delete.
+
 ---
 
 ## [1.7.0] - 2026-05-28 (Workspace Distribution + Swarm Fix + 34-Platform Sweep)

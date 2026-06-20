@@ -1,0 +1,76 @@
+{
+  "_doc": {
+    "t510_canonical_core": "T510: Qwen Code reads lifecycle hooks from the `hooks` object in `.qwen/settings.json` (Claude-Code-style: per-event array of { matcher, hooks:[{type:command,...}] }; `command` may invoke PowerShell or any shell). Each native event routes to a thin canonical entrypoint `python .qwen/hooks/g-hk-on-<event>.py` which calls `g_hk_core.dispatch(\"<event>\")`. The shared core `.qwen/hooks/g_hk_core.py` is byte-identical across every platform overlay and runs the per-event CONCERN_CHAIN (concern hooks self-gate on payload). Native->canonical map (g_hk_core.PLATFORM_EVENT_MAP['qwen']): SessionStart->session-start, SessionEnd->session-end, UserPromptSubmit->user-prompt-submit, PreToolUse->tool-start, PostToolUse->tool-end, Stop->stop. timeout is in milliseconds. Schema verified against https://qwenlm.github.io/qwen-code-docs/en/users/features/hooks/ ."
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .qwen/hooks/g-hk-on-session-start.py",
+            "name": "gald3r-session-start"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .qwen/hooks/g-hk-on-session-end.py",
+            "name": "gald3r-session-end"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .qwen/hooks/g-hk-on-user-prompt-submit.py",
+            "name": "gald3r-user-prompt-submit"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .qwen/hooks/g-hk-on-tool-start.py",
+            "name": "gald3r-tool-start"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .qwen/hooks/g-hk-on-tool-end.py",
+            "name": "gald3r-tool-end"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .qwen/hooks/g-hk-on-stop.py",
+            "name": "gald3r-stop",
+            "timeout": 60000
+          }
+        ]
+      }
+    ]
+  }
+}

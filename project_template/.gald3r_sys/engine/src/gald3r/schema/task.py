@@ -1,51 +1,34 @@
-"""Task schema — the canonical vocabulary, status→folder / status→marker maps,
-and validation. Mirrors `.gald3r_sys/schemas/task_file.v1.schema.yaml` so engine
-output validates against the existing system.
+"""Task schema — vocabulary helpers + validation. The status vocabulary itself
+(`STATUSES`, `LEGACY_STATUSES`, the folder/marker/terminal maps) is owned by
+`gald3r.schema.status` (the single source of truth shared with the YAML schemas, T519);
+this module re-exports it under the historical names and keeps the task-specific
+validation (`TYPES`, `PRIORITIES`, `RELEASE_HOLD_VALUES`, `REQUIRED`).
 """
 from __future__ import annotations
 
 import re
 from typing import Any, Dict, List
 
+from gald3r.schema import status as _status
+
 SCHEMA_VERSION = "task-file-v1"
 
 TYPES = ["feature", "bug_fix", "refactor", "chore", "documentation"]
 PRIORITIES = ["critical", "high", "medium", "low"]
+# release-staging hold (T419): omitted/none = g-ship picks it up; manual/sync_required hold it back
+RELEASE_HOLD_VALUES = ["none", "manual", "sync_required"]
 
-# current (v1) lifecycle — exactly what the markdown system writes
-STATUSES = [
-    "pending", "speccing", "in-progress", "awaiting-verification",
-    "verification-in-progress", "completed", "failed", "paused", "cancelled",
-]
-# accepted legacy/alias values (valid, but not written by new files)
-LEGACY_STATUSES = ["waiting", "resource-gated", "requires-user-attention", "verified", "closed"]
-ALL_STATUSES = STATUSES + LEGACY_STATUSES
+# current (v1) lifecycle + accepted legacy values — sourced from the TaskStatus enum (T519)
+STATUSES = _status.TASK_STATUSES
+LEGACY_STATUSES = _status.TASK_LEGACY
+ALL_STATUSES = _status.TASK_ALL_STATUSES
 
 REQUIRED = ["id", "title", "type", "status", "priority", "created_date"]
 
-# status -> tasks/<folder>/  (canonical: awaiting-verification/ for the review states)
-STATUS_FOLDER = {
-    "pending": "open", "speccing": "open",
-    "in-progress": "in-progress",
-    "awaiting-verification": "awaiting-verification",
-    "verification-in-progress": "awaiting-verification",
-    "completed": "completed", "failed": "failed",
-    "paused": "paused", "cancelled": "cancelled",
-    # legacy
-    "waiting": "open", "resource-gated": "open", "requires-user-attention": "open",
-    "verified": "completed", "closed": "completed",
-}
-
-# status -> TASKS.md marker emoji (matches the .gald3r/TASKS.md legend)
-STATUS_MARKER = {
-    "pending": "📋", "speccing": "📝", "in-progress": "🔄",
-    "awaiting-verification": "🔍", "verification-in-progress": "🕵️",
-    "completed": "✅", "failed": "❌", "cancelled": "❌", "paused": "⏸️",
-    "resource-gated": "⏳", "waiting": "⏳", "requires-user-attention": "🚨",
-    "verified": "✅", "closed": "✅",
-}
-
-TERMINAL = {"completed", "failed", "cancelled", "verified", "closed"}
+# status -> tasks/<folder>/ and status -> TASKS.md marker emoji (derived from the enum)
+STATUS_FOLDER = _status.TASK_FOLDER
+STATUS_MARKER = _status.TASK_MARKER
+TERMINAL = _status.TASK_TERMINAL
 
 _DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
@@ -76,4 +59,6 @@ def validate(fm: Dict[str, Any]) -> List[str]:
         errs.append(f"status '{fm.get('status')}' not in vocabulary")
     if "created_date" in fm and not _DATE.match(str(fm["created_date"])):
         errs.append("created_date must be YYYY-MM-DD")
+    if fm.get("release_hold") not in (None, "") and fm.get("release_hold") not in RELEASE_HOLD_VALUES:
+        errs.append(f"release_hold must be one of {RELEASE_HOLD_VALUES}")
     return errs

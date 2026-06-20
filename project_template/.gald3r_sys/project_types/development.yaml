@@ -75,7 +75,15 @@ agent_config_defaults:
   default_branch: main           # feature-branches-only model — NO long-lived dev branch (g-rl-02)
   pr_required_for_main: true
   graduation_tier: single
-  test_to_public_history: scrub  # Mode A (zero-history scrub) for public graduation; carry = keep history
+  # Public-publish history handling (T423). SAFE DEFAULT = carry (full git history preserved).
+  #   carry  — keep git history when publishing to a public repo (default; non-destructive)
+  #   scrub  — Mode A: publish with ZERO git history for IP protection (DESTRUCTIVE, opt-in only).
+  # scrub is OFF by default and must be explicitly chosen at setup AND confirmed at publish time
+  # (engine/script requires -ConfirmScrub). Never scrub silently or accidentally.
+  publish_history_mode: carry
+  # DEPRECATED alias (pre-T423): test_to_public_history defaulted to the UNSAFE `scrub`. Kept for
+  # back-compat reads; publish_history_mode is authoritative. Aligned to carry to match the safe default.
+  test_to_public_history: carry  # deprecated → use publish_history_mode (T423)
   auto_propose_releases: false  # T1420 — agents surface release proposals when true
 
 marketplace:

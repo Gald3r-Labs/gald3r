@@ -7,6 +7,12 @@ subsystem_memberships: [BUG_AND_QUALITY]
 
 # Bug-Discovery Gate (Zero-Ignore Policy)
 
+> **Deterministic enforcement (T520):** the bug *file* contract this rule depends on —
+> valid `status`/`severity`/`kind`, canonical status tokens, and correct `bugs/<status>/`
+> placement — is now ENFORCED by `gald3r validate` (run as a fail-closed pre-commit hook on
+> staged `.gald3r/bugs/**`). This rule advises *when* to log a bug; the gate guarantees the
+> bug file you write is well-formed. Run `gald3r validate --fix` to normalize fixable issues.
+
 When you encounter a bug during any coding or review session, the correct response depends on when the bug was introduced:
 
 | Scenario | Correct Response |

@@ -1,5 +1,5 @@
-﻿---
-gald3r_rel_version: "2.0.1"
+---
+gald3r_rel_version: "2.1.0"
 schema_version: "generic-v1"
 ---
 # Cross-Project Coordination (WPAC) — Linking Directory
@@ -11,7 +11,9 @@ This directory holds the file-first foundation for cross-project coordination (W
 | File | Purpose |
 |------|---------|
 | `link_topology.md` | This project's position in the ecosystem (parent, children, siblings) |
-| `INBOX.md` | Incoming project-linking-and-coordination items — conflicts, requests, broadcasts, syncs |
+| `INBOX.md` | Lightweight **index** of incoming coordination items — conflicts, requests, broadcasts, syncs (one row per message) |
+| `messages/msg_{id}_{type}_{source}.md` | One file per message: YAML frontmatter + full body |
+| `messages/archive/` | Archived `[DONE]` messages + `archive_index.md` (moved here by `@g-wpac-archive-inbox`) |
 | `peers/{project_name}.md` | Local copies of sibling topology files (advisory, non-blocking) |
 
 ---
@@ -47,25 +49,43 @@ Body can contain free-form notes about the relationship (contracts, shared conve
 
 ---
 
-## INBOX.md Format
+## INBOX.md Format (index — T428)
+
+`INBOX.md` is a lightweight index table (marked `<!-- WPAC-INDEX-V1 -->`). One row
+per message; message bodies live in `messages/`:
 
 ```markdown
+<!-- WPAC-INDEX-V1 -->
 # INBOX — {project_name}
 
-## [CONFLICT] — Items That Block Work
-<!-- Surfaced by g-hk-wpac-inbox-check.ps1 at session start — must resolve before any other work -->
-
-## [REQUEST] — Incoming Asks From Children
-<!-- Child projects asking this project to take action -->
-
-## [BROADCAST] — Orders From Parent
-<!-- Tasks pushed down from parent via g-skl-wpac-order -->
-
-## [SYNC] — Peer Contract Updates From Siblings
-<!-- Advisory topology/contract updates from sibling projects -->
+| Status | ID | Type | Source | Subject | Age | File |
+|---|---|---|---|---|---|---|
+| [DONE] | msg-001 | INFO | gald3r_dev | Project spawned | 7d | [msg_001_info_gald3r_dev.md](messages/msg_001_info_gald3r_dev.md) |
 ```
 
-Each item uses a one-line `- [ ] YYYY-MM-DD | {from_project} | {summary}` format.
+Each message file under `messages/` carries YAML frontmatter:
+
+```markdown
+---
+id: msg-001
+type: INFO
+source_project: gald3r_dev
+subject: 'Project spawned from gald3r_dev'
+status: done
+created_at: '2026-05-23'
+actioned_at: '2026-05-23'
+---
+
+# [INFO] Project spawned from gald3r_dev
+... full body ...
+```
+
+**Migration:** a legacy flat `INBOX.md` (inline `## [STATUS] ... ` bodies) is
+auto-migrated to this layout on demand by `gald3r_wpac_inbox.ps1 -Migrate` (or its
+`.py` twin), idempotently. **Archiving:** `@g-wpac-archive-inbox` moves `[DONE]`
+messages older than a threshold (default 30 days) to `messages/archive/` and prunes
+their index rows. The session-start inbox check prompts to archive when the active
+index exceeds 50 `[DONE]` rows.
 
 ---
 

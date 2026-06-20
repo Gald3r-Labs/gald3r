@@ -57,11 +57,12 @@ Kiro CLI reads project-scope config under repo-root `.kiro/`, and user/global-sc
     ├── skills/      <name>/SKILL.md ← Agent Skills (YAML frontmatter: name, description)
     ├── settings/
     │   └── mcp.json                ← workspace-scope MCP config (mcpServers object)
-    └── (custom-agent JSON configs — filename without .json = agent name)
+    └── agents/      *.json          ← custom-agent JSON configs in .kiro/agents/ (filename without .json = agent name)
 
 ~/.kiro/                            ← USER/GLOBAL tree (migrated from ~/.aws/amazonq/)
 ├── steering/    *.md               ← global steering (also picks up a global AGENTS.md)
 ├── skills/      <name>/SKILL.md    ← global Agent Skills
+├── agents/      *.json             ← global custom-agent JSON configs (~/.kiro/agents/)
 └── settings/
     └── mcp.json                    ← global MCP config
 ```

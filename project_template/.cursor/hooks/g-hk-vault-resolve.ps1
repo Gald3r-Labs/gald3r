@@ -84,7 +84,7 @@ function Get-MarkdownCount {
 
     return @(
         Get-ChildItem -Path $PathToScan -Recurse -Filter "*.md" -ErrorAction SilentlyContinue |
-        Where-Object { $_.FullName -notmatch "\\.obsidian(\|\\)" }
+        Where-Object { $_.FullName -notmatch "\\.obsidian($|\\)" }
     ).Count
 }
 

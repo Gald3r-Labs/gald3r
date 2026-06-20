@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "name": "gald3r — react to .gald3r changes",
+  "description": "When a .gald3r task/bug/plan file is saved, remind the agent to keep TASKS.md/BUGS.md in sync.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [".gald3r/**/*.md"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A .gald3r/ file changed. Verify TASKS.md / BUGS.md indexes stay in sync per the gald3r task-management rules; flag any drift."
+  }
+}
