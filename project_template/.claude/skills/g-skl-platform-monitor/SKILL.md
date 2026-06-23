@@ -41,10 +41,12 @@ Reference implementation = `g-skl-platform-cursor`. Source-of-truth per platform
 Inspect the roster: `python scripts/platform_registry.py --list` (canonical names) /
 `--list --all` (incl. aliases) / `--json` (full registry).
 
-> **Scaffolding note (T1460):** the operation contracts below are fully specified, but the heavy
-> doc-diff / config-introspection logic is intentionally deferred to the per-platform tasks
-> (T1461–T1483) that exercise each operation. Where an operation's full implementation is deferred,
-> it is marked **[deferred — T146x]** in the body. This is scaffolding by design, not an
+> **Scaffolding note (T1460):** the operation contracts below are fully specified. The
+> **freshness loop is now implemented** (T513): `SCAN_DOCS` → spec proposals (`spec_refresh.py`,
+> T514, GAP A) and `GENERATE_STATUS` (`generate_status.py`, T515, GAP B) close the broken
+> crawl→spec→status chain. The remaining heavy `CHECK` gap-analysis / `VALIDATE`
+> config-introspection logic is still deferred to the per-platform tasks (T1461–T1483); those
+> spots are marked **[deferred — T146x]** in the body. This is scaffolding by design, not an
 > unannotated stub.
 
 ---
@@ -76,8 +78,15 @@ Crawl the platform's official docs and diff against the last crawl.
    `{vault_location}/research/platforms/<platform>/`.
 3. Diff against the previous crawl snapshot. Surface changed sections:
    `These sections changed since last scan — review for gald3r compatibility impact`.
-4. Update `last_doc_scan` (today) in `PLATFORM_STATUS.md` and the platform SKILL's
-   `last_doc_scan:` field. **[deferred — T146x: per-platform diff heuristics]**
+4. Feed the crawled doc snapshot to the **spec-refresh consumer** (T514, GAP A):
+   `scripts/spec_refresh.py --platform <name> --crawl-snapshot <export.json>
+   [--crawl-ledger <registry.json>]` (`.ps1` parity wrapper alongside). It emits a
+   **reviewable proposal** — a `PLATFORM_SPEC.md.proposed` draft + a "what changed and why"
+   summary — and stamps the proposed `last_doc_scan` from the crawl-ledger completion date. It
+   NEVER blind-overwrites the curated spec: capability-cell disagreements between the crawled
+   docs and the spec surface as `[needs-review]` for a human to judge; only the mechanical
+   `last_doc_scan` stamp lands on `--apply`. Then regenerate `PLATFORM_STATUS.md` via
+   `GENERATE_STATUS` and the matrix via `GENERATE_MATRIX`.
 
 ### SCAN_ALL
 
@@ -103,6 +112,21 @@ Confirm the platform's config is platform-specific, not Cursor-copied.
 × 6 capability columns (Hooks, Rules, Skills, Commands, MCP, Docs Fresh). Cells: ✅ / ⚠️ / ❌ / ❓.
 Source the cell values from each platform's `PLATFORM_SPEC.md` (resolved via the registry
 `spec_path`). Generated, never hand-maintained.
+
+### GENERATE_STATUS
+
+(Re)build `.gald3r/PLATFORM_STATUS.md` from the specs + the crawl ledger (T515, GAP B):
+`scripts/generate_status.py --apply [--crawl-ledger <registry.json>]` (`.ps1` parity wrapper
+alongside; dry-run is the default — omit `--apply` to preview). Closes the second freshness-loop
+gap: STATUS was hand-maintained and rotted (`check_platform_status` reads it READ-ONLY and never
+wrote it). **Source-of-truth = Option 2 merge:** the curated **Status verdict + Notes** columns
+are PRESERVED from the existing STATUS; only the *mechanical* cells are regenerated — the 5
+capability cells derived from each `PLATFORM_SPEC.md` `## Capability Summary` the SAME way
+`GENERATE_MATRIX` derives them (so a regen leaves **zero** STATUS-vs-matrix cross-check warnings),
+and `Last Doc Scan` taken from the crawl ledger (real `update_crawl_registry` completion date)
+else the spec frontmatter `last_doc_scan` (never "now" blindly). Idempotent: a re-run with no
+input change is byte-identical modulo the generated timestamp line (use `--no-timestamp` for
+byte-for-byte CI diffs). The human edits the SPEC, not STATUS.
 
 ### UPGRADE `<platform>`
 
@@ -131,6 +155,7 @@ Given a `SCAN_DOCS` result, propose specific config changes to gald3r's platform
 - Agent owner: `g-agnt-platformer`.
 - Commands: `@g-platform-check`, `@g-platform-scan-docs`, `@g-platform-status`.
 - Engine: `gald3r platform status [--platform <name>]` (CHECK entry point); fallback `scripts/check_platform_status.ps1`.
+- Freshness loop (T513): `scripts/spec_refresh.py`/`.ps1` (T514 — crawled docs → `PLATFORM_SPEC.md` proposals) and `scripts/generate_status.py`/`.ps1` (T515 — specs + crawl ledger → `PLATFORM_STATUS.md`). Shared spec/ledger parsing in `scripts/platform_spec_io.py`. Both run host-side (C-001), need no DB connection or migration, and are dry-run by default (proposals, not blind writes).
 - Roster source of truth: `gald3r_templates/gald3r_core/platforms/PLATFORM_REGISTRY.yaml` (T516), read via `scripts/platform_registry.py`.
 - Roster-parity gate: `g-skl-medic/scripts/check_roster_parity.py`, wired into `g-medic` L1-J — fails loudly when overlays / registry / specs / STATUS rows disagree.
 - Medic: g-medic L2 calls `g-skl-platform-monitor CHECK <current-platform>` for platform health.

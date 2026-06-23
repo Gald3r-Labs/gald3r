@@ -47,13 +47,16 @@
           "reinvoke_count": R, "updated_at": "<iso>" }
 
       On stop, this hook:
-        0. No active run            -> no-op (continue, exit 0).
-        1. Platform mismatch        -> allow exit (different agent's run).
-        2. Session mismatch         -> allow exit (different chat session).
-        3. authorized_hard_stop set -> genuine hard stop; allow exit, clear marker.
-        4. budget exhausted         -> allow exit (the budget cap IS a hard stop).
-        5. re-invoke ceiling hit    -> allow exit (anti-infinite-loop fail-safe).
-        6. otherwise (unauthorized) -> re-invoke: increment reinvoke_count, emit
+        0. No active run             -> no-op (continue, exit 0).
+        1. Platform mismatch         -> allow exit (different agent's run).
+        2. Session mismatch          -> allow exit (different chat session).
+        2.5 scheduled_context_reset  -> AUTHORIZED Rolling Amnesia reset (T635):
+            re-invoke with --resume (fresh context), consume the marker, bump
+            resets_done; this is NOT a terminal stop (unless budget is exhausted).
+        3. authorized_hard_stop set  -> genuine TERMINAL hard stop; allow exit, clear marker.
+        4. budget exhausted          -> allow exit (the budget cap IS a hard stop).
+        5. re-invoke ceiling hit     -> allow exit (anti-infinite-loop fail-safe).
+        6. otherwise (unauthorized)  -> re-invoke: increment reinvoke_count, emit
            block/continue decision with the forbidden-reason reminder.
 
     Bounding guarantees (Acceptance Criterion #3):
@@ -225,7 +228,54 @@ $budgetRemaining = 0;  if ($null -ne $state.budget_remaining) { $budgetRemaining
 $reinvokeCount   = 0;  if ($null -ne $state.reinvoke_count)   { $reinvokeCount   = [int]$state.reinvoke_count }
 $hardStop        = ""; if ($state.authorized_hard_stop)       { $hardStop        = [string]$state.authorized_hard_stop }
 
-# Case 3: a genuine, authorized hard stop was recorded. Never re-invoke.
+# Case 2.5 (T635 Rolling Amnesia): a SCHEDULED context reset is an *authorized*
+# stop whose purpose is to re-invoke the loop with --resume so a FRESH coordinator
+# session continues with a clean context window. It is NOT a terminal hard stop --
+# the run is not done; only the current context is being recycled. Distinct from
+# Case 3 (a genuine terminal hard stop). Budget exhaustion still wins (below).
+if ($hardStop.Trim() -eq 'scheduled_context_reset') {
+    if ($budgetRemaining -le 0) {
+        Write-Diag "scheduled_context_reset requested but budget exhausted; treating as terminal exit"
+        try { Remove-Item -Path $stateFile -Force -ErrorAction SilentlyContinue } catch {}
+        Emit-AllowExit "[ggo-stop-detect] Scheduled reset coincided with budget exhaustion; run complete."
+    }
+    $resetsDone = 0; if ($null -ne $state.resets_done) { $resetsDone = [int]$state.resets_done }
+    $resetsDone++
+    try {
+        # Consume the reset marker so the resumed session is NOT seen as still-pending-reset,
+        # and is NOT mistaken for a terminal hard stop on its first stop.
+        $state.authorized_hard_stop = ''
+        $state | Add-Member -NotePropertyName 'resets_done' -NotePropertyValue $resetsDone -Force
+        $state | Add-Member -NotePropertyName 'resuming'    -NotePropertyValue $true -Force
+        $state | Add-Member -NotePropertyName 'updated_at'  -NotePropertyValue ((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')) -Force
+        $state | ConvertTo-Json -Depth 8 | Set-Content -Path $stateFile -Encoding UTF8
+    } catch {
+        Write-Diag "failed to persist reset bookkeeping; re-invoking anyway"
+    }
+    Write-Diag "scheduled_context_reset (Rolling Amnesia) -> re-invoking with --resume (resets_done=$resetsDone, iter=$iter)"
+    $resumeMsg = @"
+[ggo-stop-detect / T635 Rolling Amnesia] This is an AUTHORIZED scheduled context reset, NOT a hard stop.
+The run is not finished -- only the coordinator's context window is being recycled to stay bounded.
+Re-invoke the autopilot now with:  @g-go-go --resume .gald3r/logs/ggo_run_state.json
+The FRESH coordinator session MUST:
+  1. Read .gald3r/logs/ggo_run_state.json (iter, budget_remaining, completed_iterations[] compact
+     summaries, coordinator_notes, per_repo_blockers, deferred_task_reasons, drift_warnings).
+  2. Re-read TASKS.md + BUGS.md fresh.
+  3. Reconstruct working context to <=20K tokens, then continue at iter $iter with the remaining
+     budget. Do NOT replay raw prior-iteration conversation -- the compact stash IS the record.
+Reset #$resetsDone. Continue the loop.
+"@
+    @{
+        decision           = 'block'
+        reason             = $resumeMsg
+        continue           = $false
+        followup           = $resumeMsg
+        additional_context = $resumeMsg
+    } | ConvertTo-Json -Compress
+    exit 0
+}
+
+# Case 3: a genuine, authorized TERMINAL hard stop was recorded. Never re-invoke.
 if ($hardStop.Trim().Length -gt 0) {
     Write-Diag "authorized hard stop recorded (`"$hardStop`"); allowing exit and clearing marker"
     try { Remove-Item -Path $stateFile -Force -ErrorAction SilentlyContinue } catch {}

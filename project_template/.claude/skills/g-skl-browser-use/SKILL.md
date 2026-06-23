@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-browser-use
 description: >
   Production browser harness for agentic web tasks requiring persistent sessions,
@@ -43,6 +43,31 @@ subsystem_memberships: [AGENT_ORCHESTRATION]
 `browser-use` is an AI-driven engine that writes, repairs, and re-executes its own
 browser code autonomously — designed for production tasks the agent must complete
 without human selector maintenance.
+
+---
+
+## Autonomous Dev/Test E2E (webview — T616)
+
+For **driving a project's own webview/dev-server end-to-end without a human**
+(the `ui-control` lane, not the production-scraping lane above), gald3r ships a
+self-booting Playwright harness pattern. Two patterns make autonomous webview
+e2e work without a human or a native shell:
+
+1. **In-app dev/CLI test-seam** — a DEV-only path injection (URL query param or
+   a `VITE_`-prefixed env var) that bypasses the native OS file dialog so the
+   harness can reach the app's main view. Guard it on `import.meta.env.DEV` so
+   it is dead-code-eliminated from production builds.
+2. **Page-side IPC stub** — a Playwright `addInitScript` that installs a
+   deterministic native-runtime fixture (e.g. `__TAURI_INTERNALS__`) so
+   backend/IPC commands resolve, without modifying `src/`.
+
+**Screenshot → read → verify loop:** the harness captures a PNG, then the agent
+**reads the PNG back with its vision tool** and confirms the UI rendered as
+expected — a second, independent confirmation on top of the programmatic
+assertions. This is the autonomous self-check (no user in the loop).
+
+Use this lane for "does my app's UI actually work" verification. Use the
+production browser-use engine below for login-required / anti-bot / cloud tasks.
 
 ---
 

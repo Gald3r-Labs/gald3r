@@ -1,78 +1,12 @@
 {
   "version": 1,
-  "_doc": {
-    "hook_md_contract": "T1171: Each hook script ('.ps1') has a companion '.md' self-description file at the same path (e.g. '.claude/hooks/g-hk-session-start.md' for '.claude/hooks/g-hk-session-start.ps1'). The hook.md uses the 5-section template (# Hook / ## Fires On / ## What It Does / ## Side Effects / ## Related Tasks) defined by '/g-hook-create'. The runtime contract is: when a hook fires under PreToolUse (or any other event), the harness SHOULD read the matching hook.md and inject its content as additional_context so the agent knows what the hook just did or why a tool call was blocked. See 'skills/g-skl-platform-claude/SKILL.md' Section 3 and 'skills/g-skl-platform-cursor/SKILL.md' Section 11.",
-    "hook_md_authoring": "Use '/g-hook-create <hook-name> <event>' to scaffold a new pair atomically. See 'commands/g-hook-create.md'.",
-    "hook_md_source_of_truth": "Source the human-facing hook description from the 'hook.md' file; this 'hooks.json' is for wiring only.",
-    "gald3r_lifecycle_events": "T1055: In addition to the harness-native events wired above ('sessionStart', 'stop', 'beforeShellExecution', 'PreToolUse'), gald3r defines four gald3r-internal lifecycle events: 'pre_skill', 'post_skill', 'pre_session', 'post_session'. Cursor and Claude Code do NOT expose native skill-boundary or gald3r-session-boundary events, so these are dispatched by the gald3r skill/command runner (or fired manually) and are NOT auto-wired here. Skill events carry 'skill_name', 'skill_path', 'timestamp'; session events carry 'session_id' (if available) and 'project_path'. Reference example hooks: 'g-hk-pre-skill-timing', 'g-hk-post-skill-timing', 'g-hk-pre-session-trace', 'g-hk-post-session-trace' (each with a companion hook.md). See 'commands/g-create-hook.md' for the full event list and 'skills/g-skl-platform-claude/SKILL.md' Section 3.",
-    "_gap_claude_hook_config": "PLATFORM_SPEC.md (T1462) Section 6 / Section 9: Claude Code's OFFICIAL hook config surface is settings.json under the 'hooks' key, with CAPITALIZED lifecycle event names (SessionStart, Stop, PreToolUse, PostToolUse, UserPromptSubmit, Notification, SubagentStop, PreCompact, SessionEnd) in a matcher-grouped shape. The lowercase 'sessionStart'/'stop'/'beforeShellExecution' entries below are Cursor-era names and MAY SILENTLY NOT FIRE on current Claude Code; 'beforeShellExecution' has NO official Claude Code equivalent. The 'PreToolUse' block below already uses the correct nested {matcher, hooks:[{type:'command',command}]} shape and is the most likely to fire. This file is PRESERVED (not migrated) pending a hook-firing smoke test; do NOT delete working config. Follow-up: consolidate verified-firing entries onto settings.json 'hooks'. See platforms/.claude/README.md and PLATFORM_SPEC.md."
+  "_deprecated": {
+    "status": "RETIRED — consolidated onto settings.json (T420)",
+    "canonical_surface": ".claude/settings.json under the top-level \"hooks\" key",
+    "why": "Claude Code's OFFICIAL, doc-verified hook config surface is settings.json 'hooks' (PascalCase events: SessionStart, Stop, PreToolUse, PostToolUse, UserPromptSubmit, …) in a three-level event -> matcher -> hooks[] shape. See skills/g-skl-platform-claude/PLATFORM_SPEC.md Section 6/9 and SKILL.md (verified 2026-06-02 against https://code.claude.com/docs/en/hooks). The previous top-level hooks.json was a Cursor-era surface that may silently not fire on Claude Code; 'beforeShellExecution' had no Claude Code equivalent and was remapped to a PreToolUse 'Bash|Shell|...' matcher. T420 migrated the verified-firing entries to settings.json and retired this file to remove the two-competing-surfaces ambiguity flagged in PLATFORM_SPEC_Claude.md §9 gap #2.",
+    "history": "T1462/T1487 documented and annotated the gap; the shape was corrected in place (PascalCase, matcher-grouped); T420 completed the consolidation by moving the wiring into settings.json and reducing this file to a pointer.",
+    "hook_md_contract": "T1171: each hook script ('g-hk-<name>.py' / '.ps1') has a companion '.md' self-description at the same path (e.g. '.claude/hooks/g-hk-session-start.md'). The companion path is derivable from the script name; the official settings.json hook schema has no '_hook_md' key, so the reference is path-derived rather than inlined. Use '/g-create-hook <hook-name> <event>' to scaffold a new script+md pair and wire it into settings.json.",
+    "gald3r_lifecycle_events": "T1055: in addition to the harness-native events wired in settings.json, gald3r defines four gald3r-internal lifecycle events ('pre_skill', 'post_skill', 'pre_session', 'post_session'). Claude Code does NOT expose native skill-boundary or gald3r-session-boundary events, so these are dispatched by the gald3r skill/command runner (or fired manually) and are NOT auto-wired anywhere. Reference example hooks: 'g-hk-pre-skill-timing', 'g-hk-post-skill-timing', 'g-hk-pre-session-trace', 'g-hk-post-session-trace'."
   },
-  "hooks": {
-    "_gap_sessionStart": "SUSPECT (PLATFORM_SPEC §6/§9 gap #1): lowercase 'sessionStart' is the Cursor-era name; the official Claude Code event is 'SessionStart' in settings.json. May not fire here. Verify before relying on it.",
-    "sessionStart": [
-      {
-        "command": "python .claude/hooks/g-hk-session-start.py",
-        "_hook_md": ".claude/hooks/g-hk-session-start.md"
-      }
-    ],
-    "_gap_stop": "SUSPECT (PLATFORM_SPEC §6/§9 gap #1/#2): lowercase 'stop' is the Cursor-era name; the official Claude Code event is 'Stop' in settings.json (where a live chat-logger Stop hook may already exist -> possible double-fire/no-fire ambiguity). Verify before relying on it.",
-    "stop": [
-      {
-        "command": "python .claude/hooks/g-hk-agent-complete.py",
-        "_hook_md": ".claude/hooks/g-hk-agent-complete.md"
-      },
-      {
-        "command": "python .claude/hooks/g-hk-nightly-learn.py",
-        "_hook_md": ".claude/hooks/g-hk-nightly-learn.md"
-      },
-      {
-        "command": "python .claude/hooks/g-hk-encoding-normalize.py -Quiet",
-        "_hook_md": ".claude/hooks/g-hk-encoding-normalize.md"
-      },
-      {
-        "command": "python .claude/hooks/g-hk-ggo-stop-detect.py",
-        "_hook_md": ".claude/hooks/g-hk-ggo-stop-detect.md"
-      }
-    ],
-    "_gap_beforeShellExecution": "SUSPECT (PLATFORM_SPEC §6/§9 gap #1): 'beforeShellExecution' is a Cursor-era event name with NO official Claude Code equivalent. The closest Claude Code mechanism is a 'PreToolUse' matcher targeting the Bash tool (see the PreToolUse 'Bash|Shell|...' block below). This entry likely does NOT fire on Claude Code; preserved pending verification.",
-    "beforeShellExecution": [
-      {
-        "command": "python .claude/hooks/g-hk-validate-shell.py",
-        "_hook_md": ".claude/hooks/g-hk-validate-shell.md"
-      }
-    ],
-    "_gap_PreToolUse": "OK (PLATFORM_SPEC §6): this block uses the correct official nested shape {matcher, hooks:[{type:'command',command}]} and is the most likely to fire on Claude Code.",
-    "PreToolUse": [
-      {
-        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python .claude/hooks/g-hk-pre-tool-call-gald3r-guard.py",
-            "_hook_md": ".claude/hooks/g-hk-pre-tool-call-gald3r-guard.md"
-          },
-          {
-            "type": "command",
-            "command": "python .claude/hooks/g-hk-pre-tool-call-prd-freeze.py",
-            "_hook_md": ".claude/hooks/g-hk-pre-tool-call-prd-freeze.md"
-          },
-          {
-            "type": "command",
-            "command": "python .claude/hooks/g-hk-pre-tool-call-member-gald3r-guard.py",
-            "_hook_md": ".claude/hooks/g-hk-pre-tool-call-member-gald3r-guard.md"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash|Shell|Terminal|run_terminal_cmd",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python .claude/hooks/g-hk-pre-tool-call.py",
-            "_hook_md": ".claude/hooks/g-hk-pre-tool-call.md"
-          }
-        ]
-      }
-    ]
-  }
+  "hooks": {}
 }
