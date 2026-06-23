@@ -478,9 +478,11 @@ $unknown   = @($rows | Where-Object { $_.Status -eq '❓' }).Count
 Write-Host ("  Summary: {0} healthy, {1} need attention, {2} need rework, {3} unknown (of {4})" -f `
     $healthy, $attention, $rework, $unknown, @($rows).Count) -ForegroundColor Green
 
-# Placeholder delegation to future g-skl-platform-monitor operations (T1461-T1483).
-# TODO[TASK-1460->T1461-T1483]: wire CHECK gap-analysis + SCAN_DOCS diff here once the per-platform
-# monitor operations are implemented. Scaffolding by design per T1460 spec.
-Write-Host "  (deep gap analysis / doc-scan: g-skl-platform-monitor CHECK|SCAN_DOCS -- T1461-T1483)" -ForegroundColor DarkGray
+# SCAN_DOCS -> spec proposals and STATUS regeneration are now implemented (T513 freshness
+# loop): spec_refresh.py/.ps1 (T514, crawl docs -> PLATFORM_SPEC.md proposals) and
+# generate_status.py/.ps1 (T515, specs + crawl ledger -> PLATFORM_STATUS.md). The T1460
+# skeleton's "wire SCAN_DOCS diff + STATUS auto-refresh here" is resolved by those host-side
+# consumers; deep per-platform CHECK gap-analysis remains T1461-T1483.
+Write-Host "  (spec-refresh: spec_refresh.ps1 [T514] · STATUS regen: generate_status.ps1 [T515] · deep CHECK gap-analysis: g-skl-platform-monitor -- T1461-T1483)" -ForegroundColor DarkGray
 
 exit 0
