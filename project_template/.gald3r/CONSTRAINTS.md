@@ -1,5 +1,5 @@
 ﻿---
-gald3r_rel_version: "2.1.1"
+gald3r_rel_version: "2.1.2"
 schema_version: "CONSTRAINTS-md-v1"
 ---
 # CONSTRAINTS.md — {PROJECT_NAME}
