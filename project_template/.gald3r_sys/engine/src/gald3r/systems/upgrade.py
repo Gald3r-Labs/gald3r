@@ -304,6 +304,25 @@ class UpgradeSystem:
     #: the existing ``*.zip`` gitignore rule covers the archives.
     BACKUP_DIR_NAME = "_backups"
 
+    #: Framework trees zipped to the repo ROOT before any apply (BUG-176 / safety). Each is
+    #: snapshotted to ``<root>/<name>_<UTC ts>.zip`` so a user's custom edits ANYWHERE in
+    #: a framework tree survive even a later wholesale-replace step (e.g. the deploy
+    #: wrapper swapping ``.claude``/``.cursor``). Only those present on disk are zipped.
+    FULL_BACKUP_DIRS: Tuple[str, ...] = (
+        ".gald3r",
+        ".gald3r_sys",
+        ".claude",
+        ".cursor",
+        ".agent",
+        ".codex",
+        ".opencode",
+    )
+
+    #: Subtrees never recursed into when building a full backup (volatile / huge / VCS).
+    _FULL_BACKUP_SKIP_PARTS = frozenset(
+        {".git", "__pycache__", ".venv", "node_modules", BACKUP_DIR_NAME}
+    )
+
     def __init__(self, config):
         self.config = config
         self.root = config.root
@@ -388,6 +407,7 @@ class UpgradeSystem:
         from_dir: Optional[Path] = None,
         to_version: Optional[str] = None,
         from_version: Optional[str] = None,
+        deprecate_removed: bool = False,
     ) -> Dict[str, Any]:
         """Diff the project's ``.gald3r/`` against the target snapshot. No writes.
 
@@ -398,6 +418,17 @@ class UpgradeSystem:
         / ``deprecate`` / ``skip`` lists (each a ``.gald3r/``-relative POSIX path) plus the
         resolved ``from_dir`` / ``to_dir`` and an ``error`` when a requested snapshot is
         missing.
+
+        **DEPRECATE is opt-in (BUG-176).** By default (``deprecate_removed=False``) the
+        plan NEVER deprecates: it only ADDs new framework files and MERGEs format changes,
+        leaving every other live file untouched. The legacy "any live file absent from the
+        target is obsolete" rule is unsafe whenever ``from`` is the *live project* (which
+        is the default ``from`` source) rather than a real *old template* baseline — under
+        that rule every user-authored file (specs, tracking notes, loose top-level docs,
+        coordination ledgers, even an accidental nested framework tree) looks deletable and
+        was being archived as ``*_deprecated_<date>`` (the T430 disaster). Pass
+        ``deprecate_removed=True`` ONLY for a true template-vs-template diff (explicit
+        ``from_version``/``from_dir`` baseline) where removed-framework cleanup is wanted.
         """
         if from_dir is not None:
             src: Optional[Path] = Path(from_dir)
@@ -447,11 +478,12 @@ class UpgradeSystem:
                 plan["add"].append(rel)
             elif _needs_merge(target / rel, src / rel):
                 plan["merge"].append(rel)
-        for rel in sorted(src_files):
-            if is_user_data(rel) or _is_deprecated_archive(rel):
-                continue
-            if rel not in target_files:
-                plan["deprecate"].append(rel)
+        if deprecate_removed:
+            for rel in sorted(src_files):
+                if is_user_data(rel) or _is_deprecated_archive(rel):
+                    continue
+                if rel not in target_files:
+                    plan["deprecate"].append(rel)
         return plan
 
     # ---- apply a plan to a target .gald3r/ ----
@@ -518,6 +550,56 @@ class UpgradeSystem:
         with zipfile.ZipFile(archive, "r") as zf:
             zf.extractall(self.gald3r_dir)
 
+    # ---- comprehensive pre-flight safety backup (BUG-176) ----
+    def backup_full(self) -> List[Path]:
+        """Zip every present framework tree (:attr:`FULL_BACKUP_DIRS`) to the repo root.
+
+        Each tree is written to ``<root>/<name>_<YYYYMMDD_HHMMSS>.zip`` (UTC) and the repo
+        ``.gitignore`` is ensured to exclude those archives. This runs BEFORE any
+        apply/install mutates the framework trees, so a user's custom code anywhere under
+        ``.gald3r/``, ``.gald3r_sys/`` or any platform folder is always recoverable — even
+        if a downstream step replaces a whole folder. Volatile/huge subtrees
+        (``.git``/``.venv``/``__pycache__``/``node_modules``/``_backups``) are skipped.
+        Returns the list of archive paths written (empty when no tree is present).
+        """
+        ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        written: List[Path] = []
+        for name in self.FULL_BACKUP_DIRS:
+            folder = self.root / name
+            if not folder.is_dir():
+                continue
+            archive = self.root / f"{name}_{ts}.zip"
+            with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as zf:
+                for path in sorted(folder.rglob("*")):
+                    if path.is_dir():
+                        continue
+                    rel = path.relative_to(folder)
+                    if self._FULL_BACKUP_SKIP_PARTS.intersection(rel.parts):
+                        continue
+                    zf.write(path, (Path(name) / rel).as_posix())
+            written.append(archive)
+        if written:
+            self._ensure_zip_gitignored()
+        return written
+
+    def _ensure_zip_gitignored(self) -> None:
+        """Idempotently ensure the repo-root ``.gitignore`` excludes the full-backup zips.
+
+        No-op when ``*.zip`` is already ignored. Otherwise appends an explicit, targeted
+        block (one ``<name>_*.zip`` glob per framework tree) under a stable marker so the
+        timestamped archives never dirty the working tree.
+        """
+        gi = self.root / ".gitignore"
+        marker = "# gald3r upgrade/install safety backups (auto-added, BUG-176)"
+        existing = gi.read_text(encoding="utf-8") if gi.is_file() else ""
+        lines = {ln.strip() for ln in existing.splitlines()}
+        if "*.zip" in lines or marker in existing:
+            return
+        block = [marker] + [f"{name}_*.zip" for name in self.FULL_BACKUP_DIRS]
+        sep = "" if (not existing or existing.endswith("\n")) else "\n"
+        with gi.open("a", encoding="utf-8") as fh:
+            fh.write(sep + "\n".join(block) + "\n")
+
     # ---- the safe self-update orchestration ----
     def self_update(
         self,
@@ -528,15 +610,19 @@ class UpgradeSystem:
         from_version: Optional[str] = None,
         dry_run: bool = True,
         version_info: Optional[Dict[str, Any]] = None,
+        deprecate_removed: bool = False,
     ) -> Dict[str, Any]:
         """Backup -> migrate -> rollback-on-failure. The shared T473/T475 safe-update.
 
         Sequence (apply mode):
           1. compute the migration plan (no writes),
-          2. create a timestamped gitignored backup of ``.gald3r/``,
-          3. apply the plan; on ANY exception, RESTORE from the backup and re-raise as a
-             reported failure (``rolled_back=True``).
+          2. zip every present framework tree to the repo root (:meth:`backup_full`) — the
+             comprehensive, gitignored safety snapshot (BUG-176),
+          3. create a timestamped gitignored ``.gald3r/`` backup used for rollback,
+          4. apply the plan; on ANY exception, RESTORE the ``.gald3r/`` backup and re-raise
+             as a reported failure (``rolled_back=True``).
 
+        DEPRECATE is opt-in (``deprecate_removed``, default False) — see :meth:`plan`.
         ``to_version`` / ``from_version`` resolve stored T463 snapshots (see :meth:`plan`).
         ``dry_run=True`` (default) returns the plan + ``version_delta`` and writes nothing
         (no backup taken). Returns a result dict the CLI/MCP render directly.
@@ -544,11 +630,13 @@ class UpgradeSystem:
         plan = self.plan(
             to_dir=to_dir, from_dir=from_dir,
             to_version=to_version, from_version=from_version,
+            deprecate_removed=deprecate_removed,
         )
         result: Dict[str, Any] = {
             "dry_run": dry_run,
             "version_delta": _version_delta(version_info, self.config.gald3r_rel_version),
             "plan": plan,
+            "full_backup": None,
             "backup": None,
             "applied": None,
             "rolled_back": False,
@@ -558,6 +646,7 @@ class UpgradeSystem:
         if plan["error"] is not None or dry_run:
             return result
 
+        result["full_backup"] = [str(p) for p in self.backup_full()]
         archive = self.backup()
         result["backup"] = str(archive)
         try:

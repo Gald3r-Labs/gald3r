@@ -1,6 +1,6 @@
 ﻿schema_id: PROJECT-md
 schema_version: v1
-gald3r_rel_version: "2.1.1"
+gald3r_rel_version: "2.1.2"
 description: >-
   Schema for .gald3r/PROJECT.md, the single source of truth for project
   identity, mission, goals, and project linking (markdown document).

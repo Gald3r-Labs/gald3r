@@ -1,6 +1,6 @@
 ﻿schema_id: TASKS-md
 schema_version: v1
-gald3r_rel_version: "2.1.1"
+gald3r_rel_version: "2.1.2"
 description: >-
   Schema for the .gald3r/TASKS.md active task index. TASKS.md is a markdown
   document (NOT YAML frontmatter) consisting of a status legend followed by

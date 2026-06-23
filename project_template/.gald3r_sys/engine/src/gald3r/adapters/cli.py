@@ -179,6 +179,11 @@ def _add_selfupdate_parsers(sub) -> None:
                               "(timestamped gitignored backup -> migrate -> rollback)")
     pup.add_argument("--apply", action="store_true",
                      help="write changes (default: --dry-run; backup + migrate + rollback)")
+    pup.add_argument("--deprecate-removed", dest="deprecate_removed", action="store_true",
+                     help="ALSO archive framework files dropped by the target as "
+                          "*_deprecated_<date> (opt-in; safe ONLY with an explicit "
+                          "--from-version/--from-dir template baseline). Default: OFF — "
+                          "upgrade only ADDs/MERGEs and never deprecates (BUG-176).")
     pup.add_argument("--from-dir", dest="from_dir", default=None,
                      help="source .gald3r/ snapshot (default: the live project .gald3r/)")
     pup.add_argument("--to-dir", dest="to_dir", default=None,
@@ -216,6 +221,7 @@ def _run_selfupdate(args, g) -> int:
         to_version=getattr(args, "to_version", None),
         from_version=getattr(args, "from_version", None),
         dry_run=dry_run, version_info=version_info,
+        deprecate_removed=getattr(args, "deprecate_removed", False),
     )
     if args.json:
         print(json.dumps(res, ensure_ascii=False))
@@ -240,6 +246,8 @@ def _run_selfupdate(args, g) -> int:
     for rel in plan["deprecate"]:
         print(f"  [DEPRECATE] {rel}")
     if not dry_run:
+        for fb in (res.get("full_backup") or []):
+            print(f"safety-backup: {fb}  (gitignored)")
         if res["backup"]:
             print(f"backup: {res['backup']}  (gitignored *.zip)")
         if res["rolled_back"]:

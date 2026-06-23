@@ -11,6 +11,51 @@ _Pending release notes accumulate here as tasks and bugs are completed. At publi
 section is renamed to [X.Y.Z] - YYYY-MM-DD and a fresh [Unreleased] block is opened._
 
 ### Added
+- **`gald3r upgrade --deprecate-removed` opt-in flag (BUG-176).** Re-enables the legacy
+  removed-framework cleanup (archiving framework files dropped by the target as
+  `*_deprecated_<date>`). Safe ONLY with an explicit `--from-version`/`--from-dir` template
+  baseline. Default is OFF.
+- **Comprehensive pre-flight safety backup on `gald3r upgrade --apply` (BUG-176).** Before
+  any change, `UpgradeSystem.backup_full()` zips every present framework tree (`.gald3r`,
+  `.gald3r_sys`, `.claude`, `.cursor`, `.agent`, `.codex`, `.opencode`) to
+  `<root>/<name>_<UTC timestamp>.zip` and ensures the archives are gitignored — so a user's
+  custom code anywhere in those trees survives even a downstream wholesale-replace.
+
+### Changed
+- **`gald3r upgrade` no longer auto-deprecates by default (BUG-176, breaking-safe).** The
+  migration plan now only ADDs new framework files and MERGEs format changes; it never
+  archives a live file unless `--deprecate-removed` is explicitly passed. Every other file
+  (user specs, tracking notes, coordination ledgers, loose top-level docs) is left untouched.
+
+### Fixed
+- **`gald3r --version` + `.gald3r_sys/VERSION` no longer report stale versions (BUG-175).**
+  `gald3r/__init__.py` hardcoded `__version__ = "0.1.0"` (the build stamped `pyproject.toml`
+  but never `__init__.py`), so `gald3r --version` printed `0.1.0` regardless of release; and
+  no `version_patterns()` regex matched the plain `.gald3r_sys/VERSION` marker, so it stayed
+  stale (observed `2.0.0` after the 2.1.1 deploy). Now `__version__` derives from installed
+  package metadata (`importlib.metadata`, with a `.gald3r_sys/VERSION` → sentinel fallback for
+  raw checkouts) — self-correcting, no stamping needed — and the build's
+  `_stamp_gald3r_sys_version` advances `.gald3r_sys/VERSION` in every generated repo. +2 build
+  tests; maintainer build suite 17/17; engine suite 476/476. Live proof: `gald3r --version`
+  now reports the real version.
+- **CRITICAL: `gald3r update` archived all user `.gald3r/` content as obsolete (BUG-176).**
+  `UpgradeSystem.plan()` computed DEPRECATE as `live_files − target_template_files` guarded
+  only by an incomplete user-data denylist. Since `gald3r update` runs with no
+  `--from-version` (the `from` source defaults to the *live* project, not an old template
+  baseline), every user-authored file looked obsolete — observed live during the 2.1.1
+  deploy, which renamed ~4,250 files `*_deprecated_<date>` (incl. all `SPEC-*`,
+  `IDEA_BOARD.md`, `workspace/`, `PLATFORM_*`, `linking/sent_orders/`). Without a backup this
+  is catastrophic for a live user. Deprecation is now opt-in (see Changed/Added). +5 engine
+  tests (no-deprecate default, opt-in path, `backup_full`); 24/24 upgrade + 476/476 full
+  engine suite green. Live proof: the same operation now reports `DEPRECATE=0`.
+
+---
+## [2.1.1] - 2026-06-23
+
+_Pending release notes accumulate here as tasks and bugs are completed. At publish time this
+section is renamed to [X.Y.Z] - YYYY-MM-DD and a fresh [Unreleased] block is opened._
+
+### Added
 - **Plugin lifecycle ops in the engine (T663, epic T541).** `gald3r plugin install|remove|list|new|check-compat|update` CLI + `gald3r_plugin_*` MCP tools, backed by `gald3r.systems.plugins.PluginSystem` (owns the gald3r-plugin.yaml manifest schema, installed.yaml ledger, registry config, compat floor, D6 conflict-abort, `plugin_source:` provenance). Reimplements the designed-but-never-ported ops in Python (retires the PowerShell scripts per BUG-128/129/130). 21 tests; full engine suite 466 green. The single integration point for the T541 children (T664 editor / T665 marketplace backend / T666 UI).
 - **Vault knowledge API tools (T609)** — `gald3r_vault_note_get` (note as structured JSON: frontmatter + body), `gald3r_vault_backlinks` (notes that `[[wikilink]]`-reference a note), and `gald3r_vault_context` (token-budgeted, newest-first vault context block — the `memory_context` pattern, vault-scoped). Engine `VaultSystem.note_get` / `backlinks` / `context` + the matching MCP tools. Offline/keyword (semantic search = T618). Completes the T609 vault API (search + ingest already shipped). 4 tests; canonical engine copy.
 - **`gald3r vault location` CLI selector + layered resolution (T532).** Resolve/select the vault location (default user vault / workspace / project / create-new) with precedence session/project -> workspace -> default user home (T530); persists the choice to `.gald3r/.identity` (`vault_location`) via secret-stripping write_identity_file. New engine resolvers `resolve_vault_location_layered` / `resolve_vault_choice` / `persist_vault_location` (back-compat 2-layer resolver preserved). CLI `gald3r vault location [--select {default|workspace|project|create_new} [--path]]`. 23 tests; canonical + B-mirror parity. Throne selector UI is follow-up T650.
@@ -198,7 +243,7 @@ section is renamed to [X.Y.Z] - YYYY-MM-DD and a fresh [Unreleased] block is ope
   `.ps1` tag. The larger CRASH shipping gaps (engine `crash.py` absent from the shipped
   `project_template` engine, `.cursor` hook parity, `.py` port) are tracked in T511.
 - **Stale `gald3r_rel_version` stamp in template `.gald3r/.gitignore`** (T480) â€” corrected the
-  `# gald3r_rel_version: 2.1.1` header to `2.0.1` in both the canonical `project_template/.gald3r/.gitignore`
+  `# gald3r_rel_version: 2.1.2` header to `2.0.1` in both the canonical `project_template/.gald3r/.gitignore`
   and the `.gald3r_sys/template_verification/.gald3r/.gitignore` reference copy. (The forge does not
   re-stamp extensionless `.gitignore` files on build, so the canonical source carried the only stamp.)
 - **Workspace manifest validator typo re-fixed in the canonical engine** (BUG-128) â€” the
