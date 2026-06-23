@@ -1,6 +1,6 @@
 ﻿schema_id: bug-file
 schema_version: v1
-gald3r_rel_version: "2.1.1"
+gald3r_rel_version: "2.1.2"
 description: "Schema for individual bug files under .gald3r/bugs/**/*.md (YAML frontmatter)."
 applies_to: ".gald3r/bugs/**/*.md"
 

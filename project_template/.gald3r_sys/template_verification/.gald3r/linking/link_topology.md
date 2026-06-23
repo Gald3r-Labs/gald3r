@@ -1,5 +1,5 @@
 ﻿---
-gald3r_rel_version: "2.1.1"
+gald3r_rel_version: "2.1.2"
 schema_version: "generic-v1"
 project_id: "{project_id}"
 project_name: "{project_name}"

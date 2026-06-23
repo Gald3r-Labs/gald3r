@@ -1,5 +1,5 @@
 ﻿---
-gald3r_rel_version: "2.1.1"
+gald3r_rel_version: "2.1.2"
 schema_version: "generic-v1"
 ---
 # Backport Report - {project_name}
