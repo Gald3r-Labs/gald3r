@@ -14,6 +14,20 @@ Schema (``user-config-v1``):
 
 This module is pure I/O over an explicitly passed path — no UI, no network, no
 auth. It **fails loud** on corrupt JSON (no silent reset that would lose identity).
+
+Shared contract (T531). There is ONE entry point every surface calls —
+:func:`ensure_user_config` (env, platform_name) — which composes the single home
+resolver with the idempotent :func:`ensure`. The templates engine wires it into
+``gald3r.install.execute_setup`` (the ``gald3r setup`` verb / Throne onboarding).
+Throne and Agent become thin consumers of this same record and accessor:
+:func:`principal_account_id` yields the ``user_id`` that the entitlement evaluator
+(T527) keys ``Principal.account_id`` on, so the logged-in identity is consistent
+across every surface — no second identity path.
+
+TODO[TASK-531→TASK-NNN]: Throne onboarding + Agent client consumer wiring — both
+should call ``ensure_user_config`` / read this record rather than re-deriving
+identity; tracked as a cross-surface follow-up (Rust/Tauri Throne + Agent client
+are out of this source_only task's scope).
 """
 # @subsystems: PROJECT_IDENTITY_SETUP, MEMORY_AND_KNOWLEDGE
 from __future__ import annotations
@@ -89,6 +103,19 @@ def default_config_path(env: dict, platform_name: str) -> Path:
     return home.resolve_home(env, platform_name) / USER_CONFIG_FILENAME
 
 
+def principal_account_id(config: UserConfig) -> str:
+    """Return the stable identity key the entitlement layer keys decisions on (T531).
+
+    The permissions epic (T527) makes allow/deny decisions about a
+    :class:`gald3r.entitlements.evaluator.Principal`, whose ``account_id`` is matched
+    against an entitlement's allowlist. That id is THIS record's ``user_id`` — there is
+    no second identity source. Throne, Agent, and the templates engine all derive the
+    principal's account id from the one unified record via this accessor, so the
+    "logged-in" identity fed to the gate is consistent across every surface.
+    """
+    return config.user_id
+
+
 def read(path: Union[str, Path]) -> UserConfig:
     """Read + validate user_config.json. Raises UserConfigError on missing/corrupt."""
     p = Path(path)
@@ -131,3 +158,28 @@ def ensure(path: Union[str, Path]) -> UserConfig:
     )
     write(p, config)
     return config
+
+
+def ensure_user_config(env: dict, platform_name: str) -> UserConfig:
+    """First-run-create-or-read the unified identity record (T531).
+
+    This is the SINGLE high-level entry point every surface calls — the templates
+    engine (wired into ``execute_setup``), and later Throne + Agent. It composes the
+    one home resolver (T530 :func:`gald3r.home.resolve_home`, via
+    :func:`default_config_path`) with the idempotent :func:`ensure`, so no caller has
+    to re-derive the path or duplicate the create-if-missing logic (DRY).
+
+    Idempotent and non-destructive: a valid existing ``user_config.json`` is returned
+    unchanged (its ``user_id`` / ``machine_id`` are never regenerated); a corrupt file
+    raises rather than being silently overwritten (identity is not lost).
+
+    Args:
+        env: An environment mapping (e.g. ``os.environ`` or a test dict), injected so
+            the call is pure/testable — same contract as :func:`gald3r.home.resolve_home`.
+        platform_name: A ``platform.system()`` string (``"Windows"`` / ``"Darwin"`` /
+            ``"Linux"`` / other).
+
+    Returns:
+        The validated :class:`UserConfig` for this user+machine.
+    """
+    return ensure(default_config_path(env, platform_name))

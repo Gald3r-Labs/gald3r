@@ -153,6 +153,30 @@ def tool_impls(g: Gald3r) -> Dict[str, Callable[..., Any]]:
         """Deterministic vault lint (missing frontmatter, empty tags, legacy topics:)."""
         return {"issues": g.vault.lint()}
 
+    def gald3r_vault_search(query: str, limit: int = 20) -> Dict[str, Any]:
+        """Keyword search across vault notes (title/body/tags), ranked by match
+        count (T609). Local/offline; semantic embedding search is the cloud RAG layer."""
+        return {"results": [n.to_dict() for n in g.vault.search(query, limit=limit)]}
+
+    def gald3r_vault_note_get(path: str) -> Dict[str, Any]:
+        """Fetch one vault note as structured JSON (parsed frontmatter `metadata` + `body`)
+        by vault-relative path or slug (T609). Returns {"found": false} when no match —
+        agents query the note without reading the raw .md file."""
+        note = g.vault.note_get(path)
+        return note if note is not None else {"found": False, "path": path}
+
+    def gald3r_vault_backlinks(path: str) -> Dict[str, Any]:
+        """List vault notes that `[[wikilink]]`-reference the given note (T609), by its
+        vault-relative path or slug. Local/offline scan over note bodies."""
+        return {"target": path,
+                "backlinks": [n.to_dict() for n in g.vault.backlinks(path)]}
+
+    def gald3r_vault_context(budget: int = 8000) -> Dict[str, Any]:
+        """Token-budgeted project context block assembled from the vault — newest notes
+        first until the budget (~4 chars/token) is hit (T609, the memory_context pattern,
+        vault-scoped). Offline; no embedding/model call."""
+        return g.vault.context(budget=budget)
+
     # ---- release ----
     def gald3r_release_new(title: str, version: str, target_date: Optional[str] = None,
                            status: str = "planned") -> Dict[str, Any]:
@@ -200,7 +224,166 @@ def tool_impls(g: Gald3r) -> Dict[str, Callable[..., Any]]:
         """Fetch a prompt asset's rendered text (binds any ${slot} inputs)."""
         return {"id": id, "text": g.prompts.render(id, **(inputs or {}))}
 
+    # ---- plugins (lifecycle ops over .gald3r_sys/plugins/; T663) ----
+    def gald3r_plugin_install(source: str, dry_run: bool = False) -> Dict[str, Any]:
+        """Install a plugin from a local source dir (validate manifest+compat, copy
+        components, stamp provenance, record installed.yaml). Idempotent; D6 conflict-abort."""
+        return g.plugins.install(source, dry_run=dry_run)
+
+    def gald3r_plugin_remove(id: str, dry_run: bool = False) -> Dict[str, Any]:
+        """Uninstall a plugin cleanly (ledger + provenance-owned files). Safe on missing."""
+        return g.plugins.remove(id, dry_run=dry_run)
+
+    def gald3r_plugin_list() -> Dict[str, Any]:
+        """List installed plugins (id, version, source, components, live compat verdict)."""
+        return g.plugins.list()
+
+    def gald3r_plugin_new(id: str, name: str = "", author: str = "",
+                          subsystem: str = "PLATFORM_INTEGRATION") -> Dict[str, Any]:
+        """Scaffold a new plugin skeleton (manifest + CHANGELOG + empty component dirs)."""
+        return g.plugins.new(id, name=name, author=author, subsystem=subsystem)
+
+    def gald3r_plugin_check_compat(source: str) -> Dict[str, Any]:
+        """Validate a plugin manifest vs schema + host gald3r_min_version floor (pass/fail+reasons)."""
+        from gald3r.systems.plugins import PluginError
+        try:
+            return g.plugins.check_compat(Path(source))
+        except PluginError as e:
+            return {"ok": False, "id": None, "version": None, "reasons": [str(e)]}
+
+    def gald3r_plugin_update(id: str, source: Optional[str] = None,
+                             force: bool = False, dry_run: bool = False) -> Dict[str, Any]:
+        """Re-apply/move an installed plugin to a source version (local source; re-materializes)."""
+        return g.plugins.update(id, source=source, force=force, dry_run=dry_run)
+
+    # ---- project representative: health + status (T598 Option-A / T608 local half) ----
+    def gald3r_project_health() -> Dict[str, Any]:
+        """Structured project-health snapshot: task/bug totals + histograms by
+        status / priority / severity, and the active-constraint count. Computed
+        from the file engine (real-time, no DB needed). The cross-project Throne
+        topology map is the cloud half (paused epic)."""
+        from collections import Counter
+        tasks = g.tasks.list()
+        bugs = g.bugs.list()
+        return {
+            "tasks_total": len(tasks),
+            "bugs_total": len(bugs),
+            "tasks_by_status": dict(Counter(t.status for t in tasks)),
+            "tasks_by_priority": dict(Counter(t.priority for t in tasks)),
+            "bugs_by_status": dict(Counter(b.status for b in bugs)),
+            "bugs_by_severity": dict(Counter(str(b.fm.get("severity", "")) for b in bugs)),
+            "constraints_active": len(g.constraints.list()),
+        }
+
+    def gald3r_project_status() -> Dict[str, Any]:
+        """Current focus: the in-progress (active) tasks plus pending/awaiting
+        counts and the open-bug count — the at-a-glance 'where is this project'."""
+        tasks = g.tasks.list()
+        active = [t.to_dict() for t in tasks if t.status == "in-progress"]
+        return {
+            "active_tasks": active,
+            "active_count": len(active),
+            "pending_count": sum(1 for t in tasks if t.status == "pending"),
+            "awaiting_verification_count": sum(
+                1 for t in tasks if t.status == "awaiting-verification"
+            ),
+            "open_bugs": sum(1 for b in g.bugs.list() if b.status in ("open", "in-progress")),
+        }
+
+    # ---- coordination visibility (T598 Option-A; surfaces T631/T632 state) ----
+    def gald3r_coordinators() -> Dict[str, Any]:
+        """Active coordinator sessions on this project — their subsystem scopes,
+        tasks-claimed counts, last heartbeat — plus any stale (past-TTL) claims.
+        Read-only from `.gald3r/gald3r.db` (T631/T632); empty when no coordinator
+        has run. The project-representative view of who is working this project."""
+        import sqlite3
+        from gald3r import db as _db
+        dbf = g.config.gald3r_dir / "gald3r.db"
+        if not dbf.exists():
+            return {"active": [], "stale_claims": [], "note": "no coordinator has run"}
+        conn = sqlite3.connect(f"file:{dbf}?mode=ro", uri=True)
+        try:
+            return {
+                "active": _db.active_coordinators(conn),
+                "stale_claims": _db.stale_claims(conn),
+            }
+        finally:
+            conn.close()
+
+    # ---- swarm distributed locks (T610; SQLite backend, replaces file-locks) ----
+    def _coord_conn():
+        """Open the persistent .gald3r/gald3r.db and ensure the coordination tables."""
+        import sqlite3
+        from gald3r import db as _db
+        conn = sqlite3.connect(str(g.config.gald3r_dir / "gald3r.db"))
+        _db.init_coordination_schema(conn)
+        return conn
+
+    def gald3r_swarm_lock(bucket_id: str, paths: list, owner: str,
+                          ttl_min: int = 30) -> Dict[str, Any]:
+        """Claim a set of file paths for a swarm bucket (POST /swarm/lock). Returns
+        GRANTED, or LOCK_CONFLICT with the conflicting path + owner. Atomic
+        check-and-set with crash-safe TTL expiry (T610; SQLite backend)."""
+        from gald3r import db as _db
+        conn = _coord_conn()
+        try:
+            return _db.acquire_swarm_lock(conn, bucket_id, list(paths), owner, ttl_min=ttl_min)
+        finally:
+            conn.close()
+
+    def gald3r_swarm_unlock(bucket_id: str, owner: Optional[str] = None) -> Dict[str, Any]:
+        """Release all paths held by a bucket (DELETE /swarm/lock/{bucket_id})."""
+        from gald3r import db as _db
+        conn = _coord_conn()
+        try:
+            return {"released": _db.release_swarm_lock(conn, bucket_id, owner=owner)}
+        finally:
+            conn.close()
+
+    def gald3r_swarm_locks() -> Dict[str, Any]:
+        """List active (non-expired) swarm locks grouped by bucket (GET /swarm/locks).
+        Coordinators use this for conflict detection before reconciliation."""
+        from gald3r import db as _db
+        conn = _coord_conn()
+        try:
+            return {"locks": _db.list_swarm_locks(conn)}
+        finally:
+            conn.close()
+
+    # ---- session state (T601 — agent memory across context resets) ----
+    def gald3r_session_set(session_id: str, summary: str = "",
+                           state: Optional[dict] = None) -> Dict[str, Any]:
+        """Persist a session's 'where I left off' state (survives context resets)."""
+        return g.session.set_state(session_id, summary=summary, state=state)
+
+    def gald3r_session_get(session_id: str) -> Dict[str, Any]:
+        """Retrieve a session's prior state (null if none)."""
+        return {"session": g.session.get_state(session_id)}
+
+    def gald3r_session_recent(limit: int = 5) -> Dict[str, Any]:
+        """Most-recent session summaries (newest first)."""
+        return {"recent": g.session.recent(limit=limit)}
+
+    def gald3r_session_insight(category: str, topic: str, content: str) -> Dict[str, Any]:
+        """Store a structured insight (dedup'd by category|topic|content)."""
+        return g.session.add_insight(category, topic, content)
+
+    def gald3r_session_delete(session_id: str) -> Dict[str, Any]:
+        """Delete a session's state (cleanup after task completion)."""
+        return {"deleted": g.session.delete_state(session_id)}
+
     return {
+        "gald3r_session_set": gald3r_session_set,
+        "gald3r_session_get": gald3r_session_get,
+        "gald3r_session_recent": gald3r_session_recent,
+        "gald3r_session_insight": gald3r_session_insight,
+        "gald3r_session_delete": gald3r_session_delete,
+        "gald3r_project_health": gald3r_project_health,
+        "gald3r_project_status": gald3r_project_status,
+        "gald3r_coordinators": gald3r_coordinators,
+        "gald3r_swarm_lock": gald3r_swarm_lock,
+        "gald3r_swarm_unlock": gald3r_swarm_unlock,
+        "gald3r_swarm_locks": gald3r_swarm_locks,
         "gald3r_task_new": gald3r_task_new,
         "gald3r_task_list": gald3r_task_list,
         "gald3r_task_update": gald3r_task_update,
@@ -230,6 +413,10 @@ def tool_impls(g: Gald3r) -> Dict[str, Callable[..., Any]]:
         "gald3r_vault_list": gald3r_vault_list,
         "gald3r_vault_reindex": gald3r_vault_reindex,
         "gald3r_vault_lint": gald3r_vault_lint,
+        "gald3r_vault_search": gald3r_vault_search,
+        "gald3r_vault_note_get": gald3r_vault_note_get,
+        "gald3r_vault_backlinks": gald3r_vault_backlinks,
+        "gald3r_vault_context": gald3r_vault_context,
         "gald3r_release_new": gald3r_release_new,
         "gald3r_release_list": gald3r_release_list,
         "gald3r_release_ship": gald3r_release_ship,
@@ -240,6 +427,12 @@ def tool_impls(g: Gald3r) -> Dict[str, Callable[..., Any]]:
         "gald3r_workspace_inbox_add": gald3r_workspace_inbox_add,
         "gald3r_prompt_list": gald3r_prompt_list,
         "gald3r_prompt_get": gald3r_prompt_get,
+        "gald3r_plugin_install": gald3r_plugin_install,
+        "gald3r_plugin_remove": gald3r_plugin_remove,
+        "gald3r_plugin_list": gald3r_plugin_list,
+        "gald3r_plugin_new": gald3r_plugin_new,
+        "gald3r_plugin_check_compat": gald3r_plugin_check_compat,
+        "gald3r_plugin_update": gald3r_plugin_update,
     }
 
 

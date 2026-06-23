@@ -73,9 +73,12 @@ class InboxSystem:
         for path in sorted(self.task_inbox.glob("*.md")) if self.task_inbox.is_dir() else []:
             d = _read_draft(path)
             if not dry_run:
+                # route_inbox=False: intake IS the ID authority — it must assign
+                # ids directly even while a run is active, never re-queue (T585).
                 t = self.tasks.create(title=d["title"], type=d["type"], priority=d["priority"],
                                       status="pending", body=d["body"],
-                                      subsystems=d["subsystems"], source="inbox_intake")
+                                      subsystems=d["subsystems"], source="inbox_intake",
+                                      route_inbox=False)
                 created.append({"kind": "task", "id": f"T{t.id}", "title": t.title,
                                 "from": f"tasks/inbox/{path.name}"})
                 path.unlink()
@@ -89,7 +92,7 @@ class InboxSystem:
             if not dry_run:
                 b = self.bugs.create(title=d["title"], severity=d["priority"], status="open",
                                      body=d["body"], subsystems=d["subsystems"],
-                                     source="inbox_intake")
+                                     source="inbox_intake", route_inbox=False)
                 created.append({"kind": "bug", "id": str(b.id), "title": b.fm.get("title", d["title"]),
                                 "from": f"bugs/inbox/{path.name}"})
                 path.unlink()

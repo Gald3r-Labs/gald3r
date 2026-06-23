@@ -433,14 +433,27 @@ def execute_setup(plan: SetupPlan, *, portable: Optional[bool] = None) -> List[s
     Creates the install home layout (via :func:`gald3r.home.ensure_install_home`),
     auto-provisions the shared ``gald3r_vault`` at the resolved location (honoring a
     configured ``vault_location`` in the install-home defaults; idempotent via the
-    SINGLE shared resolver :func:`gald3r.provision.provision_vault`, T476), writes a
-    per-product settings marker if absent, and touches the per-product log.
-    Idempotent -- existing files are left untouched.
+    SINGLE shared resolver :func:`gald3r.provision.provision_vault`, T476), ensures the
+    unified per-user identity record (``user_config.json``, T531) exists in the T530
+    per-user home, writes a per-product settings marker if absent, and touches the
+    per-product log. Idempotent -- existing files are left untouched.
     """
     from gald3r import provision as _provision
+    from gald3r import user_config as _user_config
 
     base = _home.ensure_install_home(plan.home, portable=portable)
     log: List[str] = [f"ensured install home: {base}"]
+    # First-run create-or-read the ONE unified identity record (T531). This is the
+    # same record Throne + Agent consume, and it feeds the permissions epic (T527).
+    # Idempotent + non-destructive: an existing user_config.json is never clobbered.
+    # It lives in the T530 per-user home (gald3r.home.resolve_home), the single home
+    # resolver, so every surface agrees on one location.
+    _env = dict(os.environ)
+    identity = _user_config.ensure_user_config(_env, platform.system())
+    log.append(
+        f"identity: {_user_config.default_config_path(_env, platform.system())} "
+        f"(user_id={identity.user_id[:8]}...)"
+    )
     settings_path = Path(plan.paths["product_settings"])
     if not settings_path.exists():
         settings_path.write_text(

@@ -71,6 +71,14 @@ class Gald3r:
         return VaultSystem(self.config)
 
     @property
+    def session(self) -> "SessionSystem":
+        """Persistent agent session-state + insights (T601) — operational memory
+        that survives context resets; file-backed under `.gald3r/sessions/`. Distinct
+        from the vault (permanent knowledge)."""
+        from gald3r.systems.session import SessionSystem
+        return SessionSystem(self.config)
+
+    @property
     def inbox(self) -> "InboxSystem":
         """Inbox intake — ingest staged task/bug drafts from the gitignored inbox
         folders into live tracked state. Absorbs custom_scripts/hot_inbox_intake.ps1."""
@@ -125,6 +133,15 @@ class Gald3r:
     @property
     def release(self) -> ReleaseSystem:
         return ReleaseSystem(self.config)
+
+    @property
+    def plugins(self) -> "PluginSystem":
+        """Plugin lifecycle ops (INSTALL/REMOVE/LIST/NEW/CHECK_COMPAT/UPDATE) over
+        `.gald3r_sys/plugins/` — the manifest schema, registry config, and `installed.yaml`
+        ledger live here (single source; T663). Additive install (D6 conflict-abort,
+        plugin_source: provenance); never auto-runs lifecycle scripts (D7)."""
+        from gald3r.systems.plugins import PluginSystem
+        return PluginSystem(self.config)
 
     @property
     def upgrade(self) -> "UpgradeSystem":

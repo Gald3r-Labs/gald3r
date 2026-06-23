@@ -63,9 +63,13 @@ INSTALLER_NAME = "setup_gald3r_project.py"
 TEMPLATE_DIR_NAME = "project_template"
 
 #: Sibling subdirs (relative to an ancestor of the engine package) that may hold
-#: the installer + its ``project_template/``. In the source/dev layout the
-#: installer lives under ``gald3r_core/``, a SIBLING of ``gald3r-engine/`` — not an
-#: ancestor — so the walk-up must also peek into these named subdirs.
+#: the installer + its ``project_template/``. These fixed names were calibrated to
+#: the engine's *original* home (``gald3r_templates/gald3r-engine/``), where
+#: ``gald3r_templates/`` is an ancestor and ``gald3r_core/`` a sibling. The engine
+#: later relocated to ``.gald3r_sys/engine/`` but this table did not move with it
+#: (BUG-167) — so :func:`resolve_installer` no longer relies on these names alone;
+#: it ALSO marker-discovers a nested ``gald3r_core/`` at each ancestor, making
+#: resolution independent of where the engine package itself sits.
 _INSTALLER_SUBDIRS = ("", "gald3r_core")
 
 #: Default project tier when none is passed (mirrors the installer's TIER_DEFAULT).
@@ -136,8 +140,17 @@ def resolve_installer(override: Optional[Union[str, Path]] = None) -> Optional[P
         return p if p.is_file() else None
     here = Path(__file__).resolve()
     for parent in here.parents:
-        for sub in _INSTALLER_SUBDIRS:
-            base = parent / sub if sub else parent
+        bases = [parent / sub if sub else parent for sub in _INSTALLER_SUBDIRS]
+        # Marker-anchored discovery (BUG-167): also look for a nested ``gald3r_core/``
+        # one level below this ancestor (e.g. the post-relocation
+        # ``gald3r_templates/gald3r_core/`` layout) so resolution does not depend on
+        # where the engine package itself lives. We anchor on the installer marker,
+        # not the engine's position.
+        try:
+            bases += [child / "gald3r_core" for child in parent.iterdir() if child.is_dir()]
+        except OSError:
+            pass
+        for base in bases:
             cand = base / INSTALLER_NAME
             if cand.is_file() and (base / TEMPLATE_DIR_NAME).is_dir():
                 return cand

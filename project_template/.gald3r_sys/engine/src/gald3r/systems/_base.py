@@ -86,8 +86,22 @@ class FolderSystem:
         return f"{self.spec.id_prefix}{n:0{self.spec.id_pad}d}"
 
     def _next_id(self) -> Any:
-        nums = [self._num(it.id) for it in self._all()]
-        return self._format_id((max(nums) + 1) if nums else 1)
+        # BUG-169/BUG-174-B: allocate over the UNION of on-disk file ids AND ids
+        # referenced in the index (.md). An item whose file was archived/moved leaves its
+        # id only in the index; allocating from files alone would re-issue it (observed:
+        # `bug new` re-issued BUG-173). _index_ref_ids() already tolerates both formats.
+        file_nums = {self._num(it.id) for it in self._all()}
+        index_nums = self._index_ref_ids(self.store.read_text(self.index_path))
+        known = file_nums | index_nums
+        n = (max(known) + 1) if known else 1
+        # Defense in depth: max()+1 over the full known set cannot collide, but fail loudly
+        # rather than silently duplicate if that invariant is ever broken.
+        if n in known:
+            raise RuntimeError(
+                f"{self.spec.name} id allocation collision: computed {n} already exists "
+                f"(file ids + index ids = {sorted(known)})"
+            )
+        return self._format_id(n)
 
     # ---- files ----
     def _files(self) -> List[Path]:
@@ -200,18 +214,22 @@ class FolderSystem:
         referenced = self._index_ref_ids(self.store.read_text(self.index_path))
         phantom = sorted(referenced - ids)        # in index, no file
         orphan = sorted(ids - referenced)         # file, not in (pre-regen) index
+        # The engine render below includes every item file, so orphans are ADOPTED
+        # into the regenerated index (BUG-169/BUG-174-A), not merely reported.
         self.store.write_text(self.index_path, self._render_index(self, items))
-        return {"count": len(ids), "phantom": phantom, "orphan": orphan}
+        return {"count": len(ids), "phantom": phantom, "orphan": orphan, "adopted": orphan}
 
     def _index_ref_ids(self, text: str) -> set:
         if not text:
             return set()
-        # ignore only the "## Next <X> ID:" counter HEADING — it names the not-yet-created
-        # id. Must be anchored to a heading: a table row / title may legitimately contain the
-        # text "Next Bug ID" (e.g. a bug titled "...mis-parses 'Next Bug ID'..."), and that
-        # row must still be counted.
+        # Ignore the "Next <X> ID:" counter line — it names the NOT-yet-created id, so it must
+        # never be counted as an existing id (critical now that _next_id reads this set: bugs
+        # render it as a `## Next Bug ID:` heading, features/prds as a `**Next feat ID**:` bold
+        # line — BUG-174-B regression). Anchored to line-start with an optional `#`/`*`/`-`
+        # marker prefix so a table row / title that merely contains "Next Bug ID" (e.g. a bug
+        # titled "...mis-parses 'Next Bug ID'...") is still counted.
         body = "\n".join(ln for ln in text.splitlines()
-                         if not re.match(r"\s*#+\s*Next\b.*\bID\b", ln))
+                         if not re.match(r"\s*(?:#+|\*+|-)\s*\**Next\b.*\bID\b", ln))
         if self.spec.id_kind == "int":
             return {int(m) for m in re.findall(r"\bT(\d+)\b", body)}
         pref = re.escape(self.spec.id_prefix.rstrip("-"))

@@ -154,6 +154,23 @@ def merge_identity(
     return {k: v for k, v in merged.items() if not _is_secret_key(k)}
 
 
+#: The identity key that carries an explicit vault override (T476/T532).
+VAULT_LOCATION_KEY = "vault_location"
+
+
+def _vault_location_value(source: Optional[Mapping[str, str]]) -> str:
+    """Return a ``source``'s "really set" ``vault_location``, or ``""``.
+
+    A blank value or a still-templated ``{PLACEHOLDER}`` means "not configured" (the
+    same rule :func:`_is_unset` applies to every identity value), so the next, lower
+    layer is consulted instead of pinning the vault to a placeholder.
+    """
+    if not source:
+        return ""
+    loc = str(source.get(VAULT_LOCATION_KEY, "")).strip()
+    return "" if _is_unset(loc) else loc
+
+
 def resolve_vault_location(
     identity: Optional[Mapping[str, str]] = None,
     *,
@@ -171,12 +188,120 @@ def resolve_vault_location(
 
     A ``vault_location`` that is still a template placeholder (e.g. ``{LOCAL}``) is
     ignored — that means "not configured", so we fall back to the install home.
+
+    This is the two-layer back-compat resolver (the one
+    :func:`install.execute_setup` calls). :func:`resolve_vault_location_layered`
+    implements the full T532 precedence (session/project -> workspace -> default
+    user home) over an ordered list of layers.
     """
     if identity:
-        loc = str(identity.get("vault_location", "")).strip()
-        if loc and not (loc.startswith("{") and loc.endswith("}")):
+        loc = _vault_location_value(identity)
+        if loc:
             return Path(loc).expanduser().resolve()
     return _home.subdir(_home.VAULT_DIR, home=home, **home_kwargs)
+
+
+def resolve_vault_location_layered(
+    *layers: Optional[Mapping[str, str]],
+    home: Optional[Path] = None,
+    **home_kwargs,
+) -> Path:
+    """Resolve the vault location across the T532 precedence chain (highest first).
+
+    The documented precedence is **session/project override -> workspace -> default
+    user home** (the install home's ``gald3r_vault/``). Pass the layers in that
+    order — highest precedence first — and the first layer carrying a "really set"
+    (non-empty, non-placeholder) ``vault_location`` wins. ``None`` layers and unset
+    values are skipped, so a caller can pass e.g.::
+
+        resolve_vault_location_layered(
+            session_override,   # 1. session/project (highest)
+            workspace_identity, # 2. workspace
+            home=...,           # 3. default user home (fallback)
+        )
+
+    When no layer sets a non-placeholder ``vault_location`` it falls back to the
+    install home's ``gald3r_vault/`` (honoring ``GALD3R_HOME`` / portable mode via
+    ``home`` / ``home_kwargs``). This is the SINGLE resolver the engine, the CLI
+    selector, and the Agent path all call so the three surfaces agree on one path.
+    """
+    for layer in layers:
+        loc = _vault_location_value(layer)
+        if loc:
+            return Path(loc).expanduser().resolve()
+    return _home.subdir(_home.VAULT_DIR, home=home, **home_kwargs)
+
+
+# ---- CLI selector: choices -> resolved vault location (T532) ---------------
+
+#: Selector choices the CLI prompt offers. ``create_new`` carries a caller-supplied
+#: target path; the others resolve from the layers already in scope.
+VAULT_CHOICE_DEFAULT = "default"      # use the default user vault (install home)
+VAULT_CHOICE_WORKSPACE = "workspace"  # use the workspace-level vault override
+VAULT_CHOICE_PROJECT = "project"      # use the per-project vault override
+VAULT_CHOICE_NEW = "create_new"       # create a new vault at an explicit location
+VAULT_CHOICES = (
+    VAULT_CHOICE_DEFAULT, VAULT_CHOICE_WORKSPACE,
+    VAULT_CHOICE_PROJECT, VAULT_CHOICE_NEW,
+)
+
+
+def resolve_vault_choice(
+    choice: str,
+    *,
+    project_identity: Optional[Mapping[str, str]] = None,
+    workspace_identity: Optional[Mapping[str, str]] = None,
+    new_location: Optional[Union[str, Path]] = None,
+    home: Optional[Path] = None,
+    **home_kwargs,
+) -> Path:
+    """Map a selector ``choice`` to the resolved vault location (T532).
+
+    * ``default``    -> the install home's ``gald3r_vault/`` (default user vault).
+    * ``workspace``  -> the workspace identity's ``vault_location`` (falls back to
+      the default user vault when the workspace has none configured).
+    * ``project``    -> the project identity's ``vault_location`` (same fallback).
+    * ``create_new`` -> the explicit ``new_location`` (required for this choice).
+
+    Returns the resolved path (absolute, not necessarily existing). Raises
+    ``ValueError`` for an unknown choice or a ``create_new`` without ``new_location``.
+    """
+    if choice == VAULT_CHOICE_DEFAULT:
+        return _home.subdir(_home.VAULT_DIR, home=home, **home_kwargs)
+    if choice == VAULT_CHOICE_WORKSPACE:
+        return resolve_vault_location_layered(
+            workspace_identity, home=home, **home_kwargs
+        )
+    if choice == VAULT_CHOICE_PROJECT:
+        return resolve_vault_location_layered(
+            project_identity, home=home, **home_kwargs
+        )
+    if choice == VAULT_CHOICE_NEW:
+        if not new_location or not str(new_location).strip():
+            raise ValueError("create_new requires a target location (new_location)")
+        return Path(new_location).expanduser().resolve()
+    raise ValueError(
+        f"unknown vault choice '{choice}' (expected one of {VAULT_CHOICES})"
+    )
+
+
+def persist_vault_location(
+    gald3r_dir: Union[str, Path],
+    location: Union[str, Path],
+) -> Dict[str, str]:
+    """Persist the chosen ``vault_location`` into ``.gald3r/.identity`` (T532).
+
+    Reads the existing identity, sets/overwrites ``vault_location`` with the resolved
+    (absolute) path, and writes it back via :func:`write_identity_file` (which keeps
+    the header comments and strips any secret keys). Returns the written identity
+    dict. The directory is created if missing. This is the one place the selector's
+    choice is recorded so every surface that re-reads ``.identity`` honors it.
+    """
+    gd = Path(gald3r_dir)
+    identity = parse_kv_lines(gd / ".identity")
+    identity[VAULT_LOCATION_KEY] = str(Path(location).expanduser().resolve())
+    write_identity_file(gd / ".identity", identity)
+    return identity
 
 
 def provision_vault(
