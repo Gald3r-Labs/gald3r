@@ -100,6 +100,37 @@ class DoctorSystem:
                  "" if not hazards else
                  f"{len(hazards)} non-ASCII .ps1 lack a UTF-8 BOM: {hazards[:5]}")]
 
+    def _coordinators(self) -> List[Probe]:
+        """T631/T632: surface active coordinator sessions + stale claims (read-only).
+
+        Opens `.gald3r/gald3r.db` in read-only mode so doctor never mutates state.
+        Skips cleanly when no coordinator has ever run (no db / no claim tables).
+        """
+        import sqlite3
+        from gald3r import db as _db
+        dbf = self.cfg.gald3r_dir / "gald3r.db"
+        if not dbf.exists():
+            return [("coordinator sessions", "skip",
+                     "no .gald3r/gald3r.db (no coordinator has run)")]
+        try:
+            conn = sqlite3.connect(f"file:{dbf}?mode=ro", uri=True)
+            active = _db.active_coordinators(conn)
+            stale = _db.stale_claims(conn)
+            conn.close()
+        except sqlite3.OperationalError:
+            return [("coordinator sessions", "skip",
+                     "gald3r.db predates the T631 claim tables")]
+        except Exception as e:  # noqa: BLE001 - doctor must never crash on a probe
+            return [("coordinator sessions", "fail", f"db read failed: {e}")]
+        summary = (", ".join(
+            f"{a['coordinator_id']}[{a['subsystem_scope']}]x{a['tasks_claimed']}"
+            for a in active) if active else "0 active")
+        probes: List[Probe] = [("coordinator sessions readable", "pass", summary)]
+        probes.append(("no stale claims", "pass" if not stale else "fail",
+                       "none" if not stale else
+                       f"{len(stale)} past-expiry claim(s): {stale[:5]}"))
+        return probes
+
     # ---- public API ---------------------------------------------------------
     def check(self, only: Optional[List[str]] = None) -> Dict[str, Any]:
         groups: Dict[str, List[Probe]] = {
@@ -109,6 +140,7 @@ class DoctorSystem:
                                     r"\bBUG-(\d+)\b", "bug"),
             "skills": self._skills(),
             "encoding": self._encoding(),
+            "coordinators": self._coordinators(),
         }
         if only:
             groups = {k: v for k, v in groups.items() if k in only}

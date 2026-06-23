@@ -10,6 +10,11 @@ Alias for `@g-go-code --swarm`: $ARGUMENTS
 Runs **implementation only** in swarm mode — partitions the work queue into conflict-safe
 buckets and spawns N parallel agents. Every completed item is marked `[🔍]`.
 
+> **N inheritance (T635):** N (bucket count) is supplied by the `g-go-go` coordinator — this
+> command has **no independent context-aware throttle**. Under Rolling Amnesia (default) the
+> coordinator never reduces N for context reasons; do not add iteration-count or context-fill
+> throttling here. N flows in only via the partitioned queue handed to this driver.
+
 This is exactly `@g-go-code --swarm`. Use this command for discoverability.
 Implementation-only boundary: this command must not spawn reviewer agents, run `g-go-review` / `g-go-review-swarm`, or invoke `gald3r-code-reviewer` / full adversarial review subagents. It may run only implementation readiness checks: import/build/typecheck/lint, focused tests, acceptance-criteria self-check, workspace/constraint/stub/bug-discovery gates, and checkpoint/handoff creation.
 If swarm eligibility leaves exactly one runnable item after workspace preflight, auto-downgrade to standard `@g-go-code` mode and continue without asking. If workspace preflight fails because the target repo is not registered, is not a git root, or is not authorized for the task/bug routing metadata, stop with that blocker instead of offering fallback.

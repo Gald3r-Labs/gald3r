@@ -139,6 +139,104 @@ class VaultSystem:
                 return n
         return None
 
+    def search(self, query: str, limit: int = 20) -> List[Note]:
+        """Keyword search over note title/body/tags — case-insensitive substring,
+        ranked by total match count (T609 local half). Pure/offline; the semantic
+        (embedding) search is the cloud RAG layer (paused cloud epic)."""
+        q = (query or "").strip().lower()
+        if not q:
+            return []
+        scored: List[tuple] = []
+        for n in self.list():
+            hay = f"{n.title}\n{n.body}\n{' '.join(n.tags)}".lower()
+            score = hay.count(q)
+            if score:
+                scored.append((score, n))
+        scored.sort(key=lambda sn: (-sn[0], sn[1].rel))
+        return [n for _, n in scored[:limit]]
+
+    # ---- structured note fetch / backlinks / context (T609 remaining ACs) ----
+    def note_get(self, rel_or_slug: str) -> Optional[Dict[str, Any]]:
+        """Fetch a single note as structured JSON: parsed `metadata` (full frontmatter),
+        `body`, and convenience top-level fields. Returns None when no note matches.
+        Agents call this instead of reading the raw .md file — no parsing in context."""
+        note = self.get(rel_or_slug)
+        if note is None:
+            return None
+        return {
+            "rel": note.rel,
+            "title": note.title,
+            "type": note.type,
+            "tags": note.tags,
+            "metadata": dict(note.fm),
+            "body": note.body,
+        }
+
+    @staticmethod
+    def _link_targets(body: str) -> List[str]:
+        """Extract `[[wikilink]]` targets from a note body, dropping the `|alias` and
+        `#heading` parts and the optional `.md` suffix — the same link shape the
+        index writer emits (`[[<rel-without-.md>|<title>]]`)."""
+        out: List[str] = []
+        for raw in re.findall(r"\[\[([^\]]+)\]\]", body or ""):
+            target = raw.split("|", 1)[0].split("#", 1)[0].strip().removesuffix(".md")
+            if target:
+                out.append(target)
+        return out
+
+    def backlinks(self, rel_or_slug: str) -> List[Note]:
+        """List notes whose body `[[wikilink]]`-references the given note. A link
+        matches on the target's full vault-relative path (sans `.md`) or its bare
+        slug/basename, so both `[[research/articles/foo|Foo]]` and `[[foo]]` resolve."""
+        note = self.get(rel_or_slug)
+        if note is None:
+            return []
+        target_rel = note.rel.removesuffix(".md")
+        target_slug = Path(target_rel).name
+        out: List[Note] = []
+        for n in self.list():
+            if n.rel == note.rel:
+                continue  # a note does not back-link to itself
+            for link in self._link_targets(n.body):
+                if link == target_rel or Path(link).name == target_slug:
+                    out.append(n)
+                    break
+        return out
+
+    def context(self, budget: int = 8000) -> Dict[str, Any]:
+        """Assemble a token-budgeted, project-specific context block from the vault —
+        the `memory_context` pattern, vault-scoped. Newest notes first (by frontmatter
+        `date`, then rel), each rendered as a titled excerpt, accumulated until the
+        token budget is hit. Token cost is approximated at ~4 chars/token (the
+        memory_context convention); offline, no model call."""
+        budget = max(0, int(budget))
+        notes = sorted(self.list(), key=lambda n: (str(n.fm.get("date", "")), n.rel),
+                       reverse=True)
+        blocks: List[str] = []
+        included: List[Dict[str, Any]] = []
+        used_tokens = 0
+        for n in notes:
+            tags = f" [{', '.join(n.tags)}]" if n.tags else ""
+            block = f"## {n.title} ({n.rel}){tags}\n{n.body}".strip()
+            cost = self._approx_tokens(block)
+            if used_tokens + cost > budget:
+                continue  # skip; a later, smaller note may still fit
+            blocks.append(block)
+            included.append(n.to_dict())
+            used_tokens += cost
+        return {
+            "budget": budget,
+            "used_tokens": used_tokens,
+            "note_count": len(included),
+            "notes": included,
+            "context": "\n\n".join(blocks),
+        }
+
+    @staticmethod
+    def _approx_tokens(text: str) -> int:
+        """Approximate token count at ~4 chars/token (memory_context convention)."""
+        return (len(text) + 3) // 4
+
     # ---- ingest ----
     def ingest(self, title: str, type: str, source: str, tags: Optional[List[str]] = None,
                ingestion_type: str = "manual", body: str = "", date_: Optional[str] = None,

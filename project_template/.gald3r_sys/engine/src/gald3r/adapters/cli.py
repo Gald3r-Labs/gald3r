@@ -9,6 +9,7 @@ import argparse
 import json
 import os
 import sys
+from pathlib import Path
 from typing import List, Optional
 
 from gald3r import __version__
@@ -439,6 +440,109 @@ def _emit_crash_signature(mode: str, root) -> None:
             fh.write(sig + "\n")
 
 
+def _workspace_identity_for(g) -> Optional[dict]:
+    """Return the workspace-level identity layer for vault resolution (T532).
+
+    The workspace vault override is carried as a ``vault_location`` in the workspace
+    owner's ``.gald3r/.identity``. When this project is a child (WPAC topology names
+    a ``parent``) and that parent is locally resolvable, its identity is the workspace
+    layer; otherwise there is no distinct workspace layer and ``None`` is returned (so
+    the layered resolver falls through to the default user vault). Read-only — never
+    writes the parent's files.
+    """
+    from pathlib import Path
+
+    from gald3r import provision as _provision
+
+    try:
+        topo = g.workspace.read_topology()
+    except PermissionError:
+        # workspace.* is controller-gated; below that tier there is no workspace layer.
+        return None
+    parent = topo.get("parent")
+    if not parent:
+        return None
+    # parent may be a path or a name; only a locally-resolvable .gald3r/ counts.
+    parent_path = Path(str(parent)).expanduser()
+    parent_identity = parent_path / ".gald3r" / ".identity"
+    if not parent_identity.exists():
+        return None
+    return _provision.parse_kv_lines(parent_identity)
+
+
+def _run_vault_location(args, g) -> int:
+    """Handle `gald3r vault location [--select ...]` — the T532 selector.
+
+    Resolution precedence (highest first): session/project override -> workspace ->
+    default user home. With ``--select`` the chosen location is persisted into
+    ``.gald3r/.identity`` (``vault_location``) so every surface honors it; without it,
+    the command reports the currently-resolved location and the layers in play.
+    """
+    from gald3r import home as _home
+    from gald3r import provision as _provision
+
+    gd = g.config.gald3r_dir
+    project_identity = dict(g.config.identity)
+    workspace_identity = _workspace_identity_for(g)
+    portable = True if getattr(args, "portable", False) else None
+
+    default_vault = _home.subdir(
+        _home.VAULT_DIR, home=_home.resolve_install_home(portable=portable)
+    )
+
+    if args.select:
+        if args.select == _provision.VAULT_CHOICE_NEW and not args.path:
+            msg = "vault location --select create_new requires --path <new location>"
+            print(json.dumps({"error": msg}, ensure_ascii=False) if args.json
+                  else f"! {msg}")
+            return 2
+        try:
+            chosen = _provision.resolve_vault_choice(
+                args.select,
+                project_identity=project_identity,
+                workspace_identity=workspace_identity,
+                new_location=args.path,
+                home=_home.resolve_install_home(portable=portable),
+            )
+        except ValueError as e:
+            print(json.dumps({"error": str(e)}, ensure_ascii=False) if args.json
+                  else f"! {e}")
+            return 2
+        _provision.persist_vault_location(gd, chosen)
+        out = {"selected": args.select, "vault_location": str(chosen),
+               "persisted_to": str(gd / ".identity")}
+        if args.json:
+            print(json.dumps(out, ensure_ascii=False))
+        else:
+            print(f"vault location set: {chosen}")
+            print(f"  choice    : {args.select}")
+            print(f"  persisted : {out['persisted_to']}  (vault_location)")
+        return 0
+
+    # No --select: report the currently-resolved location and the layers in play.
+    resolved = _provision.resolve_vault_location_layered(
+        project_identity, workspace_identity,
+        home=_home.resolve_install_home(portable=portable),
+    )
+    info = {
+        "resolved": str(resolved),
+        "default_user_vault": str(default_vault),
+        "project_override": _provision._vault_location_value(project_identity) or None,
+        "workspace_override": _provision._vault_location_value(workspace_identity) or None,
+        "choices": list(_provision.VAULT_CHOICES),
+    }
+    if args.json:
+        print(json.dumps(info, ensure_ascii=False))
+    else:
+        print(f"vault location (resolved): {info['resolved']}")
+        print(f"  default user vault : {info['default_user_vault']}")
+        print(f"  workspace override : {info['workspace_override'] or '(none)'}")
+        print(f"  project override   : {info['project_override'] or '(none)'}")
+        print("  select with: gald3r vault location --select "
+              "{default|workspace|project|create_new} [--path <dir>]")
+    return 0
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     _ensure_utf8()
     p = argparse.ArgumentParser(prog="gald3r", description="gald3r engine CLI")
@@ -517,11 +621,30 @@ def main(argv: Optional[List[str]] = None) -> int:
     vl = pv.add_parser("list"); vl.add_argument("--type", default=None)
     pv.add_parser("reindex")
     pv.add_parser("lint")
+    # vault location selector (T532): resolve/select where the shared gald3r_vault
+    # lives (default user vault / workspace / project / create new) and persist the
+    # choice into .gald3r/.identity (vault_location).
+    vloc = pv.add_parser("location",
+                         help="show or select the shared vault location (T532)")
+    vloc.add_argument("--select", choices=["default", "workspace", "project", "create_new"],
+                      default=None,
+                      help="select a vault location and persist it to .identity "
+                           "(default user vault / workspace / project / create new)")
+    vloc.add_argument("--path", default=None,
+                      help="target path for --select create_new (the new vault location)")
+    vloc.add_argument("--portable", action="store_true",
+                      help="resolve the default user vault from the USB-portable home")
 
     # inbox (absorb staged task/bug drafts -> live state; replaces hot_inbox_intake.ps1)
     pi = sub.add_parser("inbox", help="intake staged task/bug drafts from inbox folders")
     pi.add_argument("--dry-run", dest="dry_run", action="store_true",
                     help="show what would be ingested without writing")
+
+    # coordinators (T636 — list/stop active coordinator sessions for this project)
+    pcoord = sub.add_parser("coordinators",
+                            help="list active coordinator sessions; --stop requests shutdown")
+    pcoord.add_argument("--stop", default=None, metavar="SESSION_ID",
+                        help="request graceful shutdown of a coordinator (admin, server-enforced)")
 
     # doctor (read-only health check; absorbs gald3r_system_test.ps1)
     pdoc = sub.add_parser("doctor", help="read-only health check across systems")
@@ -574,6 +697,39 @@ def main(argv: Optional[List[str]] = None) -> int:
     wa.add_argument("--section", default="REQUEST")
     wa.add_argument("--from", dest="from_project", required=True)
     wa.add_argument("--summary", required=True)
+
+    # plugin (lifecycle ops over .gald3r_sys/plugins/ — install/remove/list/new/
+    # check-compat/update; the manifest schema + installed.yaml ledger; T663)
+    pplug = sub.add_parser("plugin", help="plugin lifecycle (install/remove/list/new/check-compat/update)")
+    pplug_sub = pplug.add_subparsers(dest="plugin_cmd")
+    pins_plg = pplug_sub.add_parser("install", help="install a plugin from a local source dir")
+    pins_plg.add_argument("source", help="local path to a plugin dir (holds gald3r-plugin.yaml)")
+    pins_plg.add_argument("--dry-run", dest="dry_run", action="store_true",
+                          help="plan + validate only; write nothing")
+    prm_plg = pplug_sub.add_parser("remove", help="uninstall a plugin (alias: uninstall)")
+    prm_plg.add_argument("id")
+    prm_plg.add_argument("--dry-run", dest="dry_run", action="store_true",
+                         help="plan only; write nothing")
+    prmu_plg = pplug_sub.add_parser("uninstall", help="alias of remove")
+    prmu_plg.add_argument("id")
+    prmu_plg.add_argument("--dry-run", dest="dry_run", action="store_true")
+    pplug_sub.add_parser("list", help="list installed plugins (version + status)")
+    pnew_plg = pplug_sub.add_parser("new", help="scaffold a new plugin skeleton")
+    pnew_plg.add_argument("id")
+    pnew_plg.add_argument("--name", default="")
+    pnew_plg.add_argument("--author", default="")
+    pnew_plg.add_argument("--subsystem", default="PLATFORM_INTEGRATION")
+    pnew_plg.add_argument("--force", action="store_true",
+                          help="overwrite an existing non-empty plugin dir")
+    pcc_plg = pplug_sub.add_parser("check-compat", help="validate a plugin manifest + host compat")
+    pcc_plg.add_argument("source", help="local path to a plugin dir")
+    pupd_plg = pplug_sub.add_parser("update", help="re-apply/move an installed plugin to a source version")
+    pupd_plg.add_argument("id")
+    pupd_plg.add_argument("--source", default=None,
+                          help="source plugin dir (default: .gald3r_sys/plugins/<id>/)")
+    pupd_plg.add_argument("--force", action="store_true",
+                          help="re-install even when already at the source version")
+    pupd_plg.add_argument("--dry-run", dest="dry_run", action="store_true")
 
     # prompts (the judgment layer — package assets, served not executed)
     pp = sub.add_parser("prompt", help="judgment/prompt-asset library").add_subparsers(dest="prompt_cmd")
@@ -805,6 +961,42 @@ def _dispatch_command(args, p, g) -> int:
             p.parse_args(["task", "--help"])
         return 0
 
+    if args.cmd == "coordinators":
+        import sqlite3
+        from gald3r import db as _db
+        dbf = g.config.gald3r_dir / "gald3r.db"
+        if not dbf.exists():
+            print(json.dumps({"active": []}) if args.json
+                  else "No coordinator sessions (no .gald3r/gald3r.db yet).")
+            return 0
+        if args.stop:
+            conn = sqlite3.connect(str(dbf))
+            try:
+                ok = _db.request_coordinator_stop(conn, args.stop)
+            finally:
+                conn.close()
+            print(json.dumps({"stop_requested": ok, "session_id": args.stop}) if args.json
+                  else (f"Graceful-shutdown requested for {args.stop}." if ok
+                        else f"No active coordinator with session_id={args.stop}."))
+            return 0 if ok else 1
+        conn = sqlite3.connect(f"file:{dbf}?mode=ro", uri=True)
+        try:
+            active = _db.active_coordinators(conn)
+        finally:
+            conn.close()
+        if args.json:
+            print(json.dumps({"active": active}, ensure_ascii=False))
+        elif not active:
+            print("No active coordinator sessions.")
+        else:
+            print(f"{'DEVELOPER':<20} {'SCOPE':<24} {'CLAIMED':>7}  {'HEARTBEAT':<22} SESSION")
+            for a in active:
+                dev = a.get("display_name") or a.get("coordinator_id") or "-"
+                print(f"{dev:<20} {str(a['subsystem_scope']):<24} "
+                      f"{a['tasks_claimed']:>7}  {str(a['last_heartbeat']):<22} {a['session_id']}")
+            print(f"\n{len(active)} active coordinator(s).")
+        return 0
+
     if args.cmd == "goal":
         if args.goal_cmd == "add":
             gl = g.goals.add(args.text)
@@ -852,6 +1044,8 @@ def _dispatch_command(args, p, g) -> int:
         return 0
 
     if args.cmd == "vault":
+        if args.vault_cmd == "location":
+            return _run_vault_location(args, g)
         if args.vault_cmd == "ingest":
             tags = [t.strip() for t in args.tags.split(",") if t.strip()]
             n = g.vault.ingest(title=args.title, type=args.type, source=args.source,
@@ -1026,6 +1220,57 @@ def _dispatch_command(args, p, g) -> int:
             print(json.dumps(ws.status(), ensure_ascii=False) if args.json
                   else "  ".join(f"{k}={v}" for k, v in ws.status().items()))
         return 0
+
+    if args.cmd == "plugin":
+        from gald3r.systems.plugins import PluginError
+        plg = g.plugins
+        try:
+            if args.plugin_cmd == "install":
+                res = plg.install(args.source, dry_run=args.dry_run)
+            elif args.plugin_cmd in ("remove", "uninstall"):
+                res = plg.remove(args.id, dry_run=args.dry_run)
+            elif args.plugin_cmd == "list":
+                res = plg.list()
+            elif args.plugin_cmd == "new":
+                res = plg.new(args.id, name=args.name, author=args.author,
+                              subsystem=args.subsystem, force=args.force)
+            elif args.plugin_cmd == "check-compat":
+                res = plg.check_compat(Path(args.source))
+            elif args.plugin_cmd == "update":
+                res = plg.update(args.id, source=args.source, force=args.force,
+                                 dry_run=args.dry_run)
+            else:
+                p.parse_args(["plugin", "--help"])
+                return 0
+        except PluginError as e:
+            print(json.dumps({"error": str(e)}, ensure_ascii=False) if args.json
+                  else f"plugin error: {e}")
+            return 1
+        if args.json:
+            print(json.dumps(res, ensure_ascii=False))
+        elif args.plugin_cmd == "list":
+            for it in res["installed"]:
+                ok = (it.get("compat") or {}).get("ok")
+                flag = "" if ok in (True, None) else "  [INCOMPATIBLE]"
+                print(f"{it['id']}  {it.get('version','')}  ({it.get('source','')}){flag}")
+            print(f"\n{len(res['installed'])} plugin(s) installed; registry={res['registry_url']}")
+        elif args.plugin_cmd == "check-compat":
+            verdict = "PASS" if res["ok"] else "FAIL"
+            print(f"{verdict}: {res.get('id')} {res.get('version')} "
+                  f"(host {res.get('host_version')})")
+            for r in res["reasons"]:
+                print(f"  - {r}")
+        elif args.plugin_cmd == "new":
+            verb = "scaffolded" if res["ok"] else "refused"
+            print(f"{verb}: {res.get('id')}" + (f" -> {res.get('path')}" if res["ok"] else ""))
+            for r in res.get("reasons", []):
+                print(f"  - {r}")
+        else:
+            print(f"{res.get('status')}: {res.get('id')}"
+                  + (f" {res.get('version') or res.get('to_version') or ''}".rstrip()))
+            for r in res.get("reasons", []):
+                print(f"  - {r}")
+        return 0 if res.get("ok", True) else 1
 
     if args.cmd == "prompt":
         lib = g.prompts

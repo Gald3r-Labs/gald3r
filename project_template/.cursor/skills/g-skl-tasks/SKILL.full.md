@@ -88,6 +88,14 @@ workspace_touch_policy: source_only
 
 ## Operation: CREATE TASK
 
+> **During an active agent run (T585 inbox-during-run):** do **not** hand-pick the next id and
+> write `tasks/open/` directly. When `.gald3r/logs/ggo_run_state.json` is `active: true` (or
+> `GALD3R_AGENT_RUN=1`), drop the new-task draft (id-less, uuid-suffixed) into `tasks/inbox/`
+> instead — the hot-inbox **intake** is the single ID-assigning authority and assigns the id
+> atomically at the next iteration boundary, so concurrent agents never collide on the next id.
+> The numbered steps below apply unchanged when idle (no run).
+
+
 1. **Determine next ID**: read `TASKS.md`, find highest task ID across ALL sections → next = highest + 1
 
 2. **Score complexity** (1-10+):

@@ -1,6 +1,6 @@
 ﻿schema_id: task-file
 schema_version: v1
-gald3r_rel_version: "2.1.0"
+gald3r_rel_version: "2.1.1"
 description: "Schema for individual task files under .gald3r/tasks/**/*.md (YAML frontmatter)."
 applies_to: ".gald3r/tasks/**/*.md"
 
@@ -18,7 +18,7 @@ required:
     description: "Human-readable task title."
   type:
     type: enum
-    values: [feature, bug_fix, refactor, chore, documentation]
+    values: [feature, bug_fix, refactor, chore, documentation, research]
     description: "Task category."
   status:
     type: enum

@@ -1,15 +1,22 @@
 #!/usr/bin/env python3
-"""Python port of g-hk-setup-user.ps1 (T1584).
+"""Python port of g-hk-setup-user.ps1 (T1584); reconciled onto the unified home (T627).
 
-Run this ONCE from a terminal to set your gald3r user identity. Your user ID
-is stored in ~/.gald3r/user_config.json and used across all AI sessions
-(Cursor, Claude Code, Gemini) on this machine.
+Run this ONCE from a terminal to set your gald3r user identity. Your user ID is
+stored in the ONE unified per-user identity record managed by T530/T531 —
+``<gald3r-home>/user_config.json`` (``%LOCALAPPDATA%/gald3r`` on Windows,
+``~/.config/gald3r`` on POSIX) — and used across all AI sessions (Cursor, Claude
+Code, Gemini) on this machine. There is no longer a second ``~/.gald3r`` identity
+file (T627 retired that divergent path; any pre-existing one is migrated in, not
+regenerated).
 
-Interactive: suggests a user ID from git global email, the Cursor cached
-email (state.vscdb), and the OS username, then prompts via input() with a
-[1] default hint. The stable machine ID is read from the Windows registry
-(HKLM\\SOFTWARE\\Microsoft\\Cryptography MachineGuid) on Windows only; on
-other platforms (or on registry failure) a random GUID is generated.
+Interactive: suggests a user ID from git global email, the Cursor cached email
+(state.vscdb), and the OS username, then prompts via input() with a [1] default
+hint. Identity provisioning (id generation, idempotent create-or-read, never
+clobbering an existing record) is delegated to ``gald3r.user_config`` /
+``gald3r.home`` (T530/T531) — this hook does NOT re-derive the home path or
+regenerate ids. The extra setup fields (mcp_url, platform, setup_completed,
+setup_date, created_by) are written to a SEPARATE ``setup_meta.json`` sidecar in
+the same home — they are setup metadata, not a competing identity record.
 
 Usage:
   python .claude/hooks/g-hk-setup-user.py
@@ -21,13 +28,34 @@ import argparse
 import datetime
 import json
 import os
+import platform as _platform
 import subprocess
 import sys
 import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import _hook_common  # noqa: E402,F401
+import _hook_common  # noqa: E402
+
+#: Setup metadata filename (sidecar to the identity record, NOT the identity).
+SETUP_META_FILENAME = "setup_meta.json"
+
+#: Legacy identity file retired by T627. Only read once, to migrate ids forward.
+LEGACY_CONFIG_PATH = Path.home() / ".gald3r" / "user_config.json"
+
+#: Breadcrumb dropped next to a migrated legacy file so the migration is one-time.
+LEGACY_MIGRATED_BREADCRUMB = ".migrated-to-unified-home"
+
+
+def _is_generated_id(value: str) -> bool:
+    """True when ``value`` looks like an engine-generated id (``uuid.uuid4().hex``).
+
+    Generated ids are 32 lowercase hex chars (see ``gald3r.user_config.ensure``). A
+    deliberate, human-chosen user_id (email / nickname / username) does not match,
+    so this distinguishes a freshly-provisioned placeholder from a real identity —
+    we only overwrite the former (clobber-safe).
+    """
+    return len(value) == 32 and all(c in "0123456789abcdef" for c in value)
 
 
 def _git_global_email() -> str:
@@ -95,11 +123,98 @@ def _machine_id() -> str:
     return str(uuid.uuid4())
 
 
+def _migrate_legacy_identity(user_config, config_path: Path) -> None:
+    """One-time fold a pre-existing ``~/.gald3r/user_config.json`` into the unified home.
+
+    Preserves the legacy ``user_id`` / ``machine_id`` (never regenerates them) by
+    seeding the unified record from them BEFORE :func:`ensure` would create fresh
+    ids. Runs only when the unified record does not yet exist and a legacy file is
+    present + readable; honors the never-clobber invariant (does nothing if the
+    unified record already exists). Drops a breadcrumb so it never repeats, and
+    leaves the legacy file in place (non-destructive).
+    """
+    if config_path.exists():
+        return  # unified record already present — never clobber
+    if not LEGACY_CONFIG_PATH.is_file():
+        return
+    try:
+        legacy = json.loads(LEGACY_CONFIG_PATH.read_text(encoding="utf-8-sig"))
+    except (json.JSONDecodeError, OSError, ValueError):
+        return  # unreadable legacy file → leave it; ensure() will create fresh
+    if not isinstance(legacy, dict):
+        return
+    legacy_user = str(legacy.get("user_id") or "").strip()
+    legacy_machine = str(legacy.get("machine_id") or "").strip()
+    if not legacy_user or not legacy_machine:
+        return  # nothing identity-bearing to carry forward
+    # Seed the unified record with the EXACT legacy ids (no regeneration).
+    seeded = user_config.UserConfig(
+        user_id=legacy_user,
+        machine_id=legacy_machine,
+        display_name=str(legacy.get("display_name") or ""),
+        email=legacy.get("email"),
+    )
+    user_config.write(config_path, seeded)
+    try:
+        (LEGACY_CONFIG_PATH.parent / LEGACY_MIGRATED_BREADCRUMB).write_text(
+            f"migrated to {config_path} on "
+            f"{datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')}\n",
+            encoding="utf-8",
+        )
+    except OSError:
+        pass  # breadcrumb is best-effort; migration already succeeded
+
+
+def _write_setup_meta(home_dir: Path) -> Path:
+    """Write the non-identity setup metadata sidecar (T627 AC2).
+
+    These fields (mcp_url, platform, setup_completed, setup_date, created_by) were
+    formerly co-mingled with identity in the legacy ``~/.gald3r/user_config.json``.
+    They are setup bookkeeping, not identity, so they live in their own file and
+    never compete with the unified ``user_config.json`` identity record. ``mcp_url``
+    is preserved across re-runs if already set.
+    """
+    meta_path = home_dir / SETUP_META_FILENAME
+    meta: dict = {}
+    if meta_path.is_file():
+        try:
+            existing = json.loads(meta_path.read_text(encoding="utf-8-sig"))
+            if isinstance(existing, dict):
+                meta.update(existing)
+        except (json.JSONDecodeError, OSError, ValueError):
+            pass
+    meta["mcp_url"] = meta.get("mcp_url") or "http://localhost:8082"
+    meta["platform"] = "windows" if os.name == "nt" else sys.platform
+    meta["setup_completed"] = True
+    meta["setup_date"] = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+    meta["created_by"] = "g-hk-setup-user.py"
+    meta_path.parent.mkdir(parents=True, exist_ok=True)
+    meta_path.write_text(
+        json.dumps(meta, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8", newline="\n",
+    )
+    return meta_path
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
-        description="gald3r user setup — store your user ID in ~/.gald3r/user_config.json."
+        description="gald3r user setup — store your user ID in the unified gald3r home."
     )
     parser.parse_args(argv)
+
+    # -- Bootstrap the engine (DRY: reuse T530/T531 home + user_config primitives) --
+    if not _hook_common.bootstrap_engine():
+        print(
+            "ERROR: [g-hk-setup-user] could not import the gald3r engine "
+            "(gald3r.user_config / gald3r.home). Identity setup is delegated to the "
+            "engine to keep ONE unified record — run this from a gald3r project "
+            "checkout (with .gald3r_sys/engine) or an environment where `gald3r` is "
+            "installed.",
+            file=sys.stderr,
+        )
+        return 1
+    from gald3r import home as _home  # noqa: E402
+    from gald3r import user_config as _user_config  # noqa: E402
 
     print("")
     print("=======================================")
@@ -155,48 +270,47 @@ def main(argv=None) -> int:
             user_id = suggestions[idx]
             print(f"Using: {user_id}")
 
-    # -- Read or create existing user_config.json ---------------------------------
-    config_dir = Path.home() / ".gald3r"
-    config_file = config_dir / "user_config.json"
+    # -- Resolve the ONE unified identity record (T530/T531) ----------------------
+    env = dict(os.environ)
+    platform_name = _platform.system()
+    config_path = _user_config.default_config_path(env, platform_name)
 
-    config_dir.mkdir(parents=True, exist_ok=True)
+    # One-time fold any pre-existing legacy ~/.gald3r/user_config.json forward,
+    # preserving its ids (T627). No-op if the unified record already exists.
+    _migrate_legacy_identity(_user_config, config_path)
 
-    cfg = {}
-    if config_file.is_file():
-        try:
-            existing = json.loads(config_file.read_text(encoding="utf-8-sig"))
-            if isinstance(existing, dict):
-                # Preserve all existing fields
-                cfg.update(existing)
-        except (json.JSONDecodeError, OSError, ValueError):
-            pass
+    # Idempotent create-or-read: existing ids are NEVER regenerated (T531 contract).
+    cfg = _user_config.ensure_user_config(env, platform_name)
 
-    # Stable machine ID
-    machine_id = cfg.get("machine_id")
-    if not machine_id:
-        machine_id = _machine_id()
+    # Apply the interactively-chosen user_id ONLY when the record carries a
+    # generated placeholder id (freshly created this run). An existing, deliberate
+    # user_id is preserved — clobber-safe (AC3).
+    fresh = _is_generated_id(cfg.user_id)
+    if fresh and user_id and user_id != cfg.user_id:
+        updated = _user_config.UserConfig(
+            user_id=user_id,
+            machine_id=cfg.machine_id,
+            display_name=cfg.display_name,
+            email=cfg.email,
+        )
+        _user_config.write(config_path, updated)
+        cfg = updated
 
-    # Update / set fields
-    cfg["user_id"] = user_id
-    cfg["machine_id"] = machine_id
-    cfg["mcp_url"] = cfg.get("mcp_url") or "http://localhost:8082"
-    cfg["platform"] = "windows" if os.name == "nt" else sys.platform
-    cfg["setup_completed"] = True
-    cfg["setup_date"] = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
-    cfg["created_by"] = "g-hk-setup-user.py"
-
-    config_file.write_text(json.dumps(cfg, indent=2), encoding="utf-8")
+    # Relocate the non-identity setup fields to their own sidecar (AC2).
+    home_dir = _home.resolve_home(env, platform_name)
+    meta_path = _write_setup_meta(home_dir)
 
     print("")
     print("=======================================")
     print("  Setup complete!")
     print("=======================================")
     print("")
-    print(f"  User ID  : {user_id}")
-    print(f"  Config   : {config_file}")
+    print(f"  User ID  : {cfg.user_id}")
+    print(f"  Identity : {config_path}")
+    print(f"  Setup    : {meta_path}")
     print("")
     print("This ID will be used for all gald3r memory sessions on this machine.")
-    print(f"To change it later, edit: {config_file}")
+    print(f"To change it later, edit: {config_path}")
     print("")
     return 0
 

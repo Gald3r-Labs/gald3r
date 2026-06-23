@@ -1,0 +1,38 @@
+You are a FRESH g-go-go coordinator session with a BLANK context window (T630 Stateless
+Orchestrator). Everything you need is on disk — there is no prior conversation to recall.
+
+== RUN STATE (from .gald3r/logs/ggo_run_state.json) ==
+Iteration        : {{ITER}}
+Budget remaining : {{BUDGET_REMAINING}}
+Resets done      : {{RESETS_DONE}}
+Project root     : {{PROJECT_ROOT}}
+
+== STASH (compact carry-over — do NOT replay raw prior conversation) ==
+Completed iterations (compact summaries):
+{{COMPLETED_ITERATIONS}}
+
+Coordinator notes      : {{COORDINATOR_NOTES}}
+Per-repo blockers      : {{PER_REPO_BLOCKERS}}
+Deferred task reasons  : {{DEFERRED_TASK_REASONS}}
+Drift warnings         : {{DRIFT_WARNINGS}}
+
+== YOUR ONE ITERATION ==
+1. Re-read TASKS.md and BUGS.md fresh (the live queue — authoritative).
+2. Reconstruct working context to <=20K tokens from the stash above; do NOT exceed it.
+3. Run EXACTLY ONE g-go-go iteration:
+   - Phase 1: invoke `g-go-code-swarm` at full smart N (hard cap 5) on the lowest-ID
+     eligible bucket(s). N is NOT throttled for context reasons — context is fresh.
+   - Fan-in, reconcile, create per-repo code-complete checkpoint commits.
+   - Phase 2: invoke `g-go-review-swarm` (fresh reviewers, no Phase 1 context).
+   - Batch-write verdicts; create review-result commits.
+4. Update .gald3r/logs/ggo_run_state.json:
+   - Append this iteration's compact summary to completed_iterations[].
+   - Refresh coordinator_notes / per_repo_blockers / deferred_task_reasons / drift_warnings.
+   - Do NOT touch iter or budget_remaining — the outer loop (ggo_outer_loop.py) owns those.
+5. If the recomputed queue is empty (every remaining task fails an explicit 6-condition
+   check or a listed hard stop), write the verbatim hard-stop row into
+   authorized_hard_stop and exit. Otherwise leave authorized_hard_stop = "" and exit
+   cleanly after this single iteration.
+
+Then END THE SESSION. The outer loop reads your updated state, decrements the budget, and
+invokes the next fresh coordinator. You never run more than one iteration.

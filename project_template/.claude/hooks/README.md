@@ -1,8 +1,10 @@
 # gald3r Claude Code Hooks
 
 These are the Claude Code lifecycle hooks for gald3r, wired via
-`.claude/hooks.json` (PascalCase events: `SessionStart`, `PreToolUse`, …). They
-are Python scripts (T1584 port) that import the shared bootstrap
+`.claude/settings.json` under the `"hooks"` key (PascalCase events:
+`SessionStart`, `PreToolUse`, …) — the canonical, doc-verified Claude Code hook
+surface (T420). The legacy top-level `.claude/hooks.json` is a retired pointer
+stub. They are Python scripts (T1584 port) that import the shared bootstrap
 `_hook_common.py`. Other platforms use **different** hook models — see each
 platform's `PLATFORM_SPEC.md` `## Hook System` section before assuming a hook is
 portable.
@@ -40,7 +42,8 @@ git-level hook handled by `g-hk-pre-commit`.
   `g-hk-session-start.py`, `g-hk-pre-tool-call-gald3r-guard.py`,
   `g-hk-agent-complete.py`). These are the actual behavior; the core fans out to
   them via `CONCERN_CHAIN`.
-- **`g-hk-*.md`** — T1171 companion docs for hooks wired in `hooks.json`.
+- **`g-hk-*.md`** — T1171 companion docs for the wired hooks (companion path is
+  derived from the script name; `settings.json` carries no `_hook_md` key).
 
 > **Naming note:** canonical event entrypoints are named `g-hk-on-<event>` (e.g.
 > `g-hk-on-tool-end`) rather than the bare `g-hk-<event>`, because several bare
@@ -51,17 +54,19 @@ git-level hook handled by `g-hk-pre-commit`.
 ## Migration status (T424 reference increment)
 
 - ✅ Shared core + 6 canonical entrypoints shipped (this folder + `.claude/hooks/`).
-- ✅ Claude `hooks.json` wires the two **new** canonical events
+- ✅ Claude `settings.json` `"hooks"` wires the two **new** canonical events
   (`PostToolUse` → `g-hk-on-tool-end`, `UserPromptSubmit` →
-  `g-hk-on-user-prompt-submit`). Fully additive.
+  `g-hk-on-user-prompt-submit`), alongside the consolidated `SessionStart`/
+  `Stop`/`PreToolUse` chains (T420). Fully additive.
 - 🔜 The pre-existing per-concern entries (`SessionStart`/`Stop`/`PreToolUse`)
   are retained as-is; re-pointing them at the canonical entrypoints is the
   **AC4 fan-out** follow-up.
 
 ## Other platforms' hook models (do not assume portability)
 
-- **Claude Code** — `settings.json` / `.claude/hooks.json` with PascalCase
-  events (`SessionStart`, `PreToolUse`, …). Mirrors this folder.
+- **Claude Code** — `.claude/settings.json` `"hooks"` with PascalCase events
+  (`SessionStart`, `PreToolUse`, …) — the canonical surface (T420). Mirrors this
+  folder.
 - **Kiro IDE** — declarative `.kiro/hooks/*.kiro.hook` JSON (file/event
   `fileEdited`/`userTriggered`, `askAgent`/`command`). Does NOT use the Python
   core. See `platforms/kiro/.kiro/hooks/README.md`.

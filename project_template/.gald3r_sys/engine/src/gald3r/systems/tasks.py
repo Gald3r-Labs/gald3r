@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional
 
 from gald3r.config import Config
 from gald3r.ids import new_uuid
+from gald3r.run_state import is_agent_run_active
 from gald3r.schema import task as T
 from gald3r.store import Store
 
@@ -133,14 +134,50 @@ class TaskSystem:
         )
 
     # ---- ids ----
+    @staticmethod
+    def _index_ref_ids(text: str) -> set:
+        """Ids referenced in TASKS.md, tolerating BOTH index formats: the engine
+        `**T123**` render and the PS1 `[123](tasks/…)` link. Shared by `_next_id`
+        (so archived/index-only ids are not re-issued) and `sync()`."""
+        if not text:
+            return set()
+        referenced = {int(m) for m in re.findall(r"\bT(\d+)\b", text)}
+        referenced |= {int(m) for m in re.findall(r"\[(\d+)\]\(tasks/", text)}
+        return referenced
+
     def _next_id(self) -> int:
-        ids = [t.id for t in self._all()]
-        return (max(ids) + 1) if ids else 1
+        # BUG-169/BUG-174-B: allocate over the UNION of on-disk file ids AND ids
+        # referenced in TASKS.md. A file that was archived/moved out of tasks/ leaves
+        # its id only in the index; allocating from files alone would re-issue it.
+        file_ids = {t.id for t in self._all()}
+        index_ids = self._index_ref_ids(self.store.read_text(self.cfg.tasks_md))
+        known = file_ids | index_ids
+        nid = (max(known) + 1) if known else 1
+        # Defense in depth: a max()+1 over the full known set can never collide, but
+        # fail loudly rather than silently duplicate if that invariant is ever broken.
+        if nid in known:
+            raise RuntimeError(
+                f"task id allocation collision: computed id {nid} already exists "
+                f"(file ids + index ids = {sorted(known)})"
+            )
+        return nid
 
     # ---- public API ----
     def create(self, title: str, type: str = "feature", priority: str = "medium",
                status: str = "pending", created_date: Optional[str] = None,
-               body: str = "", **extra: Any) -> Task:
+               body: str = "", route_inbox: Optional[bool] = None,
+               **extra: Any) -> Task:
+        # T585: during an active agent run, route creation to tasks/inbox/ as an
+        # id-less draft so concurrent agents can't race on the next id. The
+        # hot-inbox intake (the single ID authority) assigns the real id later.
+        # `route_inbox=None` auto-detects the run marker; intake forces False.
+        if route_inbox is None:
+            route_inbox = is_agent_run_active(self.cfg.gald3r_dir)
+        if route_inbox:
+            return self._queue_inbox_draft(
+                title=title, type=type, priority=priority, status=status,
+                created_date=created_date, body=body, extra=extra,
+            )
         extra.setdefault("uuid", new_uuid())  # stable cross-project primary key (T522)
         t = Task(
             id=self._next_id(), title=title, type=type, priority=priority,
@@ -153,6 +190,39 @@ class TaskSystem:
         self._write(t)
         self.sync()
         return t
+
+    def _queue_inbox_draft(self, *, title: str, type: str, priority: str,
+                           status: str, created_date: Optional[str],
+                           body: str, extra: Dict[str, Any]) -> Task:
+        """Write an id-less task draft to ``tasks/inbox/`` (T585).
+
+        Returns a sentinel ``Task`` (``id=0``, ``inbox_queued=True``) — NOT a
+        live tracked task. No id is assigned and the index is NOT regenerated;
+        the next ``InboxSystem.intake()`` does both atomically. Draft filenames
+        carry a uuid fragment so two agents creating same-titled tasks never
+        clobber one another (the collision this whole mechanism prevents).
+        """
+        uid = extra.get("uuid") or new_uuid()
+        extra["uuid"] = uid
+        cdate = created_date or date.today().isoformat()
+        inbox = self.cfg.tasks_dir / "inbox"
+        inbox.mkdir(parents=True, exist_ok=True)
+        fm: Dict[str, Any] = {
+            "title": title, "type": type, "priority": priority,
+            "status": status, "created_date": cdate, "uuid": uid,
+            "source": extra.get("source", "agent_run"),
+        }
+        subs = extra.get("subsystems")
+        if subs:
+            fm["subsystems"] = subs
+        path = inbox / f"draft_{_slug(title)}_{uid.split('-')[0]}.md"
+        self.store.write_doc(path, fm, body or "")
+        return Task(
+            id=0, title=title, type=type, status=status, priority=priority,
+            created_date=cdate, body=body,
+            extra={**extra, "inbox_queued": True, "inbox_path": str(path)},
+            path=path,
+        )
 
     def get(self, task_id: int) -> Optional[Task]:
         for t in self._all():
@@ -246,18 +316,49 @@ class TaskSystem:
         tasks = self._all()
         ids = {t.id for t in tasks}
         old = self.store.read_text(self.cfg.tasks_md)
-        # tolerate BOTH index formats: engine `**T123**` and the PS1 `[123](tasks/…)` link
-        referenced = {int(m) for m in re.findall(r"\bT(\d+)\b", old)}
-        referenced |= {int(m) for m in re.findall(r"\[(\d+)\]\(tasks/", old)}
+        referenced = self._index_ref_ids(old)
         phantom = sorted(referenced - ids)   # in index, no file
         orphan = sorted(ids - referenced)    # file, not in index (pre-regen)
         if self._index_is_externally_owned(old):
+            # BUG-169/BUG-174-A: ADOPT orphans instead of only reporting them, WITHOUT
+            # clobbering the richer PS1 index (T521). We append the missing rows in the
+            # PS1 link format; existing rows / resolution detail are left byte-identical.
+            adopted: List[int] = []
+            if orphan:
+                by_id = {t.id: t for t in tasks}
+                appended = self._append_orphan_rows(old, [by_id[i] for i in orphan])
+                self.store.write_text(self.cfg.tasks_md, appended)
+                adopted = orphan
+                orphan = []  # adopted now; index references them
             return {"tasks": len(ids), "phantom": phantom, "orphan": orphan,
-                    "index_preserved": True,
+                    "adopted": adopted, "index_preserved": True,
                     "warning": ("TASKS.md is generated by custom_scripts/regenerate_tasks_md.ps1; "
-                                "engine left it untouched (T521). Run that script to regenerate.")}
+                                "engine appended missing rows non-destructively (T521) but did "
+                                "NOT re-render it. Run that script for a full lossless regenerate.")}
+        # Engine-owned index: the full _render() below includes every task file, so any
+        # orphan is ADOPTED by regeneration (BUG-169/BUG-174-A), not merely reported.
         self.store.write_text(self.cfg.tasks_md, self._render(tasks))
-        return {"tasks": len(ids), "phantom": phantom, "orphan": orphan}
+        return {"tasks": len(ids), "phantom": phantom, "orphan": orphan, "adopted": orphan}
+
+    @staticmethod
+    def _append_orphan_rows(old: str, orphans: List[Task]) -> str:
+        """Append PS1-compatible link rows for orphan tasks to a PS1-owned TASKS.md
+        (BUG-169/BUG-174-A). Non-destructive: the existing index text is preserved verbatim
+        and the new rows are added under an engine-adopted marker block so a later PS1 regen
+        (the index owner) overwrites them cleanly. Idempotent — re-running won't re-append a
+        row whose id is now referenced (the caller only passes ids absent from the index)."""
+        rows = "\n".join(
+            f"| [{t.marker}] | [{t.id}](tasks/{t.folder}/{Path(t.path).name if t.path else ''}) "
+            f"| {t.title} | {t.priority} |"
+            for t in sorted(orphans, key=lambda x: x.id)
+        )
+        marker = "<!-- gald3r-engine-adopted-orphans (regenerate with custom_scripts/regenerate_tasks_md.ps1) -->"
+        block = f"\n\n{marker}\n{rows}\n"
+        base = old if old.endswith("\n") else old + "\n"
+        if marker in base:
+            # already have an adopted block — append the new rows just after the marker
+            return base.replace(marker + "\n", marker + "\n" + rows + "\n", 1)
+        return base + block
 
     def _render(self, tasks: List[Task]) -> str:
         active = [t for t in tasks if t.status not in T.TERMINAL]

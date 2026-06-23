@@ -126,6 +126,25 @@ For swarm mode or any run lasting more than 30 minutes, the coordinator reruns t
 
 All filter arguments pass through to `@g-go --swarm`. The `--workspace` flag composes with task/bug filters and bugs-only.
 
+## Spawned-agent task/bug creation (T585 AC3)
+
+During this run, **any** task or bug a spawned agent needs to create (deferred sub-feature,
+newly discovered bug, follow-up) goes into the **hot inbox**, never a direct `tasks/open/` /
+`bugs/open/` write + index regeneration:
+
+- **Preferred** — call the engine verb (`gald3r task create …` / `gald3r bug report …`, or the
+  `gald3r_task_*` / `gald3r_bug_*` MCP tools). When the run marker
+  (`.gald3r/logs/ggo_run_state.json` `active: true`, or `GALD3R_AGENT_RUN=1`) is set, the engine
+  **auto-routes** the new item to `tasks/inbox/` / `bugs/inbox/` as an id-less, uuid-suffixed
+  draft — no id is assigned at create time.
+- **Manual fallback** (no engine) — hand-write the draft directly into `tasks/inbox/` /
+  `bugs/inbox/` (id-less, uuid-suffixed filename). Do **not** write `tasks/open/` / `bugs/open/`
+  or touch `TASKS.md` / `BUGS.md`.
+
+The hot-inbox **intake** (run at each iteration boundary — see the inbox-intake step) is the
+*single ID-assigning authority*: it assigns ids atomically, so N concurrent agents can never
+collide on the next id. This is the spawn-side complement of that intake step.
+
 ## Multi-Agent Communication Frameworks (T1094)
 
 gald3r implements all five frontier multi-agent communication frameworks (Factory's taxonomy)

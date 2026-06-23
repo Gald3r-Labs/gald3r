@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [TASK_MANAGEMENT]
 ---
 Maximal workspace swarm autopilot — rolling implement/review until a hard stop: $ARGUMENTS
@@ -63,7 +63,11 @@ Asking "Continue?" "Which next?" "Looks like X — proceed?" mid-run is a **viol
 | Auto-merge target | `main` (feature-branches-only model — NO `dev` branch; see `g-rl-02`) | `g-go-go --target-branch <branch>` to merge PASS items to a different branch |
 | Auto-merge behavior | enabled by default after every PASS verdict | `g-go-go --no-auto-merge` to preserve old `[MERGE-BLOCKED]` behavior |
 | Repo scope filter | (none — global scope across all manifest members) | `g-go-go --repos <repo_id>[,<repo_id>...]` to scope autopilot to tasks whose `workspace_repos:` contains at least one of the listed IDs. Skipped tasks (not in scope) are NOT marked failed — they're left for the next run. Budget counter only counts iterations that execute in-scope tasks. Example: `g-go-go --repos example_agent --budget 3` runs only `example_agent` tasks. |
-| Context-aware throttle | **on** (default) | `g-go-go --no-context-aware` to disable throttling and allow full N under all context levels. See "Context-Aware Throttle (BUG-107 Fix Direction #3)" below. |
+| Rolling Amnesia context reset (T635, **legacy**) | **off** by default — superseded by the stateless conductor | Only meaningful under `--legacy`. The default stateless conductor makes every iteration a fresh process, so scheduled in-session resets are unnecessary. Under `--legacy`, `g-go-go --reset-every <K>` sets the cadence and `g-go-go --no-reset` disables it. See "Rolling Amnesia — Scheduled Context Reset (legacy, T635)" below. |
+| Context-aware throttle (legacy) | **off** by default (superseded by Rolling Amnesia); **on** under `--no-reset` | Active only when `--no-reset` is set. `g-go-go --no-context-aware` disables the legacy throttle entirely. See "Context-Aware Throttle (legacy, `--no-reset` only)" below. |
+| Resume after reset | (n/a) | `g-go-go --resume .gald3r/logs/ggo_run_state.json` — issued by the stop hook to restart a fresh coordinator after a scheduled context reset. |
+| Orchestration model (T630) | **stateless conductor** (default) — `.gald3r_sys/scripts/ggo_outer_loop.py` | The default outer loop is a deterministic Python reconciler that invokes a FRESH coordinator LLM session per iteration (blank context by construction); its only stop conditions are *no eligible work left* or *budget exhausted* — it never halts while runnable work remains. `g-go-go --legacy` opts back into the deprecated single-session in-session LLM loop (Rolling Amnesia + stop-detect re-invoke ceiling). See "Stateless Orchestrator — Python Outer Loop (T630)" below. |
+| Coordinator scope (T632) | **`all`** (single coordinator) | `g-go-go --subsystem <GROUP>` scopes a coordinator to one subsystem group so multiple coordinators can partition a project. Disjoint scopes run in parallel; overlapping scopes collide and are rejected. **Pro+** (count-gated by T633). See "Multi-Coordinator Partitioning (T632)" below. |
 
 `g-go-go` accepts the same `$ARGUMENTS` filters as `g-go` (`tasks N,M`, `bugs BUG-NNN`, `subsystem ...`, `bugs-only`, `tasks-only`) plus the autopilot knobs above.
 
@@ -92,8 +96,11 @@ The autopilot maintains a single run-state marker that the stop hook reads. The 
    { "active": true, "platform": "gemini",
      "iter": 0, "budget_remaining": 12,
      "authorized_hard_stop": "", "reinvoke_count": 0,
+     "reset_every": 3, "resets_done": 0,
      "updated_at": "<iso-8601>",
-     "completed_iterations": [] }
+     "completed_iterations": [],
+     "coordinator_notes": [], "per_repo_blockers": {},
+     "deferred_task_reasons": {}, "drift_warnings": [] }
    ```
    Set `"platform"` to `"gemini"` (matches the value the stop hook detects from
    its script location). The `session_id` field is NOT written at INIT; the stop
@@ -103,6 +110,7 @@ The autopilot maintains a single run-state marker that the stop hook reads. The 
 2. **Each iteration** — refresh `iter` and `budget_remaining` (the hook reads the latest values to bound re-invokes).
 3. **On a genuine hard stop** — BEFORE emitting the final summary, write the exact hard-stop table row verbatim into `authorized_hard_stop`. This is the ONLY way to legitimately end the run. A blank `authorized_hard_stop` means "the loop has no authorized reason to stop".
 4. **At clean EXIT** (budget exhausted, no runnable work) — set `active` to `false` or delete the marker. The hook also clears it automatically on authorized hard stop, budget exhaustion, or re-invoke-cap.
+5. **Rolling Amnesia stash (T635)** — every `reset_every` iterations, BEFORE the scheduled reset, refresh the stash fields so a fresh coordinator can rebuild context from disk alone: `coordinator_notes` (free-form "remember this"), `per_repo_blockers` (`repo_id → reason`), `deferred_task_reasons` (`task_id → why deferred`), `drift_warnings`. Then write `authorized_hard_stop: "scheduled_context_reset"` and exit. The stop hook treats this as an **authorized, NON-terminal** stop: it consumes the marker, bumps `resets_done`, and re-invokes the loop with `--resume`. See "Rolling Amnesia — Scheduled Context Reset (T635)" below.
 
 ### What the hook enforces
 
@@ -119,12 +127,45 @@ Re-invokes are capped at `min(budget_remaining, 25)`. A genuine hard stop and bu
 
 ---
 
-## Context-Aware Throttle (BUG-107 Fix Direction #3)
+## Rolling Amnesia — Scheduled Context Reset (legacy, T635)
 
-Context-aware throttling is **ON by default**. Every `g-go-go` run applies a deterministic N-reduction based on context usage — instead of stopping when context is tight, the loop **reduces N (the parallel bucket / implementer count)** so the run continues with less parallelism. Trading parallelism for continuation is always preferred over halting.
+> **Legacy — `--legacy` only.** Rolling Amnesia (T635) was the *temporary* symptom-fix for coordinator context accumulation. It is **superseded by the stateless conductor (T630), now the default**, which bounds context by construction — every iteration is a fresh process, so there is nothing to "reset". Rolling Amnesia runs only under `--legacy` and is slated for removal once the stateless conductor proves out (see follow-up task).
 
-Use `--no-context-aware` to disable throttling entirely (full N at all context levels, for short/controlled runs where you want maximum throughput and are managing context yourself).
-### Behavior
+**Under `--legacy`, Rolling Amnesia is the in-session context-management mechanism.** Instead of throttling parallelism (N) as a proxy for context fill, the coordinator **proactively recycles its own context window on a schedule**, keeping it bounded without ever reducing N for context reasons.
+
+### Mechanism
+
+Every `reset_every` iterations (default `K=3`, set via `--reset-every <K>`):
+
+1. **Stash** — refresh the extended `ggo_run_state.json` fields so the next coordinator can rebuild working context from disk alone: `completed_iterations[]` (compact per-iter summaries, already maintained), plus `coordinator_notes`, `per_repo_blockers`, `deferred_task_reasons`, and `drift_warnings`. `TASKS.md`/`BUGS.md` are the live queue and are re-read fresh, not stashed.
+2. **Authorize the reset** — write `authorized_hard_stop: "scheduled_context_reset"`. This is a reserved, **non-terminal** authorized stop; it is NOT one of the Hard Stops in the table below.
+3. **Exit** — the coordinator session ends cleanly.
+4. **Re-invoke** — the `g-hk-ggo-stop-detect` hook recognizes `scheduled_context_reset`, consumes the marker, increments `resets_done`, and re-invokes the loop with `@g-go-go --resume .gald3r/logs/ggo_run_state.json`.
+5. **Fresh coordinator** — on `--resume`, the new session reads the stash + re-reads `TASKS.md`/`BUGS.md`, reconstructs working context to **≤20K tokens**, and continues at the recorded `iter` with the remaining budget. Raw prior-iteration conversation is never replayed.
+
+**N is never throttled for context reasons under Rolling Amnesia** — context never accumulates across the reset boundary, so the swarm runs at full smart N (hard cap 5) on every iteration, including deep into a long run.
+
+### Knobs
+
+```
+@g-go-go                       # Rolling Amnesia on, reset every 3 iterations (default)
+@g-go-go --reset-every 5       # reset every 5 iterations instead
+@g-go-go --no-reset            # disable Rolling Amnesia; revert to the legacy iteration-count throttle below
+@g-go-go --resume <state.json> # resume a run after a scheduled reset (normally issued by the stop hook)
+```
+
+### `--resume` reconstruction budget
+
+On resume the coordinator MUST rebuild context from disk only — `ggo_run_state.json` (iter, budget_remaining, completed_iterations[], coordinator_notes, per_repo_blockers, deferred_task_reasons, drift_warnings) + a fresh read of `TASKS.md`/`BUGS.md` — and keep that reconstruction under ~20K tokens before taking its first action. If the stash is insufficient to reconstruct safely, the coordinator re-derives from the file queue rather than guessing.
+
+---
+
+## Context-Aware Throttle (legacy, `--no-reset` only — BUG-107 Fix Direction #3)
+
+> **Superseded by Rolling Amnesia (T635).** The iteration-count throttle below is **inactive by default** and only engages under `--no-reset`. It remains for debugging and as a fallback. With Rolling Amnesia active (the default), N is never reduced for context reasons.
+
+Under `--no-reset`, context-aware throttling applies a deterministic N-reduction based on context usage — instead of stopping when context is tight, the loop **reduces N (the parallel bucket / implementer count)** so the run continues with less parallelism. `--no-context-aware` disables even this legacy throttle (full N at all context levels).
+### Behavior (legacy `--no-reset`)
 
 Each iteration computes its bucket count N as usual (smart agent count from `g-go --swarm`, hard cap 5), then applies a deterministic reduction based on a deterministic context proxy: the completed iteration count (`iter`) read from `ggo_run_state.json`. This proxy is always observable and eliminates dependence on the model's self-reported context fill percentage, which was the root failure mode in BUG-107.
 
@@ -140,6 +181,96 @@ Each iteration computes its bucket count N as usual (smart agent count from `g-g
 - **N is never reduced below 1.** A reduced N still runs the next lowest-ID eligible task — reduction throttles parallelism, it never skips or defers work for context reasons.
 - The reduction is **per-iteration and reversible**: when context pressure subsides on a later iteration, N is recomputed from the table and may rise back toward the full smart count.
 - Context-aware reduction is **never a stop reason**. Reducing to N=1 and continuing is the correct response to context pressure — halting is the forbidden CONTEXT WINDOW PANIC stop (see above).
+
+## Stateless Orchestrator — Python Outer Loop (T630)
+
+The **default** `@g-go-go` outer loop is a deterministic Python reconciler —
+`.gald3r_sys/scripts/ggo_outer_loop.py` — that replaces the single long-lived LLM coordinator,
+modeled on a Kubernetes controller. (Pass `--legacy` to opt back into the deprecated single-session loop.)
+Its only stop conditions are *no eligible work left* or *budget exhausted*; it never halts while runnable work remains:
+
+```
+.gald3r_sys/scripts/ggo_outer_loop.py   (Python, NOT an LLM)
+  while budget_remaining > 0:
+    read ggo_run_state.json + TASKS.md from disk   (never cached across iterations)
+    invoke a FRESH coordinator LLM session (blank context) for ONE iteration via
+      `claude --dangerously-skip-permissions -p "<brief>"`   (brief generated from
+      .gald3r_sys/scripts/ggo_coordinator_brief_template.txt, filled entirely from disk state)
+        |-> coordinator spawns Phase 1 g-go-code-swarm (full N), fan-in, reconcile, commit
+        |-> coordinator spawns Phase 2 g-go-review-swarm, writes verdicts, commits
+        |-> coordinator appends its compact summary + refreshes stash, then EXITS
+    re-read state; outer loop decrements budget + increments iter; loop
+```
+
+**What the outer loop owns (deterministic, never the LLM):** budget counting, hard-stop
+detection (`authorized_hard_stop`), heartbeat, and the iteration counter. The coordinator owns
+only the work of a single iteration plus the stash/queue updates it writes to disk.
+
+**Why N is never throttled:** each coordinator invocation is a brand-new context window by
+construction, so context cannot accumulate across iterations — the swarm runs at full smart N
+(hard cap 5) every iteration, including deep into a long run.
+
+**DB integration (when T631 is live):** the coordinator brief includes the DB claim token
+instead of the file-based `[🔄]` claimed status, so atomic claims survive the per-iteration reset.
+
+**Flags:**
+
+```
+@g-go-go                          # DEFAULT: stateless conductor (.gald3r_sys/scripts/ggo_outer_loop.py)
+@g-go-go --budget 8               # stateless conductor with an 8-iteration budget
+@g-go-go --stateless              # explicit opt-in (identical to the default; kept for clarity)
+@g-go-go --legacy                 # force the DEPRECATED single-session LLM loop (Rolling Amnesia + re-invoke ceiling)
+```
+
+The stateless conductor is the **default**. The legacy single-session loop is **deprecated**,
+preserved only under `--legacy` for fallback and comparison, and slated for removal once the
+stateless conductor proves out. Both bound coordinator context, but the conductor does it
+**by construction** (a fresh process per iteration) while Rolling Amnesia did it **within a
+session** (scheduled reset). Because every conductor iteration is already a fresh context,
+Rolling Amnesia and `--reset-every` are inert except under `--legacy`.
+
+## Multi-Coordinator Partitioning (T632)
+
+`@g-go-go --subsystem <GROUP>` scopes a coordinator to one subsystem group (from
+`PRODUCT_SYSTEMS.md` `defined_groups`), so two coordinators can safely partition the same
+project — e.g. one on `MEMORY_AND_KNOWLEDGE`, one on `UI_AND_OUTPUT`. **Pro+ capability**: the
+coordinator *count* limit is enforced by T633; this layer owns *scope* policy only.
+
+**Scope rules:**
+- Default scope is `all` — a single coordinator that may claim any task, including the
+  UNSCOPED pool (tasks with empty/`[]` `subsystems:`).
+- A specific `--subsystem <GROUP>` coordinator claims ONLY tasks whose `subsystems:` intersect
+  its scope. It NEVER claims UNSCOPED tasks — those are reserved for an `--subsystem all`
+  coordinator, which prevents silent cross-scope claiming.
+- **Collision detection (startup):** before registering, the coordinator queries
+  `coordinator_sessions`. If any active scope overlaps the requested scope (or either is `all`),
+  it is rejected:
+  `✗ Coordinator collision. Active coordinator owns scope '{scope}'. Choose a non-overlapping subsystem or stop the existing coordinator.`
+  Disjoint scopes are allowed and both register.
+- **Claim atomicity is NOT in this layer** — delegated to T631 (SQLite, single machine) or T610
+  (Redis, team). This layer owns partitioning policy (scope, collision, heartbeat) only.
+
+**Heartbeat + stale release:** each coordinator pings `coordinator_sessions` every ~30s (via the
+outer loop). A session with no heartbeat for 5min is stale; `sweep_stale_claims` releases its
+claims so another coordinator may take the scope.
+
+**Subsystem tag quality (prerequisite):** partitioning is only meaningful when tasks carry
+accurate `subsystems:` tags. The engine surfaces untagged tasks (`db.untagged_tasks`) as the
+UNSCOPED pool; audit them via `gald3r doctor` (the coordinators check) and tag legacy tasks so a
+scoped coordinator can claim them.
+
+**Visibility:** `gald3r doctor` reports active coordinator sessions, their scopes, claim counts,
+and any stale claims (engine `db.active_coordinators` / `db.stale_claims`). The live Throne
+coordinator panel is T637.
+
+**Tier gating (T633):** the coordinator *count* limit is enforced by the engine gate
+`db.can_register_coordinator(scope, max_coordinators)` plus world_tree's
+`can_register_coordinator(project_id, user_id)` against the subscription plan — Free = 1,
+Pro = `plan.max_coordinators` (default 5), Team = `team_size × 2`. When world_tree is unreachable
+the engine falls back to **1 coordinator max** (the safe free-tier default). Scope collision still
+applies on every tier — paid removes the *count* limit, not collision prevention. Multi-machine
+Redis coordination is a *separate* entitlement (`can_use_redis_coordination`, T610/T633) priced to
+cover per-tenant Redis cost.
 
 ### Interaction with the stop-detection hook
 
@@ -270,15 +401,30 @@ If any check fails for a member, the autopilot defers that task with a per-repo 
 
 ## The Autopilot Loop
 
+> **Execution entry — which backend runs.** By **default** `@g-go-go` runs the **stateless conductor**: launch the deterministic Python outer loop and supervise it to completion —
+>
+> ```
+> uv run python .gald3r_sys/scripts/ggo_outer_loop.py --budget <B> --heartbeat-minutes <H>
+> # plain `python .gald3r_sys/scripts/ggo_outer_loop.py ...` also works (stdlib only)
+> ```
+>
+> The Python loop owns budget / iteration / hard-stop / heartbeat and spawns a **fresh coordinator LLM session per iteration** (blank context by construction). The pseudocode below is therefore **(a)** what each fresh per-iteration coordinator does for ONE iteration, and **(b)** the complete in-session behavior under `--legacy`. Under `--legacy` you (this agent) run the whole loop yourself in-session, with Rolling Amnesia + the stop-detect re-invoke hook bounding context. Under the default conductor those mechanisms are **inert** — the process boundary per iteration IS the context reset, and the only stop conditions are *no eligible work left* or *budget exhausted*.
+
 ```
 INIT
   ├─ PCAC inbox gate (HARD STOP on conflict)
   ├─ Housekeeping preflight at orchestration root
   ├─ Integration-branch detection (T1443 — HARD STOP on excessive divergence; see below)
   ├─ Clean Controller Gate per-root
-  ├─ Initialize: iter=0, budget_remaining=12 (or user override)
+  ├─ If --resume <state.json> (scheduled-reset restart, T635): SKIP fresh init — read the
+  │   stash (iter, budget_remaining, completed_iterations[], coordinator_notes, per_repo_blockers,
+  │   deferred_task_reasons, drift_warnings), re-read TASKS.md/BUGS.md, reconstruct working
+  │   context to <=20K tokens, and RESUME the LOOP at the stashed iter with remaining budget.
+  ├─ Initialize (fresh run): iter=0, budget_remaining=12 (or user override), reset_every=3 (or --reset-every K)
   ├─ Write run-state marker .gald3r/logs/ggo_run_state.json
-  │   { active:true, iter:0, budget_remaining:B, authorized_hard_stop:"", reinvoke_count:0 }
+  │   { active:true, iter:0, budget_remaining:B, reset_every:K, resets_done:0,
+  │     authorized_hard_stop:"", reinvoke_count:0, coordinator_notes:[], per_repo_blockers:{},
+  │     deferred_task_reasons:{}, drift_warnings:[] }
   └─ Snapshot: tasks, bugs, manifest at start
 
 LOOP (iter < budget_remaining)
@@ -345,6 +491,14 @@ LOOP (iter < budget_remaining)
   │       - TASKS.md + BUGS.md (re-read fresh each iteration)
   │       - ggo_run_state.json .completed_iterations[] (compact summaries only)
   │       - Current iteration's own Phase 1/Phase 2 outputs
+  ├─ [ROLLING AMNESIA — T635] Scheduled context reset (LEGACY — --legacy only; the default stateless conductor needs no in-session reset):
+  │   ├─ If (iter > 0) AND (iter mod reset_every == 0) AND (budget_remaining > 0):
+  │   │   ├─ Refresh stash in ggo_run_state.json: coordinator_notes, per_repo_blockers,
+  │   │   │   deferred_task_reasons, drift_warnings (so a fresh session can rebuild context)
+  │   │   ├─ Write authorized_hard_stop = "scheduled_context_reset" (authorized, NON-terminal)
+  │   │   └─ EXIT cleanly. The stop hook re-invokes `@g-go-go --resume <state.json>`; the fresh
+  │   │       session rebuilds context (<=20K tokens) and continues at this iter. N is NOT throttled.
+  │   └─ Else: continue in the same session (no reset this iteration).
   ├─ Heartbeat check: if elapsed >= heartbeat_interval, emit heartbeat summary
   ├─ Increment iter; recompute budget_remaining
   └─ Loop again
@@ -381,6 +535,8 @@ The loop never blocks on `[🔍]` dependencies of newly runnable downstream work
 | **Workspace-Control preflight denial** | unknown manifest repo IDs / not a git root / unauthorized routing | halt with the specific blocker |
 
 Hard stops are not failures — they are the **purpose** of the safety contract. The final summary documents the stop reason and the next safe command.
+
+> **Not a hard stop:** `scheduled_context_reset` (Rolling Amnesia, T635) is an *authorized, non-terminal* stop, deliberately **absent** from this table. The stop hook re-invokes the loop with `--resume` rather than halting. It terminates the run only if it coincides with budget exhaustion.
 
 ---
 
@@ -465,6 +621,25 @@ Want me to push now?
 
 ---
 
+## Spawned-agent task/bug creation (T585 AC3)
+
+During this run, **any** task or bug a spawned agent needs to create (deferred sub-feature,
+newly discovered bug, follow-up) goes into the **hot inbox**, never a direct `tasks/open/` /
+`bugs/open/` write + index regeneration:
+
+- **Preferred** — call the engine verb (`gald3r task create …` / `gald3r bug report …`, or the
+  `gald3r_task_*` / `gald3r_bug_*` MCP tools). When the run marker
+  (`.gald3r/logs/ggo_run_state.json` `active: true`, or `GALD3R_AGENT_RUN=1`) is set, the engine
+  **auto-routes** the new item to `tasks/inbox/` / `bugs/inbox/` as an id-less, uuid-suffixed
+  draft — no id is assigned at create time.
+- **Manual fallback** (no engine) — hand-write the draft directly into `tasks/inbox/` /
+  `bugs/inbox/` (id-less, uuid-suffixed filename). Do **not** write `tasks/open/` / `bugs/open/`
+  or touch `TASKS.md` / `BUGS.md`.
+
+The hot-inbox **intake** (run at each iteration boundary — see the inbox-intake step) is the
+*single ID-assigning authority*: it assigns ids atomically, so N concurrent agents can never
+collide on the next id. This is the spawn-side complement of that intake step.
+
 ## Behavioral Rules
 
 | Rule | Why |
@@ -512,6 +687,15 @@ Want me to push now?
 @g-go-go --target-branch staging        # merge to a custom branch instead of main
 @g-go-go --repos example_agent --budget 3   # scope autopilot to example_agent tasks only
 @g-go-go --repos example_agent,example_desktop # scope autopilot to two specific member repos
+@g-go-go --reset-every 3                 # [--legacy only] Rolling Amnesia cadence (deprecated; inert under the default conductor)
+@g-go-go --reset-every 6                 # less frequent context resets (longer-lived coordinator sessions)
+@g-go-go --no-reset                      # disable Rolling Amnesia; use the legacy iteration-count throttle
+@g-go-go --resume .gald3r/logs/ggo_run_state.json  # resume after a scheduled reset (normally issued by the hook)
+@g-go-go                                 # DEFAULT: T630 stateless conductor (ggo_outer_loop.py), fresh coordinator per iteration
+@g-go-go --stateless --budget 8          # stateless run, 8-iteration budget
+@g-go-go --legacy                        # force the DEPRECATED single-session loop (was the old default)
+@g-go-go --subsystem MEMORY_AND_KNOWLEDGE  # T632: scope this coordinator to one subsystem (Pro+)
+@g-go-go --subsystem UI_AND_OUTPUT         # a second, disjoint-scope coordinator may run in parallel
 @g-go-go --no-context-aware              # disable context-aware throttle (full N at all context levels)
 @g-go-go --no-context-aware --budget 3  # short burst: max parallelism, no throttle
 @g-go-go --no-code-swarm                 # Phase 1 sequential coding (1 task at a time); Phase 2 review swarm unchanged

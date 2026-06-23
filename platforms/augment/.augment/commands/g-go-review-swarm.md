@@ -8,7 +8,12 @@ Alias for `@g-go-review --swarm`: $ARGUMENTS
 > the authoritative algorithm.
 
 Runs **verification only** in swarm mode — splits the `[🔍]` queue across M parallel
-reviewer agents (round-robin). Includes both **tasks** and **bugs** awaiting verification.
+reviewer agents (round-robin).
+
+> **M inheritance (T635):** M (reviewer count) is supplied by the `g-go-go` coordinator — this
+> command has **no independent context-aware throttle**. Under Rolling Amnesia (default) the
+> coordinator never reduces parallelism for context reasons; do not add iteration-count or
+> context-fill throttling here. Includes both **tasks** and **bugs** awaiting verification.
 Coordinator claims assigned items as `[🕵️]` / `verification-in-progress` before spawning
 reviewers, skips non-expired verifier claims, and batch-writes TASKS.md and BUGS.md after
 all reviewers complete. The coordinator also establishes one review isolation source per

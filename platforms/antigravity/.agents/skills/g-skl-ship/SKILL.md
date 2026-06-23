@@ -329,4 +329,4 @@ Pick **one** mode per repo — do not run both against the same `CHANGELOG.md`.
 - `g-skl-tasks` COMPLETE — calls CHANGELOG-ENTRY for user-facing tasks
 - `g-skl-bugs` FIX — calls CHANGELOG-ENTRY for bug closures
 - `.claude/skills/g-skl-release/scripts/gald3r_semver.ps1` — PowerShell engine (gald3r projects)
-- `.claude/skills/g-skl-release/scripts/gald3r_release.ps1` — maintainer tool for gald3r's own 3-repo release
+- `.claude/skills/g-skl-release/scripts/gald3r_release.py` — maintainer tool for gald3r's own 3-repo release

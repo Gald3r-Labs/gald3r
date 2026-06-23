@@ -56,6 +56,14 @@ workspace_touch_policy: source_only
 
 ## Operation: REPORT BUG
 
+> **During an active agent run (T585 inbox-during-run):** do **not** hand-pick the next BUG id
+> and write `bugs/open/` directly. When `.gald3r/logs/ggo_run_state.json` is `active: true` (or
+> `GALD3R_AGENT_RUN=1`), drop the new-bug draft (id-less, uuid-suffixed) into `bugs/inbox/`
+> instead — the hot-inbox **intake** is the single ID-assigning authority and assigns the id
+> atomically at the next iteration boundary, so concurrent agents never collide. The numbered
+> steps below apply unchanged when idle (no run).
+
+
 **Signature**: `g-skl-bugs REPORT [severity:{level}] [--no-task]`
 
 1. **Determine next ID**: read `BUGS.md`, find highest BUG-NNN → increment by 1

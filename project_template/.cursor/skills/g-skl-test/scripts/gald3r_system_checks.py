@@ -330,19 +330,91 @@ def _ps_parse_check(ctx: CheckContext, files: Sequence[Path]) -> Optional[Dict[s
     return results
 
 
+def _settings_hook_wiring(settings_json: Path) -> Tuple[List[str], List[str]]:
+    """Return (wired script paths, structural failures) for settings.json 'hooks'.
+
+    T420: Claude Code's canonical hook surface is settings.json under the
+    top-level "hooks" key with PascalCase events in event -> matcher -> hooks[]
+    shape. Walk that structure, collect every command's script path
+    (``python <path>.py`` or ``-File <path>.ps1``), and flag any non-PascalCase
+    event name (lowercase Cursor-era names that silently do not fire).
+    """
+    import json
+    paths: List[str] = []
+    structural: List[str] = []
+    try:
+        data = json.loads(_read(settings_json))
+    except (ValueError, OSError) as exc:
+        return paths, [f"settings.json parse error: {exc}"]
+    hooks = data.get("hooks")
+    if not isinstance(hooks, dict):
+        return paths, structural
+    for event, groups in hooks.items():
+        if event[:1].islower():
+            structural.append(
+                f"non-PascalCase event '{event}' in settings.json "
+                "(Cursor-era name; will not fire on Claude Code)")
+        if not isinstance(groups, list):
+            continue
+        for group in groups:
+            entries = group.get("hooks", []) if isinstance(group, dict) else []
+            for entry in entries:
+                cmd = entry.get("command", "") if isinstance(entry, dict) else ""
+                m = re.search(r'(?:-File\s+|python\s+)([^\s"]+\.(?:ps1|py))', cmd)
+                if m:
+                    paths.append(m.group(1))
+    return sorted(set(paths)), structural
+
+
 def check_hook_wiring(ctx: CheckContext) -> Dict[str, Any]:
-    """Every hook command in .claude/hooks.json resolves on disk AND parses cleanly."""
+    """Every wired hook command resolves on disk AND parses cleanly.
+
+    Reads BOTH config surfaces: the canonical .claude/settings.json "hooks"
+    block (T420 consolidation target — PascalCase events, matcher-grouped) and
+    the legacy .claude/hooks.json (retained for any residual .ps1 wiring).
+    """
     r = new_system_result("Hook Wiring", "hooks")
-    hooks_json = ctx.repo_root / ".claude" / "hooks.json"
-    if not hooks_json.is_file():
-        add_skip(r)
-        r["notes"] = ".claude/hooks.json not present (skipped)"
-        return r
-    raw = _read(hooks_json)
-    paths = sorted({m.group(1) for m in re.finditer(r'-File\s+([^\s"]+\.ps1)', raw)})
+    claude_dir = ctx.repo_root / ".claude"
+    hooks_json = claude_dir / "hooks.json"
+    settings_json = claude_dir / "settings.json"
+
+    py_paths: List[str] = []
+    ps_paths: List[str] = []
+
+    # T420: canonical surface — settings.json "hooks".
+    if settings_json.is_file():
+        s_paths, s_structural = _settings_hook_wiring(settings_json)
+        for msg in s_structural:
+            add_fail(r, msg)
+        for p in s_paths:
+            (ps_paths if p.endswith(".ps1") else py_paths).append(p)
+
+    # Legacy surface — hooks.json (only residual -File .ps1 wiring is checked
+    # here; .py commands on this surface are retired by T420).
+    if hooks_json.is_file():
+        raw = _read(hooks_json)
+        ps_paths.extend(
+            m.group(1) for m in re.finditer(r'-File\s+([^\s"]+\.ps1)', raw))
+
+    py_paths = sorted(set(py_paths))
+    ps_paths = sorted(set(ps_paths))
+
+    # .py hook scripts: existence is the honest check (no PS parse needed).
+    for rel in py_paths:
+        full = ctx.repo_root / rel.replace("\\", "/")
+        if full.is_file():
+            add_pass(r)
+        else:
+            add_fail(r, f"hook missing on disk: {rel}")
+
+    paths = ps_paths
     if not paths:
-        add_skip(r)
-        r["notes"] = "no hook .ps1 commands found in hooks.json"
+        if r["passed"] or r["failed"]:
+            r["notes"] = (f"{len(py_paths)} settings.json-wired hook(s) verified; "
+                          "no .ps1 commands to parse-check")
+        else:
+            add_skip(r)
+            r["notes"] = "no wired hook commands found in settings.json/hooks.json"
         return r
 
     existing: List[Path] = []

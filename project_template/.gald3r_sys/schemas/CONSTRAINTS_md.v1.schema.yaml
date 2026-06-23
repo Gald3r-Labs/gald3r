@@ -1,6 +1,6 @@
 ﻿schema_id: CONSTRAINTS-md
 schema_version: v1
-gald3r_rel_version: "2.1.0"
+gald3r_rel_version: "2.1.1"
 description: >-
   Schema for .gald3r/CONSTRAINTS.md, the project constraint registry plus
   per-constraint definition blocks (markdown document).

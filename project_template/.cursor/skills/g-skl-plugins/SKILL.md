@@ -24,27 +24,34 @@ host, author a third-party plugin, or any `@g-plugin-*` operation.
 
 ## ⚠️ Implementation-state honesty (read this first)
 
-The plugin system was designed in full (ADR-015) but only **partially absorbed** into this
-template tree. **Document and act on what exists; do not invoke commands/scripts that are not
-present.** Verify with `Test-Path` before assuming an operation is available.
+The plugin system was designed in full (ADR-015) and the lifecycle is now a **first-class
+engine surface** (T663, epic T541): all six ops live in `gald3r.systems.plugins.PluginSystem`
+and are reachable via the `gald3r plugin …` CLI and the `gald3r_plugin_*` MCP tools — one
+implementation, no PowerShell. The retired PowerShell scripts (BUG-128/129/130) are **not**
+the source of truth; prefer the engine ops.
 
-| Operation | Command | Backing script | Present in this tree? |
-|-----------|---------|----------------|------------------------|
-| UPDATE | `@g-plugin-update` | `.gald3r_sys/plugins/scripts/update_plugin.ps1` | ✅ Yes — full implementation |
-| INSTALL | `@g-plugin-install` | `.gald3r_sys/plugins/scripts/install_plugin.ps1` | ❌ Designed (ADR-015), script absent here |
-| REMOVE | `@g-plugin-remove` (alias `-uninstall`) | `.gald3r_sys/plugins/scripts/remove_plugin.ps1` | ❌ Designed, script absent here |
-| LIST | `@g-plugin-list` | (registry/ledger reader) | ❌ Designed, not present here |
-| NEW | `@g-plugin-new` | (scaffolder) | ❌ Designed, not present here |
-| CHECK_COMPAT | (validator) | `.gald3r_sys/plugins/scripts/validate_plugin_manifest.ps1` | ❌ Designed, not present here |
+| Operation | Engine op (CLI) | MCP tool | State |
+|-----------|-----------------|----------|-------|
+| INSTALL | `gald3r plugin install <local-source> [--dry-run]` | `gald3r_plugin_install` | ✅ Engine (T663) |
+| REMOVE | `gald3r plugin remove <id>` (alias `uninstall`) `[--dry-run]` | `gald3r_plugin_remove` | ✅ Engine (T663) |
+| LIST | `gald3r plugin list` | `gald3r_plugin_list` | ✅ Engine (T663) |
+| NEW | `gald3r plugin new <id> [--name --author --subsystem]` | `gald3r_plugin_new` | ✅ Engine (T663) |
+| CHECK_COMPAT | `gald3r plugin check-compat <local-source>` | `gald3r_plugin_check_compat` | ✅ Engine (T663) |
+| UPDATE | `gald3r plugin update <id> [--source --force --dry-run]` | `gald3r_plugin_update` | ✅ Engine (T663) |
 
-`update_plugin.ps1` itself notes the missing pieces: it delegates manifest validation to a
-sibling `validate_plugin_manifest.ps1` *if present* (falls back to a minimal built-in check),
-and delegates remote download to `install_plugin.ps1` *if present* (otherwise throws on a
-remote `https://` source). On this tree, **UPDATE works end-to-end only for local-path
-sources**; remote registry updates require the (absent) installer's download helper.
+The engine owns the **manifest schema**, the **`installed.yaml` ledger**, the **registry
+config**, the **compat floor** (`gald3r_min_version` ≤ `.gald3r_sys/VERSION`), the **D6
+conflict-abort** (never overwrites a non-plugin core component), and the **`plugin_source:`
+provenance stamping** that makes safe removal possible — a single source reused by every op.
 
-When an operation below is marked **(planned)**, it is the documented ADR-015 contract for
-when the script lands — not a feature you can run today on this tree.
+**Source resolution**: the engine installs from a **local path / vendored
+`.gald3r_sys/plugins/<id>/` dir** (a remote `https://` source is rejected, matching the
+engine's no-daemon / single-GET discipline — vendor the plugin dir first). Lifecycle scripts
+(`install.ps1` / `uninstall.ps1` / `upgrade.ps1`) are data-declared but **never auto-run** by
+the engine (ADR-015 D7) — inspect and run them yourself if you opt in.
+
+The legacy `@g-plugin-*` command names and the retired `.gald3r_sys/plugins/scripts/*.ps1`
+remain documented below for historical context; the engine ops above are the live path.
 
 ---
 

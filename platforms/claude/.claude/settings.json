@@ -19,5 +19,95 @@
         "chrome-devtools-mcp@latest"
       ]
     }
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/g-hk-session-start.py"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/g-hk-agent-complete.py"
+          },
+          {
+            "type": "command",
+            "command": "python .claude/hooks/g-hk-nightly-learn.py"
+          },
+          {
+            "type": "command",
+            "command": "python .claude/hooks/g-hk-session-end.py"
+          },
+          {
+            "type": "command",
+            "command": "python .claude/hooks/g-hk-encoding-normalize.py -Quiet"
+          },
+          {
+            "type": "command",
+            "command": "python .claude/hooks/g-hk-ggo-stop-detect.py"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Patch|ApplyPatch|str_replace_editor",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/g-hk-pre-tool-call-gald3r-guard.py"
+          },
+          {
+            "type": "command",
+            "command": "python .claude/hooks/g-hk-pre-tool-call-prd-freeze.py"
+          },
+          {
+            "type": "command",
+            "command": "python .claude/hooks/g-hk-pre-tool-call-member-gald3r-guard.py"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|Shell|Terminal|run_terminal_cmd",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/g-hk-validate-shell.py"
+          },
+          {
+            "type": "command",
+            "command": "python .claude/hooks/g-hk-pre-tool-call.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/g-hk-on-tool-end.py"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/g-hk-on-user-prompt-submit.py"
+          }
+        ]
+      }
+    ]
   }
 }

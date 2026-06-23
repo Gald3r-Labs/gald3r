@@ -275,13 +275,38 @@ def get_docs_fresh_cell(last_doc_scan: Optional[str], threshold: int) -> str:
     return _OK if age_days <= threshold else _WARN
 
 
+def load_matrix_data() -> Dict[str, Dict[str, str]]:
+    """Curated rich-cell data (base capabilities + Engine tier + Rules ext), keyed by
+    PLATFORM_REGISTRY.yaml platform name (T653). Harvested from the canonical matrix and
+    used by -GenerateMatrix as the AUTHORITATIVE cell source; platforms absent here fall
+    back to PLATFORM_SPEC.md-derived base cells with ❓/— for the engine columns.
+    Script-adjacent platform_matrix_data.json; returns {} when absent (generator still runs)."""
+    import json
+    data_path = Path(__file__).resolve().parent / "platform_matrix_data.json"
+    if not data_path.is_file():
+        return {}
+    try:
+        raw = json.loads(data_path.read_text(encoding="utf-8"))
+    except (ValueError, OSError):
+        return {}
+    plats = raw.get("platforms") if isinstance(raw, dict) else None
+    return plats if isinstance(plats, dict) else {}
+
+
 def generate_matrix(repo_root: Path, status_path: Path, crawl_max_age_days: int) -> int:
-    """T1543: -GenerateMatrix — compute 6 capability cells per platform and
-    (re)write .gald3r/PLATFORM_CAPABILITY_MATRIX.md."""
+    """T1543/T653: -GenerateMatrix — build the rich 8-column capability matrix (Hooks /
+    Rules / Skills / Commands / MCP / Engine tier / Rules ext) for the full registry roster
+    and (re)write .gald3r/PLATFORM_CAPABILITY_MATRIX.md. The roster stays registry-driven
+    (KNOWN_PLATFORMS, T516). Base cells derive from each platform's PLATFORM_SPEC.md, then
+    the curated platform_matrix_data.json overrides them with authoritative values; Engine
+    tier + Rules ext come from the curated data. PLATFORM_STATUS.md is a read-only
+    cross-check (warns; never overwritten)."""
     specs_root = repo_root / ".gald3r_sys" / "platforms"
     matrix_path = repo_root / ".gald3r" / "PLATFORM_CAPABILITY_MATRIX.md"
 
-    say("\n=== check_platform_status -GenerateMatrix (T1543) ===", "cyan")
+    curated = load_matrix_data()
+
+    say("\n=== check_platform_status -GenerateMatrix (T1543/T653) ===", "cyan")
     say(f"  specs : {specs_root}", "darkgray")
     say(f"  output: {matrix_path}", "darkgray")
     say("")
@@ -292,12 +317,17 @@ def generate_matrix(repo_root: Path, status_path: Path, crawl_max_age_days: int)
     # when NEITHER source can supply a single spec.
     if not specs_root.exists():
         any_spec = any(resolve_spec_path(repo_root, specs_root, p) for p in KNOWN_PLATFORMS)
-        if not any_spec:
+        if not any_spec and not curated:
             say(f"  ERROR: no PLATFORM_SPEC.md found via legacy {specs_root} or the registry "
-                f"skill trees — cannot build the matrix.", "red")
+                f"skill trees, and no curated platform_matrix_data.json — cannot build the "
+                f"matrix.", "red")
             return 1
-        say(f"  NOTE: legacy {specs_root} absent — resolving specs from the registry "
-            f"(PLATFORM_REGISTRY.yaml) against the skill trees.", "darkyellow")
+        if not any_spec:
+            say("  NOTE: no PLATFORM_SPEC.md resolved — building from curated "
+                "platform_matrix_data.json only.", "darkyellow")
+        else:
+            say(f"  NOTE: legacy {specs_root} absent — resolving specs from the registry "
+                f"(PLATFORM_REGISTRY.yaml) against the skill trees.", "darkyellow")
 
     # ---- Cross-check source: PLATFORM_STATUS.md (READ ONLY; never overwritten). ----
     status_by_platform: Dict[str, Dict[str, str]] = {}
@@ -308,72 +338,53 @@ def generate_matrix(repo_root: Path, status_path: Path, crawl_max_age_days: int)
         say("  WARN: PLATFORM_STATUS.md not found — skipping cross-check (AC5).", "yellow")
 
     matrix_rows: List[Dict[str, str]] = []
-    missing_spec_folders: List[str] = []
+    missing_data: List[str] = []
     tally: Dict[str, int] = {_OK: 0, _WARN: 0, _NO: 0, _UNK: 0}
 
     for p in KNOWN_PLATFORMS:
+        cur = curated.get(p, {})
+        engine_tier = cur.get("engine_tier", _UNK)
+        rules_ext = cur.get("rules_ext", "—")
+
+        # Base cells: derive from PLATFORM_SPEC.md (registry-driven generator logic), then
+        # let the curated data override with the authoritative values (T653).
+        cell_hooks = cell_rules = cell_skills = cell_commands = cell_mcp = _UNK
         spec_path = resolve_spec_path(repo_root, specs_root, p)
+        if spec_path is not None:
+            content = spec_path.read_text(encoding="utf-8")
+            summary = get_capability_summary_row(content) or {
+                "Hooks": _UNK, "Rules": _UNK, "Skills": _UNK,
+                "Commands": _UNK, "MCP": _UNK}
+            # Hooks: prefer the structured cell; if non-committal and the narrative clearly
+            # says "no hooks", honor the explicit ❌ (AC2 intent).
+            hooks = summary["Hooks"]
+            if hooks == _UNK or not hooks.strip():
+                narr = get_hooks_from_narrative(content)
+                if narr:
+                    hooks = narr
+            cell_hooks = hooks if hooks in VALID_CELLS else _UNK
+            cell_rules = summary["Rules"] if summary["Rules"] in VALID_CELLS else _UNK
+            cell_skills = summary["Skills"] if summary["Skills"] in VALID_CELLS else _UNK
+            cell_commands = summary["Commands"] if summary["Commands"] in VALID_CELLS else _UNK
+            cell_mcp = summary["MCP"] if summary["MCP"] in VALID_CELLS else _UNK
 
-        if spec_path is None:
-            missing_spec_folders.append(p)
-            matrix_rows.append({
-                "Platform": p, "Hooks": _UNK, "Rules": _UNK, "Skills": _UNK,
-                "Commands": _UNK, "MCP": _UNK, "DocsFresh": _UNK,
-            })
-            # Parity with the PS1: `5 | ForEach-Object { $tally['❓']++ }` pipes the
-            # scalar 5 so the block runs ONCE (not 5 times). The PS1 intent was +5
-            # for the capability cells but the actual behavior is +1; mirrored
-            # exactly here so .py and .ps1 tallies match (pre-existing PS1 quirk).
-            tally[_UNK] += 1   # capability cells (DocsFresh counted below)
-            tally[_UNK] += 1   # DocsFresh
-            continue
+        # Curated override (authoritative; harvested from the canonical matrix, T653).
+        cell_hooks = cur.get("hooks", cell_hooks)
+        cell_rules = cur.get("rules", cell_rules)
+        cell_skills = cur.get("skills", cell_skills)
+        cell_commands = cur.get("commands", cell_commands)
+        cell_mcp = cur.get("mcp", cell_mcp)
 
-        content = spec_path.read_text(encoding="utf-8")
-
-        summary = get_capability_summary_row(content)
-        if not summary:
-            # No structured capability table -> honest all-❓ for the 5 capability cells.
-            summary = {"Hooks": _UNK, "Rules": _UNK, "Skills": _UNK,
-                       "Commands": _UNK, "MCP": _UNK}
-
-        # Hooks: prefer the structured Capability Summary cell; if non-committal (❓)
-        # and the narrative clearly says "no hooks", honor the explicit ❌ (AC2 intent).
-        hooks = summary["Hooks"]
-        if hooks == _UNK or not hooks.strip():
-            narr = get_hooks_from_narrative(content)
-            if narr:
-                hooks = narr
-
-        # Normalize any unexpected token to ❓ (honest default).
-        cell_hooks = hooks if hooks in VALID_CELLS else _UNK
-        cell_rules = summary["Rules"] if summary["Rules"] in VALID_CELLS else _UNK
-        cell_skills = summary["Skills"] if summary["Skills"] in VALID_CELLS else _UNK
-        cell_commands = summary["Commands"] if summary["Commands"] in VALID_CELLS else _UNK
-        cell_mcp = summary["MCP"] if summary["MCP"] in VALID_CELLS else _UNK
-
-        # Docs Fresh (AC2): last_doc_scan vs per-spec crawl_max_age_days (fallback to CLI).
-        last_scan_fm = get_frontmatter_field(content, "last_doc_scan")
-        thr_fm = get_frontmatter_field(content, "crawl_max_age_days")
-        threshold = crawl_max_age_days
-        if thr_fm and re.match(r"^\d+$", thr_fm):
-            threshold = int(thr_fm)
-        # Prefer the PLATFORM_STATUS.md row's Last Doc Scan when the spec frontmatter
-        # is "never" but STATUS records a real date (STATUS is the scan ledger).
-        last_scan = last_scan_fm
-        if (last_scan is None or last_scan.strip().lower() == "never") and p in status_by_platform:
-            status_scan = status_by_platform[p]["LastDocScan"]
-            if status_scan and status_scan.strip().lower() != "never":
-                last_scan = status_scan
-        cell_docs_fresh = get_docs_fresh_cell(last_scan, threshold)
+        if spec_path is None and not cur:
+            missing_data.append(p)
 
         matrix_rows.append({
             "Platform": p, "Hooks": cell_hooks, "Rules": cell_rules,
             "Skills": cell_skills, "Commands": cell_commands, "MCP": cell_mcp,
-            "DocsFresh": cell_docs_fresh,
+            "EngineTier": engine_tier, "RulesExt": rules_ext,
         })
 
-        for cv in (cell_hooks, cell_rules, cell_skills, cell_commands, cell_mcp,
-                   cell_docs_fresh):
+        for cv in (cell_hooks, cell_rules, cell_skills, cell_commands, cell_mcp):
             if cv in tally:
                 tally[cv] += 1
             else:
@@ -393,34 +404,38 @@ def generate_matrix(repo_root: Path, status_path: Path, crawl_max_age_days: int)
             for cap, mine, theirs in pairs:
                 if theirs in VALID_CELLS and mine != theirs:
                     say(f"  Matrix says {mine} but STATUS says {theirs} for {p} "
-                        f"{cap} {emdash} verify PLATFORM_SPEC.md or PLATFORM_STATUS.md",
+                        f"{cap} {emdash} verify PLATFORM_SPEC.md / curated data / STATUS",
                         "yellow")
 
-    if missing_spec_folders:
-        say("  NOTE: {0} platform(s) had no canonical PLATFORM_SPEC.md (cells left {1}): {2}".format(
-            len(missing_spec_folders), _UNK, ", ".join(missing_spec_folders)), "darkyellow")
+    if missing_data:
+        say("  NOTE: {0} platform(s) had neither PLATFORM_SPEC.md nor curated data "
+            "(cells left {1}): {2}".format(
+                len(missing_data), _UNK, ", ".join(missing_data)), "darkyellow")
 
-    # ---- Write the matrix file, preserving the existing column layout/order. ----
+    # ---- Write the matrix file (rich 8-column schema; T653). ----
     lines: List[str] = []
     lines.append("# PLATFORM_CAPABILITY_MATRIX.md — Feature Comparison Across Platforms")
     lines.append("")
-    lines.append("**Generated by** `check_platform_status.py --generate-matrix` (T1543). "
+    lines.append("**Generated by** `check_platform_status.py --generate-matrix` (T1543/T653). "
                  "Owned by `g-agnt-platformer`.")
-    lines.append(f"Registry-driven: {len(matrix_rows)} platforms × 6 capability columns "
-                 "(row set from `PLATFORM_REGISTRY.yaml`, T516). Cells sourced from each "
-                 "platform's canonical `PLATFORM_SPEC.md`")
-    lines.append("(`## Capability Summary` table + frontmatter `last_doc_scan`). "
+    lines.append(f"Registry-driven: {len(matrix_rows)} platforms (roster from "
+                 "`PLATFORM_REGISTRY.yaml`, T516). Base capability cells (Hooks / Rules / "
+                 "Skills / Commands / MCP) derive from each platform's canonical "
+                 "`PLATFORM_SPEC.md`")
+    lines.append("(`## Capability Summary`), overridden by curated `platform_matrix_data.json` "
+                 "(authoritative). `Engine tier` and `Rules ext` come from the curated data. "
                  "Cross-checked against `PLATFORM_STATUS.md`.")
     lines.append("")
-    lines.append(f"Legend: {_OK} verified working · {_WARN} partial / Cursor-generic "
-                 f"· {_NO} not supported · {_UNK} untested.")
+    lines.append(f"Legend: {_OK} verified · {_WARN} partial · {_NO} not supported "
+                 f"· {_UNK} untested.")
     lines.append("")
-    lines.append("| Platform | Hooks | Rules | Skills | Commands | MCP | Docs Fresh |")
-    lines.append("|---|---|---|---|---|---|---|")
+    lines.append("| Platform | Hooks | Rules | Skills | Commands | MCP | Engine tier | "
+                 "Rules ext |")
+    lines.append("|---|---|---|---|---|---|---|---|")
     for r in matrix_rows:
-        lines.append("| {0} | {1} | {2} | {3} | {4} | {5} | {6} |".format(
+        lines.append("| {0} | {1} | {2} | {3} | {4} | {5} | {6} | {7} |".format(
             r["Platform"], r["Hooks"], r["Rules"], r["Skills"], r["Commands"],
-            r["MCP"], r["DocsFresh"]))
+            r["MCP"], r["EngineTier"], r["RulesExt"]))
     lines.append("")
     lines.append("---")
     lines.append("")
@@ -433,22 +448,25 @@ def generate_matrix(repo_root: Path, status_path: Path, crawl_max_age_days: int)
     lines.append("| Skills | `g-skl-*/SKILL.md` discovery + invocation |")
     lines.append("| Commands | `@g-*` slash commands / workflow equivalents |")
     lines.append("| MCP | Model Context Protocol server support |")
-    lines.append("| Docs Fresh | Last doc scan within `crawl_max_age_days` |")
+    lines.append("| Engine tier | How the bundled gald3r engine reaches the platform — "
+                 "L2 MCP, L1 CLI (`uv run … gald3r`), L0 files-only (`SKILL.full.md`) |")
+    lines.append("| Rules ext | Per-platform rule file extension "
+                 "(`.md` / `.mdc` / single-file) |")
     lines.append("")
-    lines.append("Cells are derived from each platform's `## Capability Summary` table "
-                 "in its canonical `PLATFORM_SPEC.md`; `Docs Fresh` is computed from "
-                 "frontmatter `last_doc_scan` vs `crawl_max_age_days` "
-                 f"(default {crawl_max_age_days}). Regenerate with "
-                 "`check_platform_status.py --generate-matrix`.")
+    lines.append("Base cells derive from each platform's `## Capability Summary` in its "
+                 "canonical `PLATFORM_SPEC.md`, overridden by curated "
+                 "`platform_matrix_data.json` (which also supplies `Engine tier` + "
+                 "`Rules ext`). Regenerate with `check_platform_status.py --generate-matrix`.")
 
     matrix_path.parent.mkdir(parents=True, exist_ok=True)
     matrix_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-    total_cells = len(matrix_rows) * 6
+    total_cells = len(matrix_rows) * 5
     say("")
-    say("  Updated {0} cells ({1} {5}, {2} {6}, {3} {7}, {4} {8})".format(
-        total_cells, tally[_OK], tally[_WARN], tally[_NO], tally[_UNK],
-        _OK, _WARN, _NO, _UNK), "green")
+    say("  Updated {0} base cells ({1} {5}, {2} {6}, {3} {7}, {4} {8}) across "
+        "{9} platforms".format(
+            total_cells, tally[_OK], tally[_WARN], tally[_NO], tally[_UNK],
+            _OK, _WARN, _NO, _UNK, len(matrix_rows)), "green")
     return 0
 
 

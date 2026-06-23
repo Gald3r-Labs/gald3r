@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     gald3r systems functional test harness (T1540).
 
@@ -288,27 +288,99 @@ function Test-PlatformParity {
 }
 
 # --- Hook Wiring ----------------------------------------------------------
-# Verify every hook command referenced in .claude/hooks.json resolves to a file
-# on disk AND parses cleanly (PowerShell AST). Structural+syntax check.
+# Verify every wired hook command resolves on disk AND (for .ps1) parses cleanly.
+#
+# Reads BOTH config surfaces, matching the Python check_hook_wiring sibling:
+#   * the canonical .claude/settings.json "hooks" block (T420 consolidation
+#     target -- PascalCase events in a three-level event -> matcher -> hooks[]
+#     shape; non-PascalCase event names are Cursor-era and silently do not fire)
+#   * the legacy .claude/hooks.json (retained only for residual -File .ps1 wiring;
+#     .py commands on that surface are retired by T420)
+# .py hook scripts are existence-checked (no PowerShell parse needed); .ps1 hook
+# scripts are existence- AND AST-parse-checked.
+
+# Walk the settings.json "hooks" block. Returns @{ paths=@(script paths);
+# structural=@(non-PascalCase event failures) }. Mirrors _settings_hook_wiring.
+function Get-SettingsHookWiring {
+    param([string]$SettingsJson)
+    $paths = New-Object System.Collections.Generic.List[string]
+    $structural = New-Object System.Collections.Generic.List[string]
+    try {
+        $data = (Get-Content $SettingsJson -Raw) | ConvertFrom-Json
+    } catch {
+        $structural.Add(("settings.json parse error: {0}" -f $_.Exception.Message))
+        return @{ paths = @($paths); structural = @($structural) }
+    }
+    $hooks = $data.hooks
+    if (-not $hooks) {
+        return @{ paths = @($paths); structural = @($structural) }
+    }
+    foreach ($prop in $hooks.PSObject.Properties) {
+        $event = $prop.Name
+        if ($event.Length -gt 0 -and [char]::IsLower($event[0])) {
+            $structural.Add(("non-PascalCase event '{0}' in settings.json (Cursor-era name; will not fire on Claude Code)" -f $event))
+        }
+        $groups = $prop.Value
+        if ($groups -isnot [System.Collections.IEnumerable] -or $groups -is [string]) { continue }
+        foreach ($group in $groups) {
+            $entries = $group.hooks
+            if (-not $entries) { continue }
+            foreach ($entry in $entries) {
+                $cmd = [string]$entry.command
+                $m = [regex]::Match($cmd, '(?:-File\s+|python\s+)([^\s"]+\.(?:ps1|py))')
+                if ($m.Success) { $paths.Add($m.Groups[1].Value) }
+            }
+        }
+    }
+    return @{ paths = @($paths | Sort-Object -Unique); structural = @($structural) }
+}
+
 function Test-HookWiring {
     $R = New-SystemResult -Name 'Hook Wiring' -Key 'hooks'
     $hooksJson = Join-Path $RepoRoot '.claude\hooks.json'
-    if (-not (Test-Path $hooksJson)) {
-        Add-Skip $R
-        $R.notes = '.claude/hooks.json not present (skipped)'
-        return $R
+    $settingsJson = Join-Path $RepoRoot '.claude\settings.json'
+
+    $pyPaths = New-Object System.Collections.Generic.List[string]
+    $psPaths = New-Object System.Collections.Generic.List[string]
+
+    # T420: canonical surface -- settings.json "hooks".
+    if (Test-Path $settingsJson) {
+        $wiring = Get-SettingsHookWiring -SettingsJson $settingsJson
+        foreach ($msg in $wiring.structural) { Add-Fail $R $msg }
+        foreach ($p in $wiring.paths) {
+            if ($p.EndsWith('.ps1')) { $psPaths.Add($p) } else { $pyPaths.Add($p) }
+        }
     }
-    $raw = Get-Content $hooksJson -Raw
-    # Extract every -File <path> argument from command strings.
-    $matches = [regex]::Matches($raw, '-File\s+([^\s"]+\.ps1)')
-    $paths = @()
-    foreach ($m in $matches) { $paths += $m.Groups[1].Value }
-    $paths = @($paths | Sort-Object -Unique)
+
+    # Legacy surface -- hooks.json (only residual -File .ps1 wiring is checked
+    # here; .py commands on this surface are retired by T420).
+    if (Test-Path $hooksJson) {
+        $raw = Get-Content $hooksJson -Raw
+        foreach ($m in [regex]::Matches($raw, '-File\s+([^\s"]+\.ps1)')) {
+            $psPaths.Add($m.Groups[1].Value)
+        }
+    }
+
+    $pyPaths = @($pyPaths | Sort-Object -Unique)
+    $psPaths = @($psPaths | Sort-Object -Unique)
+
+    # .py hook scripts: existence is the honest check (no PS parse needed).
+    foreach ($rel in $pyPaths) {
+        $full = Join-Path $RepoRoot ($rel -replace '/', '\')
+        if (Test-Path $full) { Add-Pass $R } else { Add-Fail $R ("hook missing on disk: {0}" -f $rel) }
+    }
+
+    $paths = $psPaths
     if ($paths.Count -eq 0) {
-        Add-Skip $R
-        $R.notes = 'no hook .ps1 commands found in hooks.json'
+        if (($R.passed + $R.failed) -gt 0) {
+            $R.notes = ("{0} settings.json-wired hook(s) verified; no .ps1 commands to parse-check" -f $pyPaths.Count)
+        } else {
+            Add-Skip $R
+            $R.notes = 'no wired hook commands found in settings.json/hooks.json'
+        }
         return $R
     }
+
     $errs = New-Object System.Collections.Generic.List[object]
     foreach ($rel in $paths) {
         $full = Join-Path $RepoRoot ($rel -replace '/', '\')

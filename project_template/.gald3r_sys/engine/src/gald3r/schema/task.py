@@ -13,7 +13,7 @@ from gald3r.schema import status as _status
 
 SCHEMA_VERSION = "task-file-v1"
 
-TYPES = ["feature", "bug_fix", "refactor", "chore", "documentation"]
+TYPES = ["feature", "bug_fix", "refactor", "chore", "documentation", "research"]
 PRIORITIES = ["critical", "high", "medium", "low"]
 # release-staging hold (T419): omitted/none = g-ship picks it up; manual/sync_required hold it back
 RELEASE_HOLD_VALUES = ["none", "manual", "sync_required"]

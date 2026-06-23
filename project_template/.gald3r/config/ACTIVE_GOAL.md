@@ -1,5 +1,5 @@
 ﻿---
-gald3r_rel_version: "2.1.0"
+gald3r_rel_version: "2.1.1"
 schema_version: "generic-v1"
 id: null
 description: ""
