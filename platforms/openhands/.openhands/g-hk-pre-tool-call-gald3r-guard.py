@@ -8,8 +8,9 @@ Enforces g-rl-33 ".gald3r/ Folder Gate (HARD RULE)":
 
 Hook contract (per Claude Code / Cursor PreToolUse spec):
   stdin   : JSON { tool_name, tool_input: { file_path | path | notebook_path, ... } }
-  exit 0  : allow (body: { "permission": "allow" })
-  exit 2  : deny  (body: { permission: "deny", user_message, agent_message })
+  exit 0  : allow (body: { "permission": "allow" } on stdout)
+  exit 2  : deny  (human-readable reason on STDERR — Claude Code's blocking-error
+            contract; a stdout body is ignored for exit 2). BUG-179 fix.
 
 Bypass: GALD3R_HOOK_BYPASS=1 (mirrors T600 §3.3 user override).
 Allow override (active gald3r command): GALD3R_ACTIVE_AGENT=<agent_id>.
@@ -86,11 +87,11 @@ def main() -> int:
         "g-planner / g-ideas-goals / etc.) or set GALD3R_ACTIVE_AGENT before the tool call. "
         "See .claude/rules/g-rl-33-enforcement_catchall.md § '.gald3r/ Folder Gate (HARD RULE)'."
     )
-    print(json.dumps({
-        "permission": "deny",
-        "user_message": msg,
-        "agent_message": msg + f" Target path: {path}",
-    }, separators=(",", ":")))
+    # BUG-179: exit 2 is Claude Code's "blocking error" contract — the reason MUST
+    # be written to STDERR. The old code printed JSON to stdout (silently discarded,
+    # surfacing as "No stderr output"). Emit the denial to stderr; exit 2 keeps it a
+    # hard block (no fail-open). See .gald3r/bugs/done/bug179_pretool_guard_hook_deny_contract.md
+    sys.stderr.write(msg + f" Target path: {path}\n")
     return 2
 
 

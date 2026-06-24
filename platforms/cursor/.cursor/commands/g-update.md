@@ -173,7 +173,7 @@ wrapper when it lands.
 {
   "latest_version": "1.3.0",
   "release_date": "2026-05-01",
-  "release_notes_url": "https://github.com/gald3r/gald3r/releases/tag/v2.1.2"
+  "release_notes_url": "https://github.com/gald3r/gald3r/releases/tag/v2.2.0"
 }
 ```
 

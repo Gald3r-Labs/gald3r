@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/wrm3/gald3r/releases/tag/v2.1.2"><img src="https://img.shields.io/badge/version-2.1.2-blue" alt="version 2.1.2" /></a>
+  <a href="https://github.com/wrm3/gald3r/releases/tag/v2.2.0"><img src="https://img.shields.io/badge/version-2.2.0-blue" alt="version 2.2.0" /></a>
   <a href="CHANGELOG.md">Changelog</a> |
   <a href="CONTRIBUTING.md">Contributing</a> |
   <a href="gald3r_supported_platforms.html">All 34 platforms</a>
@@ -244,4 +244,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Issues and PRs welcome.
 
 ---
 
-*Powered by gald3r v2.1.2 Â· [Changelog](CHANGELOG.md) Â· [Roadmap](ROADMAP.md)*
+*Powered by gald3r v2.2.0 Â· [Changelog](CHANGELOG.md) Â· [Roadmap](ROADMAP.md)*

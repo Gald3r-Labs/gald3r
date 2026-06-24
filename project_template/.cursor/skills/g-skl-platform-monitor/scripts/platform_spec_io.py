@@ -136,9 +136,14 @@ def normalize_cell(value: Optional[str]) -> str:
 
 
 def capability_cells(content: str) -> Dict[str, str]:
-    """Resolve the 5 capability cells for a spec the SAME way the matrix does:
+    """Resolve the 5 BASE capability cells for a spec from its ``PLATFORM_SPEC.md``:
     prefer the structured ## Capability Summary row; if Hooks is non-committal
-    and the narrative says "no hooks", honor the explicit ❌."""
+    and the narrative says "no hooks", honor the explicit ❌.
+
+    This is the *spec-only* base. :func:`matrix_capability_cells` layers the curated
+    ``platform_matrix_data.json`` override on top — that override is the AUTHORITATIVE
+    result ``check_platform_status.py --generate-matrix`` writes, and the one
+    ``generate_status.py`` must match (T515 AC2)."""
     summary = get_capability_summary_row(content) or {}
     hooks = summary.get("Hooks", UNK)
     if hooks == UNK or not hooks.strip():
@@ -152,6 +157,42 @@ def capability_cells(content: str) -> Dict[str, str]:
         "Commands": normalize_cell(summary.get("Commands")),
         "MCP": normalize_cell(summary.get("MCP")),
     }
+
+
+# Curated-data key -> capability column name, in canonical column order. The curated
+# platform_matrix_data.json uses lowercase keys (hooks/rules/...); the table columns
+# are title-case (Hooks/Rules/...).
+_CURATED_KEY_TO_COLUMN = (
+    ("hooks", "Hooks"),
+    ("rules", "Rules"),
+    ("skills", "Skills"),
+    ("commands", "Commands"),
+    ("mcp", "MCP"),
+)
+
+
+def matrix_capability_cells(
+    spec_content: Optional[str],
+    curated_entry: Optional[Dict[str, object]] = None,
+) -> Dict[str, str]:
+    """Resolve the 5 AUTHORITATIVE capability cells the way ``--generate-matrix`` does:
+    derive the spec base via :func:`capability_cells` (all-❓ when there is no spec),
+    then let the curated ``platform_matrix_data.json`` entry override each cell (T653).
+
+    This is the SINGLE home of the base+curated merge so the matrix generator and the
+    STATUS generator can never disagree (T515 AC2 — a STATUS regen on unchanged inputs
+    leaves zero matrix-vs-STATUS cross-check warnings). Untested-stub specs (all ❓)
+    whose researched values live only in the curated data therefore land the SAME cell
+    in STATUS as in the matrix, instead of an honest-but-mismatched ❓."""
+    if spec_content is not None:
+        cells = capability_cells(spec_content)
+    else:
+        cells = {col: UNK for col in CAPABILITY_COLUMNS}
+    cur = curated_entry or {}
+    for key, col in _CURATED_KEY_TO_COLUMN:
+        if key in cur:
+            cells[col] = normalize_cell(str(cur[key]))
+    return cells
 
 
 # --------------------------------------------------------------------------- #
