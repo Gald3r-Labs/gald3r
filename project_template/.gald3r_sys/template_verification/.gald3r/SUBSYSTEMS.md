@@ -1,5 +1,5 @@
 ﻿---
-gald3r_rel_version: "2.1.2"
+gald3r_rel_version: "2.2.0"
 schema_version: "SUBSYSTEMS-md-v1"
 ---
 # SUBSYSTEMS.md — {PROJECT_NAME}

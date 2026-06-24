@@ -59,12 +59,14 @@ try:
         KNOWN_PLATFORMS,
         parse_status_rows,
         resolve_spec_path,
+        load_matrix_data,
         _find_root,
     )
 except ImportError:  # pragma: no cover - defensive
     KNOWN_PLATFORMS = []  # type: ignore
     parse_status_rows = None  # type: ignore
     resolve_spec_path = None  # type: ignore
+    load_matrix_data = None  # type: ignore
     _find_root = None  # type: ignore
 
 # Marker line for the single generated timestamp (the only non-deterministic byte).
@@ -118,15 +120,28 @@ def build_rows(
     Capability cells + Last Doc Scan are regenerated; Status + Notes are merged
     from ``existing``. A platform whose spec cannot be resolved keeps its prior
     row verbatim (rows are never dropped).
+
+    Capability cells use the SAME resolution as ``check_platform_status.py
+    --generate-matrix`` — spec ``## Capability Summary`` base, then the curated
+    ``platform_matrix_data.json`` override (T653) — via the shared
+    ``psio.matrix_capability_cells``. This is what closes T515 AC2: untested-stub
+    specs (all ❓) whose researched values live only in the curated data now land
+    the same cell in STATUS as in the matrix, so a regen on unchanged inputs leaves
+    ZERO matrix-vs-STATUS cross-check warnings.
     """
     specs_root = repo_root / ".gald3r_sys" / "platforms"
+    # Curated authoritative cell data (same source the matrix generator overrides
+    # with). Absent / unavailable -> {} (generator still runs, cells stay spec-derived).
+    curated = load_matrix_data() if load_matrix_data else {}
     rows: List[Dict[str, str]] = []
     for platform in KNOWN_PLATFORMS:
         prior = existing.get(platform, {})
+        cur = curated.get(platform, {})
         spec_path = resolve_spec_path(repo_root, specs_root, platform) if resolve_spec_path else None
-        if spec_path is None:
-            # No spec to regenerate from: preserve the existing row untouched, or
-            # write an honest all-❓ stub if the platform is brand-new to STATUS.
+        if spec_path is None and not cur:
+            # No spec AND no curated data to regenerate from: preserve the existing
+            # row untouched, or write an honest all-❓ stub if the platform is
+            # brand-new to STATUS. Rows are never silently dropped.
             rows.append({
                 "Platform": platform,
                 "Status": prior.get("Status", UNK),
@@ -139,13 +154,17 @@ def build_rows(
                 "Notes": prior.get("Notes", ""),
             })
             continue
-        content = spec_path.read_text(encoding="utf-8")
-        cells = psio.capability_cells(content)
-        last_scan = psio.resolve_last_doc_scan(content, platform, ledger)
+        content = spec_path.read_text(encoding="utf-8") if spec_path is not None else None
+        cells = psio.matrix_capability_cells(content, cur)
+        last_scan = (
+            psio.resolve_last_doc_scan(content, platform, ledger)
+            if content is not None else psio.ledger_last_doc_scan(ledger, platform)
+        )
+        spec_status = psio.get_frontmatter_field(content, "status") if content is not None else None
         rows.append({
             "Platform": platform,
             # Status verdict + Notes are curated human judgement -> preserved by merge.
-            "Status": prior.get("Status", psio.get_frontmatter_field(content, "status") or UNK),
+            "Status": prior.get("Status", spec_status or UNK),
             "LastDocScan": last_scan or prior.get("LastDocScan", "never"),
             "Hooks": cells["Hooks"],
             "Rules": cells["Rules"],
