@@ -1,6 +1,6 @@
 ﻿schema_id: PLAN-md
 schema_version: v1
-gald3r_rel_version: "2.1.2"
+gald3r_rel_version: "2.2.0"
 description: >-
   Schema for .gald3r/PLAN.md, the master strategy / milestone plan
   (markdown document).

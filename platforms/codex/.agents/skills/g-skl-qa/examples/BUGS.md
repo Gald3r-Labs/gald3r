@@ -1,6 +1,6 @@
 ﻿---
 subsystem_memberships: [BUG_AND_QUALITY]
-gald3r_rel_version: "2.1.2"
+gald3r_rel_version: "2.2.0"
 schema_version: "BUGS-md-v1"
 ---
 <!--

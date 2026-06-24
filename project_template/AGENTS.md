@@ -226,7 +226,7 @@ bucket is editing. File-lock manifests enforce this (T1059):
 
 ## gald3r Version
 
-**gald3r version**: 2.1.2
+**gald3r version**: 2.2.0
 **Supported IDEs**: Cursor, Claude Code, Gemini, Codex, OpenCode
 
 ---

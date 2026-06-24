@@ -1,6 +1,6 @@
 [project]
 name = "gald3r"
-version = "2.1.2"
+version = "2.2.0"
 description = "gald3r engine — file-first agent OS (tier-gated, Mode A pure core): 12 file-backed systems + the prompt/judgment layer, over CLI + MCP."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -8,12 +8,16 @@ dependencies = ["pyyaml>=6.0"]
 
 [project.optional-dependencies]
 mcp = ["mcp>=1.2"]
+# T639: DuckDB analytics projection (read-only). Optional — the engine's Mode-A
+# pure core still runs with only pyyaml; the import is gated so duckdb's absence
+# yields a clean message, not a crash.
+analytics = ["duckdb>=1.5.4"]
 
 [project.scripts]
 gald3r = "gald3r.adapters.cli:main"
 
 [dependency-groups]
-dev = ["pytest>=8.0", "mcp>=1.2"]
+dev = ["pytest>=8.0", "mcp>=1.2", "duckdb>=1.5.4"]
 
 [build-system]
 requires = ["hatchling"]

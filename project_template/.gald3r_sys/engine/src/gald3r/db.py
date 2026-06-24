@@ -39,6 +39,34 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_tasks_uuid ON tasks(uuid) WHERE uuid != ''
 CREATE UNIQUE INDEX IF NOT EXISTS idx_bugs_uuid  ON bugs(uuid)  WHERE uuid != '';
 """
 
+# T639 Phase-1 remainder — additional read-only doc-type projections. Purely
+# additive: separate tables, ingested FROM the markdown the same way tasks/bugs are,
+# with the verbatim source in `raw` for lossless round-trip regeneration. None of
+# these is on a claim/transaction path; they exist for reporting + round-trip only.
+#   plans       : single-file PLAN.md (name-keyed singleton: name = "PLAN")
+#   constraints : C-NNN rows in the CONSTRAINTS.md index table (cid is the key)
+#   subsystems  : per-name subsystems/<name>.md spec files (name is the key)
+#   features    : per-item features/featNNN_*.md files (numeric id is the key)
+_DOCTYPE_SCHEMA = """
+CREATE TABLE IF NOT EXISTS plans (
+  name TEXT PRIMARY KEY, status TEXT, schema_version TEXT, path TEXT, raw TEXT
+);
+CREATE TABLE IF NOT EXISTS constraints (
+  cid TEXT PRIMARY KEY, status TEXT, name TEXT, scope TEXT, summary TEXT,
+  path TEXT, raw TEXT
+);
+CREATE TABLE IF NOT EXISTS subsystems (
+  name TEXT PRIMARY KEY, status TEXT, owner TEXT, locations TEXT,
+  dependencies TEXT, path TEXT, raw TEXT
+);
+CREATE TABLE IF NOT EXISTS features (
+  id INTEGER PRIMARY KEY, fid TEXT, title TEXT, status TEXT, priority TEXT,
+  uuid TEXT, subsystems TEXT, created_date TEXT, completed_date TEXT,
+  path TEXT, raw TEXT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_features_uuid ON features(uuid) WHERE uuid != '';
+"""
+
 # T631 — atomic task-claim layer (the ONLY write path in this module). These tables
 # live in the same .gald3r/gald3r.db file; SQLite's single-writer lock makes the
 # claim atomic for multiple coordinators on one machine (master plan §3.1/§5.1).
@@ -90,18 +118,22 @@ def _int_id(value: object) -> Optional[int]:
 
 
 def build_snapshot(gald3r_dir: Path, db_path: str = ":memory:") -> sqlite3.Connection:
-    """Ingest `.gald3r/tasks` + `.gald3r/bugs` files into a SQLite snapshot.
+    """Ingest `.gald3r/` doc-type files into a read-only SQLite snapshot.
+
+    Covers tasks + bugs (T597) plus plan/constraint/subsystem/feature doc types
+    (T639), all derived FROM the markdown (files remain the source of truth).
 
     Args:
         gald3r_dir: the project's `.gald3r` directory.
         db_path: SQLite path (default in-memory). Files are NOT modified.
 
     Returns:
-        An open sqlite3.Connection populated with the current task/bug state.
+        An open sqlite3.Connection populated with the current project state.
     """
     gd = Path(gald3r_dir)
     conn = sqlite3.connect(db_path)
     conn.executescript(_SCHEMA)
+    conn.executescript(_DOCTYPE_SCHEMA)  # T639 plan/constraint/subsystem/feature tables
     init_coordination_schema(conn)  # T631/T610 claim+lock tables (+ T636 col migration)
 
     tasks_dir = gd / "tasks"
@@ -148,8 +180,99 @@ def build_snapshot(gald3r_dir: Path, db_path: str = ":memory:") -> sqlite3.Conne
                  str(p), raw),
             )
 
+    _ingest_doctypes(conn, gd)  # T639: plan/constraint/subsystem/feature (additive)
+
     conn.commit()
     return conn
+
+
+# ── T639 Phase-1 remainder: additional read-only doc-type ingest ────────────────
+# Mirrors the task/bug ingest above (parse frontmatter / table rows, store verbatim
+# `raw` for lossless round-trip). Kept in a dedicated function so the task/bug ingest
+# path stays byte-for-byte unchanged. None of this touches a claim/transaction path.
+
+def _parse_constraint_rows(text: str) -> List[Dict[str, str]]:
+    """Parse the `C-NNN` rows of the CONSTRAINTS.md Constraint Index table.
+
+    Matches `ConstraintSystem.list()`: a 5-column row `| ID | Status | Name | Scope
+    | Summary |` whose ID starts with `C-`. Tolerant of surrounding governance prose.
+    """
+    out: List[Dict[str, str]] = []
+    for line in text.splitlines():
+        if not line.lstrip().startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) >= 5 and cells[0].startswith("C-"):
+            out.append({"cid": cells[0], "status": cells[1], "name": cells[2],
+                        "scope": cells[3], "summary": cells[4]})
+    return out
+
+
+def _ingest_doctypes(conn: sqlite3.Connection, gd: Path) -> None:
+    """Ingest plan/constraint/subsystem/feature doc types into the snapshot."""
+    # plan — single-file PLAN.md (name-keyed singleton). raw = verbatim file text.
+    plan_path = gd / "PLAN.md"
+    if plan_path.exists():
+        raw = plan_path.read_text(encoding="utf-8", errors="replace")
+        fm = _parse_frontmatter(raw) or {}
+        conn.execute(
+            "INSERT OR REPLACE INTO plans (name, status, schema_version, path, raw) "
+            "VALUES (?,?,?,?,?)",
+            ("PLAN", fm.get("status", ""), fm.get("schema_version", ""),
+             str(plan_path), raw),
+        )
+
+    # constraints — C-NNN rows of the CONSTRAINTS.md index. The whole file is the
+    # `raw` source (the rows live in one table), keyed per-row by cid for analytics.
+    cons_path = gd / "CONSTRAINTS.md"
+    if cons_path.exists():
+        raw = cons_path.read_text(encoding="utf-8", errors="replace")
+        for row in _parse_constraint_rows(raw):
+            conn.execute(
+                "INSERT OR REPLACE INTO constraints "
+                "(cid, status, name, scope, summary, path, raw) VALUES (?,?,?,?,?,?,?)",
+                (row["cid"], row["status"], row["name"], row["scope"],
+                 row["summary"], str(cons_path), raw),
+            )
+
+    # subsystems — per-name spec files subsystems/<name>.md (name-keyed, no numeric id).
+    subs_dir = gd / "subsystems"
+    if subs_dir.exists():
+        for p in sorted(subs_dir.glob("*.md")):
+            raw = p.read_text(encoding="utf-8", errors="replace")
+            fm = _parse_frontmatter(raw)
+            if not fm or not fm.get("name"):
+                continue
+            conn.execute(
+                "INSERT OR REPLACE INTO subsystems "
+                "(name, status, owner, locations, dependencies, path, raw) "
+                "VALUES (?,?,?,?,?,?,?)",
+                (fm.get("name", ""), fm.get("status", ""), fm.get("owner", ""),
+                 fm.get("locations", ""), fm.get("dependencies", ""), str(p), raw),
+            )
+
+    # features — per-item files features/featNNN_*.md (numeric id is the PK; the
+    # prefixed display id `feat-NNN` is kept verbatim in `fid`).
+    feat_dir = gd / "features"
+    if feat_dir.exists():
+        for p in feat_dir.rglob("feat*.md"):
+            if "inbox" in p.parts:
+                continue
+            raw = p.read_text(encoding="utf-8", errors="replace")
+            fm = _parse_frontmatter(raw)
+            fnum = _int_id(fm.get("id")) if fm else None
+            if fnum is None:
+                continue
+            conn.execute(
+                "INSERT OR REPLACE INTO features "
+                "(id, fid, title, status, priority, uuid, subsystems, "
+                " created_date, completed_date, path, raw) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                (fnum, fm.get("id", ""), fm.get("title", ""), fm.get("status", ""),
+                 fm.get("priority", ""), fm.get("uuid", ""), fm.get("subsystems", ""),
+                 fm.get("created_date", ""), fm.get("completed_date", ""),
+                 str(p), raw),
+            )
 
 
 def task_by_uuid(conn: sqlite3.Connection, uuid: str) -> Optional[sqlite3.Row]:
@@ -164,16 +287,31 @@ def bug_by_uuid(conn: sqlite3.Connection, uuid: str) -> Optional[sqlite3.Row]:
     return conn.execute("SELECT * FROM bugs WHERE uuid = ?", (uuid,)).fetchone()
 
 
-def regenerate_file(conn: sqlite3.Connection, table: str, numeric_id: int) -> Optional[str]:
+# Round-trip key columns per table. Every ingested doc type stores its verbatim
+# source in `raw`, so regeneration is lossless; the only per-table difference is the
+# key column the caller addresses a row by. tasks/bugs/features key on numeric `id`
+# (unchanged for tasks/bugs — T597 behavior preserved); plans/subsystems key on
+# `name`, constraints on `cid` (T639). The allowlist also doubles as injection
+# protection for the f-string SQL below.
+_ROUNDTRIP_KEYS = {
+    "tasks": "id", "bugs": "id", "features": "id",
+    "plans": "name", "subsystems": "name", "constraints": "cid",
+}
+
+
+def regenerate_file(conn: sqlite3.Connection, table: str, key) -> Optional[str]:
     """Regenerate a file's canonical text from the DB (round-trip fidelity AC).
 
     The DB stores the verbatim source in `raw`, so regeneration is lossless: the
-    DB alone can reproduce the canonical gald3r file for any ingested item.
+    DB alone can reproduce the canonical gald3r file for any ingested item. `key`
+    is the value of the table's key column (numeric id for tasks/bugs/features,
+    name for plans/subsystems, cid for constraints — see `_ROUNDTRIP_KEYS`).
     """
-    if table not in ("tasks", "bugs"):
-        raise ValueError("table must be 'tasks' or 'bugs'")
+    key_col = _ROUNDTRIP_KEYS.get(table)
+    if key_col is None:
+        raise ValueError(f"table must be one of {sorted(_ROUNDTRIP_KEYS)}")
     row = conn.execute(
-        f"SELECT raw FROM {table} WHERE id = ?", (numeric_id,)  # noqa: S608 (allowlisted)
+        f"SELECT raw FROM {table} WHERE {key_col} = ?", (key,)  # noqa: S608 (allowlisted)
     ).fetchone()
     return row[0] if row else None
 

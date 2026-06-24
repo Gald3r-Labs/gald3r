@@ -28,6 +28,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
 
+# Shared spec/cell parsing (the single home of the base+curated capability-cell merge,
+# used by both -GenerateMatrix here and generate_status.py — T515 AC2). Script-adjacent.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import platform_spec_io as psio  # noqa: E402
+
 
 def _bootstrap_engine() -> bool:
     """Make gald3r.utils importable; fall back to stdlib when unavailable."""
@@ -347,33 +352,18 @@ def generate_matrix(repo_root: Path, status_path: Path, crawl_max_age_days: int)
         rules_ext = cur.get("rules_ext", "—")
 
         # Base cells: derive from PLATFORM_SPEC.md (registry-driven generator logic), then
-        # let the curated data override with the authoritative values (T653).
-        cell_hooks = cell_rules = cell_skills = cell_commands = cell_mcp = _UNK
+        # let the curated data override with the authoritative values (T653). This base +
+        # curated merge is shared with generate_status.py (T515 AC2) via
+        # platform_spec_io.matrix_capability_cells, so the matrix and STATUS can never
+        # disagree on a capability cell.
         spec_path = resolve_spec_path(repo_root, specs_root, p)
-        if spec_path is not None:
-            content = spec_path.read_text(encoding="utf-8")
-            summary = get_capability_summary_row(content) or {
-                "Hooks": _UNK, "Rules": _UNK, "Skills": _UNK,
-                "Commands": _UNK, "MCP": _UNK}
-            # Hooks: prefer the structured cell; if non-committal and the narrative clearly
-            # says "no hooks", honor the explicit ❌ (AC2 intent).
-            hooks = summary["Hooks"]
-            if hooks == _UNK or not hooks.strip():
-                narr = get_hooks_from_narrative(content)
-                if narr:
-                    hooks = narr
-            cell_hooks = hooks if hooks in VALID_CELLS else _UNK
-            cell_rules = summary["Rules"] if summary["Rules"] in VALID_CELLS else _UNK
-            cell_skills = summary["Skills"] if summary["Skills"] in VALID_CELLS else _UNK
-            cell_commands = summary["Commands"] if summary["Commands"] in VALID_CELLS else _UNK
-            cell_mcp = summary["MCP"] if summary["MCP"] in VALID_CELLS else _UNK
-
-        # Curated override (authoritative; harvested from the canonical matrix, T653).
-        cell_hooks = cur.get("hooks", cell_hooks)
-        cell_rules = cur.get("rules", cell_rules)
-        cell_skills = cur.get("skills", cell_skills)
-        cell_commands = cur.get("commands", cell_commands)
-        cell_mcp = cur.get("mcp", cell_mcp)
+        content = spec_path.read_text(encoding="utf-8") if spec_path is not None else None
+        cells = psio.matrix_capability_cells(content, cur)
+        cell_hooks = cells["Hooks"]
+        cell_rules = cells["Rules"]
+        cell_skills = cells["Skills"]
+        cell_commands = cells["Commands"]
+        cell_mcp = cells["MCP"]
 
         if spec_path is None and not cur:
             missing_data.append(p)
@@ -512,11 +502,17 @@ def status_report(status_path: Path, platform: str) -> int:
     say("  Summary: {0} healthy, {1} need attention, {2} need rework, {3} unknown (of {4})".format(
         healthy, attention, rework, unknown, len(rows)), "green")
 
-    # Placeholder delegation to future g-skl-platform-monitor operations (T1461-T1483).
-    # TODO[TASK-1460->T1461-T1483]: wire CHECK gap-analysis + SCAN_DOCS diff here once the
-    # per-platform monitor operations are implemented. Scaffolding by design per T1460 spec.
-    say("  (deep gap analysis / doc-scan: g-skl-platform-monitor CHECK|SCAN_DOCS -- T1461-T1483)",
-        "darkgray")
+    # STATUS auto-refresh (the T1460 skeleton's promise) is now BUILT — the freshness
+    # loop is closed by the host-side generators, NOT by an inline placeholder here:
+    #   * generate_status.py (T515, GAP B) regenerates PLATFORM_STATUS.md from each
+    #     PLATFORM_SPEC.md ## Capability Summary + the curated matrix data + the crawl
+    #     ledger (capability cells match -GenerateMatrix; Status + Notes preserved); and
+    #   * spec_refresh.py (T514, GAP A) proposes PLATFORM_SPEC.md edits from crawled docs.
+    # This default mode stays a READ-ONLY reporter by design; deep per-platform gap
+    # analysis / doc-scan remains the g-skl-platform-monitor CHECK|SCAN_DOCS scope
+    # (T1461-T1483), now feeding the generators above rather than an empty stub.
+    say("  (regenerate STATUS: generate_status.py --apply; refresh specs: spec_refresh.py "
+        "-- GAP A/B closed, T514/T515)", "darkgray")
     return 0
 
 

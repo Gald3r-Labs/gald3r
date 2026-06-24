@@ -61,9 +61,39 @@ for _stream in (sys.stdout, sys.stderr, sys.stdin):
         pass
 
 
+# Substrings in coordinator output that mean "stop the whole run NOW" — these are
+# deterministic, account-level failures where every retry fails identically and only
+# burns the iteration budget (and hides the real reason the run stopped). Matched
+# case-insensitively against the coordinator's merged stdout/stderr. Claude is the
+# default coordinator model, so its quota/billing/auth messages lead the list.
+# (Learned 2026-06-24: a spend-limit cap let the loop grind 296 no-op iters to budget=0.)
+FATAL_OUTPUT_SENTINELS = (
+    "hit your monthly spend limit",
+    "monthly spend limit",
+    "credit balance is too low",
+    "insufficient credit",
+    "invalid api key",
+    "invalid x-api-key",
+    "authentication_error",
+    "authentication error",
+    "unauthorized",
+)
+
+
 def now_iso() -> str:
     """UTC timestamp, e.g. 2026-06-22T09:45:00Z (matches the PS Now-Iso helper)."""
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def log(msg: str) -> None:
+    """Timestamped, line-flushed progress line.
+
+    Every outer-loop event goes through here so a launch that redirects stdout to a
+    file (e.g. `.gald3r/logs/ggo_outer_loop_stdout.log`) produces a live, tailable
+    pulse — `Get-Content <log> -Wait` shows progress the moment it happens instead of
+    only when a coordinator finishes an iteration. flush=True defeats block buffering.
+    """
+    print(f"[outer-loop {now_iso()}] {msg}", flush=True)
 
 
 def read_state(state_file: Path):
@@ -151,22 +181,52 @@ def render_brief(state: dict, brief_tpl: Path, project_root: str) -> str:
     return tpl
 
 
-def invoke_coordinator(brief: str, coordinator_command: str) -> int:
+def invoke_coordinator(brief: str, coordinator_command: str):
     """Invoke a fresh LLM session (blank context); brief goes on stdin (matches Invoke-Coordinator).
 
     CoordinatorCommand is split into exe + args; the brief is piped in on stdin.
-    Returns the coordinator process exit code.
+    Returns a ``(returncode, fatal_reason)`` tuple — ``fatal_reason`` is the first
+    matched FATAL_OUTPUT_SENTINELS substring seen in the coordinator's output, or
+    ``None``. A non-None fatal_reason tells the outer loop to stop the whole run
+    (retrying an account-level failure like a spend cap only burns budget).
     """
     parts = shlex.split(coordinator_command.strip(), posix=(os.name != "nt"))
     if not parts:
-        return 0
-    completed = subprocess.run(
+        return 0, None
+    # Stream the coordinator's output line-by-line instead of inheriting+buffering it.
+    # bufsize=1 (line-buffered) + per-line flush means the coordinator's work shows up
+    # in the (redirected) terminal/log AS IT HAPPENS, not in one dump when it exits.
+    proc = subprocess.Popen(
         parts,
-        input=brief,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
         text=True,
         encoding="utf-8",
+        bufsize=1,
     )
-    return completed.returncode
+    fatal_reason = None
+    if proc.stdin is not None:
+        try:
+            proc.stdin.write(brief)
+            proc.stdin.close()
+        except (BrokenPipeError, OSError):
+            # Coordinator exited before consuming the brief (e.g. an instant auth/quota
+            # failure). Not fatal to the conductor — the exit code + output sentinels below
+            # still drive the circuit breakers.
+            pass
+    if proc.stdout is not None:
+        for line in proc.stdout:
+            sys.stdout.write(line)
+            sys.stdout.flush()
+            if fatal_reason is None:
+                low = line.lower()
+                for sentinel in FATAL_OUTPUT_SENTINELS:
+                    if sentinel in low:
+                        fatal_reason = sentinel
+                        break
+    proc.wait()
+    return proc.returncode, fatal_reason
 
 
 def locate_project_root(explicit: str, script_dir: Path) -> str:
@@ -194,6 +254,10 @@ def main() -> int:
                         help="Recorded into state for the Rolling Amnesia cadence (informational).")
     parser.add_argument("--heartbeat-minutes", type=int, default=30,
                         help="Wall-clock minutes between heartbeat lines.")
+    parser.add_argument("--max-consecutive-failures", type=int, default=3,
+                        help="Stop the run after this many back-to-back non-zero coordinator "
+                             "exits (circuit breaker). A fatal output signal (spend cap / auth / "
+                             "credit) stops immediately regardless of this count.")
     parser.add_argument("--coordinator-command",
                         default="claude --dangerously-skip-permissions -p",
                         help="CLI invoked per iteration; brief is passed on stdin.")
@@ -215,17 +279,17 @@ def main() -> int:
     # -- Resolve starting state -------------------------------------------------
     state = read_state(state_file)
     if args.resume and state and get_prop(state, "active", False):
-        print(f"[outer-loop] Resuming active run at iter {get_prop(state, 'iter', 0)}, "
-              f"budget {get_prop(state, 'budget_remaining', 0)}")
+        log(f"Resuming active run at iter {get_prop(state, 'iter', 0)}, "
+            f"budget {get_prop(state, 'budget_remaining', 0)}")
     else:
         state = new_state(args.budget, args.reset_every)
         write_state(state, state_file)
-        print(f"[outer-loop] Fresh stateless run: budget {args.budget}, "
-              f"reset_every {args.reset_every}")
+        log(f"Fresh stateless run: budget {args.budget}, reset_every {args.reset_every}")
 
     start_time = datetime.now()
     last_heartbeat = start_time
     exit_reason = ""
+    consecutive_failures = 0
 
     while True:
         # 1. Read state FRESH from disk every iteration (never cache across iterations).
@@ -253,16 +317,42 @@ def main() -> int:
         brief = render_brief(state, brief_tpl, project_root)
 
         if args.dry_run:
-            print(f"----- [outer-loop] DRY-RUN brief for iter {cur_iter} "
-                  f"(budget {budget}) -----")
-            print(brief)
+            log(f"DRY-RUN brief for iter {cur_iter} (budget {budget}) -----")
+            print(brief, flush=True)
         else:
-            print(f"[outer-loop] iter {cur_iter} / budget {budget} "
-                  f"-> invoking fresh coordinator")
-            code = invoke_coordinator(brief, args.coordinator_command)
+            log(f"iter {cur_iter} / budget {budget} -> invoking fresh coordinator "
+                f"(streaming its output below)")
+            code, fatal = invoke_coordinator(brief, args.coordinator_command)
+            log(f"iter {cur_iter} coordinator returned exit code {code}"
+                + ("" if code == 0 else " (non-zero)"))
+
+            # Circuit breaker 1: fatal account-level signal (spend cap / auth / credit).
+            # Retrying fails identically and only burns budget, so stop the whole run NOW
+            # and record WHY (so the run doesn't silently grind to budget=0 hiding the cause).
+            if fatal:
+                exit_reason = f"coordinator fatal signal: '{fatal}'"
+                log(f"FATAL coordinator signal '{fatal}' detected — halting run "
+                    f"(retrying would only burn budget). Resolve the account issue and relaunch.")
+                stop_state = read_state(state_file) or state
+                stop_state["authorized_hard_stop"] = exit_reason
+                write_state(stop_state, state_file)
+                break
+
+            # Circuit breaker 2: N consecutive non-zero exits (transient/unknown failures).
             if code != 0:
-                print(f"[outer-loop] coordinator exit code {code} "
-                      f"(continuing; state is authoritative)")
+                consecutive_failures += 1
+                if consecutive_failures >= args.max_consecutive_failures:
+                    exit_reason = (f"{consecutive_failures} consecutive coordinator failures "
+                                   f"(last exit {code}) — circuit breaker tripped")
+                    log(exit_reason + " — halting run.")
+                    stop_state = read_state(state_file) or state
+                    stop_state["authorized_hard_stop"] = exit_reason
+                    write_state(stop_state, state_file)
+                    break
+                log(f"consecutive coordinator failures: {consecutive_failures}"
+                    f"/{args.max_consecutive_failures}")
+            else:
+                consecutive_failures = 0
 
         # 4. Re-read the state the coordinator wrote (stash/queue updates, maybe a hard stop).
         state = read_state(state_file)
@@ -273,6 +363,8 @@ def main() -> int:
         state["iter"] = int(get_prop(state, "iter", cur_iter)) + 1
         state["budget_remaining"] = int(get_prop(state, "budget_remaining", budget)) - 1
         write_state(state, state_file)
+        log(f"iter advanced -> {state['iter']} / budget {state['budget_remaining']} "
+            f"(marker stamped {state['updated_at']})")
 
         # 6. Heartbeat.
         now = datetime.now()
@@ -280,8 +372,8 @@ def main() -> int:
             elapsed = now - start_time
             total_min = int(elapsed.total_seconds() // 60)
             hh, mm = divmod(total_min, 60)
-            print(f"[outer-loop] heartbeat — iter {state['iter']} / "
-                  f"budget {state['budget_remaining']} — elapsed {hh:02d}:{mm:02d}")
+            log(f"heartbeat — iter {state['iter']} / budget {state['budget_remaining']} "
+                f"— elapsed {hh:02d}:{mm:02d}")
             last_heartbeat = now
 
     # -- Terminal: deactivate marker + summary ----------------------------------
@@ -289,8 +381,8 @@ def main() -> int:
     if final:
         final["active"] = False
         write_state(final, state_file)
-    print(f"\n[outer-loop] STATELESS RUN COMPLETE — {exit_reason}")
-    print(f"[outer-loop] iterations executed: {get_prop(final, 'iter', 0)}")
+    log(f"STATELESS RUN COMPLETE — {exit_reason}")
+    log(f"iterations executed: {get_prop(final, 'iter', 0)}")
     return 0
 
 

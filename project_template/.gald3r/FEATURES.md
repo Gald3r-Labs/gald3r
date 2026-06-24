@@ -1,5 +1,5 @@
 ﻿---
-gald3r_rel_version: "2.1.2"
+gald3r_rel_version: "2.2.0"
 schema_version: "FEATURES-md-v1"
 ---
 # FEATURES.md — {PROJECT_NAME} Feature Registry
