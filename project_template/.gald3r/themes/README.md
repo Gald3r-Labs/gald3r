@@ -1,5 +1,5 @@
 ﻿---
-gald3r_rel_version: "2.1.2"
+gald3r_rel_version: "2.2.0"
 schema_version: "generic-v1"
 ---
 # .gald3r/themes/ — Project-Local Theme Override Layer
