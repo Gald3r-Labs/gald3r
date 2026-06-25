@@ -4,8 +4,8 @@
 # no-BOM otherwise) and LF endings, then re-stages the fixes. Prevents BUG-073 / BUG-094
 # corruption from entering history.
 #
-# This is a POSIX shell shim that delegates to the canonical PowerShell hook so the
-# normalization logic lives in exactly one place (g-hk-encoding-normalize.ps1).
+# This is a POSIX shell shim that delegates to the canonical Python hook so the
+# normalization logic lives in exactly one place (g-hk-encoding-normalize.py).
 #
 # Install: run scripts/install_git_hooks.ps1 (sets core.hooksPath to .githooks), or copy
 # this file to .git/hooks/pre-commit. Disable: git config --unset core.hooksPath.
@@ -15,9 +15,8 @@ set -e
 # Resolve the canonical hook across IDE targets (first match wins).
 HOOK=""
 for p in \
-    ".claude/hooks/g-hk-encoding-normalize.ps1" \
-    ".cursor/hooks/g-hk-encoding-normalize.ps1" \
-    ".claude/hooks/g-hk-encoding-normalize.ps1"
+    ".claude/hooks/g-hk-encoding-normalize.py" \
+    ".cursor/hooks/g-hk-encoding-normalize.py"
 do
     if [ -f "$p" ]; then HOOK="$p"; break; fi
 done
@@ -27,15 +26,14 @@ if [ -z "$HOOK" ]; then
     exit 0
 fi
 
-# Prefer Windows PowerShell 5.1 (default on Windows); fall back to pwsh.
-if command -v powershell >/dev/null 2>&1; then
-    PS="powershell"
-elif command -v pwsh >/dev/null 2>&1; then
-    PS="pwsh"
+# Resolve a Python interpreter; skip rather than block if none available.
+if command -v python >/dev/null 2>&1; then
+    PY="python"
+elif command -v python3 >/dev/null 2>&1; then
+    PY="python3"
 else
-    # No PowerShell available -- skip rather than block.
     exit 0
 fi
 
-"$PS" -NoProfile -ExecutionPolicy Bypass -File "$HOOK" -PreCommit -Quiet || exit 0
+"$PY" "$HOOK" -PreCommit -Quiet || exit 0
 exit 0

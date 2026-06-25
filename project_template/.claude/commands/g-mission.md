@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [TASK_MANAGEMENT]
 ---
 # g-mission
@@ -318,7 +318,7 @@ The mission loop respects per-task safety metadata:
 
 WPAC inbox is checked:
 - At mission start (standard session-start check)
-- Every 30 minutes of elapsed mission time (coordinator re-runs `g-hk-wpac-inbox-check.ps1 -BlockOnConflict`)
+- Every 30 minutes of elapsed mission time (coordinator re-runs `g-hk-wpac-inbox-check.py -BlockOnConflict`)
 - Before any coordinator shared write (TASKS.md, BUGS.md, CHANGELOG)
 
 If the inbox check returns `INBOX CONFLICT GATE` (exit code 2) at any point mid-mission:
@@ -397,7 +397,7 @@ Run @g-mission resume to continue.
 | `BUDGET_EXHAUSTED` | `turns_consumed` ≥ `turn_budget` | Turn budget from `--budget N` consumed; resume resets counter |
 | `QUEUE_EMPTY` | No claimable `ai_safe: true` tasks remain | Drain phase complete; all open ai_safe tasks claimed or skipped |
 | `CONDITION_MET` | Evaluator check passes | Mission condition provably achieved; final summary follows |
-| `WPAC_CONFLICT` | `g-hk-wpac-inbox-check.ps1` exits 2 | INBOX conflict gate fired mid-mission; run `@g-wpac-read` to resolve |
+| `WPAC_CONFLICT` | `g-hk-wpac-inbox-check.py` exits 2 | INBOX conflict gate fired mid-mission; run `@g-wpac-read` to resolve |
 | `AI_SAFE_BLOCKED` | Next task has `ai_safe: false` | Human review required before next task can be claimed autonomously |
 | `BLAST_RADIUS_HIGH` | Next task has `blast_radius: high` | Explicit user approval required before proceeding |
 | `CLEAN_GATE_BLOCKED` | Dirty unrelated paths in touch-set | Unrelated uncommitted changes in orchestration root or a member repo; commit/stash them first |

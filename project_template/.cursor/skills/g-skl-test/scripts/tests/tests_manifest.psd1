@@ -48,8 +48,8 @@
             Name   = 'gald3r_housekeeping_commit'
             Level  = 'L2'
             Runner = 'pwsh'
-            Path   = 'gald3r_template/.gald3r_sys/skills/g-skl-git-commit/scripts/tests/test_gald3r_housekeeping_commit.ps1'
-            Desc   = 'gald3r_housekeeping_commit.ps1 integration smoke (disposable git repos in TEMP)'
+            Path   = 'gald3r_template/.gald3r_sys/skills/g-skl-git-commit/scripts/tests/test_gald3r_housekeeping_commit.py'
+            Desc   = 'gald3r_housekeeping_commit.py integration smoke (disposable git repos in TEMP)'
         }
     )
 }

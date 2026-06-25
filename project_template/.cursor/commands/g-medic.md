@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 ---
 
@@ -9,7 +9,7 @@ Before medic mode detection, determine whether this project is a WPAC participan
 If WPAC is configured, run the re-callable WPAC inbox check without `-BlockOnConflict` so L1 triage can still report health:
 
 ```powershell
-$hook = @( ".cursor\hooks\g-hk-wpac-inbox-check.ps1", ".claude\hooks\g-hk-wpac-inbox-check.ps1", ".agent\hooks\g-hk-wpac-inbox-check.ps1", ".codex\hooks\g-hk-wpac-inbox-check.ps1", ".opencode\hooks\g-hk-wpac-inbox-check.ps1" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+$hook = @( ".cursor\hooks\g-hk-wpac-inbox-check.py", ".claude\hooks\g-hk-wpac-inbox-check.py", ".agent\hooks\g-hk-wpac-inbox-check.py", ".codex\hooks\g-hk-wpac-inbox-check.py", ".opencode\hooks\g-hk-wpac-inbox-check.py" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 if ($hook) { powershell -NoProfile -ExecutionPolicy Bypass -File $hook -ProjectRoot . }
 ```
 
@@ -37,7 +37,7 @@ Usage:
   @g-medic --heal-constraints [--apply] → report inheritable framework constraints missing locally (--apply appends adoption-pointer stub)
   @g-medic --heal-all [--apply]       → run every Phase 1 heal in dependency order (version → c023 → constraints)
 
-Heal paths map to `gald3r_medic_heal.ps1 -Heal <c023|version|constraints|all> [-Apply] [-Json]`.
+Heal paths map to `gald3r_medic_heal.py -Heal <c023|version|constraints|all> [-Apply] [-Json]`.
 Heals are dry-run by default and log to `.gald3r/logs/medic_heal_YYYYMMDD.log` (only with `--apply`).
 
 Dry-run/output rules:

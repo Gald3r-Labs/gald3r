@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-recon-yt
 description: YouTube transcript ingestion into the vault. Uses yt-dlp to fetch transcripts locally — no Docker, no MCP, no screen captures. Stores in research/videos/ with analysis_depth=transcript_only for future vision upgrade.
 token_budget: medium
@@ -54,7 +54,7 @@ python .cursor/skills/g-skl-ingest-youtube/scripts/fetch_transcript.py \
 5. Write vault note to `research/videos/{YYYY-MM-DD}_{slugified-title}.md`
 6. Append to `vault/log.md`
 7. Add entry to `vault/_index.yaml`
-8. Run `g-hk-vault-reindex.ps1` (if available)
+8. Run `g-hk-vault-reindex.py` (if available)
 
 **Output note path**: `{vault_root}/research/videos/{date}_{slug}.md`
 

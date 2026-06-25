@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-vault
 description: Own and manage the file-first vault plus repo mirror metadata. Obsidian-compatible notes, wiki compilation, path resolution, reindexing, linting, and GitHub repo summaries.
 token_budget: low
@@ -133,7 +133,7 @@ Use when the user wants a note stored but does not need compiled wiki updates ye
 3. Write the source note with full frontmatter
 4. Add relevant wikilinks when obvious
 5. Append a log entry
-6. Run `g-hk-vault-reindex.ps1`
+6. Run `g-hk-vault-reindex.py`
 
 ## 2. Full Ingest
 
@@ -334,7 +334,7 @@ Treat this as a migration candidate and surface:
 - whether the shared path is writable
 - whether migration is recommended
 
-Use `g-hk-vault-migrate.ps1` for actual migration.
+Use `g-hk-vault-migrate.py` for actual migration.
 
 Typical scenarios:
 

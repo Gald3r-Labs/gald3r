@@ -19,10 +19,10 @@
 ├── commands/        # @-commands — invoked with @g-command-name
 │   └── g-*.md
 ├── hooks/           # PowerShell automation hooks (auto-executed by Cursor)
-│   ├── g-hk-session-start.ps1
-│   ├── g-hk-agent-complete.ps1
-│   ├── g-hk-validate-shell.ps1
-│   ├── g-hk-setup-user.ps1
+│   ├── g-hk-session-start.py
+│   ├── g-hk-agent-complete.py
+│   ├── g-hk-validate-shell.py
+│   ├── g-hk-setup-user.py
 │   └── state/       # Hook state files (gitignored, machine-specific)
 ├── rules/           # Always-on AI behavior rules (.mdc format — CURSOR ONLY)
 │   └── g-rl-*.mdc
@@ -88,7 +88,7 @@ Cursor's MCP config goes in `.cursor/mcp.json` (not committed — machine-specif
 | Skills | `g-skl-` | `g-skl-tasks/SKILL.md` |
 | Commands | `g-` | `g-setup.md` |
 | Rules | `g-rl-` | `g-rl-33-enforcement_catchall.mdc` |
-| Hooks | `g-hk-` | `g-hk-session-start.ps1` |
+| Hooks | `g-hk-` | `g-hk-session-start.py` |
 
 ---
 

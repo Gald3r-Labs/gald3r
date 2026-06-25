@@ -106,7 +106,7 @@ Supported template variables (resolved at coordinator dispatch time, never insid
 | `{{TASK_ID}}` | Numeric ID of the queued task (no `T` prefix) | `1175` |
 | `{{TASK_TITLE}}` | `title:` field of the task YAML frontmatter | `the external runner g-go pipeline patterns` |
 | `{{SKILL_PATH}}` | Absolute path to the active gald3r skill folder for the dispatch role | `.claude/skills/g-skl-tasks` |
-| `{{BRANCH_NAME}}` | Worktree branch from `gald3r_worktree.ps1 -Action Create -Json` output | `gald3r/1175/code/<gald3r_source>/autopilot-iter9` |
+| `{{BRANCH_NAME}}` | Worktree branch from `gald3r_worktree.py -Action Create -Json` output | `gald3r/1175/code/<gald3r_source>/autopilot-iter9` |
 | `{{TASK_FILE}}` | Path to the active task file under `.gald3r/tasks/**` | `.gald3r/tasks/open/task1175_external_runner_g_go_pipeline_patterns.md` |
 | `{{WORKTREE_PATH}}` | Absolute worktree path from the helper JSON | `<ECOSYSTEM_ROOT>/.gald3r-worktrees/<gald3r_source>/1175-code-autopilot-iter9` |
 | `{{MODE}}` | Resolved model tier (`fast` | `standard` | task `preferred_model:` override) | `standard` |
@@ -657,12 +657,12 @@ for search); JSONL capture preserves the conversation itself.
 
 ### Capture helper
 
-`gald3r_session_capture.ps1` ships beside `gald3r_worktree.ps1` in each IDE skill folder
+`gald3r_session_capture.py` ships beside `gald3r_worktree.py` in each IDE skill folder
 (`.claude/skills/g-skl-git-commit/scripts/`, `.cursor/...`, `.claude/...`).
 
 ```powershell
 # After an iteration completes in a worktree, capture its session JSONL to the host
-.\scripts\gald3r_session_capture.ps1 -Action Capture -Apply `
+.\scripts\gald3r_session_capture.py -Action Capture -Apply `
     -WorktreePath {{WORKTREE_PATH}} -TaskId {{TASK_ID}} -Json
 ```
 
@@ -686,7 +686,7 @@ captured sessions; `-Action Resolve -SessionId <id>` prints the JSONL path and t
 `g-go --resume-session <session_id>` starts the next iteration by reusing a previously
 captured session context instead of a cold start:
 
-1. The coordinator runs `gald3r_session_capture.ps1 -Action Resolve -SessionId <id> -Json`
+1. The coordinator runs `gald3r_session_capture.py -Action Resolve -SessionId <id> -Json`
    to obtain the host JSONL path and resume command.
 2. The spawned agent is launched with `claude --resume <session_id>` (host cwd), so it
    inherits the full prior conversation thread.
@@ -751,7 +751,7 @@ To stop the normal cleanup pass from reclaiming the shared worktree between phas
 coordinator stamps it with a keep window immediately after the Phase 1 checkpoint commit:
 
 ```powershell
-.\scripts\gald3r_worktree.ps1 -Action Keep -TaskId {id} -Role code -Owner {owner} -KeepHours 2 -Json
+.\scripts\gald3r_worktree.py -Action Keep -TaskId {id} -Role code -Owner {owner} -KeepHours 2 -Json
 ```
 
 `-Action Keep` writes `phase_handoff: true` and a future `keep_until` (ISO-8601) onto the
@@ -778,7 +778,7 @@ extend the window for long review passes.
 > `review_isolation_mode` is `shared-worktree`, its inspected path equals
 > `shared_worktree_path`, and `git log` on that worktree shows the Phase 1 checkpoint commit
 > with no intervening `git worktree add`/clone for the review role. The keep-window protection
-> is unit-verifiable via `gald3r_worktree.ps1 -Action Keep` followed by `-Action Cleanup
+> is unit-verifiable via `gald3r_worktree.py -Action Keep` followed by `-Action Cleanup
 > -StaleHours 0`, which must leave the kept worktree intact.
 
 ## Model-Tier Selection (`--mode fast|standard|cheap`)
@@ -905,7 +905,7 @@ Before task claiming, implementation, verification, planning, or swarm partition
 If WPAC is configured, run the re-callable inbox check when the hook exists:
 
 ```powershell
-$hook = @( ".cursor\hooks\g-hk-wpac-inbox-check.ps1", ".claude\hooks\g-hk-wpac-inbox-check.ps1", ".agent\hooks\g-hk-wpac-inbox-check.ps1", ".codex\hooks\g-hk-wpac-inbox-check.ps1", ".opencode\hooks\g-hk-wpac-inbox-check.ps1" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+$hook = @( ".cursor\hooks\g-hk-wpac-inbox-check.py", ".claude\hooks\g-hk-wpac-inbox-check.py", ".agent\hooks\g-hk-wpac-inbox-check.py", ".codex\hooks\g-hk-wpac-inbox-check.py", ".opencode\hooks\g-hk-wpac-inbox-check.py" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 if ($hook) { powershell -NoProfile -ExecutionPolicy Bypass -File $hook -ProjectRoot . -BlockOnConflict }
 ```
 
@@ -918,7 +918,7 @@ Installed templates may call the equivalent hook from the active IDE folder. If 
 After the WPAC gate is skipped or passes and **before** the Clean Controller Gate hard-blocks the run, run the safety classifier helper at the orchestration root:
 
 ```powershell
-.\scripts\gald3r_housekeeping_commit.ps1 -Mode preflight -Apply -TaskId <id-when-known> -Json
+.\scripts\gald3r_housekeeping_commit.py -Mode preflight -Apply -TaskId <id-when-known> -Json
 ```
 
 Behavior:
@@ -936,7 +936,7 @@ After the WPAC gate is skipped or passes:
 
 1. At the **orchestration git root** (the repo from which you run this command — normally the Workspace-Control owner, e.g. `<gald3r_source>`): run `git status --short`. If anything is listed **outside** this run's explicit coordinator staging allowlist for the active task and bug IDs, **STOP** here. Do not claim tasks or bugs, create or reuse T170 worktrees, partition swarms, or write coordinator-owned updates to `.gald3r/TASKS.md`, `.gald3r/BUGS.md`, other shared `.gald3r` coordination files, `CHANGELOG.md`, generated Copilot prompts, or parity output until unrelated changes are committed, stashed, or moved to a prior focused commit. Preserve any bucket handoff artifacts already produced and list the paths that blocked progress.
 
-2. **`gald3r_worktree.ps1 -AllowDirty`**: do not use this switch for `g-go`, `g-go-code`, `g-go-review`, or any `--swarm` variant **except** when every dirty path is owned exclusively by the active task/bug scope and a `## Status History` row documents that override. Otherwise clean the checkout first. The same **per-root** `-AllowDirty` discipline applies to every repository included in the touch set below when multi-repo work is in scope.
+2. **`gald3r_worktree.py -AllowDirty`**: do not use this switch for `g-go`, `g-go-code`, `g-go-review`, or any `--swarm` variant **except** when every dirty path is owned exclusively by the active task/bug scope and a `## Status History` row documents that override. Otherwise clean the checkout first. The same **per-root** `-AllowDirty` discipline applies to every repository included in the touch set below when multi-repo work is in scope.
 
 3. **Member touch-set (v1 — `workspace_repos`)** — The orchestration root is **always** gated. When the active task or bug declares **`workspace_repos:`** with manifest `repository.id` entries, extend the gate to each **other** resolved member root (blast radius follows declared cross-repo scope). Read `.gald3r/workspace/workspace_manifest.yaml` when present; map each listed ID (deduplicated) to `repositories[?].local_path`. For each existing path, run `git -C "<path>" rev-parse --show-toplevel` then `git status --short` at that root. Apply the same **explicit coordinator staging allowlist** per root. Skip IDs whose paths are missing while `lifecycle_status` is a planned/bootstrap gap (report only; do not expand the touch set). If the manifest is missing while `workspace_repos` is non-empty, or an ID is unknown under `repositories:`, **STOP** multi-repo coordinator work until manifest or frontmatter is repaired (controller-only queue items whose `workspace_repos` lists only the owner id may proceed once that id resolves).
 
@@ -1011,7 +1011,7 @@ Concrete syntax differences to keep in mind (mirrors `g-rl-00-always` §6):
 **Regression canonical (BUG-031 family)** — the WPAC inbox hook lookup snippet that triggered T1144:
 
 ```powershell
-$hook = @( ".cursor\hooks\g-hk-wpac-inbox-check.ps1", ".claude\hooks\g-hk-wpac-inbox-check.ps1" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+$hook = @( ".cursor\hooks\g-hk-wpac-inbox-check.py", ".claude\hooks\g-hk-wpac-inbox-check.py" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 ```
 
 This snippet is PowerShell-only — invoking it via `Bash(...)` produces `syntax error near unexpected token '('` (exit 2). That error is a **tool-routing failure**, NOT a real WPAC conflict or hook-missing state. Re-route through PowerShell and the call succeeds; do not enter an error-driven retry loop.
@@ -1120,10 +1120,10 @@ For each queued task that has `harvested_from:` set:
 After speccing claims are resolved, Phase 1 uses the same isolation contract as `g-go-code`:
 
 ```powershell
-.\scripts\gald3r_worktree.ps1 -Action Create -TaskId {id} -Role code -Owner {platform_or_agent_slug} -Json
+.\scripts\gald3r_worktree.py -Action Create -TaskId {id} -Role code -Owner {platform_or_agent_slug} -Json
 ```
 
-Installed templates may call the helper from `g-skl-git-commit/scripts/gald3r_worktree.ps1` when no root `scripts/` copy exists.
+Installed templates may call the helper from `g-skl-git-commit/scripts/gald3r_worktree.py` when no root `scripts/` copy exists.
 
 Rules:
 - Create/reuse all queued item worktrees before implementation edits or primary-checkout status writes.
@@ -1164,7 +1164,7 @@ After all items are processed, reconcile successful worktree diffs into the prim
 **`--shared-sandbox` variation (T1118)**: when the session is run with `--shared-sandbox`, do **NOT** reconcile the diff into the primary checkout at end of Phase 1. Instead, create the code-complete checkpoint commit **on the `code` worktree branch itself**, then stamp the worktree with a keep window so the cleanup pass cannot reclaim it before Phase 2:
 
 ```powershell
-.\scripts\gald3r_worktree.ps1 -Action Keep -TaskId {id} -Role code -Owner {owner} -KeepHours 2 -Json
+.\scripts\gald3r_worktree.py -Action Keep -TaskId {id} -Role code -Owner {owner} -KeepHours 2 -Json
 ```
 
 Record `shared_sandbox: true`, `shared_worktree_path`, and `implementation_branch` in each `[🔍]` task's metadata so Phase 2 reuses the same worktree read-only. The primary-checkout reconcile is deferred until after Phase 2 review passes (see the "Shared Sandbox Phase Handoff" section above).
@@ -1276,7 +1276,7 @@ if (-not $branchExists) {
 **Step 2 — Attempt auto-merge (when `--no-auto-merge` is NOT set AND target branch exists):**
 
 ```powershell
-.\scripts\gald3r_worktree.ps1 -Action MergeToMain -RepoPath <member_path> -TaskId {id} -Owner {owner} -TargetBranch $targetBranch -Apply -Json
+.\scripts\gald3r_worktree.py -Action MergeToMain -RepoPath <member_path> -TaskId {id} -Owner {owner} -TargetBranch $targetBranch -Apply -Json
 ```
 
 The helper:
@@ -1443,10 +1443,10 @@ The coordinator can abort in-flight bucket agents cleanly — required when a bu
 times out (`--timeout-minutes`), runs rogue, or the WPAC conflict gate fires mid-run.
 
 - When a bucket agent is launched in its worktree, the coordinator records the agent's
-  PID via `gald3r_worktree.ps1 -Action Run ... -AgentCommand <agent>` (non-blocking;
+  PID via `gald3r_worktree.py -Action Run ... -AgentCommand <agent>` (non-blocking;
   the PID is persisted to that worktree's `.gald3r-worktree.json`).
 - **On timeout or conflict-gate abort**, the coordinator calls
-  `gald3r_worktree.ps1 -Action CancelAll -TaskId <id> -Reason <why>` to terminate **all**
+  `gald3r_worktree.py -Action CancelAll -TaskId <id> -Reason <why>` to terminate **all**
   active bucket agents owned by that task. A single bucket can be killed with
   `-Action Cancel -TaskId <id> -Role <role> -Owner <owner>`.
 - Termination is **graceful first** (window-close / SIGTERM), then a **forced tree-kill**
@@ -1568,7 +1568,7 @@ The summary makes it explicit which repos were considered, which were skipped, w
 
 ### Marker-only protection (recap)
 
-Member `.gald3r/` may contain ONLY `.identity` and `PROJECT.md`. `g-skl-workspace`, `g-skl-WPAC-spawn`, `g-skl-WPAC-adopt`, `g-skl-setup`, and `gald3r_install` all consult `.claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1` before any member `.gald3r/` write. `--workspace` runs do NOT add a bypass; the guard is non-negotiable. Any attempted write to a forbidden member `.gald3r/` path is logged as a blocker and excluded from the run.
+Member `.gald3r/` may contain ONLY `.identity` and `PROJECT.md`. `g-skl-workspace`, `g-skl-WPAC-spawn`, `g-skl-WPAC-adopt`, `g-skl-setup`, and `gald3r_install` all consult `.claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.py` before any member `.gald3r/` write. `--workspace` runs do NOT add a bypass; the guard is non-negotiable. Any attempted write to a forbidden member `.gald3r/` path is logged as a blocker and excluded from the run.
 
 ---
 

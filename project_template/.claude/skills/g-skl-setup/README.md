@@ -36,7 +36,7 @@ Two layouts:
 5. **Verify structure** against the canonical slim layout.
 6. **Create PROJECT.md scaffolding** including the Project Linking section.
 7. **Subsystem discovery** — scans the project for likely subsystems and creates one spec file per discovery.
-8. **Write `gald3r-skills-lock.json`** (T1043) — SHA-256 hashes of every installed `SKILL.md`. Lets `gald3r_validate.ps1` detect tampering and `UPGRADE` flows classify which skills changed.
+8. **Write `gald3r-skills-lock.json`** (T1043) — SHA-256 hashes of every installed `SKILL.md`. Lets `gald3r_validate.py` detect tampering and `UPGRADE` flows classify which skills changed.
 9. **Print next steps** for the user.
 
 ## Examples
@@ -51,17 +51,17 @@ Walks through the slim layout creation, generates a project_id, and prints "what
 
 ### Verify install integrity later
 
-```powershell
-.\scripts\gald3r_skills_lock.ps1 -Action VERIFY -ProjectPath .
+```bash
+python scripts/gald3r_skills_lock.py -Action VERIFY -ProjectPath .
 ```
 
 Recomputes SKILL.md hashes against `gald3r-skills-lock.json`. Exits non-zero if any skill is tampered or missing.
 
 ### Detect available upgrades
 
-```powershell
-.\scripts\gald3r_skills_lock.ps1 -Action UPGRADE -ProjectPath . `
-    -SourceRoot <workspace>\<gald3r_source>
+```bash
+python scripts/gald3r_skills_lock.py -Action UPGRADE -ProjectPath . \
+    -SourceRoot <workspace>/<gald3r_source>
 ```
 
 Classifies each skill as `unchanged`, `local-modified`, `upstream-changed`, `both-changed`, `new`, or `removed`.

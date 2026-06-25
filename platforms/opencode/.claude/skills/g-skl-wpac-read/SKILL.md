@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-wpac-read
 description: Review and action all incoming cross-project coordination items — conflicts (block planning), requests from children, broadcasts from parents, and peer syncs from siblings.
 token_budget: medium
@@ -9,7 +9,7 @@ subsystem_memberships: [WORKSPACE_COORDINATION]
 # g-skl-wpac-read
 
 ## When to Use
-`@g-wpac-read` command. Session start when INBOX items exist. After receiving a cross-project task. After `g-hk-wpac-inbox-check.ps1` reports items.
+`@g-wpac-read` command. Session start when INBOX items exist. After receiving a cross-project task. After `g-hk-wpac-inbox-check.py` reports items.
 
 ## Steps
 

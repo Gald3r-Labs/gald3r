@@ -13,7 +13,7 @@ optional_folders: []
 
 optional_files: []
 
-# HARD RULE (enforced by check_member_repo_gald3r_guard.ps1 — see BUG-021 / T213):
+# HARD RULE (enforced by check_member_repo_gald3r_guard.py — see BUG-021 / T213):
 # No TASKS.md, BUGS.md, PLAN.md, FEATURES.md, bugs/, tasks/, or any live
 # control-plane state may exist in a controlled_member .gald3r/.
 # The controller (<gald3r_source>) is the single source of truth.

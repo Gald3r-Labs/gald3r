@@ -14,7 +14,7 @@
 - `.gald3r/` task management system v3 (sequential task IDs, YAML frontmatter)
 - Core skills: `g-skl-tasks`, `g-skl-bugs`, `g-skl-ideas`, `g-skl-plan`, `g-skl-project`,
   `g-skl-subsystems`, `g-skl-qa`, `g-skl-code-review`, `g-skl-medic`, `g-skl-vault`
-- Session hooks: `g-hk-session-start.ps1`, `g-hk-agent-complete.ps1`, `g-hk-user-setup.ps1`
+- Session hooks: `g-hk-session-start.py`, `g-hk-agent-complete.py`, `g-hk-user-setup.ps1`
 
 ---
 

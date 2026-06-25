@@ -35,5 +35,5 @@ in `skills/g-skl-vault/SKILL.md`.
 ## Related Tasks
 
 - T1456 — Add vault existence/structure verification at session start.
-- Companion resolver: `g-hk-vault-resolve.ps1` (resolves/creates the working vault
+- Companion resolver: `g-hk-vault-resolve.py` (resolves/creates the working vault
   path; this hook verifies the *configured* path independently).

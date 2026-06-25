@@ -107,10 +107,10 @@ Report format:
 
 **Step 4 — Log to .gald3r/reports/**
 
-```powershell
-# Invoke the stub helper (or full implementation when available):
-# TODO[TASK-906→TASK-<follow-up>]: Replace stub with full ORT/FOSSA/Snyk/PMD pipeline
-& .claude/skills/g-skl-compliance/scripts/run_compliance_scan.ps1 -Scanner $scanner -RepoRoot (Get-Location).Path
+```bash
+# Invoke the scanner helper:
+# TODO[TASK-906→TASK-<follow-up>]: Wire full ORT/FOSSA/Snyk/PMD pipeline
+python .claude/skills/g-skl-compliance/scripts/run_compliance_scan.py -Scanner "$scanner" -RepoRoot "$(pwd)"
 ```
 
 ---
@@ -145,7 +145,7 @@ Reads the most recent report and returns a structured verdict:
 | `WARN` | LGPL/MPL/CDDL licenses present but no hard blockers | 1 |
 | `FAIL` | GPL/AGPL/unknown licenses in a distribution context, or scan error | 2 |
 
-When called from `.cursor/hooks/g-git-push` or `.claude/skills/g-skl-compliance/scripts/run_compliance_scan.ps1`:
+When called from `.cursor/hooks/g-git-push` or `.claude/skills/g-skl-compliance/scripts/run_compliance_scan.py`:
 - Exit 0 → allow push
 - Exit 1 → warn but allow (unless `COMPLIANCE_GATE_STRICT=1` env var is set)
 - Exit 2 → block push, print blocking packages
@@ -210,32 +210,20 @@ When no external SCA tool is available, parse package manifests directly.
 
 ---
 
-## PowerShell Helper Stub
+## Scanner Helper (Python)
 
-`.claude/skills/g-skl-compliance/scripts/run_compliance_scan.ps1` — called by SCAN operation and `@g-compliance-gate` hook.
+`.claude/skills/g-skl-compliance/scripts/run_compliance_scan.py` — called by SCAN operation and `@g-compliance-gate` hook.
 
-```powershell
+```bash
 # TODO[TASK-906→TASK-<follow-up>]: Full ORT/FOSSA/Snyk/PMD pipeline implementation
-# Current stub: detects scanner name and exits 0
-param(
-    [string]$Scanner = 'auto',
-    [string]$RepoRoot = (Get-Location).Path
-)
+# Phase-1 behavior: detect scanner name on PATH (ort/fossa/snyk/pmd/pmdc → fallback),
+# write a placeholder report to .gald3r/reports/, print PASS diagnostics, and exit 0.
+python .claude/skills/g-skl-compliance/scripts/run_compliance_scan.py -Scanner auto -RepoRoot "$(pwd)"
 
-$detected = $null
-foreach ($cmd in @('ort','fossa','snyk','pmdc','pmd')) {
-    if (Get-Command $cmd -ErrorAction SilentlyContinue) {
-        $detected = $cmd; break
-    }
-}
-if (-not $detected) { $detected = 'fallback' }
-
-if ($Scanner -ne 'auto') { $detected = $Scanner }
-
-Write-Host "g-skl-compliance: detected scanner = $detected"
-Write-Host "g-skl-compliance: repo root = $RepoRoot"
-Write-Host "g-skl-compliance: stub — full scan pipeline deferred to follow-up task"
-exit 0
+# Flags:
+#   -Scanner / --scanner    auto | ort | fossa | snyk | pmd | pmdc | fallback (default: auto)
+#   -RepoRoot / --repo-root  scan root (default: current directory)
+#   -Strict  / --strict      gate mode — exit 2 on FAIL-level violations
 ```
 
 ---

@@ -1,4 +1,4 @@
-﻿# <!-- gald3r AGENTS.md START -->
+# <!-- gald3r AGENTS.md START -->
 # agents.md - {project_name}
 
 > This file follows the agents.md format for AI agent instructions.
@@ -122,7 +122,7 @@ See `docs/COMMANDS.md` for the full list.
 
 ## Task Management
 
-WPAC inbox conflicts gate task claiming, implementation, verification, planning, status work, and swarm partitioning; commands rerun `g-hk-wpac-inbox-check.ps1 -BlockOnConflict` before work and swarm coordinators rerun it every 30 minutes plus before final summaries. `g-medic` L1 is the exception: it runs a non-blocking inbox check, records conflict severity in health scoring, then stops before L2-L4 or any claim/implementation/review/planning work.
+WPAC inbox conflicts gate task claiming, implementation, verification, planning, status work, and swarm partitioning; commands rerun `g-hk-wpac-inbox-check.py -BlockOnConflict` before work and swarm coordinators rerun it every 30 minutes plus before final summaries. `g-medic` L1 is the exception: it runs a non-blocking inbox check, records conflict severity in health scoring, then stops before L2-L4 or any claim/implementation/review/planning work.
 
 
 ### Task Status Indicators
@@ -200,7 +200,7 @@ bucket is editing. File-lock manifests enforce this (T1059):
   ignored, so a crashed bucket never deadlocks the swarm.
 - **Claim on worktree create** — a bucket claims its scope when its worktree is created:
   ```powershell
-  .claude/skills/g-skl-git-commit/scripts/gald3r_worktree.ps1 `
+  .claude/skills/g-skl-git-commit/scripts/gald3r_worktree.py `
       -Action Create -TaskId <id> -BucketId <bucket> -Owner <owner> `
       -LockFiles "AGENTS.md","src/foo.ps1" -BucketTtlMinutes 60
   ```
@@ -226,7 +226,7 @@ bucket is editing. File-lock manifests enforce this (T1059):
 
 ## gald3r Version
 
-**gald3r version**: 2.2.0
+**gald3r version**: 2.3.0
 **Supported IDEs**: Cursor, Claude Code, Gemini, Codex, OpenCode
 
 ---

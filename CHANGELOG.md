@@ -10,6 +10,49 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 _Pending release notes accumulate here as tasks and bugs are completed. At publish time this
 section is renamed to [X.Y.Z] - YYYY-MM-DD and a fresh [Unreleased] block is opened._
 
+> **Headline: the PS1-KILL release.** Almost all PowerShell has been removed from the gald3r
+> framework — the hook, skill-script, task-pipeline, release, and vault surfaces are now Python,
+> and ~1,065 redundant `.ps1` were pruned from the shipped source.
+
+### Added
+- **Build-time source-hygiene guard against shipping redundant `.ps1` (T1596 / BUG-191).** The
+  maintainer build (`1_build_repos.py` → `Forge().build.run()`) now calls `scan_redundant_ps1()`
+  to WARN (`REDUNDANT_PS1`) on any `.ps1` in `gald3r_core` that has a co-located `.py` twin (the
+  C-NO-PS1 redundancy that previously shipped into every overlay), with an opt-in
+  `--prune-redundant-ps1` to remove them from source. Report-only by default, honors `--what-if`,
+  and is maintainer-source-only — it never touches a user project or the build-output workspace.
+  +4 tests.
+
+### Changed
+- **PS1-KILL migration wave — the gald3r framework is now Python-first (epic T667).** Ported the
+  PowerShell surface to Python across the framework: task-pipeline scripts (T670), hook families
+  (T671–T674), release scripts (T675), vault/memory/learn scripts (T676), and the remaining skill
+  scripts (T677). Replacements are `.py`-first with a `.ps1` runtime fallback retained for legacy
+  `.ps1`-only installs (removal of those fallbacks tracked in T1600), and reconfigure stdout to
+  UTF-8 at startup to kill the encoding footguns that motivated the epic.
+- **Canonical bare-number task IDs in `TASKS.md`.** Intake now reads `T?`-prefixed inbox drafts but
+  writes canonical bare-number IDs, removing the `T`-prefix drift that caused ID-collision edge
+  cases.
+
+### Removed
+- **Pruned ~1,065 redundant `.ps1` from `gald3r_core` (T1597 + T1598, epic T667).** Acting on the
+  T1596 guard finding (1067 `.ps1` carrying a `.py` twin): removed **948** genuinely dead twins
+  (T1597), then **117** more whose callers were already `.py`-first runtime fallbacks (T1598),
+  after repointing **195** agent-facing docs (SKILL/command files) from `X.ps1` to `python X.py`.
+  The build guard now reports only **2** remaining redundant `.ps1` — both documented Windows
+  user-entry launchers (`setup_gald3r_project.ps1`, `install_git_hooks.ps1`) intentionally kept
+  pending a doc-coordinated retirement (T1599). The 24 genuinely un-ported `.ps1` (16 unique —
+  augment/kiro-cli/pcac platform hooks + engine/install helpers + g-go test fixtures) are tracked
+  in T1601.
+
+### Fixed
+
+---
+## [2.2.0] - 2026-06-24
+
+_Pending release notes accumulate here as tasks and bugs are completed. At publish time this
+section is renamed to [X.Y.Z] - YYYY-MM-DD and a fresh [Unreleased] block is opened._
+
 ### Added
 - **`DeploySystem` — the deploy pipeline step is now Python (T683, PS1-KILL epic T667).** Ported the last numbered PowerShell pipeline script, `custom_scripts/2_deploy_to_workspace.ps1`, to `maintainer/src/gald3r_forge/systems/deploy.py` (`Forge().deploy`) behind a thin `custom_scripts/2_deploy_to_workspace.py` wrapper. Faithful parity with the PS1: backs up + replaces the framework-owned folders (`.claude`/`.cursor`/`.gald3r_sys`, each moved to `<dir>_bk_<stamp>/` first), then upgrades `.gald3r/` by invoking the **target repo's own** engine (`uv run --project <repo>/.gald3r_sys/engine gald3r update --target <repo> --apply`, `python -m gald3r` fallback) so user task/bug/plan/vault data is preserved, never wiped. Same three modes — dry-run (default, write-nothing plan), `--apply`, and `--rollback YYYYMMDD_HHMMSS` — plus multi-target via `--repo` and/or `--workspace-manifest`, `--source` override, and `--skip-gald3r-upgrade`. Dry-run is a hard write-guard (mutating helpers assert non-dry). 28 new tests (`maintainer/tests/test_deploy.py`); maintainer suite 203/203 green. Verified a real `build → deploy --dry-run` cycle against the live repo.
 
@@ -260,7 +303,7 @@ section is renamed to [X.Y.Z] - YYYY-MM-DD and a fresh [Unreleased] block is ope
   `.ps1` tag. The larger CRASH shipping gaps (engine `crash.py` absent from the shipped
   `project_template` engine, `.cursor` hook parity, `.py` port) are tracked in T511.
 - **Stale `gald3r_rel_version` stamp in template `.gald3r/.gitignore`** (T480) â€” corrected the
-  `# gald3r_rel_version: 2.2.0` header to `2.0.1` in both the canonical `project_template/.gald3r/.gitignore`
+  `# gald3r_rel_version: 2.3.0` header to `2.0.1` in both the canonical `project_template/.gald3r/.gitignore`
   and the `.gald3r_sys/template_verification/.gald3r/.gitignore` reference copy. (The forge does not
   re-stamp extensionless `.gitignore` files on build, so the canonical source carried the only stamp.)
 - **Workspace manifest validator typo re-fixed in the canonical engine** (BUG-128) â€” the

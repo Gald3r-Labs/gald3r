@@ -15,6 +15,7 @@ import argparse
 import json
 import os
 import shutil
+import subprocess
 import sys
 import urllib.error
 import urllib.request
@@ -362,9 +363,17 @@ def write_note(slug: str, entry: dict[str, Any], provider: str) -> Path:
 
 
 def run_reindex() -> None:
-    script = PROJECT_ROOT / ".cursor" / "hooks" / "g-hk-vault-reindex.ps1"
-    command = f'powershell -ExecutionPolicy Bypass -File "{script}" -VaultOverride "{VAULT_PATH}"'
-    os.system(command)
+    # T676 (PS1-KILL): invoke the Python reindex hook directly via the current
+    # interpreter — no PowerShell dependency. Prefer the .claude/ copy, fall
+    # back to the .cursor/ parity copy.
+    for ide in (".claude", ".cursor"):
+        script = PROJECT_ROOT / ide / "hooks" / "g-hk-vault-reindex.py"
+        if script.is_file():
+            subprocess.run(
+                [sys.executable, str(script), "-VaultOverride", str(VAULT_PATH)],
+                check=False,
+            )
+            return
 
 
 def main() -> None:

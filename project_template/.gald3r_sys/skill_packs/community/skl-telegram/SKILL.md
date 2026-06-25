@@ -157,7 +157,7 @@ async def gald3r_task_alert(task_id: int, title: str, status: str):
             json={"chat_id": os.environ["TG_CHAT_ID"], "text": text, "parse_mode": "HTML"}
         )
 
-# Wire into gald3r hook: .claude/hooks/g-hk-agent-complete.ps1
+# Wire into gald3r hook: .claude/hooks/g-hk-agent-complete.py
 # Add: Invoke-RestMethod -Uri "https://yourserver/gald3r-notify" -Method POST -Body ...
 ```
 

@@ -100,7 +100,7 @@ footer.page{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border
 <ul>
 <li><strong>Event payload format</strong>: JSON (hooks return the <code>{ continue = true }</code> envelope; block via exit code / verdict)</li>
 <li><strong>Limitations</strong>: command is a full PowerShell invocation; optional <code>matcher</code> regex over tool names; <code>_hook_md</code> companion-doc path (T1171). No async; HTTP hook type (T600) lives in <code>.claude/hooks/</code> pending parity.</li>
-<li><strong>gald3r hook files</strong>: <code>g-hk-session-start.ps1</code> (sessionStart); <code>g-hk-agent-complete.ps1</code>, <code>g-hk-nightly-learn.ps1</code>, <code>g-hk-session-end.ps1</code> (stop); <code>g-hk-validate-shell.ps1</code> (beforeShellExecution); <code>g-hk-pre-tool-call-gald3r-guard.ps1</code>, <code>g-hk-pre-tool-call-prd-freeze.ps1</code>, <code>g-hk-pre-tool-call-member-gald3r-guard.ps1</code> (preToolUse)</li>
+<li><strong>gald3r hook files</strong>: <code>g-hk-session-start.py</code> (sessionStart); <code>g-hk-agent-complete.py</code>, <code>g-hk-nightly-learn.ps1</code>, <code>g-hk-session-end.py</code> (stop); <code>g-hk-validate-shell.py</code> (beforeShellExecution); <code>g-hk-pre-tool-call-gald3r-guard.py</code>, <code>g-hk-pre-tool-call-prd-freeze.py</code>, <code>g-hk-pre-tool-call-member-gald3r-guard.py</code> (preToolUse)</li>
 </ul>
 <p>---</p>
 <h3>Hook API Reference</h3>

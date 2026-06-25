@@ -148,12 +148,12 @@ triage_notes: 'Added clarifying comment to workspace_manifest.yaml line 1205'
 
 ## Invocation (via scripts)
 
-```powershell
+```bash
 # Assess only
-.\scripts\calculate_risk.ps1 -Kind "spec_defect" -Files @("workspace_manifest.yaml") -FixType "schema_comment"
+python scripts/calculate_risk.py -Kind "spec_defect" -Files "workspace_manifest.yaml" -FixType "schema_comment"
 
 # Full triage (assess + fix if safe + log)
-.\scripts\invoke_triage.ps1 -BugId "BUG-098" -Kind "spec_defect" -Files @("<workspace>\<gald3r_source>\.gald3r\linking\workspace_manifest.yaml") -FixType "schema_comment" -ProjectRoot "<workspace>\<gald3r_source>"
+python scripts/invoke_triage.py -BugId "BUG-098" -Kind "spec_defect" -Files "<workspace>/<gald3r_source>/.gald3r/linking/workspace_manifest.yaml" -FixType "schema_comment" -ProjectRoot "<workspace>/<gald3r_source>"
 ```
 
 ---

@@ -108,7 +108,7 @@ footer.page{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border
 <h2>gald3r Integration Notes</h2>
 <ul>
 <li><strong>T1509 (this task's motivating bug): hook wiring on Claude Code MUST be done via the official <code>settings.json</code> <code>"hooks"</code> shape, NOT the lowercase top-level <code>hooks.json</code>.</strong> Migrate gald3r entries to <code>{ matcher, hooks:[{ type:"command", command }] }</code> under <code>settings.json</code> and normalize event names to official PascalCase.</li>
-<li>BUG-100 (resolved) confirms <code>g-hk-session-start.ps1</code> IS exercised on some Claude Code versions, but does NOT confirm the lowercase <code>hooks.json</code> wiring is the firing path. Run a hook-firing smoke test before flipping Hooks to ✅.</li>
+<li>BUG-100 (resolved) confirms <code>g-hk-session-start.py</code> IS exercised on some Claude Code versions, but does NOT confirm the lowercase <code>hooks.json</code> wiring is the firing path. Run a hook-firing smoke test before flipping Hooks to ✅.</li>
 <li>When Claude Code updates, re-verify event names against <a href="https://docs.anthropic.com/en/docs/claude-code/hooks">https://docs.anthropic.com/en/docs/claude-code/hooks</a> (breaking-change history to watch: hook config moved into <code>settings.json</code>).</li>
 <li>Strengths over Cursor reference: native subagents (<code>.claude/agents/</code>) and native Agent Skills (<code>.claude/skills/</code>) require no shimming.</li>
 </ul>
