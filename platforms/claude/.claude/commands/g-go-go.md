@@ -114,7 +114,7 @@ The autopilot maintains a single run-state marker that the stop hook reads. The 
 
 ### What the hook enforces
 
-When the `stop` event fires with an active marker, `g-hk-ggo-stop-detect.ps1`:
+When the `stop` event fires with an active marker, `g-hk-ggo-stop-detect.py`:
 
 - **Allows the stop** when `authorized_hard_stop` is populated (genuine hard stop), when `budget_remaining <= 0` (budget cap IS a hard stop), or when the re-invoke cap is hit.
 - **Re-invokes the loop** otherwise — it increments `reinvoke_count` and returns a stop-continuation decision (`decision:block` for Claude Code / `continue:false`+`followup` for Cursor) carrying a verbatim reminder of the forbidden stop reasons. A disguised "checkpoint" cannot end the run.
@@ -323,7 +323,7 @@ The autopilot also re-runs the PCAC inbox check at every heartbeat interval and 
 Before each iteration claims/spawns/commits, run the safety classifier helper at the orchestration root:
 
 ```powershell
-.\scripts\gald3r_housekeeping_commit.ps1 -Mode preflight -Apply -Json
+.\scripts\gald3r_housekeeping_commit.py -Mode preflight -Apply -Json
 ```
 
 Behavior matches `g-go`:
@@ -364,11 +364,11 @@ threshold**, HARD-STOP with a clear message instead of blindly merging:
   diverged (both ahead of their merge-base) by **> 50 commits on the target side**. Configurable
   via `integration_divergence_max_commits` in `AGENT_CONFIG.md`.
 - A target that cannot fast-forward from the source (would require a merge commit / conflict) is
-  reported by `gald3r_worktree.ps1 -Action MergeToMain` as `merge-blocked` and is **never**
+  reported by `gald3r_worktree.py -Action MergeToMain` as `merge-blocked` and is **never**
   force-updated; the autopilot logs `[MERGE-BLOCKED]` as a human action item.
 
 This detection runs once at INIT (read-only). The actual integration is performed only at the
-per-PASS auto-merge step via `gald3r_worktree.ps1 -Action MergeToMain` (FF-only, `-Apply`).
+per-PASS auto-merge step via `gald3r_worktree.py -Action MergeToMain` (FF-only, `-Apply`).
 
 ---
 
@@ -653,7 +653,7 @@ collide on the next id. This is the spawn-side complement of that intake step.
 | **Dependency resolution includes archive (MANDATORY)** — when checking condition 4 (all dependencies resolved), if a dependency task file is NOT found in `.gald3r/tasks/task{id}_*.md`, ALSO check `.gald3r/archive/tasks/*/task{id}_*.md`. A task found in the archive with `status: completed` (or `status: verified`) counts as a fully satisfied dependency. Never treat a missing-in-active-tasks dependency as unresolved without first checking the archive. Marking a task as blocked because a dep "file not found" when that dep lives in the archive is a spec violation equivalent to a complexity-aversion stop. | Prevents archived completed deps from silently blocking downstream chains |
 | **Controller-only fallback** — when all workspace member repos block, retry `source_only`/`docs_only` tasks before stopping | Never stop while controller-only work remains |
 | **`--repos` filter (T1152)** — when `--repos <ids>` is supplied, runnable-queue scan filters to tasks whose `workspace_repos:` intersects the requested ids; out-of-scope tasks are silently deferred (NOT marked failed); budget counter only increments on iterations that execute in-scope tasks; controller-only fallback is disabled while `--repos` is active | Lets the autopilot be scoped to one or more member repos (e.g. `--repos example_agent`) without burning the budget on unrelated tasks; preserves the deferred-task safety of pre-T1152 behavior |
-| **Auto-merge member repo branches on PASS (MANDATORY)** -- after the review-result commit for each PASS item, run `gald3r_worktree.ps1 -Action MergeToMain -RepoPath <member_path> -TaskId {id} -TargetBranch main -Apply` in dependency order (lowest ID first); default target is `main` (feature-branches-only model — NO `dev` branch, see `g-rl-02`); override with `--target-branch <branch>` for a custom target; on success the helper FF-merges the feature branch into `main` (or override target) and deletes both code + review branches and worktree folders; log `[AUTO-MERGED→main]` in session summary; on merge-blocked (conflict), missing target branch, or member-dirty: preserve branch, log `[MERGE-BLOCKED]` / `[MERGE-SKIPPED-DIRTY]` as human action item (fallback, not default); pass `--no-auto-merge` to skip entirely and use old `[MERGE-BLOCKED]` behavior; never run auto-merge for FAIL items | Eliminates manual branch merge ceremony after every autopilot run — feature branches merge straight to `main` |
+| **Auto-merge member repo branches on PASS (MANDATORY)** -- after the review-result commit for each PASS item, run `gald3r_worktree.py -Action MergeToMain -RepoPath <member_path> -TaskId {id} -TargetBranch main -Apply` in dependency order (lowest ID first); default target is `main` (feature-branches-only model — NO `dev` branch, see `g-rl-02`); override with `--target-branch <branch>` for a custom target; on success the helper FF-merges the feature branch into `main` (or override target) and deletes both code + review branches and worktree folders; log `[AUTO-MERGED→main]` in session summary; on merge-blocked (conflict), missing target branch, or member-dirty: preserve branch, log `[MERGE-BLOCKED]` / `[MERGE-SKIPPED-DIRTY]` as human action item (fallback, not default); pass `--no-auto-merge` to skip entirely and use old `[MERGE-BLOCKED]` behavior; never run auto-merge for FAIL items | Eliminates manual branch merge ceremony after every autopilot run — feature branches merge straight to `main` |
 | Autopilot composes existing safe primitives — never bypasses any gate | One command, same safety contract |
 | Implementation agents NEVER self-verify their own work | Adversarial independence preserved across all loop iterations |
 | Hard stops emit final summaries and exit cleanly | Stops are not failures; they are the safety boundary |

@@ -7,7 +7,7 @@ Demonstrates per-session observability/tracing at the gald3r session boundary.
 
 The gald3r-internal **`pre_session`** lifecycle event at the very start of a gald3r
 work session. This is distinct from the harness-native `sessionStart` event (which
-wires `g-hk-session-start.ps1`): `pre_session` is the **gald3r-level** boundary,
+wires `g-hk-session-start.py`): `pre_session` is the **gald3r-level** boundary,
 dispatched by the gald3r skill/command runner or fired manually, so gald3r can
 trace its own session lifecycle independent of which harness (Cursor / Claude /
 CLI) launched the session. It is **not auto-wired** into `hooks.json`. The payload

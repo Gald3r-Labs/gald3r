@@ -72,7 +72,7 @@ a repo that predates C-023 release files), the corresponding heal path backfills
 
 | Flag | What it heals | Mechanism |
 |------|---------------|-----------|
-| `--heal-c023` | Missing `.gald3r/releases/RELEASE_*` files | Delegates to `g-skl-release/scripts/backfill_release_files.ps1` |
+| `--heal-c023` | Missing `.gald3r/releases/RELEASE_*` files | Delegates to `g-skl-release/scripts/backfill_release_files.py` |
 | `--heal-version` | Missing root `VERSION` file | Derives from latest CHANGELOG versioned header |
 | `--heal-constraints` | Inheritable framework constraints absent locally | Reports gap; `--apply` appends an adoption-pointer stub (cautious: never injects full bodies, never creates CONSTRAINTS.md) |
 | `--heal-all` | All of the above | Runs in dependency order: version → c023 → constraints |

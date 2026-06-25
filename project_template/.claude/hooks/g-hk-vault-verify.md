@@ -6,7 +6,7 @@ writes do not silently fail.
 
 ## Fires On
 
-Sourced and invoked by `g-hk-session-start.ps1` while building the Vault Context
+Sourced and invoked by `g-hk-session-start.py` while building the Vault Context
 banner. Can also be run standalone (`uv run python g-hk-vault-verify.py`) to
 print the status line.
 
@@ -35,5 +35,5 @@ in `skills/g-skl-vault/SKILL.md`.
 ## Related Tasks
 
 - T1456 — Add vault existence/structure verification at session start.
-- Companion resolver: `g-hk-vault-resolve.ps1` (resolves/creates the working vault
+- Companion resolver: `g-hk-vault-resolve.py` (resolves/creates the working vault
   path; this hook verifies the *configured* path independently).

@@ -133,7 +133,7 @@ Use when the user wants a note stored but does not need compiled wiki updates ye
 3. Write the source note with full frontmatter
 4. Add relevant wikilinks when obvious
 5. Append a log entry
-6. Run `g-hk-vault-reindex.ps1`
+6. Run `g-hk-vault-reindex.py`
 
 ## 2. Full Ingest
 
