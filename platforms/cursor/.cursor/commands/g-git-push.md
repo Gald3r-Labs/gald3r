@@ -3,7 +3,7 @@ subsystem_memberships: [SECURITY_AND_COMPLIANCE]
 ---
 # @g-git-push — Pre-push gate (regular vs release)
 
-Run **`.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1`** before `git push` to distinguish **routine** pushes from **release** pushes. Complements `@g-git-sanity` / `g-hk-pre-commit.ps1` and shared `.claude/skills/g-skl-git-commit/scripts/gald3r_git_sanity_common.ps1`.
+Run **`.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.py`** before `git push` to distinguish **routine** pushes from **release** pushes. Complements `@g-git-sanity` / `g-hk-pre-commit.ps1` and shared `.claude/skills/g-skl-git-commit/scripts/gald3r_git_sanity_common.py`.
 
 ---
 
@@ -20,25 +20,25 @@ Run **`.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1`** before `g
 
 ```powershell
 # Interactive — prompts "Is this a release push?"
-./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1
+./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.py
 
 # Explicit release checks
-./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1 -Release
+./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.py -Release
 
 # CI / non-interactive release
 $env:GALD3R_RELEASE_PUSH = "1"
-./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1 -NonInteractive
+./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.py -NonInteractive
 
 # Agent wiring check (always exit 0)
-./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1 -DryRun
-./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1 -Release -DryRun
+./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.py -DryRun
+./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.py -Release -DryRun
 ```
 
 **Override** when release gate fails but you intend to push anyway:
 
 ```powershell
 $env:GALD3R_PUSH_GATE_OVERRIDE = "1"
-./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1 -Release -NonInteractive
+./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.py -Release -NonInteractive
 ```
 
 ---
@@ -67,7 +67,7 @@ Before `git push`, an optional SCA (Software Composition Analysis) compliance ch
 
 ### Enabling the Gate
 
-Set `enabled: true` in `.gald3r/config/COMPLIANCE_GATE.md`. When enabled, `.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1` automatically adds `-ComplianceCheck` before the push proceeds.
+Set `enabled: true` in `.gald3r/config/COMPLIANCE_GATE.md`. When enabled, `.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.py` automatically adds `-ComplianceCheck` before the push proceeds.
 
 ### Gate Behavior
 

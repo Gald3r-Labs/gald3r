@@ -117,10 +117,10 @@ repo's `.cursor/hooks.json`:
 
 | Event | Hooks wired | Matcher |
 |---|---|---|
-| `sessionStart` | `g-hk-session-start.ps1` | (none) |
-| `stop` | `g-hk-agent-complete.ps1`, `g-hk-nightly-learn.ps1`, `g-hk-session-end.ps1` | (none) |
-| `beforeShellExecution` | `g-hk-validate-shell.ps1` | (none) |
-| `preToolUse` | `g-hk-pre-tool-call-gald3r-guard.ps1`, `g-hk-pre-tool-call-prd-freeze.ps1`, `g-hk-pre-tool-call-member-gald3r-guard.ps1` | `Edit\|Write\|MultiEdit\|NotebookEdit\|Patch\|ApplyPatch\|str_replace_editor` |
+| `sessionStart` | `g-hk-session-start.py` | (none) |
+| `stop` | `g-hk-agent-complete.py`, `g-hk-nightly-learn.ps1`, `g-hk-session-end.py` | (none) |
+| `beforeShellExecution` | `g-hk-validate-shell.py` | (none) |
+| `preToolUse` | `g-hk-pre-tool-call-gald3r-guard.py`, `g-hk-pre-tool-call-prd-freeze.py`, `g-hk-pre-tool-call-member-gald3r-guard.py` | `Edit\|Write\|MultiEdit\|NotebookEdit\|Patch\|ApplyPatch\|str_replace_editor` |
 
 - **Format**: `hooks.json` at `.cursor/hooks.json` (version 1). Each entry: `command` (full
   PowerShell invocation), optional `matcher` (regex over tool names), optional `_hook_md`

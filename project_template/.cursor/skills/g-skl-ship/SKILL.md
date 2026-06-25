@@ -58,7 +58,7 @@ Invoked by `@g-ship [major|minor|patch]`.
 2. Calculate new version based on bump type
 3. Show the `[Unreleased]` section preview and new version to user — confirm before proceeding
 3.5. **Run the RELEASE SWEEP** (see operation below) — report which awaiting-verification tasks ship vs. are held, BEFORE tagging. Held (`manual` / `sync_required`) tasks are skipped, not included in the release.
-4. Run `.claude/skills/g-skl-release/scripts/gald3r_semver.ps1 -BumpType <type> -Theme "<theme>" -Apply`
+4. Run `uv run python .claude/skills/g-skl-release/scripts/gald3r_semver.py -BumpType <type> -Theme "<theme>" -Apply`
    - Promotes `## [Unreleased]` → `## [X.Y.Z] - YYYY-MM-DD (Theme)`
    - Writes new empty `## [Unreleased]` at top
    - Bumps `VERSION` file
@@ -70,14 +70,14 @@ Invoked by `@g-ship [major|minor|patch]`.
 6. Ask: "Create GitHub release? (yes/no)"
    - If yes: extract the new `[X.Y.Z]` section from CHANGELOG.md, pass to `gh release create`
 
-**PowerShell (agent calls this):**
-```powershell
-.\scripts\gald3r_semver.ps1 -BumpType patch -Theme "Bug Fix Sprint" -Apply
+**Command (agent calls this):**
+```bash
+uv run python .claude/skills/g-skl-release/scripts/gald3r_semver.py -BumpType patch -Theme "Bug Fix Sprint" -Apply
 git push origin main --tags
 gh release create vX.Y.Z --title "vX.Y.Z -- Bug Fix Sprint" --notes-file <temp_notes_file>
 ```
 
-**If `gald3r_semver.ps1` is not found** (project doesn't have it yet):
+**If `gald3r_semver.py` is not found** (project doesn't have it yet):
 - Perform the steps manually:
   1. Read CHANGELOG.md, identify current version
   2. Calculate new version
@@ -248,7 +248,7 @@ Show:
 - Whether `gh` CLI is available for GitHub releases
 
 ```powershell
-.\scripts\gald3r_semver.ps1 -Status  # (not implemented yet — do manually)
+uv run python .claude/skills/g-skl-release/scripts/gald3r_semver.py -Status  # (not implemented yet -- do manually)
 
 # Manual approach:
 $ver = Get-Content VERSION 2>$null; Write-Host "Version: $ver"
@@ -369,5 +369,5 @@ Pick **one** mode per repo — do not run both against the same `CHANGELOG.md`.
 - `@g-git-push` — prompts for version bump if [Unreleased] is non-empty
 - `g-skl-tasks` COMPLETE — calls CHANGELOG-ENTRY for user-facing tasks
 - `g-skl-bugs` FIX — calls CHANGELOG-ENTRY for bug closures
-- `.claude/skills/g-skl-release/scripts/gald3r_semver.ps1` — PowerShell engine (gald3r projects)
+- `.claude/skills/g-skl-release/scripts/gald3r_semver.py` -- Python release/semver engine (gald3r projects)
 - `.claude/skills/g-skl-release/scripts/gald3r_release.py` — maintainer tool for gald3r's own 3-repo release

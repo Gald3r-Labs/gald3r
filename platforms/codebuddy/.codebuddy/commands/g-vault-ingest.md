@@ -16,7 +16,7 @@ Routes new knowledge into the file-first gald3r vault with Obsidian-safe wikilin
    - full ingest: source note plus compiled wiki pages
 4. Write or update the relevant note
 5. Append a `log.md` entry
-6. Run `g-hk-vault-reindex.ps1`
+6. Run `g-hk-vault-reindex.py`
 
 ## Special Case: GitHub Repos
 

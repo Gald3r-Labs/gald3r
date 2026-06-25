@@ -13,7 +13,7 @@ Session start, checking project health, @g-status command.
 
 At the start of this skill, determine whether the project is a WPAC participant. WPAC is active only when `.gald3r/linking/link_topology.md` declares at least one parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares WPAC project linking relationships. A Workspace-Control manifest and local `INBOX.md` alone do not make a project part of a WPAC group.
 
-Only when WPAC is active, call `g-hk-wpac-inbox-check.ps1 -BlockOnConflict` when present. `INBOX CONFLICT GATE` blocks status work until `@g-wpac-read` resolves conflicts. `g-medic` L1 uses its own non-blocking health gate before blocking higher-risk work. Non-conflict requests, broadcasts, and syncs remain advisory and should be surfaced in output. If WPAC is not active, skip the hook and report `WPAC: not configured / skipped`.
+Only when WPAC is active, call `g-hk-wpac-inbox-check.py -BlockOnConflict` when present. `INBOX CONFLICT GATE` blocks status work until `@g-wpac-read` resolves conflicts. `g-medic` L1 uses its own non-blocking health gate before blocking higher-risk work. Non-conflict requests, broadcasts, and syncs remain advisory and should be surfaced in output. If WPAC is not active, skip the hook and report `WPAC: not configured / skipped`.
 
 ## Steps
 
