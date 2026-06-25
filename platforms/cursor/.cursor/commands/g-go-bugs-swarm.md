@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [BUG_AND_QUALITY]
 ---
 Parallel bug-fix swarm — coordinate multiple bug fixes simultaneously: $ARGUMENTS
@@ -44,7 +44,7 @@ Hard-gate failures are the only valid stop reasons (see hard stops below).
 Before spawning any bucket agents:
 
 1. **PCAC inbox gate** — same as `@g-go-bugs` (only when PCAC is configured)
-2. **Housekeeping commit gate** — `gald3r_housekeeping_commit.ps1 -Mode preflight -Apply -Json`
+2. **Housekeeping commit gate** — `gald3r_housekeeping_commit.py -Mode preflight -Apply -Json`
 3. **Clean Controller Gate** — `git status --short`; stop if unrelated dirty paths
 4. **Claim all target bugs at once** — mark every target bug `[🔄]` / `in-progress` in BUGS.md
    (prevents other agents from double-claiming during parallel work)
@@ -70,7 +70,7 @@ Each bucket is assigned bugs that:
 ### Worktree Creation (Per Bucket)
 
 ```powershell
-.\scripts\gald3r_worktree.ps1 -Action Create -BugId {bug_ids_csv} -Role code-swarm -Owner {owner} -Json
+.\scripts\gald3r_worktree.py -Action Create -BugId {bug_ids_csv} -Role code-swarm -Owner {owner} -Json
 ```
 
 Create one worktree per bucket before spawning agents. Pass `worktree_path` and
@@ -120,7 +120,7 @@ After all bucket handoffs:
    - Update BUGS.md (all fixed bugs → `[🔍]`)
    - Update individual bug files (status + Status History)
    - Update linked fix tasks (if `fix_task_id:` set via T1114)
-4. **Post-write housekeeping gate**: `gald3r_housekeeping_commit.ps1 -Mode post-write -Apply -Json`
+4. **Post-write housekeeping gate**: `gald3r_housekeeping_commit.py -Mode post-write -Apply -Json`
 5. **Checkpoint commit** (one commit for the whole swarm run):
    ```
    fix(bugs): swarm fix BUG-{id1}, BUG-{id2}, ... ({N} bugs)

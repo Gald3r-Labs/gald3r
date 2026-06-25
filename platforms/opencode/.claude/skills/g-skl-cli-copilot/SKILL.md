@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-cli-copilot
 description: GitHub Copilot CLI (gh copilot command) — natural language to shell/git/gh commands, agent mode, chat sessions, workspace instructions, and multi-agent coordination via .github/copilot-instructions.md.
 token_budget: low
@@ -124,7 +124,7 @@ Phase 2 will add `.github/agents/*.agent.md` to enable agent-mode invocation onc
 
 - **No session continuation** — each `gh copilot suggest` is stateless
 - **No MCP tool integration** — Phase 2 dependency
-- **No hooks** — `g-hk-session-start.ps1` and inbox-check hooks are Cursor/Claude-only
+- **No hooks** — `g-hk-session-start.py` and inbox-check hooks are Cursor/Claude-only
 - **No skill invocation** — skills require `@workspace` or explicit IDE paste; no `@g-*` command shorthand in Copilot Chat
 
 ## Dangerous Patterns to Avoid

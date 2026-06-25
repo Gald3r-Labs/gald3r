@@ -3,7 +3,7 @@ display_name: "Installable Template Repository"
 description: "A clonable gald3r template repository. Its .gald3r/ folder contains product artifacts (template files to install), NOT live coordination state."
 version: "1.0.0"
 
-# SPECIAL EXCEPTION (enforced by check_member_repo_gald3r_guard.ps1):
+# SPECIAL EXCEPTION (enforced by check_member_repo_gald3r_guard.py):
 # template_directory_exception — all paths within template repos are allowed.
 # This is the ONLY repository type where .gald3r/ can contain tasks/, bugs/,
 # TASKS.md, etc. as TEMPLATE CONTENT (not live state).

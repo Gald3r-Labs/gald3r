@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
 Scaffold a new gald3r hook script + companion `hook.md` self-description in one step.
@@ -27,7 +27,7 @@ are scaffolded but **NOT auto-wired** into `hooks.json`. Their payloads (on stdi
 
 Reference examples (with companion `hook.md`): `hooks/g-hk-pre-skill-timing.ps1`,
 `hooks/g-hk-post-skill-timing.ps1` (per-skill timing/tracing), and
-`hooks/g-hk-pre-session-trace.ps1`, `hooks/g-hk-post-session-trace.ps1`
+`hooks/g-hk-pre-session-trace.py`, `hooks/g-hk-post-session-trace.py`
 (per-session observability). They are non-blocking and emit the standard
 `{ continue = true }` stdout envelope. The `_doc.gald3r_lifecycle_events` block in
 `hooks.json` records the same contract.

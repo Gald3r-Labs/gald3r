@@ -1,4 +1,4 @@
 #!/bin/sh
 # pre-commit — gald3r component tag enforcement
 # Installed via: git config core.hooksPath .gald3r_sys/git-hooks
-pwsh -NoProfile -ExecutionPolicy Bypass -File ".claude/hooks/g-hk-component-tag-check.ps1" || exit 1
+python ".claude/hooks/g-hk-component-tag-check.py" || exit 1

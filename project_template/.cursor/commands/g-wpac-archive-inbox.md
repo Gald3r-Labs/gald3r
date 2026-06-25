@@ -28,7 +28,7 @@ Run the archive operation:
 Or, equivalently, via the inbox-check hook:
 
 ```powershell
-.claude/hooks/g-hk-wpac-inbox-check.ps1 -Archive -ThresholdDays 30 -ProjectRoot .
+.claude/hooks/g-hk-wpac-inbox-check.py -Archive -ThresholdDays 30 -ProjectRoot .
 ```
 
 The script:

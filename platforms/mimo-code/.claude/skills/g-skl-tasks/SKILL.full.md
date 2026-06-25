@@ -494,7 +494,7 @@ worktree_owner: "{agent_id_or_platform_slug}"
 
 - Worktree metadata is optional for legacy/direct-root work and required only when a workflow actually creates or reuses a worktree.
 - `worktree_path` must resolve outside the active repository checkout; nested worktrees inside the primary working tree are invalid.
-- Worktrees must be created/reported/removed through `scripts/gald3r_worktree.ps1` so cleanup can prove ownership with `.gald3r-worktree.json`.
+- Worktrees must be created/reported/removed through `scripts/gald3r_worktree.py` so cleanup can prove ownership with `.gald3r-worktree.json`.
 - Stale cleanup is report-only by default and may remove only worktrees with gald3r ownership metadata plus explicit apply confirmation.
 
 4. **For completed** — also set `completed_date: "YYYY-MM-DD"` and update subsystem Activity Logs (see g-subsystems)
