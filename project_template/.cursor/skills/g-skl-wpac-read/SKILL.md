@@ -18,7 +18,7 @@ The inbox is a lightweight **index** at `.gald3r/linking/INBOX.md` (marked `<!--
 - **Read the index** for the row list (Status, ID, Type, Source, Subject, Age, File).
 - **Open the linked message file** for full body when actioning an item.
 - **Ack/update** = set the message file's `status:`/`actioned_at:` frontmatter AND flip the index row's status cell `[OPEN]` -> `[DONE]` in place.
-- **Backward-compat (`--legacy`)**: if `INBOX.md` is still the legacy flat-body format (no `WPAC-INDEX-V1` marker), run `@g-wpac-archive-inbox` (which auto-migrates first) or `.gald3r_sys/scripts/gald3r_wpac_inbox.ps1 -Migrate` to convert it, then proceed. If `messages/` is absent, the inbox-check hook creates it silently.
+- **Backward-compat (`--legacy`)**: if `INBOX.md` is still the legacy flat-body format (no `WPAC-INDEX-V1` marker), run `@g-wpac-archive-inbox` (which auto-migrates first) or `.gald3r_sys/scripts/gald3r_wpac_inbox.py -Migrate` to convert it, then proceed. If `messages/` is absent, the inbox-check hook creates it silently.
 
 ## Steps
 

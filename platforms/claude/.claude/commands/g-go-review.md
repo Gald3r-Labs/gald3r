@@ -133,7 +133,7 @@ Read in this order:
 - Individual bug files (`.gald3r/bugs/bug*.md`) for each `[🔍]` bug — read fix description and affected file/line
 - `git log --oneline -10` — understand what was recently implemented
 - `.gald3r/CONSTRAINTS.md` — guardrails
-- **Active workflow profile (T1239)** — load once via `load_profile.ps1` (active
+- **Active workflow profile (T1239)** — load once via `load_profile.py` (active
   skill folder; see g-skl-tasks "Reading the active profile"). The review-gate
   status (the `[🔍]`-equivalent), the PASS target, and the FAIL target come from
   the profile's `review_gate` + `task_statuses[]` rather than hardcoded strings

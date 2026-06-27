@@ -1,11 +1,11 @@
-﻿---
-gald3r_rel_version: "2.3.0"
+---
+gald3r_rel_version: "2.4.0"
 schema_version: "generic-v1"
 ---
 # HEARTBEAT.md — gald3r Scheduled Routines
 
-Defines recurring "cron" routines for this project. Read by `g-hk-session-start.ps1`
-(watchdog entries, T968), `g-hk-nightly-learn.ps1` (`nightly_learn:` switch), and the
+Defines recurring "cron" routines for this project. Read by `g-hk-session-start.py`
+(watchdog entries, T968), `g-hk-nightly-learn.py` (`nightly_learn:` switch), and the
 SWOT/curator scheduled flows.
 
 > FULL layout only. Slim installs do not ship this file. Lives at `.gald3r/config/HEARTBEAT.md`.
@@ -18,7 +18,7 @@ SWOT/curator scheduled flows.
 nightly_learn: true
 ```
 
-- `nightly_learn: false` disables the session-summary extraction in `g-hk-nightly-learn.ps1`.
+- `nightly_learn: false` disables the session-summary extraction in `g-hk-nightly-learn.py`.
 
 ---
 

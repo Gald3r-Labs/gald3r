@@ -27,7 +27,7 @@ Each (except `antigravity`, which has none yet — see T1465) has a
 - **Living artifacts** — maintain `.gald3r/PLATFORM_STATUS.md` (honest capability index) and
   `.gald3r/PLATFORM_CAPABILITY_MATRIX.md` (feature comparison). These are *generated*, not
   hand-maintained: regenerate via `g-skl-platform-monitor GENERATE_MATRIX` and
-  `check_platform_status.ps1`.
+  `check_platform_status.py`.
 - **Doc freshness** — coordinate doc-scan schedules across all 23 platforms. When a platform
   ships a breaking change (e.g., Antigravity's 7-day-ago relaunch), you own the response:
   `SCAN_DOCS` → `UPGRADE` proposal → human review → `platform_parity_sync.ps1`.
@@ -42,7 +42,7 @@ Each (except `antigravity`, which has none yet — see T1465) has a
 
 | Command | Skill operation |
 |---|---|
-| `@g-platform-check [<platform>]` | `g-skl-platform-monitor CHECK` (delegates to `check_platform_status.ps1`) |
+| `@g-platform-check [<platform>]` | `g-skl-platform-monitor CHECK` (delegates to `check_platform_status.py`) |
 | `@g-platform-scan-docs <platform>` | `g-skl-platform-monitor SCAN_DOCS` |
 | `@g-platform-status` | `g-skl-platform-monitor` read of `PLATFORM_STATUS.md` |
 | (skill-direct) | `g-skl-platform-monitor SCAN_ALL` / `VALIDATE` / `GENERATE_MATRIX` / `UPGRADE` |

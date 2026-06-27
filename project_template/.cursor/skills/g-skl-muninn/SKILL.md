@@ -140,7 +140,7 @@ python scripts/graph_impact.py -File "..." -Backend mcp
 
 ## Index Maintenance
 
-The post-commit hook `.cursor/hooks/g-hk-graph-update.ps1` (parity copy in
+The post-commit hook `.cursor/hooks/g-hk-graph-update.py` (parity copy in
 `.claude/hooks/`) refreshes the index after each commit. Non-blocking: if
 indexing fails or the muninn plugin is unavailable, the hook exits 0 and the
 commit proceeds.

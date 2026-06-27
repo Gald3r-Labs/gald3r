@@ -20,7 +20,7 @@ subsystem_memberships: [BUG_AND_QUALITY]
 | L1 | **Fast** | Every PR / code review / verification gate | Unit tests, smoke tests, happy-path | < 5 min |
 | L2 | **Comprehensive** | Feature completion, sprint closure | Integration, edge cases, error paths | < 30 min |
 | L3 | **Regression** | Before any release / version bump | Full suite, previous bug scenarios, cross-subsystem | Unrestricted |
-L1/L2/L3 are **code-test** levels (they run test files via `custom_scripts/tests/run_l1_tests.ps1`,
+L1/L2/L3 are **code-test** levels (they run test files via `custom_scripts/tests/run_l1_tests.py`,
 T1532). **L0 / FUNCTIONAL** is a distinct **system-health** tier (T1540): it does not run code unit
 tests but exercises each gald3r *system* (Task Management, Bug Tracking, Platform Parity, Hook Wiring,
 Schema, Constraints, Subsystems, Skills, WPAC, Release, Encoding, ...) and emits a per-system
@@ -127,7 +127,7 @@ TEST PLAN AUDIT:
 ### FUNCTIONAL (L0) — gald3r systems health harness (T1540)
 
 **Called for an install health check, a pre-release quality stamp, or a CI gate.**
-Distinct from L1/L2/L3 code tests: this runs `custom_scripts/gald3r_system_test.ps1`, which
+Distinct from L1/L2/L3 code tests: this runs `custom_scripts/gald3r_system_test.py`, which
 exercises each gald3r *system* and produces a per-system PASS/PARTIAL/FAIL plus an overall
 functionality percentage.
 
@@ -214,5 +214,5 @@ VERIFICATION GATE:
 - **g-skl-review / g-skl-code-review**: call AUDIT at end of review pass
 - **g-skl-tasks → `[🔍]` gate**: call VERIFICATION-GATE before marking awaiting-verification
 - **Release process**: call RELEASE-GATE before any version bump; also run FUNCTIONAL (L0) for the system-health stamp in release notes
-- **CI / pre-release**: wire `custom_scripts/gald3r_system_test.ps1 -FailBelow <N>` as a gate (see FUNCTIONAL above)
+- **CI / pre-release**: wire `custom_scripts/gald3r_system_test.py -FailBelow <N>` as a gate (see FUNCTIONAL above)
 - **g-agnt-test**: autonomous agent that runs this skill's operations on schedule or trigger

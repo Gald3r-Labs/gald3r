@@ -22,7 +22,7 @@ subsystem_memberships: [MEMORY_AND_KNOWLEDGE]
 - **No semantic dedup** via embeddings — plain text scan only
 - **No base64 processing** of any kind
 
-The logging for Cursor Agent mode is handled by `g-hk-agent-complete.ps1` (hook-based).
+The logging for Cursor Agent mode is handled by `g-hk-agent-complete.py` (hook-based).
 This skill covers **chat-mode sessions** where hooks don't fire.
 
 ## Memory Locations

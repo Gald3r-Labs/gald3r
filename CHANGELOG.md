@@ -10,6 +10,33 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 _Pending release notes accumulate here as tasks and bugs are completed. At publish time this
 section is renamed to [X.Y.Z] - YYYY-MM-DD and a fresh [Unreleased] block is opened._
 
+### Added
+- **`@g-install-agent` / `@g-install-throne` IDE commands (T1617).** Discoverable command wrappers (shipped to every platform that has a `commands/` surface) that invoke the `gald3r install agent|throne` engine verb for the user — dry-run first, then real install, passing through `--release`, `--from-source`, and `--require-verification`. They do not reimplement install logic; they are the IDE-facing entry point for the consumer install path added in T1615.
+- **`gald3r install agent|throne` now downloads the precompiled apps from public GitHub Releases (T1615).** The new default install method `github-release` fetches the per-OS binary/installer from `Gald3r-Labs/gald3r_agent` / `Gald3r-Labs/gald3r_throne` (latest, or `--release vX.Y.Z`), verifies integrity before installing (agent: SHA-256 `.sha256` sidecar; throne: minisign `.sig`, Throne updater key `F110B9BD6FF00BA2` -- missing/tampered signatures fail loud), and records the installed version in the install home. `--from-source` keeps the old `uv sync` (agent) / local Tauri-bundle (throne) developer path; `--dry-run` previews; network / missing-asset / 404 failures degrade to a clear message (never a crash or fake-success). Supersedes T571 (the install-verb block is removed here). macOS deferred ("coming soon").
+
+### Changed
+
+### Fixed
+- **`gald3r install agent` no longer fails open on integrity (BUG-198).** Two gaps closed: (1) the published Agent `v0.1.0` release now carries `.sha256` sidecars so the verify step actually engages (a real SHA-256 match, not "unsigned-experimental"); future releases get sidecars automatically via the `agent-binary-build.yml` workflow. (2) A new fail-closed flag **`--require-verification`** makes a missing/mismatched checksum (agent `.sha256`) or signature (throne `.sig`) **abort** the install instead of proceeding unsigned — it also overrides `--allow-unsigned`. The default behaviour is unchanged (warn + proceed = experimental) for backward compatibility.
+- **`ship` now stamps the source engine `pyproject.toml` version (T1605).** The version-cut
+  step (`3_ship` → `Forge().ship` → `ShipSystem._bump_version`) writes the target version into
+  `gald3r_core/project_template/.gald3r_sys/engine/pyproject.toml`'s `[project].version` line
+  atomically with the `gald3r_core/VERSION` bump (new `ShipSystem._stamp_engine_pyproject`,
+  mirroring `BuildSystem._stamp_engine_pyproject`'s targeted `count=1` TOML regex). The build's
+  version-patterns never matched a TOML `version = "X.Y.Z"` line, so the source engine pyproject
+  drifted every release and `5_release_repos.py`'s T572 pre-flight guard
+  (`_assert_engine_version_synced`) blocked `5_release` until a hand-edit. A fresh `3_ship` →
+  `5_release` now passes the guard with zero manual intervention. Dry-run writes nothing; a
+  missing pyproject is a silent no-op. +6 tests (`TestEnginePyprojectStamp`). NOTE:
+  `maintainer/uv.lock` also embeds the editable engine version; a deterministic re-lock needs the
+  `uv` toolchain and is left as a follow-up — the T572 guard checks the pyproject, not the lock.
+
+---
+## [2.3.0] - 2026-06-25
+
+_Pending release notes accumulate here as tasks and bugs are completed. At publish time this
+section is renamed to [X.Y.Z] - YYYY-MM-DD and a fresh [Unreleased] block is opened._
+
 > **Headline: the PS1-KILL release.** Almost all PowerShell has been removed from the gald3r
 > framework — the hook, skill-script, task-pipeline, release, and vault surfaces are now Python,
 > and ~1,065 redundant `.ps1` were pruned from the shipped source.
@@ -303,7 +330,7 @@ section is renamed to [X.Y.Z] - YYYY-MM-DD and a fresh [Unreleased] block is ope
   `.ps1` tag. The larger CRASH shipping gaps (engine `crash.py` absent from the shipped
   `project_template` engine, `.cursor` hook parity, `.py` port) are tracked in T511.
 - **Stale `gald3r_rel_version` stamp in template `.gald3r/.gitignore`** (T480) â€” corrected the
-  `# gald3r_rel_version: 2.3.0` header to `2.0.1` in both the canonical `project_template/.gald3r/.gitignore`
+  `# gald3r_rel_version: 2.4.0` header to `2.0.1` in both the canonical `project_template/.gald3r/.gitignore`
   and the `.gald3r_sys/template_verification/.gald3r/.gitignore` reference copy. (The forge does not
   re-stamp extensionless `.gitignore` files on build, so the canonical source carried the only stamp.)
 - **Workspace manifest validator typo re-fixed in the canonical engine** (BUG-128) â€” the

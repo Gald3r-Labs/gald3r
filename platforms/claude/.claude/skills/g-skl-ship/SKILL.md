@@ -118,7 +118,7 @@ in member projects must be migrated forward so projects are never left partially
    # Single member only
    .\custom_scripts\platform_parity_sync.ps1 -MigrateSchemas -Target <gald3r_source> -Apply
    ```
-   The migration engine (`.gald3r_sys/scripts/migrate_schemas.ps1`) never deletes fields:
+   The migration engine (`.gald3r_sys/scripts/migrate_schemas.py`) never deletes fields:
    deprecated fields become `deprecated_<name>`, removed fields become `legacy_<name>`, and
    un-populatable added fields get a `TODO:` marker. It is idempotent — re-running is a no-op.
 

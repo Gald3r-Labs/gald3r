@@ -24,7 +24,7 @@ Do not infer workspace members from sibling folder names, inferred `gald3r_templ
 
 `g-skl-workspace` is the read-only Workspace-Control Mode entry point. It lets agents inspect a configured workspace, validate the manifest and routing metadata, list controlled members, and explain export/sync plans before any future task authorizes writes. Every manifest repository is treated as an independent git root with its own status, branch, remote, rollback, and worktree context.
 
-Task 170 defines the shared worktree primitive for those git boundaries. When a workflow needs isolation, it must call the Gald3r worktree helper per repository, not once at the workspace root. In <gald3r_source> the helper is `scripts/gald3r_worktree.ps1`; installed templates carry the same helper in the `g-skl-git-commit/scripts/` skill directory for each IDE target. Worktree root defaults to `$env:GALD3R_WORKTREE_ROOT` or `<repo-parent>/.gald3r-worktrees/<repo-name>`, branch names use `gald3r/{task_id}/{role}/{repo_slug}/{owner}-{suffix}`, and cleanup may only remove directories that contain `.gald3r-worktree.json` ownership metadata.
+Task 170 defines the shared worktree primitive for those git boundaries. When a workflow needs isolation, it must call the Gald3r worktree helper per repository, not once at the workspace root. In <gald3r_source> the helper is `scripts/gald3r_worktree.py`; installed templates carry the same helper in the `g-skl-git-commit/scripts/` skill directory for each IDE target. Worktree root defaults to `$env:GALD3R_WORKTREE_ROOT` or `<repo-parent>/.gald3r-worktrees/<repo-name>`, branch names use `gald3r/{task_id}/{role}/{repo_slug}/{owner}-{suffix}`, and cleanup may only remove directories that contain `.gald3r-worktree.json` ownership metadata.
 
 ### g-go blast-radius clean gates (T495 / T496)
 
@@ -145,7 +145,7 @@ Default [1] autonomous_child. Choose [1/2]:
   ```
 
   Verify `.claude/`, `.cursor/`, `.gald3r_sys/`, `CLAUDE.md` exist on the target afterward. For an already-populated gald3r repo prefer the PROMOTE path (`@g-wpac-promote`) which performs the same installer step.
-- When the user selects **`controlled_member`**, keep the marker-only bootstrap path (`bootstrap_member_gald3r_marker.ps1`) and do NOT run the full installer.
+- When the user selects **`controlled_member`**, keep the marker-only bootstrap path (`bootstrap_member_gald3r_marker.py`) and do NOT run the full installer.
 
 ### MEMBER ADD APPLY Gate
 
@@ -220,7 +220,7 @@ SPAWN_APPLY may run only when all gates pass:
      uv run python .claude/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.py -MemberPath "<absolute_target_path>" -MemberId "<repo_id>" -Apply
      ```
 
-     The guard at exit `1` (BLOCK) refuses apply with `BLOCK spawn_member_repo_gald3r_guard_block`. Exit `2` (ERROR) refuses with `BLOCK spawn_member_repo_gald3r_guard_error`. Bootstrap may itself BLOCK with `BLOCK spawn_member_gald3r_has_control_plane` when the existing `.gald3r/` already contains forbidden content — in that case point the user to `.claude/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1` first. Only the combination of guard ALLOW + bootstrap success completes SPAWN_APPLY.
+     The guard at exit `1` (BLOCK) refuses apply with `BLOCK spawn_member_repo_gald3r_guard_block`. Exit `2` (ERROR) refuses with `BLOCK spawn_member_repo_gald3r_guard_error`. Bootstrap may itself BLOCK with `BLOCK spawn_member_gald3r_has_control_plane` when the existing `.gald3r/` already contains forbidden content — in that case point the user to `.claude/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.py` first. Only the combination of guard ALLOW + bootstrap success completes SPAWN_APPLY.
 
    - **`autonomous_child`** — full-framework deploy (T1452): the marker-only guard does NOT apply. After the git root and manifest entry are created, run the full installer on the target so the child gets `.claude/`, `.cursor/`, `.gald3r_sys/`, root docs, and a full `.gald3r/`:
 
@@ -271,9 +271,9 @@ SPAWN raises any of the following BLOCK findings with a single-line remediation:
 - `BLOCK spawn_apply_without_explicit_flag`
 - `BLOCK spawn_active_task_not_authorized`
 - `BLOCK spawn_manifest_write_policy_refused`
-- `BLOCK spawn_member_repo_gald3r_guard_block` — `.claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1` returned exit 1 for the target path (member repos cannot receive live control plane; only `.identity` + `PROJECT.md` are allowed)
+- `BLOCK spawn_member_repo_gald3r_guard_block` — `.claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.py` returned exit 1 for the target path (member repos cannot receive live control plane; only `.identity` + `PROJECT.md` are allowed)
 - `BLOCK spawn_member_repo_gald3r_guard_error` — guard helper returned exit 2 (manifest unparseable or other error); resolve before retrying
-- `BLOCK spawn_member_gald3r_has_control_plane` — bootstrap helper refused because the existing `.gald3r/` already contains forbidden content; run `.claude/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1` (dry-run, then `-Apply`) first
+- `BLOCK spawn_member_gald3r_has_control_plane` — bootstrap helper refused because the existing `.gald3r/` already contains forbidden content; run `.claude/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.py` (dry-run, then `-Apply`) first
 
 ## Operation: MEMBER REMOVE PLAN / MEMBER REMOVE APPLY
 
@@ -818,8 +818,8 @@ This state exists specifically so the manifest can model "adoption is in progres
 - controller archive bucket writes (Task 204)
 - controller `TASKS.md` / `BUGS.md` row insertions
 - manifest member entry transition from `planned_adopting_member` → `adopted`
-- any source-side cleanup (`remediate_member_gald3r_marker.ps1 -Apply`)
-- any source-side marker bootstrap (`bootstrap_member_gald3r_marker.ps1 -Apply`)
+- any source-side cleanup (`remediate_member_gald3r_marker.py -Apply`)
+- any source-side marker bootstrap (`bootstrap_member_gald3r_marker.py -Apply`)
 
 The decision gate is "user supplies `--apply` AND `--plan {report-path}` AND the plan is fresh AND its signature matches a re-run discovery". Anything weaker is refused; see the existing `BLOCK adoption_apply_without_explicit_flag` and `BLOCK adoption_plan_signature_mismatch` refusals below.
 
@@ -1117,9 +1117,9 @@ Apply runs only when all gates pass; any failure aborts with no partial writes:
 7. Manifest `allowed_write_policy` permits the manifest update for the active task (re-checked via ENFORCE_SCOPE).
 8. **Member `.gald3r/` marker-only guard (BUG-021 / Task 213 v1.1 / g-rl-36)**: ADOPT writes go to the control project, never to the member's live control plane. Apply must:
 
-   a. Run the validate helper against the source/member path: `.claude/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1`. If the member entry shows `has_violations`, refuse with `BLOCK adoption_member_repo_live_control_plane` and direct the user to `.claude/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1` followed by re-adoption.
+   a. Run the validate helper against the source/member path: `.claude/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.py`. If the member entry shows `has_violations`, refuse with `BLOCK adoption_member_repo_live_control_plane` and direct the user to `.claude/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.py` followed by re-adoption.
 
-   b. After the controller's `.gald3r/` is updated and the member's history has been imported into the controller (per the populated-gald3r adoption flow), call `.claude/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1 -MemberPath {source_path} -MemberId {member_id} -Apply` to ensure the member ends in the marker-only shape (`.identity` + `PROJECT.md` present, control plane absent).
+   b. After the controller's `.gald3r/` is updated and the member's history has been imported into the controller (per the populated-gald3r adoption flow), call `.claude/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.py -MemberPath {source_path} -MemberId {member_id} -Apply` to ensure the member ends in the marker-only shape (`.identity` + `PROJECT.md` present, control plane absent).
 
    c. Refuse with `BLOCK adoption_member_repo_gald3r_guard_error` if either helper returns exit `2`.
 
@@ -1142,7 +1142,7 @@ Apply never:
 
 **Full-framework deploy for autonomous_child targets (T1452)**: Workspace-Control ADOPT keeps the
 source repo as a marker-only `controlled_member` by default (it imports state into the controller and
-re-marks the source via `bootstrap_member_gald3r_marker.ps1`). It does NOT install the full framework
+re-marks the source via `bootstrap_member_gald3r_marker.py`). It does NOT install the full framework
 into the source. When the intent is instead to make the adopted repo an independent `autonomous_child`
 (full `.gald3r/` plus `.claude/`, `.cursor/`, `.gald3r_sys/`, root docs), do NOT hand-build those
 files: promote the member via PROMOTE_APPLY (`@g-wpac-promote`) and then run the full installer on the
@@ -1235,7 +1235,7 @@ uv run python .claude/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_mar
 
 Behavior:
 
-1. Confirms membership via `check_member_repo_gald3r_guard.ps1 -AllowMarkerInit`.
+1. Confirms membership via `check_member_repo_gald3r_guard.py -AllowMarkerInit`.
 2. Refuses with `BLOCK member_gald3r_has_control_plane` if existing `.gald3r/` already contains forbidden content — directs the user to MEMBER_MARKER_REMEDIATE first.
 3. Creates `.gald3r/.identity` (if absent) tying the member back to the controller (`workspace_role=controlled_member`, `workspace_controller_id`, `workspace_controller_project_id`, `workspace_controller_path`, `member_gald3r_marker_only=true`).
 4. Creates `.gald3r/PROJECT.md` (if absent) as a member-stub naming the member, role, controller, and crosslink.
@@ -1302,7 +1302,7 @@ PROMOTE is distinct from the other lifecycle modes:
 ### PROMOTE PLAN Steps (dry-run, default)
 
 1. Resolve the member path, manifest entry, and `.gald3r/.identity`.
-2. Classify the current role via `check_member_repo_gald3r_guard.ps1` and the member `.identity`.
+2. Classify the current role via `check_member_repo_gald3r_guard.py` and the member `.identity`.
 3. If the role is already `autonomous_child` -> exit with an informational message (no-op).
 4. If the role is `controlled_member` or `migration_source` -> build the promotion plan:
    - missing standard files to scaffold: `RELEASES.md`, `releases/`, `vocab.md`,
@@ -1584,5 +1584,5 @@ Before claiming Workspace-Control work is ready for review:
 
 The authoritative posture map is `<workspace>\LICENSING_STRATEGY.md` and `.gald3r/CONSTRAINTS.md` C-020. License posture changes require updating all three: strategy doc, manifest entries, and per-repo `LICENSE`/`NOTICE` files in a single coordinated task. Bare LICENSE edits without a manifest update violate C-020.
 
-The license check is implemented inside `.claude/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1` (alongside the existing T213 marker check). Pass `-SkipLicenseCheck` to suppress the license sweep when only marker diagnostics are wanted.
+The license check is implemented inside `.claude/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.py` (alongside the existing T213 marker check). Pass `-SkipLicenseCheck` to suppress the license sweep when only marker diagnostics are wanted.
 

@@ -82,7 +82,7 @@ ENCODE→DECODE round-trip must equal the source object (lossless check); field 
 in `[N]{...}` must match the rows present.
 
 Edge-case coverage beyond the inline VALIDATE smoke-test lives in
-`scripts/toon_test.ps1` (T1384) — 16 round-trip assertions for deep nesting, empty /
+`scripts/toon_test.py` (T1384) — 16 round-trip assertions for deep nesting, empty /
 single-element / scalar arrays, null & empty-string tabular cells, pipe-escaped cells,
 numeric/bool-looking strings (preserved as strings), and safe special characters:
 ```powershell
@@ -94,7 +94,7 @@ Save under `html_output_dir` (default `docs/`) per `g-rl-01` with a `.toon` exte
 `YYYYMMDD_HHMMSS_<IDE>_<TOPIC>.toon`. `.toon` files are vault-ingestable via
 `g-skl-vault` / `g-skl-recon-file`.
 
-Helper: `.claude/skills/g-skl-toon-output/scripts/toon_output.ps1`
+Helper: `.claude/skills/g-skl-toon-output/scripts/toon_output.py`
 ```powershell
 uv run python .claude/skills/g-skl-toon-output/scripts/toon_output.py `
   -Command g-status -Schema status -DataJson $jsonString -OutDir docs -Topic STATUS

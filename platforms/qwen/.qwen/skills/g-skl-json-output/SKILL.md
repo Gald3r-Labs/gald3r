@@ -57,7 +57,7 @@ Parse the produced string (must be valid JSON); confirm the envelope keys exist 
 Save under `html_output_dir` (default `docs/`) using `g-rl-01` naming with a `.json`
 extension: `YYYYMMDD_HHMMSS_<IDE>_<TOPIC>.json`. Return the path.
 
-Helper: `.claude/skills/g-skl-json-output/scripts/json_output.ps1`
+Helper: `.claude/skills/g-skl-json-output/scripts/json_output.py`
 ```powershell
 uv run python .claude/skills/g-skl-json-output/scripts/json_output.py `
   -Command g-status -Schema status -DataJson $jsonString -OutDir docs -Topic STATUS

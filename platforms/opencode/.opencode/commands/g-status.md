@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 ---
 Generate project status overview: $ARGUMENTS
@@ -97,7 +97,7 @@ If the manifest is absent, workspace output stays quiet unless you explicitly as
 - Show this line near the top of the report; no-op silently when invoked outside a gald3r project.
 
 ### 🔀 Workflow (T1239)
-- Resolve the active profile via `load_profile.ps1` (active skill folder; hybrid
+- Resolve the active profile via `load_profile.py` (active skill folder; hybrid
   activation chain) and display: `Workflow: {profile.name} ({profile.id}.yaml)`,
   e.g. `Workflow: Content Creation (content_creation.yaml)`.
 - This is the session-start workflow header (T1239 AC5). Skip silently when

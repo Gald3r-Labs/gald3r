@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-status
 description: Show project status — session context, active tasks, phase progress, goals, ideas.
 token_budget: low
@@ -34,7 +34,7 @@ Only when PCAC is active, call `g-hk-pcac-inbox-check.ps1 -BlockOnConflict` when
    per T1285+); otherwise `disabled`. No-op silently when invoked outside a gald3r project.
 
    **Workflow line (T1239)**: resolve the active profile via the loader
-   (`load_profile.ps1` in the active skill folder — see g-skl-tasks "Reading the
+   (`load_profile.py` in the active skill folder — see g-skl-tasks "Reading the
    active profile") and surface it as a dedicated session-context line:
    ```
    Workflow: Content Creation (content_creation.yaml)

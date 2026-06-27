@@ -374,7 +374,7 @@ Read in this order:
 - `.gald3r/TASKS.md` — master task list
 - `.gald3r/CONSTRAINTS.md` — guardrails (if exists)
 - `.gald3r/DECISIONS.md` — past decisions (if exists, read-only)
-- **Active workflow profile (T1239)** — load once via `load_profile.ps1` (active
+- **Active workflow profile (T1239)** — load once via `load_profile.py` (active
   skill folder; see g-skl-tasks "Reading the active profile"). Its
   `task_statuses[]` (`id`, `symbol`, `skip_in_pipeline`) is the source of truth
   for claimable-vs-skip and status-transition order, replacing hardcoded status
@@ -584,7 +584,7 @@ The b0.2 query is **advisory**, **non-blocking**, and **single tool call** (g-rl
 Canonical entry point (PowerShell, runs the per-extension check for you):
 
 ```powershell
-.\scripts\gald3r_post_write_lint.ps1 -FilePath "{relative_path_to_written_file}" -ProjectRoot . -Json
+python scripts/gald3r_post_write_lint.py -FilePath "{relative_path_to_written_file}" -ProjectRoot . -Json
 ```
 
 Per-language lint commands (single-line PowerShell-safe per g-rl-08 — no multi-line `python -c`):
@@ -611,7 +611,7 @@ If the helper script exits non-zero (`exit 2` = syntax error), **stop and fix th
 
 ```powershell
 # Right after the Write/Edit tool call:
-.\scripts\gald3r_post_write_lint.ps1 -FilePath "src/services/charge.py" -ProjectRoot . -Json
+python scripts/gald3r_post_write_lint.py -FilePath "src/services/charge.py" -ProjectRoot . -Json
 # Equivalent raw check the helper runs:
 python -m py_compile "src/services/charge.py"
 # exit 0  -> {"ok":true,"message":"Syntax OK (.py)",...}  -> continue the loop
@@ -622,7 +622,7 @@ python -m py_compile "src/services/charge.py"
 *JSON write* — you just wrote `config/feature_flags.json`:
 
 ```powershell
-.\scripts\gald3r_post_write_lint.ps1 -FilePath "config/feature_flags.json" -ProjectRoot . -Json
+python scripts/gald3r_post_write_lint.py -FilePath "config/feature_flags.json" -ProjectRoot . -Json
 # Equivalent raw check:
 python -c "import json,sys; json.load(open(sys.argv[1]))" "config/feature_flags.json"
 # A trailing comma -> json.decoder.JSONDecodeError -> exit 2 -> fix the comma inline, re-run, then continue
@@ -631,7 +631,7 @@ python -c "import json,sys; json.load(open(sys.argv[1]))" "config/feature_flags.
 *YAML write* — you just wrote `.github/workflows/ci.yml`:
 
 ```powershell
-.\scripts\gald3r_post_write_lint.ps1 -FilePath ".github/workflows/ci.yml" -ProjectRoot . -Json
+python scripts/gald3r_post_write_lint.py -FilePath ".github/workflows/ci.yml" -ProjectRoot . -Json
 # Equivalent raw check:
 python -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]).read())" ".github/workflows/ci.yml"
 # A bad indent / tab -> yaml.scanner.ScannerError -> exit 2 -> fix the indentation inline, re-run, then continue
@@ -639,7 +639,7 @@ python -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]).read())" ".github/w
 
 In all three cases the rule is identical: **lint the file you just wrote → if it fails, fix it inline and re-lint → only a clean exit 0 advances the loop to the next write.**
 
-**Parity note (AC7)** — this `g-go-code.md` under canonical `project_template/.claude/commands/` is the **source of truth** for the `post_write_lint` step. The per-IDE mirrors (`.claude/commands/g-go-code.md`, `.cursor/commands/g-go-code.md`, and the other platform copies) are **propagated later** by `custom_scripts/platform_parity_sync.ps1` — do **not** hand-edit the mirrors. The lint helper `gald3r_post_write_lint.ps1` lives under the same canonical `.gald3r_sys/scripts/` tree and is synced alongside.
+**Parity note (AC7)** — this `g-go-code.md` under canonical `project_template/.claude/commands/` is the **source of truth** for the `post_write_lint` step. The per-IDE mirrors (`.claude/commands/g-go-code.md`, `.cursor/commands/g-go-code.md`, and the other platform copies) are **propagated later** by `custom_scripts/platform_parity_sync.ps1` — do **not** hand-edit the mirrors. The lint helper `gald3r_post_write_lint.py` lives under the same canonical `.gald3r_sys/scripts/` tree and is synced alongside.
 
 **b2) AC gate** — before moving on, walk every `- [ ]` acceptance criterion in the task spec:
   - Is this criterion now satisfied? Check the actual files, not just intent.
@@ -1161,6 +1161,8 @@ Swarm mode partitions the work queue into conflict-safe buckets and spawns N par
 **Secondary axis**: file-lock zones (tasks both touching TASKS.md/BUGS.md directly → same bucket).
 **Dependency rule**: if A depends on B → same bucket, or B's bucket runs first.
 
+**File-scope output (T1059 lock claim)**: alongside `buckets = [[task_ids...]]`, record each bucket's planned file set (`bucket_planned_paths` = the union of its tasks' `workspace_repos` / planned touch set / subsystem-to-file mapping, as repo-relative paths). Because buckets are partitioned on subsystem/file boundaries, these sets do not overlap by construction. Each set is passed verbatim to `-LockFiles` at Step S6 so overlaps are enforced as `LOCK_CONFLICT` at worktree-create time.
+
 **Step S5: Display partition plan**
 ```
 [SWARM] Work queue: {M} items → {N} agents
@@ -1173,7 +1175,7 @@ Spawning {N} implementation agents...
 **Step S6: Spawn sub-agents**
 - Before spawning, create or reuse one coding worktree per bucket:
   ```powershell
-  .\scripts\gald3r_worktree.py -Action Create -TaskId bucket-{bucket_number} -Role code-swarm -Owner {platform_or_agent_slug} -StaleBaseAction Recreate -Json
+  .\scripts\gald3r_worktree.py -Action Create -TaskId bucket-{bucket_number} -Role code-swarm -Owner {platform_or_agent_slug} -BucketId {bucket_number} -LockFiles {bucket_planned_paths} -BucketTtlMinutes 60 -StaleBaseAction Recreate -Json
   ```
   **`-StaleBaseAction Recreate` is mandatory for rolling-wave bucket worktrees.** Without it,
   iteration-2+ bucket worktrees silently reuse the iteration-1 worktrees (same `TaskId
@@ -1183,6 +1185,7 @@ Spawning {N} implementation agents...
   worktree, and creates a fresh one from the latest commit. Task-specific worktrees (not
   bucket worktrees) should default to `-StaleBaseAction Warn` so stale-base conditions are
   surfaced but not silently discarded.
+- **Swarm file-lock claim (T1059, mandatory for `code-swarm`).** `-BucketId {bucket_number}` plus `-LockFiles {bucket_planned_paths}` (the bucket's planned file set from Step S4) make the helper write a lock manifest *before* the worktree exists. If another active bucket already claims an overlapping path, `-Action Create` fails with `LOCK_CONFLICT` and the colliding bucket is never spawned. `-Role code-swarm` **fails closed** (`LOCK_REQUIRED`) when `-LockFiles` is empty, so the lock layer can never silently no-op. Routing every bucket through `gald3r_worktree.py` is what makes the lock apply — do not create bucket worktrees by any other path. `-BucketTtlMinutes 60` sets the claim lifetime (expiry = created_at + 2×TTL).
 - Branch/worktree names must include the bucket role plus repo/owner suffix from the helper contract.
 - Each bucket agent receives its assigned `worktree_path` and `worktree_branch` and must run implementation from that worktree root.
 - Bucket agents MUST NOT directly write shared `.gald3r/TASKS.md` / `.gald3r/BUGS.md`, task/bug status files, `CHANGELOG.md`, generated Copilot prompts, parity output, or commits. They return proposed status changes, changed-file inventory, generated artifacts, and evidence to the coordinator.
@@ -1195,6 +1198,7 @@ Spawning {N} implementation agents...
 
 **Step S7: Collect and merge**
 After all sub-agents complete:
+0. **Lock report (T1059)**: before reconciling, run `.\scripts\gald3r_worktree.py -Action LockReport -Json` and surface any multi-bucket path in the session summary as a `WARN` (not a hard block) — this complements the overlap check in step 2 and the Swarm Reconciliation Gate.
 1. Inspect each bucket worktree with `git status --short` and `git diff --stat`.
 2. Detect overlapping shared-file edits before applying patches. If two buckets request the same shared file, defer that file to the coordinator's final write.
 3. Reconcile one bucket at a time: stage only intended bucket files in the bucket worktree with `git add -A -- {paths}`, export `git diff --binary --cached HEAD`, then apply it to the primary checkout with `git apply --3way --index`; do not overwrite user edits.

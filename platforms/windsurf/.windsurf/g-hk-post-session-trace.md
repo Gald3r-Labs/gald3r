@@ -7,7 +7,7 @@ the session trace record opened by `g-hk-pre-session-trace`.
 
 The gald3r-internal **`post_session`** lifecycle event at the very end of a gald3r
 work session. Distinct from the harness-native `stop` event (which wires
-`g-hk-session-end.ps1`): `post_session` is the **gald3r-level** boundary,
+`g-hk-session-end.py`): `post_session` is the **gald3r-level** boundary,
 dispatched by the gald3r skill/command runner or fired manually, and **not
 auto-wired** into `hooks.json`. The payload arrives on stdin as JSON and SHOULD
 carry `session_id` (if available) and `project_path`.
