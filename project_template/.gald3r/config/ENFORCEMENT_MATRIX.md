@@ -1,5 +1,5 @@
-﻿---
-gald3r_rel_version: "2.3.0"
+---
+gald3r_rel_version: "2.4.0"
 schema_version: "generic-v1"
 title: gald3r Enforcement Matrix
 purpose: Audit-and-design surface for migrating hard-constraint rules from context-injected always-apply text (~70% agent compliance) to hooks (~100% mechanical enforcement).
@@ -42,16 +42,16 @@ Scanned: `.claude/rules/*.md` and `.cursor/rules/*.mdc` (15 files each; pairs ar
 |---|---|---|---|---|---|
 | `g-rl-00-always.md` | Response footer + file-size nag + UV + freshness | `advisory` | Style + tool-choice nudges. No data risk. | none needed | none |
 | `g-rl-01-documentation.md` | docs/ folder placement + timestamped filenames | `advisory` | Cosmetic organisation. Violation = misplaced file, not unsafe. | none needed | none |
-| `g-rl-02-git_workflow.md` | Commit message format + **Protected Files** list + worktree rules + pre-commit/pre-push gates | `mixed` | Format is advisory; **Protected Files (no .env / no AGENTS.md / no .gald3r/ committed) is a hard-constraint** | `g-hk-pre-commit.ps1` (pattern scan); `g-hk-pre-push.ps1`; `gald3r_push_gate.ps1` | Pre-commit hook should explicitly reject every Protected Files entry by glob, not rely on agent diff inspection. Today the hook scans for secret patterns but not for the full Protected Files allowlist. |
+| `g-rl-02-git_workflow.md` | Commit message format + **Protected Files** list + worktree rules + pre-commit/pre-push gates | `mixed` | Format is advisory; **Protected Files (no .env / no AGENTS.md / no .gald3r/ committed) is a hard-constraint** | `g-hk-pre-commit.py` (pattern scan); `g-hk-pre-push.py`; `gald3r_push_gate.py` | Pre-commit hook should explicitly reject every Protected Files entry by glob, not rely on agent diff inspection. Today the hook scans for secret patterns but not for the full Protected Files allowlist. |
 | `g-rl-04-code_reusability.md` | DRY 3-strike rule + folder conventions | `advisory` | Code quality nudges. Reviewable post-hoc. | none needed | none |
 | `g-rl-08-powershell.md` | PowerShell command-separator + curl alias notes | `advisory` | Tool-choice guidance. Wrong syntax fails immediately and is self-correcting. | none needed | none |
 | `g-rl-09-python_venv.md` | UV venv + dependency sync | `advisory` | Code-style and dependency hygiene. Violations show up in next install. | none needed | none |
-| `g-rl-25-gald3r_session_start.md` | Session start display + sync validation + WPAC inbox surface | `mixed` | Display is advisory; **WPAC INBOX conflict gate is a hard-constraint** (must block claims/coding when an open conflict exists) | `g-hk-wpac-inbox-check.ps1` (`-BlockOnConflict` exit code 2); wired into `g-go-go`, `g-go`, `g-go-code`, `g-go-review` commands; sessionStart hook can surface but does not currently block tool calls | Pre-tool-call hook (planned) should re-check WPAC INBOX conflict state and refuse `Edit`/`Write` on `.gald3r/` paths while an unresolved `[CONFLICT]` exists. Today this is command-internal only. |
+| `g-rl-25-gald3r_session_start.md` | Session start display + sync validation + WPAC inbox surface | `mixed` | Display is advisory; **WPAC INBOX conflict gate is a hard-constraint** (must block claims/coding when an open conflict exists) | `g-hk-wpac-inbox-check.py` (`-BlockOnConflict` exit code 2); wired into `g-go-go`, `g-go`, `g-go-code`, `g-go-review` commands; sessionStart hook can surface but does not currently block tool calls | Pre-tool-call hook (planned) should re-check WPAC INBOX conflict state and refuse `Edit`/`Write` on `.gald3r/` paths while an unresolved `[CONFLICT]` exists. Today this is command-internal only. |
 | `g-rl-26-readme-changelog.md` | Update CHANGELOG/README at feature boundary | `advisory` | Doc hygiene. Missing CHANGELOG entry is a review-time fail, not a runtime hazard. | review-time only | none (review owns it) |
-| `g-rl-33-enforcement_catchall.md` | The catchall: error reporting, mandatory commit offer, **`.gald3r/` folder gate**, **PRD freeze gate (C-019)**, WPAC INBOX gate, **Clean Controller Gate**, gald3r housekeeping commit gate, **WPAC priority floor**, WPAC outbound tracking, code-change-enforcement, delegation hints | `hard-constraint` (multiple) | This file is the central hard-constraint document. Multiple sub-rules are data-loss-risky if violated. | Partial: `g-hk-pre-commit.ps1` (secret scan); `gald3r_housekeeping_commit.ps1`; `gald3r_push_gate.ps1`; `g-hk-wpac-inbox-check.ps1` (WPAC). **No `.gald3r/` write guard hook.** **No PRD freeze hook.** **No code-change-vs-task-id check at pre-commit.** | **Major gap** — see next section. |
+| `g-rl-33-enforcement_catchall.md` | The catchall: error reporting, mandatory commit offer, **`.gald3r/` folder gate**, **PRD freeze gate (C-019)**, WPAC INBOX gate, **Clean Controller Gate**, gald3r housekeeping commit gate, **WPAC priority floor**, WPAC outbound tracking, code-change-enforcement, delegation hints | `hard-constraint` (multiple) | This file is the central hard-constraint document. Multiple sub-rules are data-loss-risky if violated. | Partial: `g-hk-pre-commit.py` (secret scan); `gald3r_housekeeping_commit.py`; `gald3r_push_gate.py`; `g-hk-wpac-inbox-check.py` (WPAC). **No `.gald3r/` write guard hook.** **No PRD freeze hook.** **No code-change-vs-task-id check at pre-commit.** | **Major gap** — see next section. |
 | `g-rl-34-todo_completion_gate.md` | Stub/TODO annotation + follow-up task creation | `mixed` | Stub annotation is hard-constraint at task completion (`[🔍]` gate); discovery is advisory at any other time. | task verifier runs at `g-go-review`; no hook | A pre-commit hook scanning for bare `# TODO` / `pass` / `raise NotImplementedError` without the `TODO[TASK-X→TASK-Y]` form would surface unannotated stubs deterministically. |
 | `g-rl-35-bug-discovery-gate.md` | Pre-existing bug logging + `BUG[BUG-{id}]` annotation | `advisory` | Bug discovery is an agent-judgement step. Hook can't easily detect "what is a pre-existing bug". | none needed | none |
-| `g-rl-36-workspace-member-gald3r-guard.md` | Workspace-Control member `.gald3r/` MUST be marker-only (`.identity` + `PROJECT.md` only) | `hard-constraint` | Violation = control-plane drift, framework integrity loss. BUG-021 was filed for exactly this case. | `.claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1` invoked from skills (`g-skl-workspace`, `g-skl-setup`, `g-skl-wpac-spawn`, `g-skl-wpac-adopt`); `.claude/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1` for audit | **No pre-tool-call hook.** Today the guard is called from skill code paths only — direct `Write`/`Edit` to a member `.gald3r/` path bypasses it. A pre-tool-call hook that recognises `<member>/.gald3r/<not-marker>` paths and refuses the write closes this. |
+| `g-rl-36-workspace-member-gald3r-guard.md` | Workspace-Control member `.gald3r/` MUST be marker-only (`.identity` + `PROJECT.md` only) | `hard-constraint` | Violation = control-plane drift, framework integrity loss. BUG-021 was filed for exactly this case. | `.claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.py` invoked from skills (`g-skl-workspace`, `g-skl-setup`, `g-skl-wpac-spawn`, `g-skl-wpac-adopt`); `.claude/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.py` for audit | **No pre-tool-call hook.** Today the guard is called from skill code paths only — direct `Write`/`Edit` to a member `.gald3r/` path bypasses it. A pre-tool-call hook that recognises `<member>/.gald3r/<not-marker>` paths and refuses the write closes this. |
 | `g-rl-37-think-in-code.md` | Use a single script when 3+ tool calls would do the same work | `advisory` | Token-efficiency guidance. No safety risk. | none needed | none |
 | `rally.md` | Rally HTTP API conventions | `advisory` | Operational guidance for an internal task tracker. | none needed | none |
 | `silicon_valley_personality.md` | Persona rule | `advisory` | Cosmetic. | none needed | none |
@@ -62,11 +62,11 @@ These five constraints need hook-backed enforcement. They are the explicit Phase
 
 | Constraint | Source | Current state | Proposed hook | Hook type |
 |---|---|---|---|---|
-| **`.gald3r/` write guard** (no agent writes to `.gald3r/` without an active gald3r agent/skill) | g-rl-33 § ".gald3r/ Folder Gate" | Context-only | `g-hk-pre-tool-call-gald3r-guard.ps1` — inspects tool name + target path + active agent/skill ID; refuses unsupervised `Edit`/`Write` to `.gald3r/` | pre-tool-call |
-| **PRD freeze gate (C-019)** (released/superseded PRDs are immutable; only `@g-prd-revise` may touch them) | g-rl-33 § "PRD Freeze Gate" | Context-only | `g-hk-pre-tool-call-prd-freeze.ps1` — on any `Edit`/`Write` targeting `.gald3r/prds/prdNNN_*.md`, reads YAML `status:`; refuses if `released`/`superseded`; allows only via `@g-prd-revise` flow | pre-tool-call |
-| **Member `.gald3r/` marker-only invariant** (workspace member repos may keep ONLY `.identity` + `PROJECT.md`) | g-rl-36 | Skill-code paths only; direct tool calls bypass | `g-hk-pre-tool-call-member-gald3r-guard.ps1` — recognises `<workspace_member>/.gald3r/<not-marker>` path patterns from the workspace manifest; refuses with the existing guard helper exit message | pre-tool-call |
-| **Protected Files commit guard** (never commit `.env`, `AGENTS.md`, `CLAUDE.md`, `.cursor/`, `.gald3r/`, etc.) | g-rl-02 § "Protected Files" | Partial — secret-pattern scan only | `g-hk-pre-commit.ps1` extension — full Protected Files allowlist scan, not just secret regex | pre-commit (existing hook, extend) |
-| **Stub/TODO commit guard** (no bare `# TODO`, `pass`, `raise NotImplementedError` in staged commits without `TODO[TASK-X→TASK-Y]` annotation) | g-rl-34 | Review-time only | `g-hk-pre-commit.ps1` extension — staged-diff scan for bare-stub patterns missing the annotation form | pre-commit (existing hook, extend) |
+| **`.gald3r/` write guard** (no agent writes to `.gald3r/` without an active gald3r agent/skill) | g-rl-33 § ".gald3r/ Folder Gate" | Context-only | `g-hk-pre-tool-call-gald3r-guard.py` — inspects tool name + target path + active agent/skill ID; refuses unsupervised `Edit`/`Write` to `.gald3r/` | pre-tool-call |
+| **PRD freeze gate (C-019)** (released/superseded PRDs are immutable; only `@g-prd-revise` may touch them) | g-rl-33 § "PRD Freeze Gate" | Context-only | `g-hk-pre-tool-call-prd-freeze.py` — on any `Edit`/`Write` targeting `.gald3r/prds/prdNNN_*.md`, reads YAML `status:`; refuses if `released`/`superseded`; allows only via `@g-prd-revise` flow | pre-tool-call |
+| **Member `.gald3r/` marker-only invariant** (workspace member repos may keep ONLY `.identity` + `PROJECT.md`) | g-rl-36 | Skill-code paths only; direct tool calls bypass | `g-hk-pre-tool-call-member-gald3r-guard.py` — recognises `<workspace_member>/.gald3r/<not-marker>` path patterns from the workspace manifest; refuses with the existing guard helper exit message | pre-tool-call |
+| **Protected Files commit guard** (never commit `.env`, `AGENTS.md`, `CLAUDE.md`, `.cursor/`, `.gald3r/`, etc.) | g-rl-02 § "Protected Files" | Partial — secret-pattern scan only | `g-hk-pre-commit.py` extension — full Protected Files allowlist scan, not just secret regex | pre-commit (existing hook, extend) |
+| **Stub/TODO commit guard** (no bare `# TODO`, `pass`, `raise NotImplementedError` in staged commits without `TODO[TASK-X→TASK-Y]` annotation) | g-rl-34 | Review-time only | `g-hk-pre-commit.py` extension — staged-diff scan for bare-stub patterns missing the annotation form | pre-commit (existing hook, extend) |
 
 ## Implementation pathway — shipped 2026-05-11 (T997 AC2-AC6)
 
@@ -76,13 +76,13 @@ Live PowerShell implementation landed in this commit. The contract is identical 
 
 | Hook | Path | Type | ACs |
 |---|---|---|---|
-| `.gald3r/` write guard | `.claude/hooks/g-hk-pre-tool-call-gald3r-guard.ps1` (+ .cursor / .agent / .codex parity) | pre-tool-call | AC5 |
-| PRD freeze gate | `.claude/hooks/g-hk-pre-tool-call-prd-freeze.ps1` (+ parity) | pre-tool-call | AC6 |
-| Member marker-only guard | `.claude/hooks/g-hk-pre-tool-call-member-gald3r-guard.ps1` (+ parity) | pre-tool-call | AC2 |
-| Protected Files allowlist | `.claude/hooks/g-hk-pre-commit.ps1` § "PROTECTED FILES ALLOWLIST" (+ parity) | pre-commit (extended) | AC4 |
-| Stub annotation guard | `.claude/hooks/g-hk-pre-commit.ps1` § "STUB / TODO ANNOTATION" (+ parity) | pre-commit (extended) | AC5 (g-rl-34) |
+| `.gald3r/` write guard | `.claude/hooks/g-hk-pre-tool-call-gald3r-guard.py` (+ .cursor / .agent / .codex parity) | pre-tool-call | AC5 |
+| PRD freeze gate | `.claude/hooks/g-hk-pre-tool-call-prd-freeze.py` (+ parity) | pre-tool-call | AC6 |
+| Member marker-only guard | `.claude/hooks/g-hk-pre-tool-call-member-gald3r-guard.py` (+ parity) | pre-tool-call | AC2 |
+| Protected Files allowlist | `.claude/hooks/g-hk-pre-commit.py` § "PROTECTED FILES ALLOWLIST" (+ parity) | pre-commit (extended) | AC4 |
+| Stub annotation guard | `.claude/hooks/g-hk-pre-commit.py` § "STUB / TODO ANNOTATION" (+ parity) | pre-commit (extended) | AC5 (g-rl-34) |
 
-**Hook contract** (matches `g-hk-validate-shell.ps1` precedent):
+**Hook contract** (matches `g-hk-validate-shell.py` precedent):
 
 - **stdin**  : JSON `{ tool_name, tool_input: { file_path | path | ... } }`
 - **exit 0** : allow  (body: `{"permission":"allow"}`)
@@ -114,9 +114,9 @@ Cursor's documented hook events as of late 2025 are `sessionStart`, `stop`, `bef
 
 **Validated** via standalone invocation in T997 ITER 3 (2026-05-11):
 
-- `g-hk-pre-tool-call-gald3r-guard.ps1` correctly denies `Write` to `.gald3r/test.md`, allows with `GALD3R_ACTIVE_AGENT` set, allows non-`.gald3r/` paths.
-- `g-hk-pre-tool-call-prd-freeze.ps1` correctly denies `Edit` on a `released` PRD fixture, allows with `GALD3R_PRD_REVISE_ACTIVE`, allows draft PRDs, allows non-PRD paths.
-- `g-hk-pre-tool-call-member-gald3r-guard.ps1` correctly denies `Write` to a member's `.gald3r/TASKS.md`, allows the member marker pair, allows controller `.gald3r/` writes, allows non-`.gald3r/` paths.
+- `g-hk-pre-tool-call-gald3r-guard.py` correctly denies `Write` to `.gald3r/test.md`, allows with `GALD3R_ACTIVE_AGENT` set, allows non-`.gald3r/` paths.
+- `g-hk-pre-tool-call-prd-freeze.py` correctly denies `Edit` on a `released` PRD fixture, allows with `GALD3R_PRD_REVISE_ACTIVE`, allows draft PRDs, allows non-PRD paths.
+- `g-hk-pre-tool-call-member-gald3r-guard.py` correctly denies `Write` to a member's `.gald3r/TASKS.md`, allows the member marker pair, allows controller `.gald3r/` writes, allows non-`.gald3r/` paths.
 
 ## Rule → hook coverage summary (post-T997 implementation 2026-05-11)
 
@@ -124,18 +124,18 @@ Cursor's documented hook events as of late 2025 are `sessionStart`, `stop`, `bef
 |---|---|---|
 | g-rl-00 | n/a (advisory) | — |
 | g-rl-01 | n/a (advisory) | — |
-| g-rl-02 | **shipped** — pre-commit hook now enforces full Protected Files allowlist (15+ patterns) + existing secret regex | `g-hk-pre-commit.ps1` § "PROTECTED FILES ALLOWLIST" (AC4) |
+| g-rl-02 | **shipped** — pre-commit hook now enforces full Protected Files allowlist (15+ patterns) + existing secret regex | `g-hk-pre-commit.py` § "PROTECTED FILES ALLOWLIST" (AC4) |
 | g-rl-04 | n/a (advisory) | — |
 | g-rl-08 | n/a (advisory) | — |
 | g-rl-09 | n/a (advisory) | — |
-| g-rl-25 | partial — WPAC INBOX hook surfaces conflicts; pre-tool-call extension not yet wired | Future: extend `g-hk-pre-tool-call-gald3r-guard.ps1` to re-check INBOX conflict state when an active CONFLICT exists |
+| g-rl-25 | partial — WPAC INBOX hook surfaces conflicts; pre-tool-call extension not yet wired | Future: extend `g-hk-pre-tool-call-gald3r-guard.py` to re-check INBOX conflict state when an active CONFLICT exists |
 | g-rl-26 | review-time | n/a |
-| g-rl-33 (.gald3r/ guard) | **shipped** | `g-hk-pre-tool-call-gald3r-guard.ps1` (AC5) — refuses unsupervised Edit/Write to `.gald3r/`; bypassable via `GALD3R_ACTIVE_AGENT` env var |
-| g-rl-33 (PRD freeze C-019) | **shipped** | `g-hk-pre-tool-call-prd-freeze.ps1` (AC6) — refuses Edit/Write to released/superseded PRDs; bypassable via `GALD3R_PRD_REVISE_ACTIVE` env var |
-| g-rl-33 (Clean Controller Gate) | **partial** — `gald3r_housekeeping_commit.ps1` handles housekeeping classification; full clean check is command-internal | Acceptable: command-internal gate is sufficient for orchestration roots; agents that bypass commands are bypassing all gates anyway |
-| g-rl-34 (stub annotation) | **shipped** | `g-hk-pre-commit.ps1` § "STUB / TODO ANNOTATION" — staged-diff scan rejects bare `# TODO`, `// TODO`, `raise NotImplementedError`, etc. without the `TODO[TASK-X→TASK-Y]` form |
+| g-rl-33 (.gald3r/ guard) | **shipped** | `g-hk-pre-tool-call-gald3r-guard.py` (AC5) — refuses unsupervised Edit/Write to `.gald3r/`; bypassable via `GALD3R_ACTIVE_AGENT` env var |
+| g-rl-33 (PRD freeze C-019) | **shipped** | `g-hk-pre-tool-call-prd-freeze.py` (AC6) — refuses Edit/Write to released/superseded PRDs; bypassable via `GALD3R_PRD_REVISE_ACTIVE` env var |
+| g-rl-33 (Clean Controller Gate) | **partial** — `gald3r_housekeeping_commit.py` handles housekeeping classification; full clean check is command-internal | Acceptable: command-internal gate is sufficient for orchestration roots; agents that bypass commands are bypassing all gates anyway |
+| g-rl-34 (stub annotation) | **shipped** | `g-hk-pre-commit.py` § "STUB / TODO ANNOTATION" — staged-diff scan rejects bare `# TODO`, `// TODO`, `raise NotImplementedError`, etc. without the `TODO[TASK-X→TASK-Y]` form |
 | g-rl-35 | n/a (judgement) | — |
-| g-rl-36 (member marker-only) | **shipped** | `g-hk-pre-tool-call-member-gald3r-guard.ps1` (AC2) — refuses Edit/Write to any member `.gald3r/` path that is not `.identity` or `PROJECT.md`; bypassable via `GALD3R_MARKER_INIT_ACTIVE` env var |
+| g-rl-36 (member marker-only) | **shipped** | `g-hk-pre-tool-call-member-gald3r-guard.py` (AC2) — refuses Edit/Write to any member `.gald3r/` path that is not `.identity` or `PROJECT.md`; bypassable via `GALD3R_MARKER_INIT_ACTIVE` env var |
 | g-rl-37 | n/a (advisory) | — |
 | rally | n/a (operational) | — |
 | silicon-valley | n/a (cosmetic) | — |
@@ -152,4 +152,4 @@ This matrix is written from `<gald3r_source>` (Claude Code orientation). Hook pa
 - Source rules: `.claude/rules/g-rl-*.md` (and `.cursor/rules/g-rl-*.mdc` parity copies)
 - Existing hooks: `.claude/hooks/g-hk-*.ps1` (and `.cursor/hooks/g-hk-*.ps1` parity)
 - Hook wiring: `.claude/hooks.json`, `.cursor/hooks.json`
-- Guard helpers: `.claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1`, `.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1`, `.claude/skills/g-skl-git-commit/scripts/gald3r_housekeeping_commit.ps1`
+- Guard helpers: `.claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.py`, `.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.py`, `.claude/skills/g-skl-git-commit/scripts/gald3r_housekeeping_commit.py`

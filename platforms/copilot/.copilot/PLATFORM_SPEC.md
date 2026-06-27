@@ -79,7 +79,7 @@ Copilot customization is split across **two real locations** plus a gald3r conve
 every Copilot Chat/agent session for the repository. This is the canonical, documented file. ✅
 
 - Plain Markdown, no required frontmatter.
-- gald3r generates it from always-apply rules via `generate_copilot_instructions.ps1`.
+- gald3r generates it from always-apply rules via `generate_copilot_instructions.py`.
 - Context budget caution: very large files compete for the model context window. Keep consumer
   installs lean (the existing SKILL.md recommends < 500 lines).
 

@@ -1,5 +1,5 @@
 ﻿---
-gald3r_rel_version: "2.3.0"
+gald3r_rel_version: "2.4.0"
 schema_version: "TASKS-md-v1"
 ---
 # TASKS.md — {PROJECT_NAME}

@@ -26,23 +26,27 @@ rerouted API calls and broke user setups overnight):
 
 ## Execution Protocol
 
-### Step 1: Run the PowerShell Script
+### Step 1: Run the Python Script
 
-```powershell
-$scriptPath = @(
-    ".gald3r_sys\skills\g-skl-medic\scripts\gald3r_doctor.ps1",
-    ".cursor\skills\g-skl-medic\scripts\gald3r_doctor.ps1",
-    ".claude\skills\g-skl-medic\scripts\gald3r_doctor.ps1"
-) | Where-Object { Test-Path $_ } | Select-Object -First 1
+```bash
+scriptPath=""
+for cand in \
+    ".gald3r_sys/skills/g-skl-medic/scripts/gald3r_doctor.py" \
+    ".cursor/skills/g-skl-medic/scripts/gald3r_doctor.py" \
+    ".claude/skills/g-skl-medic/scripts/gald3r_doctor.py"; do
+    if [ -f "$cand" ]; then scriptPath="$cand"; break; fi
+done
 
-if ($scriptPath) {
-    $fixFlag  = if ($args -contains '--fix') { '-Fix' } else { '' }
-    $catArg   = $args | Where-Object { $_ -in @('identity','tasks','mcp','vault','platform') } | Select-Object -First 1
-    $catFlag  = if ($catArg) { "-Category $catArg" } else { '' }
-    powershell -NoProfile -ExecutionPolicy Bypass -File $scriptPath $fixFlag $catFlag
-} else {
-    Write-Host "⚠️ g-skl-medic/scripts/gald3r_doctor.ps1 not found — running AI-assisted checks below."
-}
+if [ -n "$scriptPath" ]; then
+    fixFlag=""; [ "$*" = "${*/--fix/}" ] || fixFlag="-Fix"
+    catFlag=""
+    for c in identity tasks mcp vault platform; do
+        case " $* " in *" $c "*) catFlag="-Category $c";; esac
+    done
+    python "$scriptPath" $fixFlag $catFlag
+else
+    echo "⚠️ g-skl-medic/scripts/gald3r_doctor.py not found — running AI-assisted checks below."
+fi
 ```
 
 If the script is present, display its output and stop. Exit code 1 = at least one FAIL.

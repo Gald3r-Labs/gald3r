@@ -82,33 +82,6 @@ def _run_install_or_setup(args) -> int:
     (no silent stub): the plan carries the build command and the executor raises
     (T472, g-rl-34).
     """
-    # TODO[TASK-472→TASK-528]: gald3r install throne — precompiled installer not yet available.
-    # TODO[TASK-472→TASK-529]: gald3r install agent  — precompiled binary not yet available.
-    # Both products currently require building from source (T528/T529 pending).
-    # Block the install verb until precompiled artifacts are shipped.
-    if args.cmd == "install":
-        msg = (
-            "gald3r install is not yet available for consumer use.\n"
-            "\n"
-            "  Throne (gald3r_throne) and Agent (gald3r_agent) do not yet have\n"
-            "  precompiled installers — both currently require building from source.\n"
-            "\n"
-            "  Precompiled installers are tracked in:\n"
-            "    T528 — Throne signed installer (Windows/macOS/Linux)\n"
-            "    T529 — Agent packaged binary (IP-protected, no source required)\n"
-            "\n"
-            "  Once those ship, this command will work as documented.\n"
-            "  Developer path: build from source per RELEASE.md (Throne) or\n"
-            "  `uv pip install -e .` (Agent)."
-        )
-        if getattr(args, "json", False):
-            import json as _json
-            print(_json.dumps({"error": "install_not_yet_available",
-                               "message": msg, "pending_tasks": ["T528", "T529"]}))
-        else:
-            print(msg)
-        return 2
-
     from gald3r import install as _install
 
     portable = True if getattr(args, "portable", False) else None
@@ -121,7 +94,10 @@ def _run_install_or_setup(args) -> int:
             if args.cmd == "install":
                 plan = _install.plan_install(
                     product, products_root=getattr(args, "products_root", None),
-                    home=_install._home.resolve_install_home(portable=portable))
+                    home=_install._home.resolve_install_home(portable=portable),
+                    from_source=getattr(args, "from_source", False),
+                    release=getattr(args, "release", None),
+                    require_verification=getattr(args, "require_verification", False))
             else:
                 plan = _install.plan_setup(product, portable=portable)
         except (_install.InstallError, ValueError) as e:
@@ -142,7 +118,11 @@ def _run_install_or_setup(args) -> int:
                 print("  (dry-run: nothing executed)")
         else:
             try:
-                log = (_install.execute_install(plan) if args.cmd == "install"
+                log = (_install.execute_install(
+                           plan,
+                           token=getattr(args, "token", None) or os.environ.get("GITHUB_TOKEN"),
+                           allow_unsigned=getattr(args, "allow_unsigned", False))
+                       if args.cmd == "install"
                        else _install.execute_setup(plan, portable=portable))
                 entry["executed"] = True
                 entry["log"] = log
@@ -785,6 +765,22 @@ def main(argv: Optional[List[str]] = None) -> int:
                       help="dir containing gald3r_agent/ + gald3r_throne/ (or GALD3R_PRODUCTS_ROOT)")
     pins.add_argument("--portable", action="store_true",
                       help="resolve the USB-portable install home")
+    pins.add_argument("--from-source", dest="from_source", action="store_true",
+                      help="build/locate from local source (dev fallback) instead of "
+                           "downloading the precompiled app from GitHub Releases")
+    pins.add_argument("--release", default=None,
+                      help="pin a release tag (e.g. v0.1.0); default: latest")
+    pins.add_argument("--allow-unsigned", dest="allow_unsigned", action="store_true",
+                      help="proceed past a missing/uncheckable signature "
+                           "(download method; not recommended)")
+    pins.add_argument("--require-verification", dest="require_verification",
+                      action="store_true",
+                      help="fail-closed: abort the install if integrity cannot be "
+                           "verified (missing agent .sha256 / throne .sig). Overrides "
+                           "--allow-unsigned")
+    pins.add_argument("--token", default=None,
+                      help="GitHub token for the download method (or GITHUB_TOKEN "
+                           "env); raises the API rate limit")
     pset = sub.add_parser("setup", help="initialize gald3r_agent / gald3r_throne against the install home")
     pset.add_argument("product", choices=["agent", "throne", "all"])
     pset.add_argument("--dry-run", dest="dry_run", action="store_true",

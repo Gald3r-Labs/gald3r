@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
 # g-cli-copilot — GitHub Copilot CLI
@@ -14,7 +14,7 @@ Use when:
 
 ## Actions
 
-- **Generate instructions**: run `.\.gald3r_sys\skills\g-skl-platform-copilot\scripts\generate_copilot_instructions.ps1`
+- **Generate instructions**: run `python .gald3r_sys/skills/g-skl-platform-copilot/scripts/generate_copilot_instructions.py`
 - **Suggest command**: `gh copilot suggest --target {shell|git|gh} "{description}"`
 - **Explain command**: `gh copilot explain "{command}"`
 - **Status**: confirm `gh auth status` + Copilot subscription active

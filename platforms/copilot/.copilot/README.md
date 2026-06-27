@@ -79,7 +79,7 @@ Do not rely on it without an install test on your target surface.
 Run after modifying rules, agents, hooks, or commands:
 
 ```powershell
-.\.gald3r_sys\skills\g-skl-platform-copilot\scripts\generate_copilot_instructions.ps1
+python .gald3r_sys/skills/g-skl-platform-copilot/scripts/generate_copilot_instructions.py
 ```
 
 What it generates and the **honest** status of each output:

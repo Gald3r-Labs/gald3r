@@ -1,5 +1,5 @@
 ﻿---
-gald3r_rel_version: "2.3.0"
+gald3r_rel_version: "2.4.0"
 schema_version: "generic-v1"
 title: gald3r Enforcement Matrix
 purpose: Audit-and-design surface for migrating hard-constraint rules from context-injected always-apply text (~70% agent compliance) to hooks (~100% mechanical enforcement).

@@ -128,8 +128,8 @@ gitignored (see `g-rl-02` protected files).
   `afterFileEdit`, `beforeSubmitPrompt`, `preCompact`, `stop`, `afterAgentResponse` /
   `afterAgentThought`, plus Tab hooks (`beforeTabFileRead` / `afterTabFileEdit`) and app lifecycle
   (`workspaceOpen`).
-- gald3r `g-hk-*.ps1` hooks wire natively via these events (e.g. `g-hk-session-start.ps1` →
-  `sessionStart`; `g-hk-validate-shell.ps1` → `beforeShellExecution`; `g-hk-pre-tool-call-*.ps1` →
+- gald3r `g-hk-*.ps1` hooks wire natively via these events (e.g. `g-hk-session-start.py` →
+  `sessionStart`; `g-hk-validate-shell.py` → `beforeShellExecution`; `g-hk-pre-tool-call-*.ps1` →
   `preToolUse`; session-end hooks → `stop`). Each entry: `command` (full PowerShell invocation),
   optional `matcher` (regex over tool names), optional `_hook_md` (companion doc, T1171).
 - Source: https://cursor.com/docs/hooks
@@ -199,10 +199,10 @@ Cursor without a separate port**. (Unlike Auggie, Cursor's primary instruction f
   the standard `{ continue = true }` envelope or block via exit code / verdict)
 - **Command extensions**: full PowerShell invocation; optional `matcher` regex over tool names;
   `_hook_md` companion-doc path (T1171)
-- **gald3r hook files**: `g-hk-session-start.ps1` (sessionStart); `g-hk-agent-complete.ps1`,
-  `g-hk-nightly-learn.ps1`, `g-hk-session-end.ps1` (stop); `g-hk-validate-shell.ps1`
-  (beforeShellExecution); `g-hk-pre-tool-call-gald3r-guard.ps1`, `g-hk-pre-tool-call-prd-freeze.ps1`,
-  `g-hk-pre-tool-call-member-gald3r-guard.ps1` (preToolUse)
+- **gald3r hook files**: `g-hk-session-start.py` (sessionStart); `g-hk-agent-complete.py`,
+  `g-hk-nightly-learn.py`, `g-hk-session-end.py` (stop); `g-hk-validate-shell.py`
+  (beforeShellExecution); `g-hk-pre-tool-call-gald3r-guard.py`, `g-hk-pre-tool-call-prd-freeze.py`,
+  `g-hk-pre-tool-call-member-gald3r-guard.py` (preToolUse)
 
 ## Atypical Handling
 

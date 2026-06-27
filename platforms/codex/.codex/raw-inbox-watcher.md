@@ -1,7 +1,7 @@
 # Hook: raw-inbox-watcher
 
 ## Fires On
-Manual / on-demand only (Phase 2 design). Invoked via `@g-vault-process-inbox` or directly: `pwsh .cursor/hooks/raw-inbox-watcher.ps1`. No FileSystemWatcher service is installed — Phase 3 will add a watcher daemon.
+Manual / on-demand only (Phase 2 design). Invoked via `@g-vault-process-inbox` or directly: `python .cursor/hooks/raw-inbox-watcher.py`. No FileSystemWatcher service is installed — Phase 3 will add a watcher daemon.
 
 ## What It Does
 Scans `{vault}/raw/` for dropped files, classifies each by extension and content (rules-based — no LLM in Phase 2), and routes accepted files to the appropriate vault destination via existing `g-skl-ingest-*` skills. Re-running on an empty `raw/` is a no-op. Supports `-DryRun` for inspection-only mode and `-VaultPathOverride` for non-default vault locations.

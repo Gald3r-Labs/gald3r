@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-platform-monitor
 description: Cross-platform health and freshness monitor for the 23 gald3r platforms. Checks per-platform capability gaps against the Cursor reference, scans official docs for breaking changes, validates platform-specific config, and generates the PLATFORM_STATUS / PLATFORM_CAPABILITY_MATRIX living indexes. Owned by g-agnt-platformer.
 token_budget: low
@@ -44,7 +44,7 @@ Compare one platform's declared capability support against the Cursor reference.
 5. If `g-skl-platform-<platform>/SKILL.md` does not exist (antigravity) → report
    `NO SKILL — create via T1465` and mark all cells `❓`.
 
-Delegates the read/report mechanics to `custom_scripts/check_platform_status.ps1 -Platform <name>`.
+Delegates the read/report mechanics to `custom_scripts/check_platform_status.py -Platform <name>`.
 
 ### SCAN_DOCS `<platform>`
 
@@ -108,5 +108,5 @@ Given a `SCAN_DOCS` result, propose specific config changes to gald3r's platform
 
 - Agent owner: `g-agnt-platformer`.
 - Commands: `@g-platform-check`, `@g-platform-scan-docs`, `@g-platform-status`.
-- Script: `custom_scripts/check_platform_status.ps1` (CHECK / status-read entry point).
+- Script: `custom_scripts/check_platform_status.py` (CHECK / status-read entry point).
 - Medic: g-medic L2 calls `g-skl-platform-monitor CHECK <current-platform>` for platform health.

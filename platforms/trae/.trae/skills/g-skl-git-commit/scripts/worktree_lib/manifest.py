@@ -174,12 +174,25 @@ def valid_existing_worktree(repo_root: str, metadata: Optional[Dict[str, Any]]) 
 def task_file_for_worktree(
     repo_root: str, task_root: Optional[str], task_id: Optional[str]
 ) -> Optional[Path]:
-    """First task{id}_*.md under the task root (PS1 Get-TaskFileForWorktree)."""
+    """First spec file for a worktree id under the task root (PS1 Get-TaskFileForWorktree).
+
+    Tries ``task{id}_*.md`` first (task worktrees -- behavior unchanged). When no task
+    spec is found, also tries ``bug{id}_*.md`` recursively under ``.gald3r/bugs`` (incl.
+    ``bugs/done/`` and any archive) so bug worktrees created via the ``-BugId`` alias
+    resolve to their real spec instead of being treated as an expired/missing claim by
+    ``task_claim_expired`` (BUG-197).
+    """
     base = Path(task_root) if not is_blank(task_root) else Path(repo_root) / ".gald3r" / "tasks"
-    if not base.exists():
-        return None
-    matches = sorted(p for p in base.glob(f"task{task_id}_*.md") if p.is_file())
-    return matches[0] if matches else None
+    if base.exists():
+        matches = sorted(p for p in base.glob(f"task{task_id}_*.md") if p.is_file())
+        if matches:
+            return matches[0]
+    bug_base = Path(repo_root) / ".gald3r" / "bugs"
+    if bug_base.exists():
+        bug_matches = sorted(p for p in bug_base.rglob(f"bug{task_id}_*.md") if p.is_file())
+        if bug_matches:
+            return bug_matches[0]
+    return None
 
 
 def task_claim_expired(task_file: Optional[Path]) -> bool:
