@@ -15,7 +15,7 @@ GitHub network call is ever made (this only reads local specs and writes a file)
 
 ## Behavior
 
-Runs the helper `.claude/skills/g-skl-github-pr/scripts/codeowners_gen.ps1`:
+Runs the helper `.claude/skills/g-skl-github-pr/scripts/codeowners_gen.py`:
 
 1. Read every `.gald3r/subsystems/**/*.md` spec (skipping `SUBSYSTEM*` index/graph artifacts).
 2. For each spec with a non-empty `owners:` list, emit one CODEOWNERS line per

@@ -200,7 +200,7 @@ Cursor without a separate port**. (Unlike Auggie, Cursor's primary instruction f
 - **Command extensions**: full PowerShell invocation; optional `matcher` regex over tool names;
   `_hook_md` companion-doc path (T1171)
 - **gald3r hook files**: `g-hk-session-start.py` (sessionStart); `g-hk-agent-complete.py`,
-  `g-hk-nightly-learn.ps1`, `g-hk-session-end.py` (stop); `g-hk-validate-shell.py`
+  `g-hk-nightly-learn.py`, `g-hk-session-end.py` (stop); `g-hk-validate-shell.py`
   (beforeShellExecution); `g-hk-pre-tool-call-gald3r-guard.py`, `g-hk-pre-tool-call-prd-freeze.py`,
   `g-hk-pre-tool-call-member-gald3r-guard.py` (preToolUse)
 

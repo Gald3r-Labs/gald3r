@@ -174,7 +174,7 @@ implementation itself — the honest baseline that feeds `PLATFORM_STATUS.md`:
 
 1. **T600 HTTP hook parity** — the drop-in HTTP hook caller (`g-hk-http-event.ps1`) currently
    lives under `.claude/hooks/`; propagation to `.cursor/hooks/` is a documented follow-up.
-2. **`block_on_failure` propagation** — `.cursor/hooks/g-hk-pre-commit.ps1` will honor
+2. **`block_on_failure` propagation** — `.cursor/hooks/g-hk-pre-commit.py` will honor
    `$env:GALD3R_HOOK_BYPASS=1` only once the T600 patch is propagated from `.claude/hooks/`.
 3. **Per-machine MCP server set ❓** — the *mechanism* is verified ✅, but the concrete server
    list is machine-specific (no `.cursor/mcp.json` committed). Active servers untested in CI.

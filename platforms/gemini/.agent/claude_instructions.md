@@ -24,10 +24,10 @@
 ├── commands/        # Slash commands — invoked with /g-command-name
 │   └── g-*.md
 ├── hooks/           # PowerShell/Bash hook scripts
-│   ├── g-hk-session-start.ps1
-│   ├── g-hk-agent-complete.ps1
-│   ├── g-hk-validate-shell.ps1
-│   └── g-hk-setup-user.ps1
+│   ├── g-hk-session-start.py
+│   ├── g-hk-agent-complete.py
+│   ├── g-hk-validate-shell.py
+│   └── g-hk-setup-user.py
 ├── rules/           # AI behavior rules (.md format)
 │   └── g-rl-*.md
 └── skills/          # Reusable knowledge modules
@@ -127,7 +127,7 @@ The `agents/sdk/` folder mirrors `.cursor/agents/sdk/` — a Python SDK for buil
 | Skills | `g-skl-` | `g-skl-tasks/SKILL.md` |
 | Commands | `g-` | `g-setup.md` |
 | Rules | `g-rl-` | `g-rl-33-enforcement_catchall.md` |
-| Hooks | `g-hk-` | `g-hk-session-start.ps1` |
+| Hooks | `g-hk-` | `g-hk-session-start.py` |
 
 ---
 

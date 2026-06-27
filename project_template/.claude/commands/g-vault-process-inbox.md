@@ -1,11 +1,11 @@
-﻿---
+---
 subsystem_memberships: [VAULT_AND_RESEARCH]
 ---
 Process the vault raw/ inbox: $ARGUMENTS
 
 ## What This Command Does
 
-Invokes the Phase 2 raw inbox watcher (`raw-inbox-watcher.ps1`) which scans
+Invokes the Phase 2 raw inbox watcher (`raw-inbox-watcher.py`) which scans
 `{vault}/raw/` for dropped files and routes each one rules-based:
 
 | Drop Type                   | Routed To                              |
@@ -32,13 +32,13 @@ A summary entry is appended to `vault/log.md` per run (C-006).
 
 ```powershell
 # Standard run
-pwsh .cursor/hooks/raw-inbox-watcher.ps1
+python .cursor/hooks/raw-inbox-watcher.py
 
 # Preview without moving anything
-pwsh .cursor/hooks/raw-inbox-watcher.ps1 -DryRun
+python .cursor/hooks/raw-inbox-watcher.py -DryRun
 
 # Verbose classification output
-pwsh .cursor/hooks/raw-inbox-watcher.ps1 -Verbose
+python .cursor/hooks/raw-inbox-watcher.py -Verbose
 ```
 
 `@g-vault-process-inbox` should invoke the watcher script directly with no

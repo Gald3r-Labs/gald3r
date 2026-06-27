@@ -118,7 +118,7 @@ repo's `.cursor/hooks.json`:
 | Event | Hooks wired | Matcher |
 |---|---|---|
 | `sessionStart` | `g-hk-session-start.py` | (none) |
-| `stop` | `g-hk-agent-complete.py`, `g-hk-nightly-learn.ps1`, `g-hk-session-end.py` | (none) |
+| `stop` | `g-hk-agent-complete.py`, `g-hk-nightly-learn.py`, `g-hk-session-end.py` | (none) |
 | `beforeShellExecution` | `g-hk-validate-shell.py` | (none) |
 | `preToolUse` | `g-hk-pre-tool-call-gald3r-guard.py`, `g-hk-pre-tool-call-prd-freeze.py`, `g-hk-pre-tool-call-member-gald3r-guard.py` | `Edit\|Write\|MultiEdit\|NotebookEdit\|Patch\|ApplyPatch\|str_replace_editor` |
 
@@ -174,7 +174,7 @@ implementation itself — the honest baseline that feeds `PLATFORM_STATUS.md`:
 
 1. **T600 HTTP hook parity** — the drop-in HTTP hook caller (`g-hk-http-event.ps1`) currently
    lives under `.claude/hooks/`; propagation to `.cursor/hooks/` is a documented follow-up.
-2. **`block_on_failure` propagation** — `.cursor/hooks/g-hk-pre-commit.ps1` will honor
+2. **`block_on_failure` propagation** — `.cursor/hooks/g-hk-pre-commit.py` will honor
    `$env:GALD3R_HOOK_BYPASS=1` only once the T600 patch is propagated from `.claude/hooks/`.
 3. **Per-machine MCP server set ❓** — the *mechanism* is verified ✅, but the concrete server
    list is machine-specific (no `.cursor/mcp.json` committed). Active servers untested in CI.

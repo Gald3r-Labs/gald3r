@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-vault
 description: Own and manage the file-first vault plus repo mirror metadata. Obsidian-compatible notes, wiki compilation, path resolution, reindexing, linting, and GitHub repo summaries.
 token_budget: low
@@ -334,7 +334,7 @@ Treat this as a migration candidate and surface:
 - whether the shared path is writable
 - whether migration is recommended
 
-Use `g-hk-vault-migrate.ps1` for actual migration.
+Use `g-hk-vault-migrate.py` for actual migration.
 
 Typical scenarios:
 

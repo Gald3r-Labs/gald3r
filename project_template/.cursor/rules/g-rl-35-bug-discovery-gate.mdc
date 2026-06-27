@@ -74,7 +74,10 @@ bounded fixes and otherwise records `needs_attention`.
 
 1. Run the triage loop (assess → gate → fix-if-safe → log):
    ```bash
-   python .claude/skills/g-skl-auto-triage/scripts/invoke_triage.py \n       -BugId "BUG-{id}" -Kind "{spec_defect|policy_incongruity|design_gap}" \n       -Files "<absolute_path>" -FixType "{schema_comment|manifest_annotation|command_annotation|rule_annotation|constraint_expire}" \n       -FixContent "<text>" -ProjectRoot "<repo_root>" -BugFilePath "<absolute_bug_md>"
+   python .claude/skills/g-skl-auto-triage/scripts/invoke_triage.py \
+       -BugId "BUG-{id}" -Kind "{spec_defect|policy_incongruity|design_gap}" \
+       -Files "<absolute_path>" -FixType "{schema_comment|manifest_annotation|command_annotation|rule_annotation|constraint_expire}" \
+       -FixContent "<text>" -ProjectRoot "<repo_root>" -BugFilePath "<absolute_bug_md>"
    ```
 2. The script writes the outcome to the bug's `triage_status:` / `triage_risk_score:` frontmatter
    and appends an audit row to `.gald3r/logs/triage_auto_YYYYMMDD.log`.

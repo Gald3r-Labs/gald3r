@@ -342,7 +342,7 @@ The codebase graph (gald3r_muninn) indexes Python and TypeScript/JavaScript sour
 
 **What it does**: builds a local SQLite graph at `~/.gald3r/muninn.db` (override with `MUNINN_DB_PATH`). `graph_impact` / `graph_callers` / `graph_callees` / `graph_deps` / `graph_status` query it.
 
-**How to initialize** (step 8b above): run the Python + TypeScript indexers once, then let the post-commit hook (`g-hk-graph-update.ps1`) refresh changed files on every commit.
+**How to initialize** (step 8b above): run the Python + TypeScript indexers once, then let the post-commit hook (`g-hk-graph-update.py`) refresh changed files on every commit.
 
 **OS support matrix** (clean-room rewrite — supersedes the WSL-only GitNexus):
 

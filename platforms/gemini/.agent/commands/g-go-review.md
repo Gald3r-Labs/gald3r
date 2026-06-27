@@ -39,7 +39,7 @@ Before task claiming, implementation, verification, planning, or swarm partition
 If WPAC is configured, run the re-callable inbox check when the hook exists:
 
 ```powershell
-$hook = @( ".cursor\hooks\g-hk-wpac-inbox-check.ps1", ".claude\hooks\g-hk-wpac-inbox-check.ps1", ".agent\hooks\g-hk-wpac-inbox-check.ps1", ".codex\hooks\g-hk-wpac-inbox-check.ps1", ".opencode\hooks\g-hk-wpac-inbox-check.ps1" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+$hook = @( ".cursor\hooks\g-hk-wpac-inbox-check.py", ".claude\hooks\g-hk-wpac-inbox-check.py", ".agent\hooks\g-hk-wpac-inbox-check.py", ".codex\hooks\g-hk-wpac-inbox-check.py", ".opencode\hooks\g-hk-wpac-inbox-check.py" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 if ($hook) { powershell -NoProfile -ExecutionPolicy Bypass -File $hook -ProjectRoot . -BlockOnConflict }
 ```
 
@@ -52,7 +52,7 @@ Installed templates may call the equivalent hook from the active IDE folder. If 
 After the WPAC gate is skipped or passes and **before** the Clean Controller Gate hard-blocks the run, run the safety classifier helper at the orchestration root:
 
 ```powershell
-.\scripts\gald3r_housekeeping_commit.ps1 -Mode preflight -Apply -TaskId <id-when-known> -Json
+.\scripts\gald3r_housekeeping_commit.py -Mode preflight -Apply -TaskId <id-when-known> -Json
 ```
 
 Behavior:
@@ -70,7 +70,7 @@ After the WPAC gate is skipped or passes:
 
 1. At the **orchestration git root** (the repo from which you run this command — normally the Workspace-Control owner, e.g. `<gald3r_source>`): run `git status --short`. If anything is listed **outside** this run's explicit coordinator staging allowlist for the active task and bug IDs, **STOP** here. Do not claim tasks or bugs, create or reuse T170 worktrees, partition swarms, or write coordinator-owned updates to `.gald3r/TASKS.md`, `.gald3r/BUGS.md`, other shared `.gald3r` coordination files, `CHANGELOG.md`, generated Copilot prompts, or parity output until unrelated changes are committed, stashed, or moved to a prior focused commit. Preserve any bucket handoff artifacts already produced and list the paths that blocked progress.
 
-2. **`gald3r_worktree.ps1 -AllowDirty`**: do not use this switch for `g-go`, `g-go-code`, `g-go-review`, or any `--swarm` variant **except** when every dirty path is owned exclusively by the active task/bug scope and a `## Status History` row documents that override. Otherwise clean the checkout first. The same **per-root** `-AllowDirty` discipline applies to every repository included in the touch set below when multi-repo work is in scope.
+2. **`gald3r_worktree.py -AllowDirty`**: do not use this switch for `g-go`, `g-go-code`, `g-go-review`, or any `--swarm` variant **except** when every dirty path is owned exclusively by the active task/bug scope and a `## Status History` row documents that override. Otherwise clean the checkout first. The same **per-root** `-AllowDirty` discipline applies to every repository included in the touch set below when multi-repo work is in scope.
 
 3. **Member touch-set (v1 — `workspace_repos`)** — The orchestration root is **always** gated. When the active task or bug declares **`workspace_repos:`** with manifest `repository.id` entries, extend the gate to each **other** resolved member root (blast radius follows declared cross-repo scope). Read `.gald3r/workspace/workspace_manifest.yaml` when present; map each listed ID (deduplicated) to `repositories[?].local_path`. For each existing path, run `git -C "<path>" rev-parse --show-toplevel` then `git status --short` at that root. Apply the same **explicit coordinator staging allowlist** per root. Skip IDs whose paths are missing while `lifecycle_status` is a planned/bootstrap gap (report only; do not expand the touch set). If the manifest is missing while `workspace_repos` is non-empty, or an ID is unknown under `repositories:`, **STOP** multi-repo coordinator work until manifest or frontmatter is repaired (controller-only queue items whose `workspace_repos` lists only the owner id may proceed once that id resolves).
 
@@ -98,7 +98,7 @@ Immediately before the coordinator merges bucket results into the primary checko
 **Case A — all tasks share one branch, it differs from current branch:**
 ```powershell
 # Preferred: create a review worktree from the implementation branch (T207 policy)
-gald3r_worktree.ps1 -Action Create -Branch <implementation_branch> -Role review
+gald3r_worktree.py -Action Create -Branch <implementation_branch> -Role review
 # Fallback if worktree helper unavailable:
 git checkout <implementation_branch>
 ```
@@ -133,7 +133,7 @@ Read in this order:
 - Individual bug files (`.gald3r/bugs/bug*.md`) for each `[🔍]` bug — read fix description and affected file/line
 - `git log --oneline -10` — understand what was recently implemented
 - `.gald3r/CONSTRAINTS.md` — guardrails
-- **Active workflow profile (T1239)** — load once via `load_profile.ps1` (active
+- **Active workflow profile (T1239)** — load once via `load_profile.py` (active
   skill folder; see g-skl-tasks "Reading the active profile"). The review-gate
   status (the `[🔍]`-equivalent), the PASS target, and the FAIL target come from
   the profile's `review_gate` + `task_statuses[]` rather than hardcoded strings
@@ -186,7 +186,7 @@ After claiming and before inspecting implementation details, isolate the review 
 **Default: review worktree from checkpoint commit.** Use the shared T170 helper when the review source is branch-addressable. Normal `g-go-code` / `g-go --swarm` handoff provides a code-complete checkpoint branch and commit SHA; prefer that source over dirty snapshot inspection.
 
 ```powershell
-.\scripts\gald3r_worktree.ps1 -Action Create -TaskId {id_or_bucket} -Role review -Owner {platform_or_agent_slug} -BaseBranch {review_source_branch_or_HEAD} -Json
+.\scripts\gald3r_worktree.py -Action Create -TaskId {id_or_bucket} -Role review -Owner {platform_or_agent_slug} -BaseBranch {review_source_branch_or_HEAD} -Json
 ```
 
 Before using worktree mode, prove the candidate changes are reachable from `review_source_branch_or_HEAD`:
@@ -271,7 +271,7 @@ For each `[🕵️]` task claimed by this verifier:
 
 ```powershell
 # Reports (exit 1) if any changed text file needs encoding normalization; writes nothing.
-.claude/hooks/g-hk-encoding-normalize.ps1 -Scan
+.claude/hooks/g-hk-encoding-normalize.py -Scan
 ```
 
 This surfaces stray BOMs / CRLF / UTF-16 drift before they reach the integration branch. It is **advisory by default** — a non-clean scan is recorded in the review note (`Step E: N file(s) need encoding normalization`) and is informational, not an automatic FAIL (the pre-commit hook fixes these on commit). Projects that want it enforced can treat a non-zero scan as a FAIL via `encoding_scan_enforced: true` in `AGENT_CONFIG.md`.
@@ -544,7 +544,7 @@ After all reviewers complete:
    - Bug FAIL items: `[🕵️]` → `[📋]` (back to open)
 5. Preserve review worktrees for failed or fix-forward items; otherwise remove them only through the T170 helper after confirming `.gald3r-worktree.json` ownership metadata:
    ```powershell
-   .\scripts\gald3r_worktree.ps1 -Action Remove -TaskId {id_or_bucket} -Role review-swarm -Owner {platform_or_agent_slug} -Apply
+   .\scripts\gald3r_worktree.py -Action Remove -TaskId {id_or_bucket} -Role review-swarm -Owner {platform_or_agent_slug} -Apply
    ```
    For a single-review worktree, use `-Role review` with the same `-TaskId` and `-Owner` used at creation.
 6. Create the review-result commit after PASS/FAIL status writes, unless one of the narrow non-commit blockers from `Review-Result Commit` applies.

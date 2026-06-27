@@ -73,7 +73,7 @@ Distribute org-wide via `.github-private`; discover via `github/awesome-copilot`
 
 ### Verify
 ```powershell
-Test-Path .github/copilot-instructions.md   # always-on rules (generate_copilot_instructions.ps1 if missing)
+Test-Path .github/copilot-instructions.md   # always-on rules (generate_copilot_instructions.py if missing)
 Test-Path .claude/skills                     # Agent Skills (Copilot discovers cross-tool)
 Test-Path .github/agents ; Test-Path .github/prompts ; Test-Path .github/hooks
 ```

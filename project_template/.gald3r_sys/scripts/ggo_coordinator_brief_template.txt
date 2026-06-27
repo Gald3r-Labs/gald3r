@@ -34,5 +34,17 @@ Drift warnings         : {{DRIFT_WARNINGS}}
    authorized_hard_stop and exit. Otherwise leave authorized_hard_stop = "" and exit
    cleanly after this single iteration.
 
+== TOOL-DEPENDENCY GATE (BUG-186 — do NOT phantom-block) ==
+Before you defer, block, or mark INELIGIBLE any task on a TOOL dependency, you MUST:
+  (a) Probe the filesystem and confirm the tool actually exists on disk (e.g. a real
+      Path(...).exists() check / `ls` of the path) — never block on a remembered or
+      assumed tool, and
+  (b) Check for a live ENGINE replacement before concluding the capability is gone.
+`platform_parity_sync.ps1` is RETIRED and no longer exists on disk. Parity propagation is
+now `gald3r sync` / `gald3r parity` (alias) / the `designer.py` `TemplateBuilder` flow, or
+manual propagation during a canonical rebuild. NEVER cite `platform_parity_sync.ps1`
+(or any other non-existent / un-probed tool) as a blocker, dependency, or deferral reason.
+A task is only tool-blocked if the replacement is ALSO absent after an on-disk probe.
+
 Then END THE SESSION. The outer loop reads your updated state, decrements the budget, and
 invokes the next fresh coordinator. You never run more than one iteration.

@@ -1,5 +1,5 @@
-﻿---
-gald3r_rel_version: "2.3.0"
+---
+gald3r_rel_version: "2.4.0"
 schema_version: "generic-v1"
 ---
 # VAULT_SCHEMA
@@ -162,7 +162,7 @@ If `vault_location` points to a shared path and `.gald3r/vault/` still contains 
 
 - mark this as a migration candidate
 - inform the user through hook context
-- use `g-hk-vault-migrate.ps1` for the actual merge
+- use `g-hk-vault-migrate.py` for the actual merge
 
 ## Guardrails
 

@@ -67,10 +67,10 @@ at "logged and forgotten". This is a *cautious* reactive layer: it only attempts
 bounded fixes and otherwise records `needs_attention`.
 
 1. Run the triage loop (assess → gate → fix-if-safe → log):
-   ```powershell
-   .claude/skills/g-skl-auto-triage/scripts/invoke_triage.ps1 `
-       -BugId "BUG-{id}" -Kind "{spec_defect|policy_incongruity|design_gap}" `
-       -Files @("<absolute_path>") -FixType "{schema_comment|manifest_annotation|command_annotation|rule_annotation|constraint_expire}" `
+   ```bash
+   python .claude/skills/g-skl-auto-triage/scripts/invoke_triage.py \
+       -BugId "BUG-{id}" -Kind "{spec_defect|policy_incongruity|design_gap}" \
+       -Files "<absolute_path>" -FixType "{schema_comment|manifest_annotation|command_annotation|rule_annotation|constraint_expire}" \
        -FixContent "<text>" -ProjectRoot "<repo_root>" -BugFilePath "<absolute_bug_md>"
    ```
 2. The script writes the outcome to the bug's `triage_status:` / `triage_risk_score:` frontmatter

@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [SECURITY_AND_COMPLIANCE]
 ---
 # @g-git-sanity — Pre-commit sanity check
@@ -105,6 +105,6 @@ git config core.hooksPath .cursor/hooks
 git config --unset core.hooksPath
 ```
 
-Hook file: `.cursor/hooks/g-hk-pre-commit.ps1`
+Hook file: `.cursor/hooks/g-hk-pre-commit.py`
 
 > Hook is soft-fail for WARNs (exit 0) and hard-fail for BLOCKs (exit 1).

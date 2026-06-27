@@ -18,7 +18,7 @@ Reference docs at: `{vault_location}/research/platforms/copilot/` once populated
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| Always-apply rules | ✅ | Via `.github/copilot-instructions.md` — run `generate_copilot_instructions.ps1` |
+| Always-apply rules | ✅ | Via `.github/copilot-instructions.md` — run `generate_copilot_instructions.py` |
 | Commands (`g-*`) | ✅ | `.copilot/commands/` mirrors other IDE targets |
 | Skills | ❌ | Phase 2 — awaits example_app MCP URL |
 | Agents | ❌ | Phase 2 — awaits public MCP endpoint |
@@ -89,7 +89,7 @@ In Cursor, VS Code, and JetBrains IDEs with Copilot enabled, Copilot reads:
 gald3r's always-apply rules are automatically compiled into `.github/copilot-instructions.md` by:
 
 ```powershell
-.\.gald3r_sys\skills\g-skl-platform-copilot\scripts\generate_copilot_instructions.ps1
+python .gald3r_sys/skills/g-skl-platform-copilot/scripts/generate_copilot_instructions.py
 ```
 
 Regenerate after any change to `.cursor/rules/g-rl-*.mdc` files.
@@ -133,7 +133,7 @@ Phase 2 will add `.github/agents/*.agent.md` to enable agent-mode invocation onc
 |---------|------|
 | `echo "1" \| gh copilot suggest --target shell` piped to `bash` | Auto-executes shell commands without review |
 | Copying copilot-instructions.md with secrets | GitHub commits instructions to the repo — never include credentials |
-| Running `generate_copilot_instructions.ps1` on a stale rules directory | Output file will not reflect latest rules |
+| Running `generate_copilot_instructions.py` on a stale rules directory | Output file will not reflect latest rules |
 
 ## Vault Reference
 

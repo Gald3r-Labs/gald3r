@@ -10,7 +10,7 @@ notes that lack it — `memory.md`, `sessions/*.md`, `decisions/*.md` (+ `decisi
 
 ## Behavior
 
-Runs `.claude/skills/g-skl-vault/scripts/frontmatter_fix.ps1`:
+Runs `.claude/skills/g-skl-vault/scripts/frontmatter_fix.py`:
 
 1. Resolve the vault from `.gald3r/.identity` `vault_location=` (no-op when `{LOCAL}`/unset).
 2. Walk `projects/*/memory.md`, `projects/*/sessions/`, `projects/*/decisions/`, `knowledge/`.

@@ -1,7 +1,7 @@
 # Hook: g-hk-claude-chat-logger
 
 Claude Code chat-logging hook — the Claude-side mirror of the Cursor logging flow
-(`g-hk-agent-complete.ps1` → `g-hk-cursor-chat-logger.py`). Fixes BUG-091.
+(`g-hk-agent-complete.py` → `g-hk-cursor-chat-logger.py`). Fixes BUG-091.
 
 ## Fires On
 

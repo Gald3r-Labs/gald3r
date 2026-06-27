@@ -96,7 +96,7 @@ git tag phase-N-complete
 
 ## Pre-Commit Checklist
 
-Before every commit, run through these checks. An optional `pre-commit` hook (`g-hk-pre-commit.ps1`) automates the block/warn items.
+Before every commit, run through these checks. An optional `pre-commit` hook (`g-hk-pre-commit.py`) automates the block/warn items.
 
 ### Block (fix before committing)
 
@@ -140,20 +140,20 @@ When `.gald3r/linking/workspace_manifest.yaml` is active, prepare commits inside
 
 ### Gald3r Worktree Isolation Primitive (T170)
 
-Use `scripts/gald3r_worktree.ps1` for agent-owned isolated checkouts in the gald3r source repo. Installed templates also ship the same helper beside this skill at `.cursor/skills/g-skl-git-commit/scripts/gald3r_worktree.ps1` and the peer IDE skill folders.
+Use `scripts/gald3r_worktree.py` for agent-owned isolated checkouts in the gald3r source repo. Installed templates also ship the same helper beside this skill at `.cursor/skills/g-skl-git-commit/scripts/gald3r_worktree.py` and the peer IDE skill folders.
 
 ```powershell
 # Report gald3r-owned worktrees for the current repo
-.\scripts\gald3r_worktree.ps1 -Action Report
+.\scripts\gald3r_worktree.py -Action Report
 
 # Create or reuse a task worktree outside the active checkout
-.\scripts\gald3r_worktree.ps1 -Action Create -TaskId 170 -Role code -Owner cursor
+.\scripts\gald3r_worktree.py -Action Create -TaskId 170 -Role code -Owner cursor
 
 # Integration merge: fast-forward a task's code branch into the target (default main), then
 # delete code+review branches and the worktree. Dry-run by default; -Apply to write. (T1443)
-.\scripts\gald3r_worktree.ps1 -Action MergeToMain -TaskId 170                            # dry-run plan (target main)
-.\scripts\gald3r_worktree.ps1 -Action MergeToMain -TaskId 170 -Apply                     # FF-merge + cleanup
-.\scripts\gald3r_worktree.ps1 -Action MergeToMain -SourceBranch feature/x -TargetBranch main -Json
+.\scripts\gald3r_worktree.py -Action MergeToMain -TaskId 170                            # dry-run plan (target main)
+.\scripts\gald3r_worktree.py -Action MergeToMain -TaskId 170 -Apply                     # FF-merge + cleanup
+.\scripts\gald3r_worktree.py -Action MergeToMain -SourceBranch feature/x -TargetBranch main -Json
 ```
 
 ### Worktree actions (`-Action`)
@@ -178,21 +178,21 @@ Use `scripts/gald3r_worktree.ps1` for agent-owned isolated checkouts in the gald
 
 ### Continuity Artifact & Session Resume (T967)
 
-Long-horizon implementation work in a worktree can be interrupted by a crash, OOM, or power loss. To resume from the last clean state — rather than the conversation transcript — `gald3r_worktree.ps1` writes a **continuity artifact** at each implementation checkpoint and exposes a `Resume` action that restores it as a context prefix. This is distinct from `gald3r_session_capture.ps1` (which preserves the literal JSONL transcript): the continuity artifact is a structured *resume summary* (goal, completed/pending ACs, last tool summary, next action, blockers).
+Long-horizon implementation work in a worktree can be interrupted by a crash, OOM, or power loss. To resume from the last clean state — rather than the conversation transcript — `gald3r_worktree.py` writes a **continuity artifact** at each implementation checkpoint and exposes a `Resume` action that restores it as a context prefix. This is distinct from `gald3r_session_capture.py` (which preserves the literal JSONL transcript): the continuity artifact is a structured *resume summary* (goal, completed/pending ACs, last tool summary, next action, blockers).
 
 ```powershell
 # At each implementation checkpoint — write continuity_artifact.md + update marker.
 # Run this BEFORE the checkpoint commit so the artifact survives a crash mid-commit.
-.\scripts\gald3r_worktree.ps1 -Action Checkpoint -TaskId 967 -Role code -Owner cursor `
+.\scripts\gald3r_worktree.py -Action Checkpoint -TaskId 967 -Role code -Owner cursor `
     -Goal "Add session resume to the worktree lifecycle" `
     -CompletedAcs "AC1 artifact write","AC2 marker fields" `
     -PendingAcs "AC3 resume read","AC4 resume banner" `
-    -LastToolSummary "Edited gald3r_worktree.ps1 metadata schema" `
+    -LastToolSummary "Edited gald3r_worktree.py metadata schema" `
     -NextAction "Document --resume in g-go-code" `
     -CheckpointSha (git rev-parse HEAD)
 
 # Resume after a crash — prints the banner + emits the artifact body as a context prefix.
-.\scripts\gald3r_worktree.ps1 -Action Resume -TaskId 967 -Role code -Owner cursor
+.\scripts\gald3r_worktree.py -Action Resume -TaskId 967 -Role code -Owner cursor
 ```
 
 - **Marker fields (`.gald3r-worktree.json`)**: `Create` seeds `last_checkpoint_sha` and `continuity_artifact_path` as `null`; `Checkpoint` populates both (additive — existing fields preserved) plus a `continuity_updated_at` stamp.
@@ -202,18 +202,18 @@ Long-horizon implementation work in a worktree can be interrupted by a crash, OO
 
 ### Session JSONL Capture & Cross-Sandbox Resume (T1124)
 
-`scripts/gald3r_session_capture.ps1` (mirrored beside `gald3r_worktree.ps1` in each IDE skill folder) preserves the full Claude Code conversation thread from a worktree/sandbox so it can be resumed natively with `claude --resume`. This complements `memory_capture_session` (semantic summaries) — JSONL capture keeps the *literal* transcript, with `cwd` paths rewritten from the worktree to the host repo so resume works from any sandbox.
+`scripts/gald3r_session_capture.py` (mirrored beside `gald3r_worktree.py` in each IDE skill folder) preserves the full Claude Code conversation thread from a worktree/sandbox so it can be resumed natively with `claude --resume`. This complements `memory_capture_session` (semantic summaries) — JSONL capture keeps the *literal* transcript, with `cwd` paths rewritten from the worktree to the host repo so resume works from any sandbox.
 
 ```powershell
 # Dry-run: locate the worktree's session JSONL and report what would be captured
-.\scripts\gald3r_session_capture.ps1 -Action Report -WorktreePath ..\.gald3r-worktrees\<gald3r_source>\T1124 -TaskId 1124
+.\scripts\gald3r_session_capture.py -Action Report -WorktreePath ..\.gald3r-worktrees\<gald3r_source>\T1124 -TaskId 1124
 
 # Capture: copy + cwd-rewrite + record metadata (writes only with -Apply)
-.\scripts\gald3r_session_capture.ps1 -Action Capture -Apply -WorktreePath ..\.gald3r-worktrees\<gald3r_source>\T1124 -TaskId 1124
+.\scripts\gald3r_session_capture.py -Action Capture -Apply -WorktreePath ..\.gald3r-worktrees\<gald3r_source>\T1124 -TaskId 1124
 
 # List captured sessions for a project, or resolve one to its resume command
-.\scripts\gald3r_session_capture.ps1 -Action List
-.\scripts\gald3r_session_capture.ps1 -Action Resolve -SessionId <session-id>
+.\scripts\gald3r_session_capture.py -Action List
+.\scripts\gald3r_session_capture.py -Action Resolve -SessionId <session-id>
 ```
 
 - **Path encoding**: Claude Code names each project folder by replacing every non-alphanumeric char in the absolute cwd with `-` (e.g. `<workspace>\<gald3r_source>` → `G--gald3r-ecosystem-gald3r-dev`). The helper reproduces this to find the worktree's session folder.
@@ -240,7 +240,7 @@ git diff --cached --name-only | ForEach-Object { (Get-Item $_).Length / 1MB } | 
 
 ### Hook (Optional)
 
-An **opt-in** pre-commit hook script is available at `.cursor/hooks/g-hk-pre-commit.ps1`.
+An **opt-in** pre-commit hook script is available at `.cursor/hooks/g-hk-pre-commit.py`.
 
 To enable in your local repo:
 ```powershell
@@ -258,7 +258,7 @@ git config --unset core.hooksPath
 
 ## Pre-Push gate (regular | release)
 
-Before `git push`, run **`.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1`** (or `@g-git-push`) so **routine** work is not blocked by release documentation rules, while **release** pushes enforce CHANGELOG/version discipline (`g-rl-26`, `g-rl-02`).
+Before `git push`, run **`.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.py`** (or `@g-git-push`) so **routine** work is not blocked by release documentation rules, while **release** pushes enforce CHANGELOG/version discipline (`g-rl-26`, `g-rl-02`).
 
 ### Modes
 
@@ -270,19 +270,19 @@ Before `git push`, run **`.claude/skills/g-skl-git-commit/scripts/gald3r_push_ga
 ### Commands
 
 ```powershell
-./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1                    # interactive mode select
-./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1 -Release          # release checks
-$env:GALD3R_RELEASE_PUSH='1'; ./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1 -NonInteractive
-./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1 -DryRun           # verify wiring; always exit 0
+./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.py                    # interactive mode select
+./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.py -Release          # release checks
+$env:GALD3R_RELEASE_PUSH='1'; ./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.py -NonInteractive
+./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.py -DryRun           # verify wiring; always exit 0
 ```
 
 ### Optional pre-push hook
 
-`.cursor/hooks/g-hk-pre-push.ps1` — same opt-in `core.hooksPath` as pre-commit. In hook mode, **release** checks run only when `GALD3R_RELEASE_PUSH=1`.
+`.cursor/hooks/g-hk-pre-push.py` — same opt-in `core.hooksPath` as pre-commit. In hook mode, **release** checks run only when `GALD3R_RELEASE_PUSH=1`.
 
 ### Shared script (DRY)
 
-`.claude/skills/g-skl-git-commit/scripts/gald3r_git_sanity_common.ps1` supplies secret patterns for **`g-hk-pre-commit.ps1`**; push gate lives in **`.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.ps1`**.
+`.claude/skills/g-skl-git-commit/scripts/gald3r_git_sanity_common.py` supplies secret patterns for **`g-hk-pre-commit.py`**; push gate lives in **`.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.py`**.
 ---
 
 ## Push Modes

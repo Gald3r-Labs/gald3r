@@ -52,8 +52,8 @@ STALE_BASE_ACTIONS = ["Reuse", "Warn", "Recreate"]
 # for options, matching the PS1 [string[]]$AgentArguments behavior.
 KNOWN_OPTIONS = {
     "-h", "--help",
-    "-action", "--action", "-repopath", "--repo-path", "-taskid", "--task-id",
-    "-role", "--role", "-owner", "--owner", "-basebranch", "--base-branch",
+    "-action", "--action", "-repopath", "--repo-path", "-taskid", "--task-id", "-bugid", "--bug-id",
+    "-role", "--role", "-owner", "--owner", "-basebranch", "--base-branch", "-branch", "--branch",
     "-targetbranch", "--target-branch", "-sourcebranch", "--source-branch",
     "-worktreeroot", "--worktree-root", "-taskroot", "--task-root",
     "-stalehours", "--stale-hours", "-keephours", "--keep-hours",
@@ -151,13 +151,13 @@ def build_parser() -> argparse.ArgumentParser:
                    help=f"One of: {', '.join(ACTIONS)} (default: Report)")
     p.add_argument("-RepoPath", "--repo-path", dest="repo_path", default=".",
                    help="Path inside the target repository (default: .)")
-    p.add_argument("-TaskId", "--task-id", dest="task_id", default=None,
+    p.add_argument("-TaskId", "--task-id", "-BugId", "--bug-id", dest="task_id", default=None,
                    help="gald3r task id owning the worktree")
     p.add_argument("-Role", "--role", dest="role", default="agent",
                    help="Agent role segment (default: agent)")
     p.add_argument("-Owner", "--owner", dest="owner", default=None,
                    help="Owner segment (default: USERNAME / USER / agent)")
-    p.add_argument("-BaseBranch", "--base-branch", dest="base_branch", default="HEAD",
+    p.add_argument("-BaseBranch", "--base-branch", "-Branch", "--branch", dest="base_branch", default="HEAD",
                    help="Ref the worktree branch forks from (default: HEAD)")
     p.add_argument("-TargetBranch", "--target-branch", dest="target_branch", default="main",
                    help="MergeToMain integration target (default: main)")
@@ -249,6 +249,19 @@ def dispatch(args: argparse.Namespace) -> Union[None, Dict[str, Any], List[Dict[
     action = args.action
 
     if action == "Create":
+        # T655 / BUG-168 — fail closed for swarm code buckets. A `code-swarm`
+        # bucket that supplies no -LockFiles would silently skip the T1059 lock
+        # claim, letting two parallel buckets edit the same files with no
+        # pre-spawn LOCK_CONFLICT guard. Refuse rather than no-op. Non-swarm
+        # roles keep their prior lock-optional behavior.
+        if str(args.role).lower() == "code-swarm" and not args.lock_files:
+            raise WorktreeError(
+                "LOCK_REQUIRED: -Role code-swarm requires -LockFiles (the "
+                "repo-relative paths this bucket intends to modify) so the "
+                "T1059 swarm file-lock claim engages. Derive the bucket's "
+                "planned touch set and pass it via -LockFiles, or use a "
+                "non-swarm role."
+            )
         # T1059 — claim the lock manifest FIRST so a conflicting bucket never
         # even spawns its worktree (fails with LOCK_CONFLICT before creation).
         lock_result: Optional[Dict[str, Any]] = None

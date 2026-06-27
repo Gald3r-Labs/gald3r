@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [BUG_AND_QUALITY]
 ---
 Parallel bug-fix swarm — coordinate multiple bug fixes simultaneously: $ARGUMENTS
@@ -44,7 +44,7 @@ Hard-gate failures are the only valid stop reasons (see hard stops below).
 Before spawning any bucket agents:
 
 1. **PCAC inbox gate** — same as `@g-go-bugs` (only when PCAC is configured)
-2. **Housekeeping commit gate** — `gald3r_housekeeping_commit.ps1 -Mode preflight -Apply -Json`
+2. **Housekeeping commit gate** — `gald3r_housekeeping_commit.py -Mode preflight -Apply -Json`
 3. **Clean Controller Gate** — `git status --short`; stop if unrelated dirty paths
 4. **Claim all target bugs at once** — mark every target bug `[🔄]` / `in-progress` in BUGS.md
    (prevents other agents from double-claiming during parallel work)
@@ -70,11 +70,13 @@ Each bucket is assigned bugs that:
 ### Worktree Creation (Per Bucket)
 
 ```powershell
-.\scripts\gald3r_worktree.ps1 -Action Create -BugId {bug_ids_csv} -Role code-swarm -Owner {owner} -Json
+.\scripts\gald3r_worktree.py -Action Create -BugId {bug_ids_csv} -Role code-swarm -Owner {owner} -BucketId {bucket_number} -LockFiles {bucket_planned_paths} -BucketTtlMinutes 60 -Json
 ```
 
 Create one worktree per bucket before spawning agents. Pass `worktree_path` and
 `worktree_branch` to each implementer.
+
+**Swarm file-lock claim (T1059, mandatory for `code-swarm`).** `-BucketId {bucket_number}` plus `-LockFiles {bucket_planned_paths}` — the repo-relative paths the bucket intends to modify, derived from each assigned bug's affected-files / subsystem mapping — make the helper write a lock manifest *before* the worktree exists. Buckets are partitioned on subsystem boundaries so claims do not overlap by construction; on overlap with another active bucket, `-Action Create` fails with `LOCK_CONFLICT` and the colliding bucket is never spawned. `-Role code-swarm` **fails closed** (`LOCK_REQUIRED`) when `-LockFiles` is empty. Routing every bucket through `gald3r_worktree.py` is what makes the lock apply.
 
 ### Bucket Agent Protocol
 
@@ -111,6 +113,7 @@ Bucket agents MUST NOT use `git add .`. Use explicit `git add -- {paths}` only.
 After all bucket handoffs:
 
 1. **Pre-Reconciliation Clean Gate** — re-run `git status --short` at orchestration root
+   - **Lock report (T1059)** — run `.\scripts\gald3r_worktree.py -Action LockReport -Json` and surface any multi-bucket path in the summary as a `WARN` (not a hard block) before applying patches.
 2. For each bucket (in dependency order, lowest BUG-NNN first):
    - Stage only intended files: `git add -A -- {changed_files}`
    - Export patch: `git diff --binary --cached HEAD`
@@ -120,7 +123,7 @@ After all bucket handoffs:
    - Update BUGS.md (all fixed bugs → `[🔍]`)
    - Update individual bug files (status + Status History)
    - Update linked fix tasks (if `fix_task_id:` set via T1114)
-4. **Post-write housekeeping gate**: `gald3r_housekeeping_commit.ps1 -Mode post-write -Apply -Json`
+4. **Post-write housekeeping gate**: `gald3r_housekeeping_commit.py -Mode post-write -Apply -Json`
 5. **Checkpoint commit** (one commit for the whole swarm run):
    ```
    fix(bugs): swarm fix BUG-{id1}, BUG-{id2}, ... ({N} bugs)

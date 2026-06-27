@@ -3,7 +3,7 @@ subsystem_memberships: [SECURITY_AND_COMPLIANCE]
 ---
 # @g-git-push — Pre-push gate (regular vs release)
 
-Run **`.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.py`** before `git push` to distinguish **routine** pushes from **release** pushes. Complements `@g-git-sanity` / `g-hk-pre-commit.ps1` and shared `.claude/skills/g-skl-git-commit/scripts/gald3r_git_sanity_common.py`.
+Run **`.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.py`** before `git push` to distinguish **routine** pushes from **release** pushes. Complements `@g-git-sanity` / `g-hk-pre-commit.py` and shared `.claude/skills/g-skl-git-commit/scripts/gald3r_git_sanity_common.py`.
 
 ---
 
@@ -51,7 +51,7 @@ Same opt-in hooks folder as pre-commit:
 git config core.hooksPath .cursor/hooks
 ```
 
-Hook file: `.cursor/hooks/g-hk-pre-push.ps1`
+Hook file: `.cursor/hooks/g-hk-pre-push.py`
 
 - In **hook** mode, only **`GALD3R_RELEASE_PUSH=1`** selects release checks; otherwise the hook runs **regular** (informational, exit 0).
 

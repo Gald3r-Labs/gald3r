@@ -15,10 +15,10 @@
 ├── commands/        # Slash commands — invoked with /g-command-name
 │   └── g-*.md
 ├── hooks/           # PowerShell automation hooks
-│   ├── g-hk-session-start.ps1
-│   ├── g-hk-agent-complete.ps1
-│   ├── g-hk-validate-shell.ps1
-│   ├── g-hk-setup-user.ps1
+│   ├── g-hk-session-start.py
+│   ├── g-hk-agent-complete.py
+│   ├── g-hk-validate-shell.py
+│   ├── g-hk-setup-user.py
 │   └── README.md
 ├── rules/           # Workspace rules (.md format)
 │   └── g-rl-*.md

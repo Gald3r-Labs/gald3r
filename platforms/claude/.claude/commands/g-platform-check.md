@@ -7,18 +7,18 @@ Check platform capability gaps vs. the Cursor reference: $ARGUMENTS
 
 Reports the current capability state of one platform (or all 23 if no argument) by comparing
 its declared support against the Cursor reference implementation. Delegates to
-`g-skl-platform-monitor` operation `CHECK` and the `check_platform_status.ps1` script.
+`g-skl-platform-monitor` operation `CHECK` and the `check_platform_status.py` script.
 
 ## Delegates To
 
-- Script: `custom_scripts/check_platform_status.ps1 -Platform <name>` (default: all)
+- Script: `custom_scripts/check_platform_status.py -Platform <name>` (default: all)
 - Skill: `g-skl-platform-monitor` → `CHECK`
 - Agent: `g-agnt-platformer`
 
 ## Workflow
 
 1. Activate `g-agnt-platformer`.
-2. Run `check_platform_status.ps1 -Platform $ARGUMENTS` to read `.gald3r/PLATFORM_STATUS.md`
+2. Run `check_platform_status.py -Platform $ARGUMENTS` to read `.gald3r/PLATFORM_STATUS.md`
    and report the current state.
 3. For a deeper gap analysis, run `g-skl-platform-monitor CHECK <platform>` which compares the
    platform's `g-skl-platform-<name>/SKILL.md` against `g-skl-platform-cursor`.

@@ -95,7 +95,7 @@ dedicated `COPILOT.md` is required — gald3r's `AGENTS.md` is a first-class inp
 > **Instruction-convention truth:** unlike Claude Code (which reads `CLAUDE.md`, importing
 > `@AGENTS.md`), Copilot reads **`AGENTS.md` directly** as its primary cross-tool instruction file,
 > while still honoring its GitHub-native `.github/copilot-instructions.md`. gald3r generates
-> `copilot-instructions.md` from always-apply rules via `generate_copilot_instructions.ps1`; keep
+> `copilot-instructions.md` from always-apply rules via `generate_copilot_instructions.py`; keep
 > consumer installs lean (large instruction files compete for context window — under ~500 lines).
 
 ---

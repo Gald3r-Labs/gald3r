@@ -87,7 +87,7 @@ envelope shape: `{error, message}` for `invalid_argument` /
 
 ## IMPACT SCAN: g-go-code Step b0
 
-Before implementing any task, run this sequence (via `.claude/skills/g-skl-muninn/scripts/graph_impact.ps1`
+Before implementing any task, run this sequence (via `.claude/skills/g-skl-muninn/scripts/graph_impact.py`
 or a direct MCP call):
 
 ```
@@ -122,7 +122,7 @@ or a direct MCP call):
 
 ## PowerShell Wrapper
 
-`.claude/skills/g-skl-muninn/scripts/graph_impact.ps1` is the PowerShell entry point used by Step b0 and
+`.claude/skills/g-skl-muninn/scripts/graph_impact.py` is the PowerShell entry point used by Step b0 and
 the post-commit hook. It:
 
 1. Loads `docker/gald3r/tools/plugins/muninn/plugin.py` in-process via Python
@@ -133,14 +133,14 @@ the post-commit hook. It:
    (falls back to ripgrep import scanning when muninn is unavailable).
 
 ```powershell
-.\scripts\graph_impact.ps1 -File "docker/gald3r/tools/plugins/search.py"
-.\scripts\graph_impact.ps1 -File "src/lib/agentActivity/index.ts" -Json
-.\scripts\graph_impact.ps1 -File "..." -Backend mcp
+python scripts/graph_impact.py -File "docker/gald3r/tools/plugins/search.py"
+python scripts/graph_impact.py -File "src/lib/agentActivity/index.ts" -Json
+python scripts/graph_impact.py -File "..." -Backend mcp
 ```
 
 ## Index Maintenance
 
-The post-commit hook `.cursor/hooks/g-hk-graph-update.ps1` (parity copy in
+The post-commit hook `.cursor/hooks/g-hk-graph-update.py` (parity copy in
 `.claude/hooks/`) refreshes the index after each commit. Non-blocking: if
 indexing fails or the muninn plugin is unavailable, the hook exits 0 and the
 commit proceeds.

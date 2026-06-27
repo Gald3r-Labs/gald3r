@@ -153,7 +153,7 @@ uv run python .claude/skills/g-skl-subsystems/scripts/gald3r_subsystem_hierarchy
 
 Use `-WarnOnly` for advisory exit 0; `-Json` for automation. **Do not conflate** this with the dependency graph: `dependencies:` / `dependents:` describe runtime coupling; `parent_subsystem` / `children` / nested folders describe documentation ownership grouping.
 
-**Regenerate architecture diagrams** (Mermaid, separate tree vs dependency views; includes nested spec paths): `.claude/skills/g-skl-subsystems/scripts/gald3r_subsystem_diagrams_generate.ps1` (see `SUBSYSTEMS.md` → Generated architecture diagrams).
+**Regenerate architecture diagrams** (Mermaid, separate tree vs dependency views; includes nested spec paths): `.claude/skills/g-skl-subsystems/scripts/gald3r_subsystem_diagrams_generate.py` (see `SUBSYSTEMS.md` → Generated architecture diagrams).
 
 ---
 
@@ -281,7 +281,7 @@ Add a **navigable hierarchy** view: keep the existing index + mermaid dependency
 **L1-grouped index (T1458)** — when `PRODUCT_SYSTEMS.md` exists and subsystem specs carry
 `parent_system:`, the **Subsystem Index** is rendered grouped by L1 product system (one
 `## GROUP_NAME` header per `defined_groups:` entry, members listed beneath) instead of a single
-flat alphabetical table. `migrate_schemas.ps1` regenerates SUBSYSTEMS.md into this grouped form
+flat alphabetical table. `migrate_schemas.py` regenerates SUBSYSTEMS.md into this grouped form
 when `parent_system:` data is present; the flat table remains the fallback when no `parent_system:`
 data exists.
 

@@ -281,7 +281,7 @@ Add a **navigable hierarchy** view: keep the existing index + mermaid dependency
 **L1-grouped index (T1458)** — when `PRODUCT_SYSTEMS.md` exists and subsystem specs carry
 `parent_system:`, the **Subsystem Index** is rendered grouped by L1 product system (one
 `## GROUP_NAME` header per `defined_groups:` entry, members listed beneath) instead of a single
-flat alphabetical table. `migrate_schemas.ps1` regenerates SUBSYSTEMS.md into this grouped form
+flat alphabetical table. `migrate_schemas.py` regenerates SUBSYSTEMS.md into this grouped form
 when `parent_system:` data is present; the flat table remains the fallback when no `parent_system:`
 data exists.
 

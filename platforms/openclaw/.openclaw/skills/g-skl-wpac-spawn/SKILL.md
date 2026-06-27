@@ -89,10 +89,10 @@ uv run python .claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_gu
 - exit `0` — proceed (target is not a workspace member).
 - exit `1` — **stop with `BLOCK pcac_spawn_member_repo_gald3r_guard_block`**. The target is a Workspace-Control member; PCAC spawn would seed the full control plane and violate the marker-only invariant. Direct the user to either:
   1. Spawn under a non-member parent path, OR
-  2. Use `@g-wrkspc-spawn` for new empty workspace members (which uses `.claude/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1` to create only `.identity` + `PROJECT.md`).
+  2. Use `@g-wrkspc-spawn` for new empty workspace members (which uses `.claude/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.py` to create only `.identity` + `PROJECT.md`).
 - exit `2` — stop with `BLOCK pcac_spawn_member_repo_gald3r_guard_error`. Resolve the manifest before retrying.
 
-Installed projects ship the helper at `.claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1`.
+Installed projects ship the helper at `.claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.py`.
 
 If `--dry-run`: print a full preview and stop. Do not create anything. The guard is reported in dry-run preview but does not block dry-run output (only blocks apply).
 
@@ -336,7 +336,7 @@ If the current project (or any ancestor) has a `workspace_manifest.yaml` in `.ga
 2. Set `project_type:` per `--type` parameter
 3. Set `wpac_role: child | sibling` per `--child | --sibling` flag
 4. Set `lifecycle_status: active`
-5. Run `.claude/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1 -MemberPath <new_path> -MemberId <new_project_name> -Apply`
+5. Run `.claude/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.py -MemberPath <new_path> -MemberId <new_project_name> -Apply`
    - This creates `.gald3r/.identity` + `.gald3r/PROJECT.md` as the marker pair
 6. Update `controlled_members:` list in the manifest
 

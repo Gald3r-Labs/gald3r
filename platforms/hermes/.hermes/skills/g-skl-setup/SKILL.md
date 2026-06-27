@@ -37,10 +37,10 @@ Outcomes:
 - exit `0` (ALLOW) — target is the workspace control project, outside any workspace, or a template directory; proceed with full setup.
 - exit `1` (BLOCK) — target is a Workspace-Control controlled_member or migration_source. **Stop**. Direct the user to either:
   1. Run setup against the workspace control project instead, OR
-  2. Run `@g-wrkspc-spawn` (new empty member) or `@g-wrkspc-adopt` (existing standalone gald3r project) if the target should be a workspace member. Both paths use `.claude/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1` to create the marker pair (`.identity` + `PROJECT.md`) — they do NOT install the full gald3r control plane in members.
+  2. Run `@g-wrkspc-spawn` (new empty member) or `@g-wrkspc-adopt` (existing standalone gald3r project) if the target should be a workspace member. Both paths use `.claude/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.py` to create the marker pair (`.identity` + `PROJECT.md`) — they do NOT install the full gald3r control plane in members.
 - exit `2` (ERROR) — manifest unparseable. Resolve before continuing. If the project is genuinely standalone (no `.gald3r/linking/workspace_manifest.yaml` in any ancestor), the helper returns ALLOW; an actual exit `2` indicates a broken manifest.
 
-Installed projects ship the same helper at `.claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1`. External template repos (`<ECOSYSTEM_ROOT>/<template_slim>`, `<ECOSYSTEM_ROOT>/<template_full>`, `<ECOSYSTEM_ROOT>/<template_adv>`) are the only legitimate exception for live `.gald3r/` writes outside the control project.
+Installed projects ship the same helper at `.claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.py`. External template repos (`<ECOSYSTEM_ROOT>/<template_slim>`, `<ECOSYSTEM_ROOT>/<template_full>`, `<ECOSYSTEM_ROOT>/<template_adv>`) are the only legitimate exception for live `.gald3r/` writes outside the control project.
 
 ### Step 0.5 — Git Readiness Check
 
@@ -268,15 +268,15 @@ The template (`assets/gitattributes-lfs.template`) covers: `.psd .ai .fbx .obj
 8. **Write skills lock file** (T1043):
    After platform skill directories are placed (whether by `gald3r_install` MCP, by `bin/install.js`, or manually), write `gald3r-skills-lock.json` at project root via:
    ```powershell
-   .\scripts\gald3r_skills_lock.ps1 -Action WRITE -ProjectPath . -Tier <slim|full|adv>
+   python scripts/gald3r_skills_lock.py -Action WRITE -ProjectPath . -Tier <slim|full|adv>
    ```
    - Records SHA-256 hash of each installed `SKILL.md` so future runs can detect tamper / drift.
-   - Pair with `-Action VERIFY` during `gald3r_validate.ps1` runs.
+   - Pair with `-Action VERIFY` during `gald3r_validate.py` runs.
    - Pair with `-Action UPGRADE -SourceRoot <<gald3r_source> path>` to classify each installed skill as `unchanged | local-modified | upstream-changed | both-changed | new | removed` before pulling a new gald3r version.
    - Lock file format and operations documented in `docs/SKILLS_LOCK_FORMAT.md`.
 
 8b. **Codebase Graph Initialization (gald3r_muninn, T1149)** — non-blocking, always optional:
-   - Check index state via `graph_status` (MCP) or `.claude/skills/g-skl-muninn/scripts/graph_impact.ps1 -File <any source file> -Json`. If it reports `index_missing` / `warning: not_indexed`, offer to build it now:
+   - Check index state via `graph_status` (MCP) or `.claude/skills/g-skl-muninn/scripts/graph_impact.py -File <any source file> -Json`. If it reports `index_missing` / `warning: not_indexed`, offer to build it now:
      ```powershell
      python -m docker.gald3r.tools.plugins.muninn.indexers.python_indexer --root .   # Python sources
      node  docker/gald3r/tools/plugins/muninn/indexers/ts_indexer.js  --root .       # TS/JS sources (needs Node.js)
@@ -319,7 +319,7 @@ The codebase graph (gald3r_muninn) indexes Python and TypeScript/JavaScript sour
 
 **What it does**: builds a local SQLite graph at `~/.gald3r/muninn.db` (override with `MUNINN_DB_PATH`). `graph_impact` / `graph_callers` / `graph_callees` / `graph_deps` / `graph_status` query it.
 
-**How to initialize** (step 8b above): run the Python + TypeScript indexers once, then let the post-commit hook (`g-hk-graph-update.ps1`) refresh changed files on every commit.
+**How to initialize** (step 8b above): run the Python + TypeScript indexers once, then let the post-commit hook (`g-hk-graph-update.py`) refresh changed files on every commit.
 
 **OS support matrix** (clean-room rewrite — supersedes the WSL-only GitNexus):
 

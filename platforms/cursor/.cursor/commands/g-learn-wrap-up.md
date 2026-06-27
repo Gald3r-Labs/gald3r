@@ -1,4 +1,4 @@
-﻿---
+---
 subsystem_memberships: [MEMORY_AND_KNOWLEDGE]
 ---
 # g-learn-wrap-up
@@ -8,7 +8,7 @@ Manually flush session learning artifacts before ending a conversation — or an
 ## What It Does
 
 1. **Chat log** — runs `g-hk-cursor-chat-logger.py` against the current session transcript
-2. **Learned facts extraction** — runs `gald3r_nightly_learn.ps1` (force mode, bypasses the 5-stop counter)
+2. **Learned facts extraction** — runs `gald3r_nightly_learn.py` (force mode, bypasses the 5-stop counter)
 3. **Vocab checkpoint** — confirms `.gald3r/vocab.md` is up to date
 4. **Memory capture** — offers `memory_capture_session` summary via example_app MCP (optional, requires Docker)
 
@@ -45,8 +45,7 @@ py "$ProjectRoot\.cursor\hooks\g-hk-cursor-chat-logger.py" `
    --status completed
 
 # 2. Learned facts (force run, bypass counter)
-powershell -NoProfile -ExecutionPolicy Bypass `
-   -File "$ProjectRoot\.gald3r_sys\skills\g-skl-learn\scripts\gald3r_nightly_learn.ps1" `
+py "$ProjectRoot\.gald3r_sys\skills\g-skl-learn\scripts\gald3r_nightly_learn.py" `
    -Force
 
 # 3. Report vocab row count
@@ -67,4 +66,4 @@ memory_capture_session(project_id=<from .gald3r/.identity>, summary=<session sum
 
 - The `g-learn-*` prefix groups all session-memory and knowledge commands together for visual discoverability (CRASH convention)
 - This command is safe to run mid-session — it does not end the conversation
-- The 5-stop counter in `g-hk-nightly-learn.ps1` is bypassed; the counter is NOT reset by this command
+- The 5-stop counter in `g-hk-nightly-learn.py` is bypassed; the counter is NOT reset by this command

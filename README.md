@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/wrm3/gald3r/releases/tag/v2.3.0"><img src="https://img.shields.io/badge/version-2.3.0-blue" alt="version 2.3.0" /></a>
+  <a href="https://github.com/wrm3/gald3r/releases/tag/v2.4.0"><img src="https://img.shields.io/badge/version-2.4.0-blue" alt="version 2.4.0" /></a>
   <a href="CHANGELOG.md">Changelog</a> |
   <a href="CONTRIBUTING.md">Contributing</a> |
   <a href="gald3r_supported_platforms.html">All 34 platforms</a>
@@ -28,7 +28,7 @@ Once installed, your AI gains:
 
 - **Persistent memory** across sessions â€” tasks, bugs, plans, constraints survive every restart
 - **110 skills** for common dev workflows (code review, QA, task management, planning, and more)
-- **177 commands** invoked directly in chat (`@g-status`, `@g-go`, `@g-task-new`, `@g-bug-report`)
+- **179 commands** invoked directly in chat (`@g-status`, `@g-go`, `@g-task-new`, `@g-bug-report`)
 - **37 hooks** that fire on IDE events (session start, file save, commit)
 - **12 rules** that keep the agent disciplined every session
 - **Works in both Cursor and Claude Code** over one shared `.gald3r/` brain â€” plan in one, code in the other
@@ -58,7 +58,7 @@ gald3r setup all            # initialize agent + throne against your shared inst
 - **Centralized install home** + a global `gald3r` command, with a USB-portable mode (`--portable`).
 - **`gald3r init` / `gald3r update`** scaffold and update projects in any folder, idempotently.
 
-> **Note:** `gald3r install agent` and `gald3r install throne` are coming soon â€” precompiled installers for all platforms are in progress (tracked as T528/T529). Until then, see [RELEASE.md](RELEASE.md) for the developer build path.
+> **Install the apps:** `gald3r install agent` and `gald3r install throne` download the precompiled, signed apps from our public GitHub Releases (`Gald3r-Labs/gald3r_agent` and `Gald3r-Labs/gald3r_throne`) and verify them before installing -- the agent binary against a SHA-256 sidecar, the Throne installer against a minisign `.sig` (a missing/tampered signature fails loud, never a silent install). Use `--dry-run` to preview, `--release vX.Y.Z` to pin a version, or `--from-source` for a local developer build (see [RELEASE.md](RELEASE.md)). macOS is coming soon.
 <!-- PENDING_RELEASE_START -->
 <!-- Pending release highlights (user-facing). Filled as features ship; cleared at publish. -->
 <!-- PENDING_RELEASE_END -->
@@ -204,6 +204,8 @@ Every command you run in Cursor or Claude Code reads and writes these same files
 | Command | What it does |
 |---|---|
 | `@g-setup` / `/g-setup` | Initialize gald3r in a new project |
+| `@g-install-agent` / `/g-install-agent` | Download + install the Gald3r Agent CLI from the public GitHub Release |
+| `@g-install-throne` / `/g-install-throne` | Download + install the Gald3r Throne desktop app from the public GitHub Release |
 | `@g-status` / `/g-status` | Show project health: tasks, bugs, open items |
 | `@g-go` / `/g-go` | Start an autonomous work session on the next task |
 | `@g-task-new` | Create a new task with spec |
@@ -244,4 +246,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Issues and PRs welcome.
 
 ---
 
-*Powered by gald3r v2.3.0 Â· [Changelog](CHANGELOG.md) Â· [Roadmap](ROADMAP.md)*
+*Powered by gald3r v2.4.0 Â· [Changelog](CHANGELOG.md) Â· [Roadmap](ROADMAP.md)*

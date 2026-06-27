@@ -96,7 +96,7 @@ git tag phase-N-complete
 
 ## Pre-Commit Checklist
 
-Before every commit, run through these checks. An optional `pre-commit` hook (`g-hk-pre-commit.ps1`) automates the block/warn items.
+Before every commit, run through these checks. An optional `pre-commit` hook (`g-hk-pre-commit.py`) automates the block/warn items.
 
 ### Block (fix before committing)
 
@@ -240,7 +240,7 @@ git diff --cached --name-only | ForEach-Object { (Get-Item $_).Length / 1MB } | 
 
 ### Hook (Optional)
 
-An **opt-in** pre-commit hook script is available at `.cursor/hooks/g-hk-pre-commit.ps1`.
+An **opt-in** pre-commit hook script is available at `.cursor/hooks/g-hk-pre-commit.py`.
 
 To enable in your local repo:
 ```powershell
@@ -278,11 +278,11 @@ $env:GALD3R_RELEASE_PUSH='1'; ./.claude/skills/g-skl-git-commit/scripts/gald3r_p
 
 ### Optional pre-push hook
 
-`.cursor/hooks/g-hk-pre-push.ps1` — same opt-in `core.hooksPath` as pre-commit. In hook mode, **release** checks run only when `GALD3R_RELEASE_PUSH=1`.
+`.cursor/hooks/g-hk-pre-push.py` — same opt-in `core.hooksPath` as pre-commit. In hook mode, **release** checks run only when `GALD3R_RELEASE_PUSH=1`.
 
 ### Shared script (DRY)
 
-`.claude/skills/g-skl-git-commit/scripts/gald3r_git_sanity_common.py` supplies secret patterns for **`g-hk-pre-commit.ps1`**; push gate lives in **`.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.py`**.
+`.claude/skills/g-skl-git-commit/scripts/gald3r_git_sanity_common.py` supplies secret patterns for **`g-hk-pre-commit.py`**; push gate lives in **`.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.py`**.
 ---
 
 ## Push Modes

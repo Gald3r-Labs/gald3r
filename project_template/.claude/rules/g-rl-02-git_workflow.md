@@ -119,7 +119,7 @@ git config core.hooksPath .cursor/hooks
 git config --unset core.hooksPath
 ```
 
-Hook file: `.cursor/hooks/g-hk-pre-commit.ps1`
+Hook file: `.cursor/hooks/g-hk-pre-commit.py`
 
 ## Pre-Push Gate (regular vs release)
 
@@ -132,8 +132,8 @@ Before `git push`, run **`.claude/skills/g-skl-git-commit/scripts/gald3r_push_ga
 
 Release mode also reminds you to re-read **README.md** and prints **version** lines from `pyproject.toml` / `package.json` if present (`g-rl-26`).
 
-Shared scripts: `.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.py`; `.claude/skills/g-skl-git-commit/scripts/gald3r_git_sanity_common.py` (secret patterns for `g-hk-pre-commit.ps1`).
+Shared scripts: `.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.py`; `.claude/skills/g-skl-git-commit/scripts/gald3r_git_sanity_common.py` (secret patterns for `g-hk-pre-commit.py`).
 
 ### Optional pre-push hook
 
-Same opt-in `core.hooksPath` as pre-commit. Hook: `.cursor/hooks/g-hk-pre-push.ps1` — in hook mode, **release** checks run only when `GALD3R_RELEASE_PUSH=1`.
+Same opt-in `core.hooksPath` as pre-commit. Hook: `.cursor/hooks/g-hk-pre-push.py` — in hook mode, **release** checks run only when `GALD3R_RELEASE_PUSH=1`.

@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-platform-monitor
 description: Cross-platform health and freshness monitor for the registry-driven gald3r platform roster (PLATFORM_REGISTRY.yaml — single source of truth, T516). Checks per-platform capability gaps against the Cursor reference, scans official docs for breaking changes, validates platform-specific config, and generates the PLATFORM_STATUS / PLATFORM_CAPABILITY_MATRIX living indexes. Owned by g-agnt-platformer.
 token_budget: low
@@ -67,7 +67,7 @@ Compare one platform's declared capability support against the Cursor reference.
    `NO SKILL — create via T1465` and mark all cells `❓`.
 
 Delegates the read/report mechanics to the engine: `gald3r platform status --platform <name>`
-(falls back to `scripts/check_platform_status.ps1 -Platform <name>` where the engine is unavailable).
+(falls back to `scripts/check_platform_status.py -Platform <name>` where the engine is unavailable).
 
 ### SCAN_DOCS `<platform>`
 
@@ -154,7 +154,7 @@ Given a `SCAN_DOCS` result, propose specific config changes to gald3r's platform
 
 - Agent owner: `g-agnt-platformer`.
 - Commands: `@g-platform-check`, `@g-platform-scan-docs`, `@g-platform-status`.
-- Engine: `gald3r platform status [--platform <name>]` (CHECK entry point); fallback `scripts/check_platform_status.ps1`.
+- Engine: `gald3r platform status [--platform <name>]` (CHECK entry point); fallback `scripts/check_platform_status.py`.
 - Freshness loop (T513): `scripts/spec_refresh.py`/`.ps1` (T514 — crawled docs → `PLATFORM_SPEC.md` proposals) and `scripts/generate_status.py`/`.ps1` (T515 — specs + crawl ledger → `PLATFORM_STATUS.md`). Shared spec/ledger parsing in `scripts/platform_spec_io.py`. Both run host-side (C-001), need no DB connection or migration, and are dry-run by default (proposals, not blind writes).
 - Roster source of truth: `gald3r_templates/gald3r_core/platforms/PLATFORM_REGISTRY.yaml` (T516), read via `scripts/platform_registry.py`.
 - Roster-parity gate: `g-skl-medic/scripts/check_roster_parity.py`, wired into `g-medic` L1-J — fails loudly when overlays / registry / specs / STATUS rows disagree.

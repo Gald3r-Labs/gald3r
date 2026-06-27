@@ -981,7 +981,7 @@ type: bug_fix
 subsystems: [TASK_MANAGEMENT]
 ```
 **How it runs:**
-`custom_scripts/hot_inbox_intake.ps1` is called at the start of each `g-go-go` iteration
+`custom_scripts/hot_inbox_intake.py` is called at the start of each `g-go-go` iteration
 (before the PCAC gate, before the claim loop). It:
 1. Assigns the next sequential task/bug ID
 2. Writes a proper task file to `tasks/open/` with full frontmatter
@@ -992,8 +992,8 @@ The intake commit is the **sole writer** of `TASKS.md` / `BUGS.md` in that step 
 housekeeping gate classifies it as `safe-gald3r-housekeeping` and auto-commits without blocking.
 **Manual invocation:**
 ```powershell
-.\custom_scripts\hot_inbox_intake.ps1 -DryRun   # preview
-.\custom_scripts\hot_inbox_intake.ps1            # apply
+.\custom_scripts\hot_inbox_intake.py -DryRun   # preview
+.\custom_scripts\hot_inbox_intake.py            # apply
 ```
 **Inbox is empty → exits 0, no commit, no output (use -Quiet).**
 ---

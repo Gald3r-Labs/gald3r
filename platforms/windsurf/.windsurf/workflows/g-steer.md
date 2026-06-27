@@ -30,9 +30,9 @@ the pending steer. Each new redirection requires a new `@g-steer` call.
    not supplied.
 2. Invoke the worktree helper to write `steer.md` (overwrite — latest steer wins):
    ```powershell
-   .\.gald3r_sys\skills\g-skl-git-commit\scripts\gald3r_worktree.ps1 -Action Steer -TaskId {id} -Role code -Owner {owner} -SteerText "<steering prompt>" -Json
+   .\.gald3r_sys\skills\g-skl-git-commit\scripts\gald3r_worktree.py -Action Steer -TaskId {id} -Role code -Owner {owner} -SteerText "<steering prompt>" -Json
    ```
-   Installed templates may call the helper from the `g-skl-git-commit/scripts/gald3r_worktree.ps1`
+   Installed templates may call the helper from the `g-skl-git-commit/scripts/gald3r_worktree.py`
    skill directory when no root `scripts/` copy exists.
 3. The helper writes `steer.md` atomically (temp file + rename) at the worktree root so the running
    session never reads a half-written file.
@@ -46,7 +46,7 @@ If no gald3r-owned worktree exists for `T{id}` / role / owner, the helper errors
 `g-go-code` step b2.5 (Steer poll) runs the read-and-clear mode of the same helper at each AC-gate:
 
 ```powershell
-.\.gald3r_sys\skills\g-skl-git-commit\scripts\gald3r_worktree.ps1 -Action Steer -TaskId {id} -Role code -Owner {owner} -Json
+.\.gald3r_sys\skills\g-skl-git-commit\scripts\gald3r_worktree.py -Action Steer -TaskId {id} -Role code -Owner {owner} -Json
 ```
 
 - `steered: false` → silent no-op, loop continues.
@@ -56,7 +56,7 @@ If no gald3r-owned worktree exists for `T{id}` / role / owner, the helper errors
 
 - Command: `g-queue` — append follow-up work processed after the main goal completes
 - Command: `g-go-code` — the session that polls for `steer.md` (see "Mid-Flight Course Correction")
-- Helper: `.claude/skills/g-skl-git-commit/scripts/gald3r_worktree.ps1` (`-Action Steer`)
+- Helper: `.claude/skills/g-skl-git-commit/scripts/gald3r_worktree.py` (`-Action Steer`)
 - Spec: T969 — Worktree /steer + /queue
 - File: `<worktree>/steer.md` (one-shot, deleted after injection)
 

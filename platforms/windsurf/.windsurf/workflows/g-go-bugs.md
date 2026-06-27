@@ -76,7 +76,7 @@ printed warning. Additive to the Housekeeping Commit Gate. **Full authoritative 
 Before any bug claiming or implementation, run the re-callable inbox check if WPAC is configured:
 
 ```powershell
-$hook = @( ".cursor\hooks\g-hk-wpac-inbox-check.ps1", ".claude\hooks\g-hk-wpac-inbox-check.ps1", ".agent\hooks\g-hk-wpac-inbox-check.ps1", ".codex\hooks\g-hk-wpac-inbox-check.ps1", ".opencode\hooks\g-hk-wpac-inbox-check.ps1" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+$hook = @( ".cursor\hooks\g-hk-wpac-inbox-check.py", ".claude\hooks\g-hk-wpac-inbox-check.py", ".agent\hooks\g-hk-wpac-inbox-check.py", ".codex\hooks\g-hk-wpac-inbox-check.py", ".opencode\hooks\g-hk-wpac-inbox-check.py" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 if ($hook) { powershell -NoProfile -ExecutionPolicy Bypass -File $hook -ProjectRoot . -BlockOnConflict }
 ```
 
@@ -92,7 +92,7 @@ not sufficient. If the check reports `INBOX CONFLICT GATE` or exits code `2`, st
 After the WPAC gate passes and before the Clean Controller Gate:
 
 ```powershell
-.\scripts\gald3r_housekeeping_commit.ps1 -Mode preflight -Apply -Json
+.\scripts\gald3r_housekeeping_commit.py -Mode preflight -Apply -Json
 ```
 
 - `clean` → continue
@@ -124,7 +124,7 @@ Mark the bug `[🔄]` / `status: in-progress` in both BUGS.md and the bug file. 
 
 Create or reuse a coding worktree:
 ```powershell
-.\scripts\gald3r_worktree.ps1 -Action Create -BugId {bug_id} -Role code -Owner {platform_or_agent_slug} -Json
+.\scripts\gald3r_worktree.py -Action Create -BugId {bug_id} -Role code -Owner {platform_or_agent_slug} -Json
 ```
 
 ### 2. Read the Bug Spec
