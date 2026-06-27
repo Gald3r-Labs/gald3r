@@ -1,5 +1,5 @@
 ﻿---
-gald3r_rel_version: "2.3.0"
+gald3r_rel_version: "2.4.0"
 schema_version: "generic-v1"
 ---
 # INBOX — {project_name}
@@ -8,7 +8,7 @@ schema_version: "generic-v1"
 > CONFLICT items block session work until resolved.
 
 ## [CONFLICT] — Items That Block Work
-<!-- Surfaced by g-hk-wpac-inbox-check.ps1 at session start. Resolve via @g-wpac-read before any other work. -->
+<!-- Surfaced by g-hk-wpac-inbox-check.py at session start. Resolve via @g-wpac-read before any other work. -->
 
 ## [REQUEST] — Incoming Asks From Children
 <!-- Child projects asking this project to take action. Review and respond via @g-wpac-read. -->

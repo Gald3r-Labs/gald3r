@@ -149,7 +149,7 @@ This is the **hook-firing-context inconsistency** the task flags. Concretely:
 **Whether the lowercase `hooks.json` entries fire at all in current Claude Code is the open question.**
 The `PreToolUse` block (correct shape, in `settings.json`-compatible form) is the most likely to fire;
 `sessionStart`/`stop`/`beforeShellExecution` in `hooks.json` are the suspect ones. The `BUG-100` fix
-(g-hk-session-start.ps1 PS7 unicode escape) confirms the session-start hook IS exercised on at least some
+(g-hk-session-start.py PS7 unicode escape) confirms the session-start hook IS exercised on at least some
 Claude Code versions, but does not confirm the lowercase `hooks.json` wiring is the firing path.
 
 **T1171 hook.md companion pattern** (verified present): every `g-hk-*.ps1` has a sibling `g-hk-*.md`
@@ -232,7 +232,7 @@ Legend: ✅ verified working · ⚠️ partial / Cursor-generic · ❌ not suppo
 | Agents (subagents) | ✅ | `.claude/agents/` populated; Claude Code subagent docs. |
 | Commands `/g-*` | ✅ | `.claude/commands/g-*.md` present; live `CLAUDE.md` command table. |
 | Hooks config inconsistency | ⚠️/❓ | Read live `hooks.json` (lowercase events + mixed shapes) AND `settings.json` (`Stop` chat-logger). Cross-checked vs. official Claude Code hook event names. |
-| Hook actually fires | partial | BUG-100 (resolved) shows `g-hk-session-start.ps1` was exercised — but does not confirm the lowercase `hooks.json` wiring is the firing path. |
+| Hook actually fires | partial | BUG-100 (resolved) shows `g-hk-session-start.py` was exercised — but does not confirm the lowercase `hooks.json` wiring is the firing path. |
 | MCP | ✅ | Read live `settings.json` `mcpServers` (streamable-http + stdio) + `enableAllProjectMcpServers`. |
 | Docs freshness | ❌ | `@g-platform-scan-docs claude` not run (implementer subagent scope). |
 

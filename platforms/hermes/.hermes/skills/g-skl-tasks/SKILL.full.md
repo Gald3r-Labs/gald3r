@@ -494,7 +494,7 @@ worktree_owner: "{agent_id_or_platform_slug}"
 
 - Worktree metadata is optional for legacy/direct-root work and required only when a workflow actually creates or reuses a worktree.
 - `worktree_path` must resolve outside the active repository checkout; nested worktrees inside the primary working tree are invalid.
-- Worktrees must be created/reported/removed through `scripts/gald3r_worktree.ps1` so cleanup can prove ownership with `.gald3r-worktree.json`.
+- Worktrees must be created/reported/removed through `scripts/gald3r_worktree.py` so cleanup can prove ownership with `.gald3r-worktree.json`.
 - Stale cleanup is report-only by default and may remove only worktrees with gald3r ownership metadata plus explicit apply confirmation.
 
 4. **For completed** — also set `completed_date: "YYYY-MM-DD"` and update subsystem Activity Logs (see g-subsystems)
@@ -981,7 +981,7 @@ type: bug_fix
 subsystems: [TASK_MANAGEMENT]
 ```
 **How it runs:**
-`custom_scripts/hot_inbox_intake.ps1` is called at the start of each `g-go-go` iteration
+`custom_scripts/hot_inbox_intake.py` is called at the start of each `g-go-go` iteration
 (before the PCAC gate, before the claim loop). It:
 1. Assigns the next sequential task/bug ID
 2. Writes a proper task file to `tasks/open/` with full frontmatter
@@ -992,8 +992,8 @@ The intake commit is the **sole writer** of `TASKS.md` / `BUGS.md` in that step 
 housekeeping gate classifies it as `safe-gald3r-housekeeping` and auto-commits without blocking.
 **Manual invocation:**
 ```powershell
-.\custom_scripts\hot_inbox_intake.ps1 -DryRun   # preview
-.\custom_scripts\hot_inbox_intake.ps1            # apply
+.\custom_scripts\hot_inbox_intake.py -DryRun   # preview
+.\custom_scripts\hot_inbox_intake.py            # apply
 ```
 **Inbox is empty → exits 0, no commit, no output (use -Quiet).**
 ---

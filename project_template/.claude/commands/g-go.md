@@ -1029,7 +1029,7 @@ Read in this order:
 - `.gald3r/TASKS.md` — master task list
 - `.gald3r/CONSTRAINTS.md` — guardrails (if exists)
 - `.gald3r/DECISIONS.md` — past decisions (if exists, read-only)
-- **Active workflow profile (T1239)** — load once via `load_profile.ps1` (active
+- **Active workflow profile (T1239)** — load once via `load_profile.py` (active
   skill folder; see g-skl-tasks "Reading the active profile"). The resulting
   `task_statuses[]` (each with `id`, `symbol`, `skip_in_pipeline`) is the
   pipeline's source of truth for which statuses are claimable vs. skipped and for

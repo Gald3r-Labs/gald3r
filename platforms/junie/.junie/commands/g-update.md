@@ -115,7 +115,7 @@ inheritable constraints would be merged into `CONSTRAINTS.md`.
 idempotent ADD/MERGE/DEPRECATE migrations — is delegated to the canonical engine op
 `gald3r upgrade` (now implemented in `gald3r.systems.upgrade` / `g.upgrade`, T473/T475). The
 command **shells out** to the engine; it never re-implements the diff/merge logic (same
-shell-out contract as `migrate_schemas.ps1` and g-medic).
+shell-out contract as `migrate_schemas.py` and g-medic).
 
 ```powershell
 # version-check: query world_tree's T112 version surface (offline-safe — degrades gracefully)
@@ -173,7 +173,7 @@ wrapper when it lands.
 {
   "latest_version": "1.3.0",
   "release_date": "2026-05-01",
-  "release_notes_url": "https://github.com/gald3r/gald3r/releases/tag/v2.3.0"
+  "release_notes_url": "https://github.com/gald3r/gald3r/releases/tag/v2.4.0"
 }
 ```
 

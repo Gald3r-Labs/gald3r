@@ -27,9 +27,9 @@ current goal or losing the worktree's context.
    Default `--role code` and `--owner` to the current session owner when not supplied.
 2. Invoke the worktree helper to append the item:
    ```powershell
-   .\.gald3r_sys\skills\g-skl-git-commit\scripts\gald3r_worktree.ps1 -Action Queue -TaskId {id} -Role code -Owner {owner} -QueueText "<follow-up prompt>" -Json
+   .\.gald3r_sys\skills\g-skl-git-commit\scripts\gald3r_worktree.py -Action Queue -TaskId {id} -Role code -Owner {owner} -QueueText "<follow-up prompt>" -Json
    ```
-   Installed templates may call the helper from the `g-skl-git-commit/scripts/gald3r_worktree.ps1`
+   Installed templates may call the helper from the `g-skl-git-commit/scripts/gald3r_worktree.py`
    skill directory when no root `scripts/` copy exists.
 3. The helper creates `queue.md` with a header on first write, then appends `- [ ] <prompt>` (internal
    newlines collapsed so each item stays on one row).
@@ -38,7 +38,7 @@ current goal or losing the worktree's context.
 ### List the queue (`@g-queue T{id} --list`)
 
 ```powershell
-.\.gald3r_sys\skills\g-skl-git-commit\scripts\gald3r_worktree.ps1 -Action Queue -TaskId {id} -Role code -Owner {owner} -Json
+.\.gald3r_sys\skills\g-skl-git-commit\scripts\gald3r_worktree.py -Action Queue -TaskId {id} -Role code -Owner {owner} -Json
 ```
 
 Returns `pending_count` and the `items` array. Display each pending item; report `(empty)` when none.
@@ -60,7 +60,7 @@ Draining never blocks the `[🔍]` of the main task.
 
 - Command: `g-steer` — one-shot mid-flight steering (interrupts the current trajectory)
 - Command: `g-go-code` — the session that drains `queue.md` (see step 7d + "Mid-Flight Course Correction")
-- Helper: `.claude/skills/g-skl-git-commit/scripts/gald3r_worktree.ps1` (`-Action Queue`)
+- Helper: `.claude/skills/g-skl-git-commit/scripts/gald3r_worktree.py` (`-Action Queue`)
 - Spec: T969 — Worktree /steer + /queue
 - File: `<worktree>/queue.md` (append-only checklist)
 
