@@ -42,7 +42,7 @@ If target `.identity` not found:
 Run the guard helper against the target path **before** any write into the target's `.gald3r/`. Use `-DotGald3rPath linking/` to evaluate the specific path PCAC adopt would write:
 
 ```powershell
-uv run python .claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.py -TargetPath "<target_project_path>" -DotGald3rPath "linking/"
+gald3r workspace member guard --target-path "<target_project_path>" --dot-gald3r-path "linking/"
 ```
 
 - exit `0` — target is not a member (or is the control project / outside workspace / template); bidirectional adoption proceeds normally.

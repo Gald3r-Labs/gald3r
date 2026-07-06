@@ -144,7 +144,8 @@ def fmt_age(seconds):
 def locate_project_root(explicit, start: Path) -> Path:
     """Resolve repo root: explicit, else nearest .gald3r ancestor, else cwd.
 
-    Mirrors ggo_outer_loop.locate_project_root so the two agree on which run they target.
+    Mirrors the engine `gald3r autopilot loop` (A3 / T1660) project-root
+    resolution so the reader and the conductor agree on which run they target.
     """
     if explicit:
         return Path(explicit).resolve()
@@ -196,7 +197,7 @@ def probe_conductor(marker: dict):
     if "in-session" in mode or "coordinator" in mode:
         return "in-session", None
 
-    # 3. Best-effort scan for a detached `ggo_outer_loop.py` process (optional psutil).
+    # 3. Best-effort scan for a detached `gald3r autopilot loop` conductor (optional psutil).
     derived = _scan_for_conductor()
     if derived is not None:
         return "alive", derived
@@ -240,7 +241,11 @@ def _scan_for_conductor():
     try:
         for proc in psutil.process_iter(["pid", "cmdline"]):
             cmdline = proc.info.get("cmdline") or []
-            if any("ggo_outer_loop.py" in str(part) for part in cmdline):
+            joined = " ".join(str(part) for part in cmdline)
+            # The A3 outer loop absorbed into the engine runs as
+            # `gald3r autopilot loop`; keep the legacy script name for a
+            # transitional install still running the pre-absorption conductor.
+            if ("autopilot" in joined and "loop" in joined) or "ggo_outer_loop.py" in joined:
                 return proc.info.get("pid")
     except Exception:  # noqa: BLE001 — process enumeration is best-effort only
         return None

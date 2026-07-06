@@ -20,7 +20,6 @@
 ├── agents/          # SubAgent definitions
 │   ├── g-agnt-*.md  # gald3r agents (g-agnt- prefix)
 │   ├── README.md    # Agent index
-│   └── sdk/         # Python agent SDK (experimental, mirrors .cursor/agents/sdk/)
 ├── commands/        # Slash commands — invoked with /g-command-name
 │   └── g-*.md
 ├── hooks/           # PowerShell/Bash hook scripts
@@ -115,7 +114,7 @@ MCP is configured in `settings.json`:
 ```
 
 ### Agents SDK
-The `agents/sdk/` folder mirrors `.cursor/agents/sdk/` — a Python SDK for building custom agent integrations. Not auto-loaded by Claude Code. See `agents/sdk/README.md`.
+The experimental Python Agent SDK previously at `agents/sdk/` was moved to the gald3r maintainer tree and no longer ships in installs (T1652 D1).
 
 ---
 

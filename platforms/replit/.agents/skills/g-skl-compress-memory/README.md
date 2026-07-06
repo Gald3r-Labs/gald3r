@@ -11,13 +11,13 @@ code blocks, or URLs. The gald3r variant is marker-aware and **dry-run by defaul
 
 ```bash
 # 1. See what's compressible (no writes)
-uv run python scripts/gald3r_compress_memory.py            # scans AGENTS.md + CLAUDE.md
-uv run python scripts/gald3r_compress_memory.py -Path AGENTS.md -Json
+gald3r compress-memory            # scans AGENTS.md + CLAUDE.md
+gald3r compress-memory
 
 # 2. (agent) rewrite the compressible region per SKILL.md, save a full new file
 
 # 3. Apply — refuses unless the gald3r SECTION range is byte-identical
-uv run python scripts/gald3r_compress_memory.py -Path AGENTS.md -Apply -CompressedFile new.md -Confirm
+gald3r compress-memory
 ```
 
 ## What it protects

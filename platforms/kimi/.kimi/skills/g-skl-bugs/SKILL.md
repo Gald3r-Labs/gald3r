@@ -14,7 +14,7 @@ subsystem_memberships: [BUG_AND_QUALITY]
 **What it does:** bug lifecycle over BUGS.md + bugs/<status>/.
 
 ## Preferred — invoke the engine
-- **CLI:** `uv run --project .gald3r_sys/engine gald3r bug …`  (or the installed `gald3r`)
+- **CLI:** `gald3r bug …`  (or the installed `gald3r`)
 - **MCP tools:** `gald3r_bug_*`   ·   facade `Gald3r(...).bugs`
 
 The engine owns ID allocation, file placement, status→folder moves, index regeneration, and

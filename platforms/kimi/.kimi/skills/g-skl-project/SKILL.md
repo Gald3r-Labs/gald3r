@@ -23,7 +23,7 @@ subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 3. `project_type=` in `.gald3r/.identity` (the primary switch),
 4. `freeform` (final fallback).
 
-Canonical profile filenames equal the `project_type` value: `software_development` (default), `content_creation`, `3d_modeling`, `research_analysis`, `freeform` — stored as `.gald3r/config/workflow_profiles/<project_type>.yaml` (schema B). Drop additional profiles there to extend. The `g-skl-project` skill reads/writes `project_type=` in `.identity` (set during `g-setup`); `g-skl-tasks` § Workflow Profiles documents the schema; `g-skl-project-types` `load_profile.py` resolves the chain. (The legacy T1238 `software_dev`/`research` files were archived to `.gald3r/archive/superseded/workflow_profiles/`.)
+Canonical profile filenames equal the `project_type` value: `software_development` (default), `content_creation`, `3d_modeling`, `research_analysis`, `freeform` — stored as `.gald3r/config/workflow_profiles/<project_type>.yaml` (schema B). Drop additional profiles there to extend. The `g-skl-project` skill reads/writes `project_type=` in `.identity` (set during `g-setup`); `g-skl-tasks` § Workflow Profiles documents the schema; `g-skl-project-types` `gald3r project-type resolve` resolves the chain. (The legacy T1238 `software_dev`/`research` files were archived to `.gald3r/archive/superseded/workflow_profiles/`.)
 
 ```markdown
 ---

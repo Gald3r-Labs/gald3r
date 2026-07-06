@@ -30,7 +30,7 @@ You are now operating as a **gald3r AI development agent**. gald3r is a structur
 ```
 project_name: {{PROJECT_NAME}}
 user_name: {{USER_NAME}}
-gald3r_version: 2.4.0
+gald3r_version: 3.0.0
 ```
 If `.gald3r/.identity` exists, read it now and surface the project name and user name. If it does not exist, ask the user their name and the project name.
 

@@ -9,15 +9,19 @@ by placing a small launcher on a PATH directory:
 * macOS/Linux -> writes a ``gald3r`` POSIX shim into ``~/.local/bin`` (created if
   missing) and marks it executable; warns if that folder is not already on PATH.
 
-The launcher invokes the bundled engine via ``uv run`` (preferred, zero global
-Python needed) falling back to the current interpreter + ``-m gald3r``. The
-engine location is resolved relative to this script's project so the shim keeps
-working after the source moves.
+The launcher prefers the **compiled agent binary** (``gald3r-agent[.exe]``) in
+its own directory — the gald3r home ``bin/`` where ``gald3r install agent``
+(T1615) places it — because shipped installs carry NO engine source (IP
+leak-stop, T1645). Only when the engine SOURCE is present (a dev checkout,
+detected by ``.gald3r_sys/engine/pyproject.toml``) does the launcher keep the
+legacy ``uv run`` source path (and ``python -m gald3r``) as a dev fallback. On
+a stripped install with no binary the launcher fails loudly and points at
+``g-install-agent``.
 
 This script is **idempotent** and **dry-run capable** (``--dry-run`` /
 ``-DryRun``). It cannot mutate the live machine PATH inside a test run, so the
 dry-run path prints every planned operation and writes nothing. See
-``../docs/adr/ADR-016-install-home-and-global-cli.md``.
+ADR-016 (install-home-and-global-cli — maintainer-tree ADR, not shipped; T1652 D4).
 
 Usage:
     python install_global_cli.py                 # register for the current user
@@ -84,12 +88,24 @@ def _engine_dir() -> Optional[Path]:
 
 
 def _windows_launcher(engine_dir: Optional[Path]) -> str:
-    """Return the contents of the Windows ``gald3r.cmd`` launcher."""
+    """Return the contents of the Windows ``gald3r.cmd`` launcher.
+
+    Binary-first (T1645): ``%~dp0`` is the launcher's own directory — the
+    gald3r home ``bin/`` where ``gald3r install agent`` (T1615) drops
+    ``gald3r-agent.exe`` — so the compiled binary always wins when present.
+    The ``uv run`` engine-source path survives ONLY for dev checkouts (an
+    ``engine_dir`` was found, i.e. ``engine/pyproject.toml`` exists).
+    """
     if engine_dir is not None:
         ed = str(engine_dir)
         return (
             "@echo off\r\n"
-            "REM gald3r global launcher (T471) -- prefers uv, falls back to python -m\r\n"
+            "REM gald3r global launcher (T471; binary-first since T1645)\r\n"
+            'if exist "%~dp0gald3r-agent.exe" (\r\n'
+            '  "%~dp0gald3r-agent.exe" %*\r\n'
+            '  goto :eof\r\n'
+            ')\r\n'
+            "REM dev fallback -- engine source present in this checkout\r\n"
             f'set "GALD3R_ENGINE_DIR={ed}"\r\n'
             'where uv >nul 2>nul && (\r\n'
             '  uv run --project "%GALD3R_ENGINE_DIR%" gald3r %*\r\n'
@@ -99,18 +115,35 @@ def _windows_launcher(engine_dir: Optional[Path]) -> str:
         )
     return (
         "@echo off\r\n"
-        "REM gald3r global launcher (T471)\r\n"
-        "python -m gald3r %*\r\n"
+        "REM gald3r global launcher (T471; binary-first since T1645)\r\n"
+        'if exist "%~dp0gald3r-agent.exe" (\r\n'
+        '  "%~dp0gald3r-agent.exe" %*\r\n'
+        '  goto :eof\r\n'
+        ')\r\n'
+        "echo gald3r: compiled agent binary not found at %~dp0gald3r-agent.exe 1>&2\r\n"
+        "echo Run the g-install-agent command (or: gald3r install agent) to download 1>&2\r\n"
+        "echo the signed binary from Gald3r-Labs/gald3r_agent releases. 1>&2\r\n"
+        "exit /b 1\r\n"
     )
 
 
 def _posix_launcher(engine_dir: Optional[Path]) -> str:
-    """Return the contents of the POSIX ``gald3r`` shim."""
+    """Return the contents of the POSIX ``gald3r`` shim.
+
+    Binary-first (T1645): the compiled ``gald3r-agent`` placed beside this
+    shim (gald3r home ``bin/``) always wins; the ``uv run`` engine-source path
+    survives ONLY for dev checkouts.
+    """
     if engine_dir is not None:
         ed = str(engine_dir)
         return (
             "#!/usr/bin/env bash\n"
-            "# gald3r global launcher (T471) -- prefers uv, falls back to python -m\n"
+            "# gald3r global launcher (T471; binary-first since T1645)\n"
+            '_here="$(cd "$(dirname "$0")" && pwd)"\n'
+            'if [ -x "$_here/gald3r-agent" ]; then\n'
+            '  exec "$_here/gald3r-agent" "$@"\n'
+            'fi\n'
+            "# dev fallback -- engine source present in this checkout\n"
             f'GALD3R_ENGINE_DIR="{ed}"\n'
             'if command -v uv >/dev/null 2>&1; then\n'
             '  exec uv run --project "$GALD3R_ENGINE_DIR" gald3r "$@"\n'
@@ -120,8 +153,15 @@ def _posix_launcher(engine_dir: Optional[Path]) -> str:
         )
     return (
         "#!/usr/bin/env bash\n"
-        "# gald3r global launcher (T471)\n"
-        'exec python3 -m gald3r "$@"\n'
+        "# gald3r global launcher (T471; binary-first since T1645)\n"
+        '_here="$(cd "$(dirname "$0")" && pwd)"\n'
+        'if [ -x "$_here/gald3r-agent" ]; then\n'
+        '  exec "$_here/gald3r-agent" "$@"\n'
+        'fi\n'
+        'echo "gald3r: compiled agent binary not found at $_here/gald3r-agent" >&2\n'
+        'echo "Run the g-install-agent command (or: gald3r install agent) to download" >&2\n'
+        'echo "the signed binary from Gald3r-Labs/gald3r_agent releases." >&2\n'
+        "exit 1\n"
     )
 
 
@@ -252,7 +292,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     print(f"  gald3r global CLI {'uninstall' if args.uninstall else 'install'}"
           f"{' (DRY RUN)' if args.dry_run else ''}")
     print(f"  launcher dir : {bin_dir}")
-    print(f"  engine dir   : {engine_dir or '(not found -- launcher uses python -m gald3r)'}")
+    print(f"  engine dir   : {engine_dir or '(no dev engine source -- launcher is binary-first: gald3r-agent, then PATH, then python -m gald3r)'}")
 
     if platform.system() == "Windows":
         return _install_windows(bin_dir, engine_dir, args.dry_run, args.uninstall)

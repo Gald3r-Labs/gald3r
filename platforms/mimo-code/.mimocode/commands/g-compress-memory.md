@@ -14,7 +14,7 @@ token overhead, preserving gald3r-managed ranges. Activates **g-skl-compress-mem
 ```
 
 ## What it does
-1. **SCAN** (default, no writes): runs `gald3r_compress_memory.py` to report protected vs
+1. **SCAN** (default, no writes): runs `gald3r compress-memory` to report protected vs
    compressible token budgets and the ≥30% target.
 2. **COMPRESS**: the agent rewrites only the compressible region (terse facts, drop redundant
    examples, dedup) — never the gald3r SECTION range, code blocks, or URLs.
@@ -23,4 +23,4 @@ token overhead, preserving gald3r-managed ranges. Activates **g-skl-compress-mem
 
 In the gald3r **source** repo the whole memory file is gald3r-managed, so SCAN reports `skip`.
 
-Helper: `.claude/skills/g-skl-compress-memory/scripts/gald3r_compress_memory.py`
+Helper: `gald3r compress-memory`

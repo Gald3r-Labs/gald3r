@@ -11,6 +11,28 @@ subsystem_memberships: [WORKSPACE_COORDINATION]
 ## When to Use
 `@g-wpac-order` command. When a change in this project requires action in child projects.
 
+## Transport layer (WPAC-v2 — T1608)
+
+**Step 0-T — transport verdict (code decides, never the model — g-rl-38).** Before the
+file steps below, for EACH target child build the delegation-intake payload (the live
+`world_tree` `TaskIntakeRequest` contract: `title`, `description`, `task_type`,
+`priority`, `project_id`, `subsystems[]`, `dependencies[]`, `acceptance_criteria[]`,
+`source_project` = this project) and run the shared transport (T1609 shim underneath):
+
+```
+gald3r workspace outbox send --verb order --payload-file <payload.json>
+```
+
+| Verdict | Action |
+|---|---|
+| `ok` | Delivered via `POST /api/v1/tasks/delegation/intake` — the target wakes via inbox auto-wake (world_tree T494), replacing the WPAC ORDER file-drop and the session-start poll. SKIP the cross-repo direct-write (steps 5a–5d) for that child; STILL write the LOCAL sent_orders ledger (step 5e) with an extra `transport: world_tree` frontmatter key and the returned `task_uuid` in the Sync History row. |
+| `offline` / `error` | Perform ALL file steps below exactly as today (behavior identical to WPAC-v1). The message was write-aheaded to `.gald3r/linking/outbox/` BEFORE any network I/O, so nothing is lost — `gald3r workspace outbox flush` reconciles it on reconnect. |
+| `auth_required` | File steps below + tell the user to run `gald3r login`. Entry parked (not retried). |
+| `upgrade_required` | File steps below + print the shim's upgrade line (online transport is paid-Team gated per T633/T641; the file transport stays free). Entry parked (not retried). |
+
+Everything below this section is the **OFFLINE / FILE FALLBACK transport** — the verb
+surface (name + arguments) is unchanged.
+
 ## WPAC Direct-Write Authority (ADR-003, ADR-013)
 
 **Core mechanic**: When the controller runs `@g-wpac-order`, it writes task files DIRECTLY into the child repo's `.gald3r/` — no inbox wait. The inbox entry is written as an audit trail only.

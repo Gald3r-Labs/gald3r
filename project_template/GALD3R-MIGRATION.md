@@ -18,12 +18,8 @@ Each step is idempotent — safe to re-run on an already-migrated project. Check
 
 ### Check
 ```powershell
-# Run the validation script (requires gald3r >= 1.2.0)
-if (Test-Path "scripts/gald3r_validate.py") {
-    uv run python scripts/gald3r_validate.py --report
-} else {
-    Write-Host "Validation script not yet present — continue to Apply step"
-}
+# Run the engine validator (T520 — supersedes the retired scripts/gald3r_validate.py)
+gald3r validate
 ```
 
 Expected: `PASS: gald3r structure valid` or `validation script not yet present`
@@ -73,9 +69,7 @@ If files are missing, run `@g-setup INIT` to scaffold missing structure.
 
 After completing all steps, verify the upgrade:
 ```powershell
-if (Test-Path "scripts/gald3r_validate.py") {
-    uv run python scripts/gald3r_validate.py
-}
+gald3r validate --fix
 ```
 
 Expected output: `✅ Migration complete — gald3r {version_to} installed`

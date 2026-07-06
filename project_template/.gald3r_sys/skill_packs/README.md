@@ -36,7 +36,7 @@ Each pack stores a single canonical copy in ``:
   source/
     skills/        ← one subfolder per skill, same as gald3r core skills
   PACK.md          ← version, tier, skill list
-  install.ps1      ← platform-aware installer
+  install.py       ← platform-aware installer (imports the shared _install_helper.py)
 ```
 
 ## Evolved Skills

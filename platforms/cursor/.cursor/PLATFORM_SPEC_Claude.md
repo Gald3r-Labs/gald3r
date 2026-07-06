@@ -155,9 +155,11 @@ Claude Code versions, but does not confirm the lowercase `hooks.json` wiring is 
 **T1171 hook.md companion pattern** (verified present): every `g-hk-*.ps1` has a sibling `g-hk-*.md`
 (5-section: Fires On / What It Does / Side Effects / Related Tasks), referenced via `_hook_md` in `hooks.json`.
 
-**gald3r-internal lifecycle events** (`pre_skill`/`post_skill`/`pre_session`/`post_session`, T1055) are NOT
-native Claude Code events — they are dispatched by the gald3r skill/command runner and are intentionally not
-wired into the harness hook config.
+**gald3r-internal lifecycle events** (`pre_skill`/`post_skill`, T1055) are NOT native Claude Code events —
+they are dispatched by the gald3r skill/command runner and are intentionally not wired into the harness hook
+config. The former `pre_session`/`post_session` internal events were retired by T1624 (WS-A-1, decision D-8):
+the session-trace hooks now fire on the canonical SessionStart/Stop wiring in `settings.json` +
+`g_hk_core.py` CONCERN_CHAIN.
 
 ---
 

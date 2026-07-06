@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
-"""Python port of g-hk-pre-session-trace.ps1 (T1584).
+"""Session-trace opener — fires on the canonical `session-start` event.
 
-Example pre_session lifecycle hook (T1055): records a session-start trace
-marker for richer per-session observability. Fires on the gald3r-internal
-"pre_session" lifecycle event at the very start of a gald3r work session
-(distinct from the harness-native sessionStart event). The payload arrives on
-stdin as JSON and SHOULD include session_id (if available) and project_path.
+Records a session-start trace marker for richer per-session observability.
+Originally a T1055 example keyed to the gald3r-internal "pre_session" event;
+T1624 (WS-A-1, decision D-8) retired that internal event name and wired this
+hook into the canonical core: it now runs in `CONCERN_CHAIN["session-start"]`
+(g_hk_core.py) and is registered on the harness-native SessionStart /
+sessionStart trigger for Claude Code and Cursor.
 
-Non-blocking reference example: only stages a session start record so the
-companion post_session hook can compute session duration.
+The payload arrives on stdin as JSON. Harness payloads carry `session_id`
+(Claude Code) or `conversation_id` (Cursor) plus `cwd`/`project_path`; all are
+accepted. Non-blocking reference: only stages a session start record so the
+companion g-hk-post-session-trace hook can compute session duration on
+stop/session-end. Stale markers (>7 days) are pruned on each run so wired
+installs never accumulate marker files.
 """
 # @subsystems: LOGGING_SYSTEM
 from __future__ import annotations
@@ -18,11 +23,15 @@ import json
 import os
 import re
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import _hook_common
+
+#: Session-trace markers older than this are pruned on each run (T1624).
+_MARKER_MAX_AGE_SECONDS = 7 * 24 * 60 * 60
 
 
 def _find_project_root() -> str:
@@ -38,9 +47,24 @@ def _find_project_root() -> str:
     return os.getcwd()
 
 
+def _prune_stale_markers(logs_dir: Path) -> None:
+    """Remove session_trace_*.json markers older than the max age (fail-soft)."""
+    cutoff = time.time() - _MARKER_MAX_AGE_SECONDS
+    try:
+        for marker in logs_dir.glob("session_trace_*.json"):
+            try:
+                if marker.stat().st_mtime < cutoff:
+                    marker.unlink()
+            except OSError:
+                continue
+    except OSError:
+        pass
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Record a session-start trace marker (pre_session lifecycle hook)."
+        description="Record a session-start trace marker (canonical "
+                    "session-start concern hook)."
     )
     parser.add_argument(
         "-ProjectRoot", "--project-root", dest="project_root", default="",
@@ -48,10 +72,14 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    # -- stdin payload (gald3r session-event schema) ---------------------------
+    # -- stdin payload (harness event schema) -----------------------------------
+    # Claude Code sends session_id; Cursor sends conversation_id; the retired
+    # gald3r-internal schema sent session_id + project_path. Accept all.
     payload = _hook_common.read_stdin_json()
-    session_id = str(payload.get("session_id") or "")
-    project_path = str(payload.get("project_path") or "")
+    session_id = str(
+        payload.get("session_id") or payload.get("conversation_id") or ""
+    )
+    project_path = str(payload.get("project_path") or payload.get("cwd") or "")
 
     # -- Locate project root ---------------------------------------------------
     project_root = args.project_root
@@ -63,6 +91,7 @@ def main() -> int:
 
     logs_dir = Path(project_root) / ".gald3r" / "logs"
     logs_dir.mkdir(parents=True, exist_ok=True)
+    _prune_stale_markers(logs_dir)
 
     now = datetime.now(timezone.utc)
     timestamp = now.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -86,7 +115,7 @@ def main() -> int:
         pass
 
     # -- Append a structured log line -------------------------------------------
-    log_line = f"{timestamp} | pre_session | session={session_id} | project={project_root}"
+    log_line = f"{timestamp} | session-start | session={session_id} | project={project_root}"
     try:
         with open(logs_dir / "session_lifecycle.log", "a", encoding="utf-8") as fh:
             fh.write(log_line + "\n")
@@ -96,7 +125,7 @@ def main() -> int:
     # -- Non-blocking: never delay session start --------------------------------
     print(json.dumps({
         "continue": True,
-        "additional_context": f"[pre_session] session {session_id} start recorded.",
+        "additional_context": f"[session-trace] session {session_id} start recorded.",
     }, separators=(",", ":")))
     return 0
 

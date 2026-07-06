@@ -2,8 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(python .claude/hooks/g-hk-wpac-inbox-check.py -ProjectRoot . -BlockOnConflict)",
+      "Bash(python3 .claude/hooks/g-hk-wpac-inbox-check.py -ProjectRoot . -BlockOnConflict)",
       "Bash(echo \"EXIT:$?\")",
       "Bash(python .cursor/hooks/g-hk-wpac-inbox-check.py -ProjectRoot . -BlockOnConflict)",
+      "Bash(python3 .cursor/hooks/g-hk-wpac-inbox-check.py -ProjectRoot . -BlockOnConflict)",
       "Bash(npx gitnexus*)"
     ],
     "defaultMode": "bypassPermissions"

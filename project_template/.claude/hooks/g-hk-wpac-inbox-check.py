@@ -23,6 +23,7 @@ auto-action is audited to .gald3r/logs/wpac_auto_actions.log.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import os
 import re
 import subprocess
@@ -32,6 +33,27 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import _hook_common  # noqa: F401  (shared bootstrap; this hook is pure stdlib)
+
+
+def _resolve_engine_cmd(project_root: Path):
+    """Resolve the gald3r engine command prefix via the zero-IP resolver.
+
+    The WPAC inbox migrate/archive logic was absorbed (A3 / T1660) into the
+    `gald3r workspace inbox migrate|archive` verbs. Returns the command prefix
+    (e.g. ``["gald3r"]``) or ``None`` when the resolver is not shipped or no
+    engine can be found."""
+    resolver = project_root / ".gald3r_sys" / "scripts" / "gald3r_bin.py"
+    if not resolver.is_file():
+        return None
+    try:
+        spec = importlib.util.spec_from_file_location("gald3r_bin_wpac_inbox", str(resolver))
+        if not spec or not spec.loader:
+            return None
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)  # type: ignore[union-attr]
+        return mod.resolve_engine_cmd(project_root)
+    except Exception:
+        return None
 
 # U+2014 EM DASH - kept out of the source bytes for ASCII safety (mirrors the
 # .ps1 [char]0x2014). Real inbox headings separate fields with an em-dash; the
@@ -133,40 +155,38 @@ def main(argv: list) -> int:
     # --- Message-folder system (T428) -----------------------------------------
     # INBOX.md is evolving into a lightweight INDEX backed by per-message files
     # under .gald3r/linking/messages/ (+ archive/). The migration + archive logic
-    # lives in the shared script gald3r_wpac_inbox.py. -Migrate / --migrate and
-    # -Archive / --archive delegate to it and return; the default scanner path
-    # below is unchanged for backward-compat and also silently initializes
-    # messages/ when absent (T428 AC#8).
-    inbox_script = project_root / ".gald3r_sys" / "scripts" / "gald3r_wpac_inbox.py"
+    # was absorbed (A3 / T1660) into the `gald3r workspace inbox migrate|archive`
+    # verbs. -Migrate / --migrate and -Archive / --archive delegate to the engine
+    # and return; the default scanner path below is unchanged for backward-compat
+    # and also silently initializes messages/ when absent (T428 AC#8).
+    engine = _resolve_engine_cmd(project_root)
     if args.migrate or args.archive:
-        if inbox_script.exists():
+        if engine is not None:
             if args.archive:
                 cmd = [
-                    sys.executable,
-                    str(inbox_script),
-                    "-Archive",
-                    "-ThresholdDays",
+                    *engine,
+                    "workspace", "inbox", "archive",
+                    "--threshold-days",
                     str(args.threshold_days),
-                    "-ProjectRoot",
+                    "--project-root",
                     str(project_root),
                 ]
             else:
                 cmd = [
-                    sys.executable,
-                    str(inbox_script),
-                    "-Migrate",
-                    "-ProjectRoot",
+                    *engine,
+                    "workspace", "inbox", "migrate",
+                    "--project-root",
                     str(project_root),
                 ]
             if args.quiet:
-                cmd.append("-Quiet")
+                cmd.append("--quiet")
             try:
                 subprocess.run(cmd)
             except OSError:
                 pass
         elif not args.quiet:
             emit(
-                "WPAC inbox: migration script not found at .gald3r_sys/scripts/gald3r_wpac_inbox.py"
+                "WPAC inbox: gald3r engine not found — cannot migrate/archive inbox"
             )
         return 0
 

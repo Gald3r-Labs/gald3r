@@ -1,5 +1,5 @@
 ﻿# .gald3r_sys/schemas/_version_rules.yaml
-gald3r_rel_version: "2.4.0"
+gald3r_rel_version: "3.0.0"
 schema_version: "version-rules-v1"
 rules:
   file_older_than_system:

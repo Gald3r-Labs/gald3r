@@ -7,7 +7,9 @@ payload from stdin ({"status": ..., "loop_count": N, "conversation_id": ...,
 .gald3r/logs/hook_diag.log, discovers a transcript via the T1232 fallback
 (most recent non-subagent .jsonl under ~/.cursor/projects/<slug>/
 agent-transcripts) when the payload omits it, launches the sibling chat
-logger script with a 30-second timeout, writes a pending-reflection hint
+logger — resolved through the shared core's INDIRECT_CONCERNS map and
+labeled with the detected platform (T1625 / BUG-133), never a hardcoded
+platform filename — with a 30-second timeout, writes a pending-reflection hint
 (.gald3r/logs/pending_reflection.json) for the next session-start hook, and
 optionally stages a skill-capture stub (T1174) when AGENT_CONFIG.md has
 skill_capture_hook: true. Emits "{}" and always exits 0.
@@ -26,6 +28,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import _hook_common  # noqa: E402
+
+try:
+    # Shared canonical core (T424): platform map + indirect-concern resolver
+    # (T1625 / BUG-133). Fail-soft: a few flat legacy overlay layouts ship
+    # this hook without the core next to it.
+    import g_hk_core  # noqa: E402
+except Exception:
+    g_hk_core = None
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 
@@ -108,20 +118,28 @@ def main():
 
     # ── Chat transcript logger (synchronous, 30s timeout) ───────────────────
     try:
-        # BUG-133 fix: probe for whichever chat logger actually ships in
-        # this hook directory. g-hk-cursor-chat-logger.py does not ship in
-        # every deployment (the .claude install ships g-hk-claude-chat-
-        # logger.py); the previous hardcoded name was a silent no-op there.
+        # BUG-133 fix (T1625): resolve the chat logger through the shared
+        # core's INDIRECT_CONCERNS map and label it with the detected
+        # platform. This hook must never hardcode a platform logger
+        # filename — the old literal did not ship in .claude installs and
+        # made this step a silent no-op (the BUG-133 regression).
+        platform = "claude"  # unified logger's own default
         logger_script = None
-        for _logger_name in ("g-hk-cursor-chat-logger.py",
-                             "g-hk-claude-chat-logger.py"):
-            _candidate = SCRIPT_DIR / _logger_name
-            if _candidate.is_file():
-                logger_script = _candidate
-                break
+        if g_hk_core is not None:
+            platform = g_hk_core.detect_platform(SCRIPT_DIR)
+            resolved = g_hk_core.resolve_indirect_concerns(
+                "g-hk-agent-complete", SCRIPT_DIR)
+            logger_script = resolved[0] if resolved else None
+        else:
+            # Flat legacy overlays ship this hook without the core next to
+            # it; probe by generic pattern, never by platform filename.
+            candidates = sorted(SCRIPT_DIR.glob("g-hk-*chat-logger.py"))
+            logger_script = candidates[0] if candidates else None
         if logger_script is None:
             _diag(project_root,
-                  "logger skipped: no chat logger ships in this deployment")
+                  "WARNING: chat logger unresolved for platform=%s "
+                  "(no INDIRECT_CONCERNS script ships in %s) — "
+                  "chat log NOT written" % (platform, SCRIPT_DIR))
         if logger_script is not None:
             # The PS1 probes for py/python/python3; here the running
             # interpreter is the natural equivalent.
@@ -130,7 +148,7 @@ def main():
                 "--project-path", str(project_root),
                 "--loop-count", str(loop_count),
                 "--status", "completed" if status == "completed" else str(status),
-                "--platform", "cursor",
+                "--platform", platform,
             ]
             if conversation_id and conversation_id != "unknown":
                 logger_args += ["--conversation-id", str(conversation_id)]

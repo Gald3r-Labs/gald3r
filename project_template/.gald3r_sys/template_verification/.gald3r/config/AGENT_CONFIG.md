@@ -1,5 +1,5 @@
 ﻿---
-gald3r_rel_version: "2.4.0"
+gald3r_rel_version: "3.0.0"
 schema_version: "generic-v1"
 ---
 # AGENT_CONFIG.md — gald3r Agent Configuration
@@ -235,7 +235,7 @@ context_reduction_mode:
 | Flag | Default | What it does | Where read |
 |------|---------|--------------|------------|
 | `think_in_code` | `true` | Reminds agents to collapse 3+ sequential file reads into a single script per g-rl-37 | g-go-code Step b0/c1 context assembly |
-| `graphify_b0_enabled` | `false` | When `true`, the coordinator runs a single gitNexus/Graphify/tree-sitter query at Step b0.2 and passes the ≤200-token result block to implementer subagents. When `false`, Step b0.1 (gitnexus_impact) alone gates context. | g-go-code Step b0.2; g-go --swarm coordinator briefing |
+| `graphify_b0_enabled` | `false` | When `true`, the coordinator runs a single gitNexus/Graphify/tree-sitter query at Step b0.2 and passes the ≤200-token result block to implementer subagents. When `false`, Step b0.1 (muninn graph_impact) alone gates context. | g-go-code Step b0.2; g-go --swarm coordinator briefing |
 
 `graphify_b0_enabled` ships **off by default** so the b0 path is a no-op for projects without `gitnexus` MCP, `graphify-cli`, or a `.graphify/` index. Operators enable it once a backend is wired and indexed (see g-skl-graphify SETUP).
 

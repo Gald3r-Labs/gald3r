@@ -75,7 +75,7 @@ Check the installed gald3r version and apply framework updates.
    `## [X.Y.Z]` CHANGELOG entry has a matching `.gald3r/releases/` file. This silences the
    recurring session-start `N CHANGELOG version(s) missing release file` warning.
    ```powershell
-   $backfill = Join-Path $projectRoot ".gald3r_sys\skills\g-skl-release\scripts\backfill_release_files.py"
+   $backfill = Join-Path $projectRoot "gald3r ship"
    if (Test-Path $backfill) {
        & powershell -NoProfile -ExecutionPolicy Bypass -File $backfill -ProjectRoot $projectRoot -Apply
    }
@@ -96,7 +96,7 @@ Check the installed gald3r version and apply framework updates.
 
 `@g-update --apply --dry-run` performs steps 1-5 read-only, and for steps 6-8 **prints the
 planned changes without writing**: which VERSION would be created (and with what value), which
-release files would be backfilled (run `backfill_release_files.py` without `-Apply`), and which
+release files would be backfilled (run `gald3r ship` without `-Apply`), and which
 inheritable constraints would be merged into `CONSTRAINTS.md`.
 
 ### `@g-update --changelog`
@@ -173,7 +173,7 @@ wrapper when it lands.
 {
   "latest_version": "1.3.0",
   "release_date": "2026-05-01",
-  "release_notes_url": "https://github.com/gald3r/gald3r/releases/tag/v2.4.0"
+  "release_notes_url": "https://github.com/gald3r/gald3r/releases/tag/v3.0.0"
 }
 ```
 

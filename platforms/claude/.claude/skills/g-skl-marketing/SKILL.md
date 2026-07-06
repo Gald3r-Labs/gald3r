@@ -34,7 +34,7 @@ subsystem_memberships: [AGENT_ORCHESTRATION]
 **What it does:** distribution-first marketing voice.
 
 ## Preferred — fetch the centralized judgment
-`uv run --project .gald3r_sys/engine gald3r prompt get voice.marketing`   ·   MCP `gald3r_prompt_get id=voice.marketing`
+`gald3r prompt get voice.marketing`   ·   MCP `gald3r_prompt_get id=voice.marketing`
 
 ## Manual fallback (engine not provisioned)
 Follow **`SKILL.full.md`** in this directory, plus any `rules.md` / `reference/` / `examples/`.

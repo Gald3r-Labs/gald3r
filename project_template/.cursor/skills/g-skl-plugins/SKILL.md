@@ -12,7 +12,7 @@ subsystem_memberships: [PLUGIN_SYSTEM]
 > place an agent reads to understand how plugins are installed, removed, updated, listed,
 > authored, and checked for compatibility.
 
-**Design source of truth**: **ADR-015** (`.gald3r_sys/docs/adr/ADR-015-plugin-system.md`)
+**Design source of truth**: **ADR-015** (maintainer-tree ADR — not shipped in installs; T1652 D4)
 and subsystem **SS-007** (`.gald3r/subsystems/plugin_system.md`). Read those for the
 *why*; this skill is the operational *how*.
 
@@ -130,36 +130,38 @@ If absent, do **not** fabricate the behavior — tell the user the operation is 
 
 ## OPERATIONS
 
-### UPDATE — `@g-plugin-update`  ✅ implemented
+### UPDATE — `@g-plugin-update <id>`  ✅ implemented (engine, T663 / T1601)
 
-**When**: an installed plugin has a newer version in the registry, or you need to re-apply a
-plugin (`--force`). The only fully-working lifecycle operation on this tree.
+**When**: an installed plugin's local source has a newer version, or you need to re-apply a
+plugin (`--force`). Backed by `gald3r.systems.plugins.PluginSystem.update` — the Python
+successor to the historical `update_plugin.ps1` (retired T1601, PS1-KILL epic T667).
 
 **Invoke** (from project root):
-```powershell
-.gald3r_sys/plugins/scripts/update_plugin.ps1 [-PluginId <id>] [-DryRun] [-Force] [-NoBackup] [-RegistryUrl <url>] [-KeepBackups <n>] [-AssumeYes]
+```bash
+uv run --project .gald3r_sys/engine gald3r plugin update <id> [--source <path>] [--dry-run] [--force]
 ```
 
-| Flag | Command alias | Effect |
-|------|---------------|--------|
-| `-PluginId <id>` | `g-plugin-update <id>` | Update one plugin (default: all installed) |
-| `-DryRun` | `--check` / `--dry-run` | Print availability table only; no changes |
-| `-Force` | `--force` | Re-install even if already at latest |
-| `-NoBackup` | `--no-backup` | Skip pre-update backup (disables auto-rollback — use knowingly) |
-| `-RegistryUrl` | — | Override registry URL |
-| `-KeepBackups <n>` | — | Backups retained per plugin (default 3) |
-| `-AssumeYes` | — | Non-interactive (CI); lifecycle `upgrade.ps1` still gated on this/confirm |
+| Flag | Effect |
+|------|--------|
+| `<id>` | Required. Update this one installed plugin. |
+| `--source <path>` | Explicit local source dir (default: the already-vendored `.gald3r_sys/plugins/<id>/`) |
+| `--dry-run` | Return the planned `from_version -> to_version` + component inventory; apply nothing |
+| `--force` | Re-install even if already at the source version |
 
-**Flow**: compare `installed.yaml` vs registry → (dry-run stops here) → CHANGELOG excerpt →
-compat check (`gald3r_min_version`) → backup → download new version → validate manifest →
-component diff/conflict surface → confirm → opt-in `upgrade.ps1` → apply (remove stale
-components, copy new) → rewrite ledger → prune old backups. **Any failure after backup =
-automatic rollback** + a row in `plugin_update_failures.log`. Exit `0` = success/no-op,
-`1` = at least one plugin failed (and was rolled back).
+**Flow**: look up `installed.yaml` entry → resolve source + read its manifest → compat
+check (`gald3r_min_version`) → compare versions (same + no `--force` -> `up_to_date`,
+stop) → (`--dry-run` stops here) → apply via the same path as `plugin install` (remove
+stale components, copy new, rewrite ledger). Returns
+`{ok, status, id, from_version, to_version, components, reasons, dry_run}`.
 
-**Local vs remote**: a local-path `source` is copied directly (works here). A remote
-`https://` source needs `install_plugin.ps1`'s download helper — **absent here**, so remote
-updates throw; use `-RegistryUrl` pointing at a local file fixture or wait for the installer.
+**Scope narrowing from the historical `.ps1` (T1601)**: this is **single-plugin,
+local-source only** — no bulk "check every installed plugin against a remote HTTPS
+registry" loop, no CHANGELOG excerpt, no interactive confirm prompts, no `upgrade.ps1`
+lifecycle execution, and no versioned on-disk backup/rollback directory. These were
+designed-but-not-carried-forward when the engine module absorbed this op, matching
+INSTALL/REMOVE/LIST/NEW/CHECK_COMPAT below (also "designed but never ported"). Remote
+`https://` registry sources are intentionally not fetched by this engine surface —
+use `--source <local-path>` for anything not already vendored under `.gald3r_sys/plugins/`.
 
 ---
 
@@ -218,8 +220,9 @@ scaffolder produces.
 ```
 
 Checks the manifest is present and well-formed (at minimum `id` + `version`), and that
-`gald3r_min_version` ≤ the host's `.gald3r_sys/VERSION` (SemVer compare). `update_plugin.ps1`
-calls this if present; otherwise it runs a minimal built-in `id`+`version` presence check.
+`gald3r_min_version` ≤ the host's `.gald3r_sys/VERSION` (SemVer compare). The engine's
+`plugin update` op (see UPDATE above) calls the equivalent `PluginSystem.check_compat`
+internally.
 
 ---
 
@@ -261,8 +264,13 @@ Rules:
 
 ## Registry format — `registry.json`
 
-GitHub-hosted catalog fetched over raw HTTPS (single GET — no daemon, C-005/C-006/C-008).
-`update_plugin.ps1` accepts both `{ "plugins": { ... } }` and a bare top-level map.
+GitHub-hosted catalog format (ADR-015 design). **Not fetched by the current engine
+surface** (T1601): `gald3r plugin update`/`install`/`check-compat` operate on local
+source paths only and intentionally do not download from a remote `https://` registry
+— see the UPDATE section's scope-narrowing note above. `registry_url:` in
+`.gald3r_sys/config/plugins.yaml` is still read (`gald3r plugin list` reports it) but
+is not dereferenced over HTTP by this tree. Accepted shape (when a registry consumer
+is added): both `{ "plugins": { ... } }` and a bare top-level map.
 
 ```json
 {
@@ -388,6 +396,6 @@ bodies before first invocation.
   (`.gald3r_sys/skill_packs/<pack>/`) is a separate, curated bundle-of-skills mechanism, not
   the third-party plugin system documented here. Don't conflate them.
 - **SS-007 `plugin_system.md`** — subsystem spec (decisions, scope boundary, constraints).
-- **ADR-015** — foundational architecture decisions (D1–D7 referenced throughout).
+- **ADR-015** — foundational architecture decisions (D1–D7 referenced throughout; maintainer-tree ADR, not shipped).
 - **g-rl-38 component-creation-standards** — mandatory `subsystem_memberships:` tagging that
   plugin components must satisfy.

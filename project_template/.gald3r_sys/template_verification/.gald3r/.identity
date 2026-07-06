@@ -1,10 +1,16 @@
-﻿# gald3r_rel_version: 2.0.0
+﻿# gald3r_rel_version: 3.0.0
 # schema_version: identity-v1
 project_id={project_id}
 project_name={project_name}
 project_type=software_development
 user_id={USER_ID}
 user_name={user_name}
-gald3r_version=2.0.0
+gald3r_version=3.0.0
 vault_location={LOCAL}
 repos_location={LOCAL_REPOS}
+# coordination_enabled (T1621): explicit on/off switch for cross-project
+# coordination (WPAC / the Valkyrie hub system). Checked before any coordination
+# verb touches .gald3r/linking/ or a hub — OFF is a clean, file-transport-only
+# state, not an error. Default when absent: true (matches pre-T1621 behavior).
+# Uncomment to opt out (per-project, or as a corporate kill-switch):
+# coordination_enabled=false

@@ -9,12 +9,18 @@ Skills / Agents / Hooks / Rules that have no native IDE harness event.
 
 ## Fires On
 
-A gald3r-internal CRASH activation report. The engine auto-records every **Command** it dispatches
-(`gald3r.crash` + `adapters/cli.py`); IDE harnesses (Cursor / Claude Code) do **not** emit a
-discrete event for every Rule / Skill / Agent / Hook activation, so this hook is the explicit path
-those use: a hook event, the gald3r skill/command runner, or an agent invokes it with a JSON
-payload describing the component that just activated. Rule "activation" has no native event (rules
-are always-loaded context), so a faithful "rule fired" signal must be reported here explicitly.
+1. **The canonical `stop` event (T1624, WS-A-1)** — wired in `g_hk_core.py`
+   `CONCERN_CHAIN["stop"]` and registered on the Claude Code / Cursor stop triggers with an
+   explicit CLI declaration (`--component-type hook --component-name stop-chain
+   --trigger-source ...`), recording one `hook` activation per agent turn when CRASH stats are
+   enabled. Payload fields, when present, always win over the CLI declaration.
+2. **A gald3r-internal CRASH activation report** (the original path). The engine auto-records
+   every **Command** it dispatches (`gald3r.crash` + `adapters/cli.py`); IDE harnesses (Cursor /
+   Claude Code) do **not** emit a discrete event for every Rule / Skill / Agent / Hook activation,
+   so this hook is the explicit path those use: a hook event, the gald3r skill/command runner, or
+   an agent invokes it with a JSON payload describing the component that just activated. Rule
+   "activation" has no native event (rules are always-loaded context), so a faithful "rule fired"
+   signal must be reported here explicitly.
 
 ## Payload (stdin JSON)
 

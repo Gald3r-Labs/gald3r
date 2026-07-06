@@ -200,7 +200,7 @@ bucket is editing. File-lock manifests enforce this (T1059):
   ignored, so a crashed bucket never deadlocks the swarm.
 - **Claim on worktree create** — a bucket claims its scope when its worktree is created:
   ```powershell
-  .claude/skills/g-skl-git-commit/scripts/gald3r_worktree.py `
+  gald3r worktree `
       -Action Create -TaskId <id> -BucketId <bucket> -Owner <owner> `
       -LockFiles "AGENTS.md","src/foo.ps1" -BucketTtlMinutes 60
   ```
@@ -226,7 +226,7 @@ bucket is editing. File-lock manifests enforce this (T1059):
 
 ## gald3r Version
 
-**gald3r version**: 2.4.0
+**gald3r version**: 3.0.0
 **Supported IDEs**: Cursor, Claude Code, Gemini, Codex, OpenCode
 
 ---

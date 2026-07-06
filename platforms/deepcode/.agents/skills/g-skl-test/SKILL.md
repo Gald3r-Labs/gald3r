@@ -127,7 +127,7 @@ TEST PLAN AUDIT:
 ### FUNCTIONAL (L0) — gald3r systems health harness (T1540)
 
 **Called for an install health check, a pre-release quality stamp, or a CI gate.**
-Distinct from L1/L2/L3 code tests: this runs `custom_scripts/gald3r_system_test.py`, which
+Distinct from L1/L2/L3 code tests: this runs `gald3r selftest`, which
 exercises each gald3r *system* and produces a per-system PASS/PARTIAL/FAIL plus an overall
 functionality percentage.
 
@@ -135,16 +135,16 @@ functionality percentage.
 
 ```powershell
 # Full run against the current install (writes .gald3r/reports/system_test_YYYYMMDD_HHMMSS.md)
-uv run python custom_scripts/gald3r_system_test.py
+gald3r selftest
 
 # CI gate: exit non-zero when overall score < 80%
-uv run python custom_scripts/gald3r_system_test.py -ProjectRoot . -FailBelow 80
+gald3r selftest
 
 # Machine-readable summary for dashboards / agent handoff
-uv run python custom_scripts/gald3r_system_test.py -Json
+gald3r selftest
 
 # Subset of systems
-uv run python custom_scripts/gald3r_system_test.py -Systems "task,bug,hooks,git_hooks,schema"
+gald3r selftest
 ```
 
 **Systems under test (13):** task, bug, platform_spec, parity, hooks, git_hooks, schema,
@@ -214,5 +214,5 @@ VERIFICATION GATE:
 - **g-skl-review / g-skl-code-review**: call AUDIT at end of review pass
 - **g-skl-tasks → `[🔍]` gate**: call VERIFICATION-GATE before marking awaiting-verification
 - **Release process**: call RELEASE-GATE before any version bump; also run FUNCTIONAL (L0) for the system-health stamp in release notes
-- **CI / pre-release**: wire `custom_scripts/gald3r_system_test.py -FailBelow <N>` as a gate (see FUNCTIONAL above)
+- **CI / pre-release**: wire `gald3r selftest` as a gate (see FUNCTIONAL above)
 - **g-agnt-test**: autonomous agent that runs this skill's operations on schedule or trigger

@@ -35,6 +35,25 @@ If any check fails → stop and report with fix instructions. Do not proceed.
 
 ---
 
+## Transport layer (WPAC-v2 — T1608)
+
+File moves are inherently LOCAL — every step below runs as written. The online part is
+advisory only: after Step 6 (provenance logged), attempt an event publish so connected
+peers see the move in the org coordination log:
+
+```
+gald3r workspace outbox send --verb event --payload-file <payload.json>
+```
+
+The world_tree event catalog is CLOSED and has no move/provenance type yet, so the
+transport short-circuits to the `fallback` verdict client-side — the vault-log + INBOX
+provenance below remains the record. On `offline`/`error` the queued entry is
+reconciled by `gald3r workspace outbox flush`; on `auth_required`/`upgrade_required` print
+the shim's hint/upgrade line and continue. Verb surface (name + arguments) unchanged;
+online-vs-offline is decided by code, not the model (g-rl-38).
+
+---
+
 ## Step-by-Step Workflow
 
 ### Step 1 — Identify what is moving

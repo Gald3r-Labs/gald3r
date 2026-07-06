@@ -1,5 +1,5 @@
 ﻿---
-gald3r_rel_version: "2.4.0"
+gald3r_rel_version: "3.0.0"
 schema_version: "generic-v1"
 ---
 # VAULT_SCHEMA
@@ -57,8 +57,9 @@ Every note must have:
 - `tags`  ← **use `tags:` (not `topics:`)** — Obsidian's Tags panel indexes this field natively
 
 > **Tagging Decision (2026-04-07, D021)**: The frontmatter key is `tags:` (array of strings).
-> This enables native Obsidian tag indexing without any plugin. Old notes using `topics:` can
-> be migrated via `migrate_topics_to_tags.py` (T039).
+> This enables native Obsidian tag indexing without any plugin. Old notes using `topics:` are
+> migrated to `tags:` silently by the engine vault ops (D021; the standalone
+> migration script was retired, T1652 D7).
 
 Example note header:
 ```yaml

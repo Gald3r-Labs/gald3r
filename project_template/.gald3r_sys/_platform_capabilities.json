@@ -252,5 +252,21 @@
     "rulesDir": "rules",
     "skillsDir": "skills",
     "_added": "kilo-code stub population (replaces legacy .kilocode/; also reads .claude/skills + .agents/skills)"
+  },
+  ".zcode": {
+    "hasRules": true,
+    "rulesExt": ".md",
+    "hasSkills": true,
+    "rulesDir": null,
+    "skillsDir": "skills",
+    "_note": "AGENTS.md two-scope append-only (global ~/.zcode/AGENTS.md then workspace AGENTS.md); no imports/hierarchy. Native SKILL.md skills + slash commands + MCP; subagents Beta global-only; no hooks surface published."
+  },
+  ".zed": {
+    "hasRules": false,
+    "rulesExt": ".md",
+    "hasSkills": true,
+    "rulesDir": null,
+    "skillsDir": "skills",
+    "_note": "Rules = root AGENTS.md (native agents.md standard; .rules legacy filename outranks AGENTS.md if present) + personal ~/.config/zed/AGENTS.md, NOT a .zed-housed rules folder. Skills at .agents/skills/ (shared with Codex/Amp/Deep Code). MCP via context_servers + external agents via agent_servers, both in .zed/settings.json (Zed-owned, not gald3r-written). No hand-authored hooks surface, no dedicated commands file format published."
   }
 }

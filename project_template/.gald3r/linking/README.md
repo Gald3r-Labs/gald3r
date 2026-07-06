@@ -1,5 +1,5 @@
 ---
-gald3r_rel_version: "2.4.0"
+gald3r_rel_version: "3.0.0"
 schema_version: "generic-v1"
 ---
 # Cross-Project Coordination (WPAC) — Linking Directory
@@ -81,7 +81,7 @@ actioned_at: '2026-05-23'
 ```
 
 **Migration:** a legacy flat `INBOX.md` (inline `## [STATUS] ... ` bodies) is
-auto-migrated to this layout on demand by `gald3r_wpac_inbox.py -Migrate` (or its
+auto-migrated to this layout on demand by `gald3r workspace inbox migrate` (or its
 `.py` twin), idempotently. **Archiving:** `@g-wpac-archive-inbox` moves `[DONE]`
 messages older than a threshold (default 30 days) to `messages/archive/` and prunes
 their index rows. The session-start inbox check prompts to archive when the active

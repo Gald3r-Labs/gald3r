@@ -99,6 +99,10 @@ temp_scripts/*
 .gald3r/logs/*.log
 !.gald3r/logs/.gitkeep
 
+# T1611: org policy bundle — per-install local state (org-specific), never canonical template
+# source and never committed (an org's policy rules should not leak into a shared repo).
+.gald3r/policy/
+
 
 # T1043: generated skills integrity manifest — do not commit
 gald3r-skills-lock.json
