@@ -1,9 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/g-hk-pcac-inbox-check.ps1 -ProjectRoot . -BlockOnConflict)",
+      "Bash(python .claude/hooks/g-hk-pcac-inbox-check.py -ProjectRoot . -BlockOnConflict)",
+      "Bash(python3 .claude/hooks/g-hk-pcac-inbox-check.py -ProjectRoot . -BlockOnConflict)",
       "Bash(echo \"EXIT:$?\")",
-      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File .cursor/hooks/g-hk-pcac-inbox-check.ps1 -ProjectRoot . -BlockOnConflict)",
+      "Bash(python .cursor/hooks/g-hk-pcac-inbox-check.py -ProjectRoot . -BlockOnConflict)",
+      "Bash(python3 .cursor/hooks/g-hk-pcac-inbox-check.py -ProjectRoot . -BlockOnConflict)",
       "Bash(npx gitnexus*)"
     ],
     "defaultMode": "bypassPermissions"

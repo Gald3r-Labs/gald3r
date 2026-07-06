@@ -18,7 +18,7 @@ g-skill-pack-del <pack-name> --force          Remove including _evolved variants
 1. Validate `<pack-name>` exists in `.gald3r_sys/skill_packs/`
 2. Run uninstall:
    ```powershell
-   .gald3r_sys/skill_packs/<pack-name>/install.ps1 -Uninstall -ProjectRoot . [-Skill <skill-name>]
+   .gald3r_sys/skill_packs/<pack-name>/install.py --uninstall --project-root . [--skill <skill-name>]
    ```
 3. The installer skips `_evolved` skill folders by default (warns with: "⚠ Skipping <name>_evolved — use --force to remove")
 4. Update `.gald3r/.identity` `installed_skill_packs:` block — remove skill or whole pack entry

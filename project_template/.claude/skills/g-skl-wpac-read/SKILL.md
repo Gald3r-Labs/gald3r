@@ -11,6 +11,32 @@ subsystem_memberships: [WORKSPACE_COORDINATION]
 ## When to Use
 `@g-wpac-read` command. Session start when INBOX items exist. After receiving a cross-project task. After `g-hk-wpac-inbox-check.py` reports items.
 
+## Transport layer (WPAC-v2 — T1608)
+
+**Step 0-T — online board pull (code decides, never the model — g-rl-38).** Before
+reading the file inbox, pull the server-side coordination surface (T1609 shim
+underneath):
+
+```
+gald3r workspace outbox pull --json
+```
+
+- `"online": true` → the JSON carries the delegation board (`GET
+  /api/v1/tasks/delegation` — tasks delegated to this principal via intake, the
+  connected-path replacement for BROADCAST file-drops) and the recent org coordination
+  events (`GET /api/v1/events`). Merge these into the review in step 2: delegated tasks
+  are shown alongside file BROADCASTS (create the local task from the board entry when
+  missing, same WPAC-priority floor T166); events are shown alongside INFO items.
+  Online, delivery is push-based (inbox auto-wake, world_tree T494) — this pull is the
+  catch-up read, not a poll loop.
+- `"online": false` → file inbox only, exactly as today.
+- Then run `gald3r workspace outbox flush` to
+  reconcile any queued outbound messages in `.gald3r/linking/outbox/` (write-ahead
+  entries from verbs that ran offline). Report the flush counts in step 10.
+
+The file inbox below is ALWAYS processed — server items are additive, and the verb
+surface (name + arguments) is unchanged.
+
 ## Inbox layout (T428)
 
 The inbox is a lightweight **index** at `.gald3r/linking/INBOX.md` (marked `<!-- WPAC-INDEX-V1 -->`) backed by one file per message under `.gald3r/linking/messages/msg_{id}_{type}_{source}.md`. Each message file has YAML frontmatter (`id`, `type`, `source_project`, `subject`, `status`, `created_at`, `actioned_at`) plus the full body. Resolved messages are archived to `.gald3r/linking/messages/archive/` via `@g-wpac-archive-inbox`.
@@ -18,7 +44,7 @@ The inbox is a lightweight **index** at `.gald3r/linking/INBOX.md` (marked `<!--
 - **Read the index** for the row list (Status, ID, Type, Source, Subject, Age, File).
 - **Open the linked message file** for full body when actioning an item.
 - **Ack/update** = set the message file's `status:`/`actioned_at:` frontmatter AND flip the index row's status cell `[OPEN]` -> `[DONE]` in place.
-- **Backward-compat (`--legacy`)**: if `INBOX.md` is still the legacy flat-body format (no `WPAC-INDEX-V1` marker), run `@g-wpac-archive-inbox` (which auto-migrates first) or `.gald3r_sys/scripts/gald3r_wpac_inbox.py -Migrate` to convert it, then proceed. If `messages/` is absent, the inbox-check hook creates it silently.
+- **Backward-compat (`--legacy`)**: if `INBOX.md` is still the legacy flat-body format (no `WPAC-INDEX-V1` marker), run `@g-wpac-archive-inbox` (which auto-migrates first) or `gald3r workspace inbox migrate` to convert it, then proceed. If `messages/` is absent, the inbox-check hook creates it silently.
 
 ## Steps
 

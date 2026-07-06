@@ -43,7 +43,7 @@ _FALLBACK_PLATFORMS: List[str] = [
     "cline", "opencode", "openhands", "kiro", "kiro-cli", "augment", "goose",
     "junie", "openclaw", "qwen", "aider", "mistral", "warp", "replit", "deepcode",
     "trae", "kilo-code", "amp", "codebuddy", "hermes", "kimi", "qoder", "continue",
-    "mimo-code", "subq", "roo", "void", "astrbot",
+    "mimo-code", "subq", "roo", "void", "astrbot", "zcode", "zed", "pi",
 ]
 
 # Readiness derivation (T533) — DERIVED from the existing lifecycle/support_level

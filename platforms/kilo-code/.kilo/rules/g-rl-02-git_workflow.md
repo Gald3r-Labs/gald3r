@@ -83,7 +83,7 @@ long-lived integration branch.
 
 ## Worktree Isolation
 
-Use `scripts/gald3r_worktree.py` as the shared primitive for agent-owned worktrees in the gald3r source repo. Installed templates also include the same helper in the `g-skl-git-commit/scripts/` skill directory for each IDE target.
+Use `gald3r worktree` as the shared primitive for agent-owned worktrees in the gald3r source repo. Installed templates also include the same helper in the `g-skl-git-commit/scripts/` skill directory for each IDE target.
 
 - Default root: `$env:GALD3R_WORKTREE_ROOT`, or `<repo-parent>/.gald3r-worktrees/<repo-name>` when unset.
 - Never create worktrees inside the active repository checkout.
@@ -123,7 +123,7 @@ Hook file: `.cursor/hooks/g-hk-pre-commit.py`
 
 ## Pre-Push Gate (regular vs release)
 
-Before `git push`, run **`.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.py`** or `@g-git-push`:
+Before `git push`, run **`gald3r push-gate`** or `@g-git-push`:
 
 | Mode | Trigger | CHANGELOG / docs |
 |------|---------|------------------|
@@ -132,7 +132,7 @@ Before `git push`, run **`.claude/skills/g-skl-git-commit/scripts/gald3r_push_ga
 
 Release mode also reminds you to re-read **README.md** and prints **version** lines from `pyproject.toml` / `package.json` if present (`g-rl-26`).
 
-Shared scripts: `.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.py`; `.claude/skills/g-skl-git-commit/scripts/gald3r_git_sanity_common.py` (secret patterns for `g-hk-pre-commit.py`).
+Shared scripts: `gald3r push-gate`; `.claude/skills/g-skl-git-commit/scripts/gald3r_git_sanity_common.py` (secret patterns for `g-hk-pre-commit.py`).
 
 ### Optional pre-push hook
 

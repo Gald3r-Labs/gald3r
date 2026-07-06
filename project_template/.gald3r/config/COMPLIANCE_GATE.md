@@ -1,10 +1,10 @@
 ---
-gald3r_rel_version: "2.4.0"
+gald3r_rel_version: "3.0.0"
 schema_version: "generic-v1"
 ---
 # COMPLIANCE_GATE.md — SCA Pre-Push Gate Configuration
 
-Controls whether `.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.py` runs a Software Composition Analysis (SCA) compliance check before allowing a `git push`.
+Controls whether `gald3r push-gate` runs a Software Composition Analysis (SCA) compliance check before allowing a `git push`.
 
 ---
 
@@ -44,7 +44,7 @@ To push despite a FAIL verdict (use sparingly, for emergency hotfixes):
 
 ```powershell
 $env:GALD3R_PUSH_GATE_OVERRIDE = "1"
-./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.py
+gald3r push-gate
 ```
 
 Document the override reason in the commit message or PR description.
@@ -55,7 +55,7 @@ Document the override reason in the commit message or PR description.
 
 1. Set `enabled: true` in this file
 2. Ensure `.claude/skills/g-skl-compliance/scripts/run_compliance_scan.py` is configured (see `@g-compliance-scan`)
-3. Test with `./.claude/skills/g-skl-git-commit/scripts/gald3r_push_gate.py -DryRun` to verify gate behavior before first live push
+3. Test with `gald3r push-gate -DryRun` to verify gate behavior before first live push
 
 ---
 

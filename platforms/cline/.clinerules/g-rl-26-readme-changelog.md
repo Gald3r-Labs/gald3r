@@ -55,9 +55,11 @@ If the completed task changes something that has a section in `README.md`:
 
 | Project type | CHANGELOG.md | README.md |
 |-------------|--------------|-----------|
-| <gald3r_source> (this repo) | `CHANGELOG.md` at root | `README.md` at root (contributor view) |
+| <gald3r_source> (this repo) | `gald3r_core/CHANGELOG.md` (the file the release pipeline promotes — see note below) | `README.md` at root (contributor view) |
 | <ECOSYSTEM_ROOT>/<template_full> | `<ECOSYSTEM_ROOT>/<template_full>/CHANGELOG.md` | `<ECOSYSTEM_ROOT>/<template_full>/README.md` (end-user view) |
 | Installed gald3r project | `CHANGELOG.md` at project root | `README.md` at project root |
+
+> **Canonical changelog for this repo (BUG-185).** The release pipeline (`Forge().publish` / `Forge().ship`) reads and promotes **`gald3r_core/CHANGELOG.md`** — `PublishSystem._finalize_release_notes` renames its `[Unreleased]` block to `[X.Y.Z]`, and the ship pre-flight audit (`ShipSystem._audit_unreleased_nonempty`) refuses to cut a release when that same file's `[Unreleased]` is empty. Framework-facing changes to this repo MUST land in `gald3r_core/CHANGELOG.md` `[Unreleased]`, not the root `CHANGELOG.md`. Logging into the root file instead is exactly what left `gald3r_core`'s `[Unreleased]` empty at ship time (BUG-185). The root `CHANGELOG.md` stays a human contributor-facing summary of the distribution pipeline; it is NOT what the release pipeline promotes.
 
 ## Timing
 

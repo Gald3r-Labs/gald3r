@@ -8,18 +8,24 @@ Install the Gald3r Throne desktop app from the latest public GitHub Release: $AR
 Wraps the engine install verb to download the precompiled, signed **Gald3r Throne** installer
 from the public `Gald3r-Labs/gald3r_throne` releases, verify it (minisign `.sig`), and launch
 the platform installer. This does NOT reimplement install logic — it invokes the
-`gald3r install throne` engine verb (T1615).
+`gald3r install throne` engine verb (T1615). Installs ship NO engine source (T1645), so the
+verb needs the compiled agent binary first.
 
 ## Steps
 
-1. Run the engine verb in dry-run first to show the plan:
+1. Resolve how to invoke the engine (the gald3r_bin.py order: `GALD3R_BIN` env var →
+   `gald3r` on PATH → bundled `.gald3r_sys/bin/gald3r[.exe]` → dev source):
    ```powershell
-   uv run --project .gald3r_sys/engine gald3r install throne --dry-run
+   python .gald3r_sys/scripts/gald3r_bin.py
    ```
-2. If the plan looks correct, run the real install:
+   If nothing resolves, run the `g-install-agent` command first (zero-engine bootstrap:
+   signed binary + SHA-256 sidecar from Gald3r-Labs/gald3r_agent releases), then return here.
+2. Run the engine verb in dry-run first to show the plan, then for real:
    ```powershell
-   uv run --project .gald3r_sys/engine gald3r install throne
+   gald3r install throne --dry-run
+   gald3r install throne
    ```
+   (Use the exact command prefix step 1 printed if bare `gald3r` is not on PATH.)
 3. Pass through any user flags from `$ARGUMENTS` (e.g. `--release vX.Y.Z`, `--require-verification`).
 4. After install, report the resolved version and launch the downloaded installer for the
    user's OS.

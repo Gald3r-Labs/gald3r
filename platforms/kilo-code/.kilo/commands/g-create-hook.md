@@ -8,29 +8,33 @@ Scaffold a new gald3r hook script + companion `hook.md` self-description in one 
 ```
 
 - `<hook-name>` — slug like `g-hk-my-thing`. The `g-hk-` prefix is required.
-- `<event>` — one of `sessionStart`, `stop`, `beforeShellExecution`, `preToolUse`, `postToolUse`, `subagentStart`, `subagentStop`, `beforeSubmitPrompt`, `afterFileEdit`, `pre_skill`, `post_skill`, `pre_session`, `post_session`, `manual`, `git-pre-commit`, `git-pre-push`, `nightly`.
+- `<event>` — one of `sessionStart`, `stop`, `beforeShellExecution`, `preToolUse`, `postToolUse`, `subagentStart`, `subagentStop`, `beforeSubmitPrompt`, `afterFileEdit`, `pre_skill`, `post_skill`, `manual`, `git-pre-commit`, `git-pre-push`, `nightly`.
 
-### gald3r-internal lifecycle events (T1055)
+### gald3r-internal lifecycle events (T1055 / T1624)
 
-`pre_skill`, `post_skill`, `pre_session`, and `post_session` are **gald3r-internal**
-lifecycle events, not native Cursor / Claude Code harness events — neither IDE
-exposes a skill-boundary or gald3r-session-boundary event. They are dispatched by
-the gald3r skill/command runner (or fired manually) and, like `manual` / `nightly`,
-are scaffolded but **NOT auto-wired** into `hooks.json`. Their payloads (on stdin):
+`pre_skill` and `post_skill` are **gald3r-internal** lifecycle events, not native
+Cursor / Claude Code harness events — neither IDE exposes a skill-boundary
+event. They are dispatched by the gald3r skill/command runner (or fired
+manually) and, like `manual` / `nightly`, are scaffolded but **NOT auto-wired**
+into `hooks.json`. Their payloads (on stdin):
 
 | Event | Payload fields | When it fires |
 |-------|----------------|---------------|
 | `pre_skill` | `skill_name`, `skill_path`, `timestamp` | Immediately before a skill body executes |
 | `post_skill` | `skill_name`, `skill_path`, `timestamp` | Immediately after a skill body finishes |
-| `pre_session` | `session_id` (if available), `project_path` | At the start of a gald3r work session |
-| `post_session` | `session_id` (if available), `project_path` | At the end of a gald3r work session |
 
 Reference examples (with companion `hook.md`): `hooks/g-hk-pre-skill-timing.py`,
-`hooks/g-hk-post-skill-timing.py` (per-skill timing/tracing), and
-`hooks/g-hk-pre-session-trace.py`, `hooks/g-hk-post-session-trace.py`
-(per-session observability). They are non-blocking and emit the standard
-`{ continue = true }` stdout envelope. The `_doc.gald3r_lifecycle_events` block in
-`hooks.json` records the same contract.
+`hooks/g-hk-post-skill-timing.py` (per-skill timing/tracing). They are
+non-blocking and emit the standard `{ continue = true }` stdout envelope. The
+`_doc.gald3r_lifecycle_events` block in `hooks.json` records the same contract.
+
+> **Retired (T1624, WS-A-1, decision D-8):** the former `pre_session` /
+> `post_session` internal events. The session-trace hooks
+> (`hooks/g-hk-pre-session-trace.py`, `hooks/g-hk-post-session-trace.py`) now
+> fire on the CANONICAL `session-start` / `stop` / `session-end` events — wired
+> in `g_hk_core.py` `CONCERN_CHAIN` and the Claude/Cursor trigger configs. Do
+> not scaffold new hooks against the retired names; target the canonical
+> events instead.
 
 ## What it creates
 

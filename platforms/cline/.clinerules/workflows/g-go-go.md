@@ -66,7 +66,7 @@ Asking "Continue?" "Which next?" "Looks like X — proceed?" mid-run is a **viol
 | Rolling Amnesia context reset (T635, **legacy**) | **off** by default — superseded by the stateless conductor | Only meaningful under `--legacy`. The default stateless conductor makes every iteration a fresh process, so scheduled in-session resets are unnecessary. Under `--legacy`, `g-go-go --reset-every <K>` sets the cadence and `g-go-go --no-reset` disables it. See "Rolling Amnesia — Scheduled Context Reset (legacy, T635)" below. |
 | Context-aware throttle (legacy) | **off** by default (superseded by Rolling Amnesia); **on** under `--no-reset` | Active only when `--no-reset` is set. `g-go-go --no-context-aware` disables the legacy throttle entirely. See "Context-Aware Throttle (legacy, `--no-reset` only)" below. |
 | Resume after reset | (n/a) | `g-go-go --resume .gald3r/logs/ggo_run_state.json` — issued by the stop hook to restart a fresh coordinator after a scheduled context reset. |
-| Orchestration model (T630) | **stateless conductor** (default) — `.gald3r_sys/scripts/ggo_outer_loop.py` | The default outer loop is a deterministic Python reconciler that invokes a FRESH coordinator LLM session per iteration (blank context by construction); its only stop conditions are *no eligible work left* or *budget exhausted* — it never halts while runnable work remains. `g-go-go --legacy` opts back into the deprecated single-session in-session LLM loop (Rolling Amnesia + stop-detect re-invoke ceiling). See "Stateless Orchestrator — Python Outer Loop (T630)" below. |
+| Orchestration model (T630) | **stateless conductor** (default) — `gald3r autopilot loop` | The default outer loop is a deterministic Python reconciler that invokes a FRESH coordinator LLM session per iteration (blank context by construction); its only stop conditions are *no eligible work left* or *budget exhausted* — it never halts while runnable work remains. `g-go-go --legacy` opts back into the deprecated single-session in-session LLM loop (Rolling Amnesia + stop-detect re-invoke ceiling). See "Stateless Orchestrator — Python Outer Loop (T630)" below. |
 | Coordinator scope (T632) | **`all`** (single coordinator) | `g-go-go --subsystem <GROUP>` scopes a coordinator to one subsystem group so multiple coordinators can partition a project. Disjoint scopes run in parallel; overlapping scopes collide and are rejected. **Pro+** (count-gated by T633). See "Multi-Coordinator Partitioning (T632)" below. |
 
 `g-go-go` accepts the same `$ARGUMENTS` filters as `g-go` (`tasks N,M`, `bugs BUG-NNN`, `subsystem ...`, `bugs-only`, `tasks-only`) plus the autopilot knobs above.
@@ -185,12 +185,12 @@ Each iteration computes its bucket count N as usual (smart agent count from `g-g
 ## Stateless Orchestrator — Python Outer Loop (T630)
 
 The **default** `@g-go-go` outer loop is a deterministic Python reconciler —
-`.gald3r_sys/scripts/ggo_outer_loop.py` — that replaces the single long-lived LLM coordinator,
+`gald3r autopilot loop` — that replaces the single long-lived LLM coordinator,
 modeled on a Kubernetes controller. (Pass `--legacy` to opt back into the deprecated single-session loop.)
 Its only stop conditions are *no eligible work left* or *budget exhausted*; it never halts while runnable work remains:
 
 ```
-.gald3r_sys/scripts/ggo_outer_loop.py   (Python, NOT an LLM)
+gald3r autopilot loop   (Python, NOT an LLM)
   while budget_remaining > 0:
     read ggo_run_state.json + TASKS.md from disk   (never cached across iterations)
     invoke a FRESH coordinator LLM session (blank context) for ONE iteration via
@@ -216,7 +216,7 @@ instead of the file-based `[🔄]` claimed status, so atomic claims survive the 
 **Flags:**
 
 ```
-@g-go-go                          # DEFAULT: stateless conductor (.gald3r_sys/scripts/ggo_outer_loop.py)
+@g-go-go                          # DEFAULT: stateless conductor (gald3r autopilot loop)
 @g-go-go --budget 8               # stateless conductor with an 8-iteration budget
 @g-go-go --stateless              # explicit opt-in (identical to the default; kept for clarity)
 @g-go-go --legacy                 # force the DEPRECATED single-session LLM loop (Rolling Amnesia + re-invoke ceiling)
@@ -284,7 +284,7 @@ Before the PCAC gate, before any claim, run the inbox intake to absorb any tasks
 dropped into the gitignored staging zones during this or a prior run:
 
 ```powershell
-uv run python custom_scripts\hot_inbox_intake.py -ProjectRoot . -Quiet
+gald3r inbox   # engine verb — absorbed the retired hot_inbox_intake.py (T1652 D6)
 ```
 
 If `N > 0` items were ingested: log `"Ingested N task(s) / M bug(s) from inbox"` and continue.
@@ -323,7 +323,7 @@ The autopilot also re-runs the PCAC inbox check at every heartbeat interval and 
 Before each iteration claims/spawns/commits, run the safety classifier helper at the orchestration root:
 
 ```powershell
-.\scripts\gald3r_housekeeping_commit.py -Mode preflight -Apply -Json
+gald3r housekeep -Mode preflight -Apply -Json
 ```
 
 Behavior matches `g-go`:
@@ -364,11 +364,11 @@ threshold**, HARD-STOP with a clear message instead of blindly merging:
   diverged (both ahead of their merge-base) by **> 50 commits on the target side**. Configurable
   via `integration_divergence_max_commits` in `AGENT_CONFIG.md`.
 - A target that cannot fast-forward from the source (would require a merge commit / conflict) is
-  reported by `gald3r_worktree.py -Action MergeToMain` as `merge-blocked` and is **never**
+  reported by `gald3r worktree merge` as `merge-blocked` and is **never**
   force-updated; the autopilot logs `[MERGE-BLOCKED]` as a human action item.
 
 This detection runs once at INIT (read-only). The actual integration is performed only at the
-per-PASS auto-merge step via `gald3r_worktree.py -Action MergeToMain` (FF-only, `-Apply`).
+per-PASS auto-merge step via `gald3r worktree merge` (FF-only, `-Apply`).
 
 ---
 
@@ -404,8 +404,8 @@ If any check fails for a member, the autopilot defers that task with a per-repo 
 > **Execution entry — which backend runs.** By **default** `@g-go-go` runs the **stateless conductor**: launch the deterministic Python outer loop and supervise it to completion —
 >
 > ```
-> uv run python .gald3r_sys/scripts/ggo_outer_loop.py --budget <B> --heartbeat-minutes <H>
-> # plain `python .gald3r_sys/scripts/ggo_outer_loop.py ...` also works (stdlib only)
+> gald3r autopilot loop --budget <B> --heartbeat-minutes <H>
+> # plain `gald3r autopilot loop ...` also works (stdlib only)
 > ```
 >
 > The Python loop owns budget / iteration / hard-stop / heartbeat and spawns a **fresh coordinator LLM session per iteration** (blank context by construction). The pseudocode below is therefore **(a)** what each fresh per-iteration coordinator does for ONE iteration, and **(b)** the complete in-session behavior under `--legacy`. Under `--legacy` you (this agent) run the whole loop yourself in-session, with Rolling Amnesia + the stop-detect re-invoke hook bounding context. Under the default conductor those mechanisms are **inert** — the process boundary per iteration IS the context reset, and the only stop conditions are *no eligible work left* or *budget exhausted*.
@@ -634,7 +634,7 @@ Want me to push now?
 | **Dependency resolution includes archive (MANDATORY)** — when checking condition 4 (all dependencies resolved), if a dependency task file is NOT found in `.gald3r/tasks/task{id}_*.md`, ALSO check `.gald3r/archive/tasks/*/task{id}_*.md`. A task found in the archive with `status: completed` (or `status: verified`) counts as a fully satisfied dependency. Never treat a missing-in-active-tasks dependency as unresolved without first checking the archive. Marking a task as blocked because a dep "file not found" when that dep lives in the archive is a spec violation equivalent to a complexity-aversion stop. | Prevents archived completed deps from silently blocking downstream chains |
 | **Controller-only fallback** — when all workspace member repos block, retry `source_only`/`docs_only` tasks before stopping | Never stop while controller-only work remains |
 | **`--repos` filter (T1152)** — when `--repos <ids>` is supplied, runnable-queue scan filters to tasks whose `workspace_repos:` intersects the requested ids; out-of-scope tasks are silently deferred (NOT marked failed); budget counter only increments on iterations that execute in-scope tasks; controller-only fallback is disabled while `--repos` is active | Lets the autopilot be scoped to one or more member repos (e.g. `--repos example_agent`) without burning the budget on unrelated tasks; preserves the deferred-task safety of pre-T1152 behavior |
-| **Auto-merge member repo branches on PASS (MANDATORY)** -- after the review-result commit for each PASS item, run `gald3r_worktree.py -Action MergeToMain -RepoPath <member_path> -TaskId {id} -TargetBranch main -Apply` in dependency order (lowest ID first); default target is `main` (feature-branches-only model — NO `dev` branch, see `g-rl-02`); override with `--target-branch <branch>` for a custom target; on success the helper FF-merges the feature branch into `main` (or override target) and deletes both code + review branches and worktree folders; log `[AUTO-MERGED→main]` in session summary; on merge-blocked (conflict), missing target branch, or member-dirty: preserve branch, log `[MERGE-BLOCKED]` / `[MERGE-SKIPPED-DIRTY]` as human action item (fallback, not default); pass `--no-auto-merge` to skip entirely and use old `[MERGE-BLOCKED]` behavior; never run auto-merge for FAIL items | Eliminates manual branch merge ceremony after every autopilot run — feature branches merge straight to `main` |
+| **Auto-merge member repo branches on PASS (MANDATORY)** -- after the review-result commit for each PASS item, run `gald3r worktree merge -RepoPath <member_path> -TaskId {id} -TargetBranch main -Apply` in dependency order (lowest ID first); default target is `main` (feature-branches-only model — NO `dev` branch, see `g-rl-02`); override with `--target-branch <branch>` for a custom target; on success the helper FF-merges the feature branch into `main` (or override target) and deletes both code + review branches and worktree folders; log `[AUTO-MERGED→main]` in session summary; on merge-blocked (conflict), missing target branch, or member-dirty: preserve branch, log `[MERGE-BLOCKED]` / `[MERGE-SKIPPED-DIRTY]` as human action item (fallback, not default); pass `--no-auto-merge` to skip entirely and use old `[MERGE-BLOCKED]` behavior; never run auto-merge for FAIL items | Eliminates manual branch merge ceremony after every autopilot run — feature branches merge straight to `main` |
 | Autopilot composes existing safe primitives — never bypasses any gate | One command, same safety contract |
 | Implementation agents NEVER self-verify their own work | Adversarial independence preserved across all loop iterations |
 | Hard stops emit final summaries and exit cleanly | Stops are not failures; they are the safety boundary |
@@ -672,7 +672,7 @@ Want me to push now?
 @g-go-go --reset-every 6                 # less frequent context resets (longer-lived coordinator sessions)
 @g-go-go --no-reset                      # disable Rolling Amnesia; use the legacy iteration-count throttle
 @g-go-go --resume .gald3r/logs/ggo_run_state.json  # resume after a scheduled reset (normally issued by the hook)
-@g-go-go                                 # DEFAULT: T630 stateless conductor (ggo_outer_loop.py), fresh coordinator per iteration
+@g-go-go                                 # DEFAULT: T630 stateless conductor (gald3r autopilot loop), fresh coordinator per iteration
 @g-go-go --stateless --budget 8          # stateless run, 8-iteration budget
 @g-go-go --legacy                        # force the DEPRECATED single-session loop (was the old default)
 @g-go-go --subsystem MEMORY_AND_KNOWLEDGE  # T632: scope this coordinator to one subsystem (Pro+)

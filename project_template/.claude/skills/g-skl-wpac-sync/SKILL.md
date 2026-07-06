@@ -14,6 +14,32 @@ subsystem_memberships: [WORKSPACE_COORDINATION]
 ## Key Principle
 **Peer syncs are advisory.** Neither sibling has authority over the other. Work in this project proceeds regardless. The sync surfaces as an advisory in `@g-status` until resolved.
 
+## Transport layer (WPAC-v2 — T1608)
+
+**Step 0-T — transport verdict (code decides, never the model — g-rl-38).** When
+initiating a sync, attempt an event publish before the file steps (T1609 shim
+underneath):
+
+```
+gald3r workspace outbox send --verb event --payload-file <payload.json>
+```
+
+Payload = `PublishEventRequest` (`{"type": …, "project_id": …, "payload": {…}}`). The
+world_tree event catalog is CLOSED; peer contract-sync has no catalogued type yet, so
+the transport short-circuits to the `fallback` verdict client-side — the file steps
+below are the delivery path today. When a catalogued type applies (e.g.
+`release.published` for a released contract version), publish it.
+
+| Verdict | Action |
+|---|---|
+| `ok` | Published to the org coordination log — siblings on realtime see it; STILL update the local peer copy (step 3–4). The sibling INBOX/task writes (steps 5–6) may be skipped. |
+| `fallback` | Not catalogued — perform ALL file steps below (expected today). |
+| `offline` / `error` | File steps below; queued entry reconciled by `gald3r workspace outbox flush` on reconnect. |
+| `auth_required` / `upgrade_required` | File steps below (+ `gald3r login` hint / upgrade line). Entry parked (not retried). |
+
+Everything below this section is the **OFFLINE / FILE FALLBACK transport** — the verb
+surface (name + arguments) is unchanged.
+
 ## Steps
 
 ### Initiating a Sync (I changed a contract)

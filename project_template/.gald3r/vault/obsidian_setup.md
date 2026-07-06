@@ -1,5 +1,5 @@
 ﻿---
-gald3r_rel_version: "2.4.0"
+gald3r_rel_version: "3.0.0"
 schema_version: "generic-v1"
 ---
 # Obsidian Vault Setup Guide
@@ -57,8 +57,7 @@ tags: ["cursor", "agent-mode", "ide"]
 
 Browse by tag in the **Tags** panel (left sidebar, looks like a hashtag icon).
 
-**Old notes** may use `topics:` instead of `tags:`. These won't appear in the Tags panel until migrated.
-To migrate: run `g-skl-vault/scripts/migrate_topics_to_tags.py` (see T039).
+**Old notes** may use `topics:` instead of `tags:`. The engine vault migrates `topics:` → `tags:` silently during ingest/lint (D021).
 
 ---
 
@@ -99,5 +98,5 @@ For the full compatibility standard: see **[[VAULT_OBSIDIAN_STANDARD]]**.
 
 ## Closing Obsidian During Bulk Operations
 
-When running ingest scripts (`@g-ingest-docs`, `@g-ingest-url`, `migrate_topics_to_tags.py`, etc.),
+When running ingest scripts (`@g-ingest-docs`, `@g-ingest-url`, etc.),
 close Obsidian or pause indexing to avoid file conflicts. Obsidian will re-index automatically on reopen.

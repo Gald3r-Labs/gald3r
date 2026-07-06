@@ -1,7 +1,7 @@
 {
   "_doc": {
-    "t510_canonical_core": "T510: Augment (Auggie CLI) reads lifecycle hooks from the `hooks` object in `.augment/settings.json` (Claude-Code-style: per-event array of { matcher, hooks:[{type:command,command,timeout}] }). IMPORTANT: Augment's `command` MUST be a path to a script with a supported extension (.ps1/.cmd/.bat/.sh) -- a bare `python x.py` is NOT accepted. So each native event points at a thin `.ps1` shim `g-hk-augment-<event>.ps1` that pipes the STDIN payload to the canonical entrypoint `python .augment/hooks/g-hk-on-<event>.py`, which calls `g_hk_core.dispatch(\"<event>\")`. The shared core `.augment/hooks/g_hk_core.py` is byte-identical across every platform overlay and runs the per-event CONCERN_CHAIN (concern hooks self-gate on payload). Native->canonical map (g_hk_core.PLATFORM_EVENT_MAP['augment']): SessionStart->session-start, SessionEnd->session-end, PreToolUse->tool-start, PostToolUse->tool-end, Stop->stop. matcher is optional for PreToolUse/PostToolUse (defaults to .*); not used for session/stop events. timeout is in milliseconds. Schema verified against https://docs.augmentcode.com/cli/hooks .",
-    "unix_note": "T510: shims are PowerShell (.ps1), matching the kiro-cli precedent in this repo. On Unix, Auggie dispatches .ps1 via PowerShell -- ensure `pwsh` is installed, or add parallel .sh shims if a POSIX-only install is required (follow-up)."
+    "t510_canonical_core": "T510/T1601: Augment (Auggie CLI) reads lifecycle hooks from the `hooks` object in `.augment/settings.json` (Claude-Code-style: per-event array of { matcher, hooks:[{type:command,command,timeout}] }). IMPORTANT: Augment's `command` MUST be a path to a script with a supported extension (.ps1/.cmd/.bat/.sh) -- a bare `python x.py` is NOT accepted. So each native event points at a thin `.cmd` shim `g-hk-augment-<event>.cmd` that forwards the inherited STDIN payload to the canonical entrypoint `python .augment/hooks/g-hk-on-<event>.py`, which calls `g_hk_core.dispatch(\"<event>\")`. The shared core `.augment/hooks/g_hk_core.py` is byte-identical across every platform overlay and runs the per-event CONCERN_CHAIN (concern hooks self-gate on payload). Native->canonical map (g_hk_core.PLATFORM_EVENT_MAP['augment']): SessionStart->session-start, SessionEnd->session-end, PreToolUse->tool-start, PostToolUse->tool-end, Stop->stop. matcher is optional for PreToolUse/PostToolUse (defaults to .*); not used for session/stop events. timeout is in milliseconds. Schema verified against https://docs.augmentcode.com/cli/hooks .",
+    "cmd_note": "T1601 (PS1-KILL epic T667): shims are Windows batch (.cmd), not PowerShell -- a bare `python x.py` command is rejected by Augment's hook runner (schema-verified extension allowlist: .ps1/.cmd/.bat/.sh), so .cmd was chosen over .ps1 to retire the last PowerShell dependency here (no pwsh/ExecutionPolicy needed). Stdin is inherited by the child process automatically, matching the prior .ps1 shims' explicit stdin pipe. POSIX-only installs may still need parallel .sh shims (follow-up, unchanged from the prior .ps1-era note)."
   },
   "hooks": {
     "SessionStart": [
@@ -9,7 +9,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".augment/hooks/g-hk-augment-session-start.ps1"
+            "command": ".augment/hooks/g-hk-augment-session-start.cmd"
           }
         ]
       }
@@ -19,7 +19,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".augment/hooks/g-hk-augment-session-end.ps1"
+            "command": ".augment/hooks/g-hk-augment-session-end.cmd"
           }
         ]
       }
@@ -30,7 +30,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".augment/hooks/g-hk-augment-tool-start.ps1"
+            "command": ".augment/hooks/g-hk-augment-tool-start.cmd"
           }
         ]
       }
@@ -41,7 +41,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".augment/hooks/g-hk-augment-tool-end.ps1"
+            "command": ".augment/hooks/g-hk-augment-tool-end.cmd"
           }
         ]
       }
@@ -51,7 +51,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".augment/hooks/g-hk-augment-stop.ps1"
+            "command": ".augment/hooks/g-hk-augment-stop.cmd"
           }
         ]
       }

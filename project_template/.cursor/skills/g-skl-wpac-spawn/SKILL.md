@@ -34,6 +34,33 @@ specifications, or ideas). This skill orchestrates the full lifecycle:
 
 ---
 
+## Transport layer (WPAC-v2 — T1608)
+
+Spawning is inherently LOCAL (folder creation, install, seeding) — all steps run as
+written. The online part is the topology registration (step 5): after the local
+topology link is written, when both projects carry a registered `project_id` UUID,
+register the edge in the world_tree linking registry (T1625):
+
+```
+gald3r workspace outbox send --verb link \
+    --project-uuid <subject_project_id> \
+    --payload '{"target_project_id": "<target_project_id>", "relation": "<parent|sibling>"}'
+```
+
+(Subject/target/relation follow the spawned relationship — for `--child`, the NEW
+project is the subject and this project the `parent` target; for `--sibling`, either
+is subject with `relation: "sibling"`; mirror of `g-skl-wpac-claim`/`-adopt`.)
+
+Branch on the verdict in code (g-rl-38): `ok` → registry edge recorded (local topology
+is its mirror); `offline`/`error` → local topology is authoritative, queued entry
+reconciled by `gald3r workspace outbox flush` on reconnect; `auth_required` /
+`upgrade_required` → print the shim's hint/upgrade line and continue file-only. A
+freshly spawned project usually has no server registration yet — file-only is the
+expected first state; the linking mirror skill (T1610) reconciles it later. Verb
+surface (name + arguments) unchanged.
+
+---
+
 ## Command Syntax
 
 ```
@@ -83,16 +110,16 @@ Run the guard helper against the planned new-project path **before Step 2** mate
 
 ```powershell
 $newProjectPath = Join-Path $ecosystemRoot $new_project_name
-uv run python .claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.py -TargetPath $newProjectPath
+gald3r workspace member guard --target-path $newProjectPath
 ```
 
 - exit `0` — proceed (target is not a workspace member).
 - exit `1` — **stop with `BLOCK wpac_spawn_member_repo_gald3r_guard_block`**. The target is a Workspace-Control member; WPAC spawn would seed the full control plane and violate the marker-only invariant. Direct the user to either:
   1. Spawn under a non-member parent path, OR
-  2. Use `@g-wrkspc-spawn` for new empty workspace members (which uses `.claude/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.py` to create only `.identity` + `PROJECT.md`).
+  2. Use `@g-wrkspc-spawn` for new empty workspace members (which uses `gald3r workspace member bootstrap` to create only `.identity` + `PROJECT.md`).
 - exit `2` — stop with `BLOCK wpac_spawn_member_repo_gald3r_guard_error`. Resolve the manifest before retrying.
 
-Installed projects ship the helper at `.claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.py`.
+Installed projects ship the helper at `gald3r workspace member guard`.
 
 If `--dry-run`: print a full preview and stop. Do not create anything. The guard is reported in dry-run preview but does not block dry-run output (only blocks apply).
 
@@ -336,7 +363,7 @@ If the current project (or any ancestor) has a `workspace_manifest.yaml` in `.ga
 2. Set `project_type:` per `--type` parameter
 3. Set `wpac_role: child | sibling` per `--child | --sibling` flag
 4. Set `lifecycle_status: active`
-5. Run `.claude/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.py -MemberPath <new_path> -MemberId <new_project_name> -Apply`
+5. Run `gald3r workspace member bootstrap --member-path <new_path> --member-id <new_project_name> --apply`
    - This creates `.gald3r/.identity` + `.gald3r/PROJECT.md` as the marker pair
 6. Update `controlled_members:` list in the manifest
 

@@ -239,14 +239,14 @@ that has no matching `.gald3r/releases/` file, create one with `status: released
 parsed from the CHANGELOG header. This is the standard fix for projects that predate the
 `releases/` concept (T1416) and therefore see the C-023 warning on every session.
 
-**Script**: `.claude/skills/g-skl-release/scripts/backfill_release_files.py`
+**Script**: `gald3r ship`
 
 ```bash
 # Dry-run: list which release files would be created
-uv run python .claude/skills/g-skl-release/scripts/backfill_release_files.py -ProjectRoot "<project_root>"
+gald3r ship
 
 # Apply: create the missing release files
-uv run python .claude/skills/g-skl-release/scripts/backfill_release_files.py -ProjectRoot "<project_root>" -Apply
+gald3r ship
 ```
 
 **Behavior**:

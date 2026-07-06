@@ -239,14 +239,14 @@ that has no matching `.gald3r/releases/` file, create one with `status: released
 parsed from the CHANGELOG header. This is the standard fix for projects that predate the
 `releases/` concept (T1416) and therefore see the C-023 warning on every session.
 
-**Script**: `.claude/skills/g-skl-release/scripts/backfill_release_files.py`
+**Script**: `gald3r ship`
 
-```powershell
+```bash
 # Dry-run: list which release files would be created
-python backfill_release_files.py -ProjectRoot "<project_root>"
+gald3r ship
 
 # Apply: create the missing release files
-python backfill_release_files.py -ProjectRoot "<project_root>" -Apply
+gald3r ship
 ```
 
 **Behavior**:
@@ -258,6 +258,38 @@ python backfill_release_files.py -ProjectRoot "<project_root>" -Apply
 - Dry-run by default; `-Apply` writes. `-Json` emits a structured result.
 
 ---
+
+## Public-Publish History Mode (T423 — carry vs scrub, OFF by default)
+
+When a project publishes/graduates to a **public** repository it must choose how git history is
+handled. This is a USER-SAFETY toggle: a destructive history scrub must never be silent or accidental.
+
+| Mode | What it does to history | Default? | Risk |
+|------|-------------------------|----------|------|
+| `carry` | Keeps full git history on the public repo (incremental commit). | **Yes (safe default)** | None — non-destructive. |
+| `scrub` (Mode A) | Publishes with **zero** git history: `git archive` the tree, strip internal dirs, fresh `git init`, single root commit. For IP protection. | No — opt-in only | **DESTRUCTIVE & irreversible** on the public repo: history is replaced and cannot be recovered there. |
+
+**How the mode is chosen (precedence, highest first):**
+1. Explicit `-HistoryMode <carry|scrub>` (or engine equivalent) passed to the publish call.
+2. `.gald3r/.identity` -> `publish_history_mode=<carry|scrub>` (recorded at `@g-setup` / `--upgrade-existing`, T423 AC2).
+3. `agent_config_defaults.publish_history_mode` in the project type (`development.yaml`) — defaults to `carry`.
+4. (Deprecated) `test_to_public_history` is read only for back-compat; `publish_history_mode` wins. The
+   pre-T423 default of this key was the UNSAFE `scrub`; it is now aligned to `carry`.
+
+**Enforcement contract (publish-time gate — AC3):** the publish/graduation mechanism MUST:
+- Print which mode will run and exactly what it does to history **before doing anything** (dry-run states this clearly).
+- When the resolved mode is `scrub`, **refuse to proceed without an explicit `-ConfirmScrub`** (or the engine
+  equivalent confirmation), and additionally require an interactive `YES` confirmation for a non-dry-run.
+- Treat absent/unknown config as `carry` — never default to scrub.
+
+> **Architecture note (T423 / spec_defect):** the historical implementation of this gate lived in
+> `g-skl-release/scripts/graduate_to_public.ps1` (Mode A scrub + `-ConfirmScrub`, reading
+> `test_to_public_history`). That script is **not present in the live skill tree** (it survives only in
+> `._*_bk_20260606` backup dirs), and the bundled gald3r engine exposes **no** `graduate` / `publish-to-public`
+> / `scrub` verb (`release.py` is release-records only). So the runtime enforcement point does not currently
+> exist live; this section is the authoritative contract any restored or re-implemented publish path MUST
+> satisfy. Until then a maintainer publishing publicly does so manually and MUST honor this contract by hand
+> (the 2026-05-30 manual `git filter-repo` IP cleanup, BUG-123, is the cautionary precedent).
 
 ## File Placement (10-target propagation)
 

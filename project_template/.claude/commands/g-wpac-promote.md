@@ -62,7 +62,7 @@ Delegates to `g-skl-workspace` PROMOTE operation.
 ## Underlying Script
 
 ```
-.claude/skills/g-skl-workspace/scripts/gald3r_promote_member.py -MemberPath <path> [-Apply]
+gald3r workspace member promote --member-path <path> [--apply]
 ```
 
 ## Companion Commands

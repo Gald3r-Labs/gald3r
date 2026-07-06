@@ -27,6 +27,22 @@
           {
             "type": "command",
             "command": "python .claude/hooks/g-hk-session-start.py"
+          },
+          {
+            "type": "command",
+            "command": "python .claude/hooks/g-hk-pre-session-trace.py"
+          },
+          {
+            "type": "command",
+            "command": "python .claude/hooks/g-hk-vault-resolve.py"
+          },
+          {
+            "type": "command",
+            "command": "python .claude/hooks/g-hk-vault-migrate.py --if-diverged"
+          },
+          {
+            "type": "command",
+            "command": "python .claude/hooks/g-hk-agent-worktree-janitor.py -EventName SessionStart"
           }
         ]
       }
@@ -53,6 +69,34 @@
           {
             "type": "command",
             "command": "python .claude/hooks/g-hk-ggo-stop-detect.py"
+          },
+          {
+            "type": "command",
+            "command": "python .claude/hooks/g-hk-post-session-trace.py"
+          },
+          {
+            "type": "command",
+            "command": "python .claude/hooks/g-hk-crash-record.py --component-type hook --component-name stop-chain --trigger-source settings.json"
+          },
+          {
+            "type": "command",
+            "command": "python .claude/hooks/g-hk-graph-update.py"
+          },
+          {
+            "type": "command",
+            "command": "python .claude/hooks/g-hk-vault-verify.py"
+          },
+          {
+            "type": "command",
+            "command": "python .claude/hooks/raw-inbox-watcher.py --hook-mode"
+          },
+          {
+            "type": "command",
+            "command": "python .claude/hooks/g-hk-vault-reindex.py"
+          },
+          {
+            "type": "command",
+            "command": "python .claude/hooks/g-hk-agent-worktree-janitor.py -EventName Stop"
           }
         ]
       }

@@ -14,7 +14,7 @@ subsystem_memberships: [RELEASE_AND_VERSIONING]
 **What it does:** release records (RELEASES.md + releases/).
 
 ## Preferred — invoke the engine
-- **CLI:** `uv run --project .gald3r_sys/engine gald3r release …`  (or the installed `gald3r`)
+- **CLI:** `gald3r release …`  (or the installed `gald3r`)
 - **MCP tools:** `gald3r_release_*`   ·   facade `Gald3r(...).release`
 
 The engine owns ID allocation, file placement, status→folder moves, index regeneration, and

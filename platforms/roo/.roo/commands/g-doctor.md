@@ -31,9 +31,9 @@ rerouted API calls and broke user setups overnight):
 ```bash
 scriptPath=""
 for cand in \
-    ".gald3r_sys/skills/g-skl-medic/scripts/gald3r_doctor.py" \
-    ".cursor/skills/g-skl-medic/scripts/gald3r_doctor.py" \
-    ".claude/skills/g-skl-medic/scripts/gald3r_doctor.py"; do
+    "gald3r doctor" \
+    "gald3r doctor" \
+    "gald3r doctor"; do
     if [ -f "$cand" ]; then scriptPath="$cand"; break; fi
 done
 
@@ -45,7 +45,7 @@ if [ -n "$scriptPath" ]; then
     done
     python "$scriptPath" $fixFlag $catFlag
 else
-    echo "⚠️ g-skl-medic/scripts/gald3r_doctor.py not found — running AI-assisted checks below."
+    echo "⚠️ gald3r doctor not found — running AI-assisted checks below."
 fi
 ```
 

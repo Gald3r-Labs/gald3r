@@ -82,7 +82,7 @@ workspace_touch_policy: source_only
 - Member repo writes require explicit member IDs, a compatible touch policy, task text authorizing member writes or generated output, reviewed member git status, and manifest write permission or a task-specific override. During bootstrap, planned member repos with `write_allowed: false` are blocked.
 - Widening a task from current-repo-only to member repos, or changing policy to `generated_output`/`multi_repo`, requires a Status History note or equivalent explicit instruction explaining the scope change.
 - `TASKS.md` should omit these fields for current-repo-only tasks. For workspace-scoped tasks, add at most a short suffix such as `workspace: <gald3r_source>+<template_full>; policy: generated_output`; the task file remains the source of truth.
-- These fields complement `cross_project_ref`: workspace routing controls filesystem scope; `cross_project_ref` tracks PCAC orders, dependencies, and shared logical work.
+- These fields complement `cross_project_ref`: workspace routing controls filesystem scope; `cross_project_ref` tracks WPAC orders, dependencies, and shared logical work.
 
 ---
 
@@ -122,7 +122,7 @@ workspace_touch_policy: source_only
 
 3. **Create task file** at the correct status subfolder (T1025):
    - New tasks start as `pending` → `tasks/open/taskNNN_descriptive_name.md`
-   - PCAC-derived critical tasks start as `in-progress` if a claim fires immediately → `tasks/in-progress/`
+   - WPAC-derived critical tasks start as `in-progress` if a claim fires immediately → `tasks/in-progress/`
    - File naming: `task{id:03d}_{slug}.md` (slug = title lowercased, spaces→underscores, max 50 chars)
 
    **Path formula**:
@@ -143,22 +143,22 @@ workspace_touch_policy: source_only
    $taskPath = ".gald3r/tasks/$subfolder/task{0:D3}_{1}.md" -f $id, $slug
    ```
 
-   **PCAC-derived priority floor (T166)** — applies BEFORE the task file is written:
-   - If the caller passes a `pcac_source: { type, source_project, inbox_ref }` block (callers: `g-skl-pcac-read` accept-and-spawn, `g-skl-pcac-order` receiving-side, `g-skl-pcac-ask` receiving-side, conflict resolution flow):
+   **WPAC-derived priority floor (T166)** — applies BEFORE the task file is written:
+   - If the caller passes a `wpac_source: { type, source_project, inbox_ref }` block (callers: `g-skl-wpac-read` accept-and-spawn, `g-skl-wpac-order` receiving-side, `g-skl-wpac-ask` receiving-side, conflict resolution flow):
      - Priority floor = `high` by default
-     - Priority floor = `critical` when `type: conflict` OR the source PCAC item carried an explicit urgency flag (e.g., `urgent: true`)
+     - Priority floor = `critical` when `type: conflict` OR the source WPAC item carried an explicit urgency flag (e.g., `urgent: true`)
      - When `priority: critical`, force `requires_verification: true` (cross-project critical work cannot skip verification)
-     - Write the `pcac_source:` block verbatim into the task frontmatter (audit trail — never strip on later status changes)
-     - In TASKS.md, render the row with a `[PCAC]` prefix: `- [PCAC][📋] **Task NNN**: ...`. The prefix is render-only, regenerated from frontmatter on TASKS.md regen — never hand-edit.
+     - Write the `wpac_source:` block verbatim into the task frontmatter (audit trail — never strip on later status changes)
+     - In TASKS.md, render the row with a `[WPAC]` prefix: `- [WPAC][📋] **Task NNN**: ...`. The prefix is render-only, regenerated from frontmatter on TASKS.md regen — never hand-edit.
      - Humans MAY manually downgrade priority after creation; agents MUST NOT auto-downgrade.
-   - "PCAC-derived" is detected by the presence of `pcac_source:` in the create-task call payload — not by inferring from titles. Bare `g-task-add` calls without this block remain at the user's specified priority (default medium).
+   - "WPAC-derived" is detected by the presence of `wpac_source:` in the create-task call payload — not by inferring from titles. Bare `g-task-add` calls without this block remain at the user's specified priority (default medium).
 
    **Anti-pattern guard (T167)** — reject tasks whose title or objective is purely:
-   - Pattern `/^Send (PCAC|order|broadcast|notify|ask|sync) to/i`
+   - Pattern `/^Send (WPAC|order|broadcast|notify|ask|sync) to/i`
    - Pattern `/await.*responses?.*(child|children|peer|sibling)/i`
-   - Pattern `/^PCAC\s+(send|broadcast|notify|order|ask)/i`
+   - Pattern `/^WPAC\s+(send|broadcast|notify|order|ask)/i`
 
-   With error: `❌ PCAC sends are immediate operations and outbound state lives on the .gald3r/linking/sent_orders/ ledger — no local task should mirror this. Use the appropriate g-skl-pcac-* skill directly.` This guard runs before the task file is written and before any TASKS.md write.
+   With error: `❌ WPAC sends are immediate operations and outbound state lives on the .gald3r/linking/sent_orders/ ledger — no local task should mirror this. Use the appropriate g-skl-wpac-* skill directly.` This guard runs before the task file is written and before any TASKS.md write.
 
    **Cross-project dependency prompt** (interactive, before writing the file):
    - Ask: `"Does this task depend on a cross-project order? [order_id or 'skip']"`
@@ -232,10 +232,10 @@ cross_project_ref:
   - order_id: "ord-abc123"
     project: "child_project_id"
     remote_task_title: "Implement JWT auth endpoint"
-    status: in-progress        # cached from last sync; updated by g-skl-pcac-read
+    status: in-progress        # cached from last sync; updated by g-skl-wpac-read
     last_synced: "YYYY-MM-DD"
-# Optional — only present when this task was spawned from an inbound PCAC item (T166):
-pcac_source:
+# Optional — only present when this task was spawned from an inbound WPAC item (T166):
+wpac_source:
   type: order                  # order | ask | broadcast | sync | conflict
   source_project: "child_or_parent_project_id"
   inbox_ref: "REQ-123"         # cross-link to the originating INBOX entry
@@ -494,7 +494,7 @@ worktree_owner: "{agent_id_or_platform_slug}"
 
 - Worktree metadata is optional for legacy/direct-root work and required only when a workflow actually creates or reuses a worktree.
 - `worktree_path` must resolve outside the active repository checkout; nested worktrees inside the primary working tree are invalid.
-- Worktrees must be created/reported/removed through `scripts/gald3r_worktree.py` so cleanup can prove ownership with `.gald3r-worktree.json`.
+- Worktrees must be created/reported/removed through `gald3r worktree` so cleanup can prove ownership with `.gald3r-worktree.json`.
 - Stale cleanup is report-only by default and may remove only worktrees with gald3r ownership metadata plus explicit apply confirmation.
 
 4. **For completed** — also set `completed_date: "YYYY-MM-DD"` and update subsystem Activity Logs (see g-subsystems)
@@ -509,7 +509,7 @@ worktree_owner: "{agent_id_or_platform_slug}"
    **Broadcast completion ping** (if applicable):
    If the task has `delegation_type: broadcast` and `task_source` is set in its YAML frontmatter:
    - Prompt: "This task was received as a broadcast from [task_source]. Notify the source project of completion? [y/n] (default: y)"
-   - If yes: invoke `g-skl-pcac-notify` with routing `--project [task_source_path]`, subject "Broadcast task completed: [title]", subtype `broadcast_completion`; include original task title and completion date in the detail
+   - If yes: invoke `g-skl-wpac-notify` with routing `--project [task_source_path]`, subject "Broadcast task completed: [title]", subtype `broadcast_completion`; include original task title and completion date in the detail
    - If no or source path unknown: skip silently — completion pings are always optional
 
    **Capability update check** (for [✅] completions):
@@ -520,7 +520,7 @@ worktree_owner: "{agent_id_or_platform_slug}"
      - Display: "📡 This task affected subsystem(s): [{subsystem_names}]. Check capabilities.md — should any status change?"
      - Show the current status of matching capabilities
      - Prompt: "Update capability status? [enter changes or press Enter to skip]"
-     - If updated: write change to `capabilities.md` and optionally trigger `g-skl-pcac-notify --capability-update`
+     - If updated: write change to `capabilities.md` and optionally trigger `g-skl-wpac-notify --capability-update`
    - If no match or capabilities.md missing: skip silently
 
 4d. **Lifecycle activity emit (T826, contract: T818)** — fire-and-forget POST to `example_app` `/v1/activity/emit` after the Status History row is written for these five lifecycle transitions:
@@ -854,7 +854,7 @@ Used by CREATE TASK and STATUS display to determine the minimum gald3r tier requ
 
 ```
 - [📋] **Task 082** `[full]` Product Tier Architecture — parent task...
-- [📋] **Task 007** `[slim]` PCAC topology foundation...
+- [📋] **Task 007** `[slim]` WPAC topology foundation...
 ```
 
 The badge is **omitted for slim** in most contexts to reduce visual noise. It appears when:
@@ -981,8 +981,8 @@ type: bug_fix
 subsystems: [TASK_MANAGEMENT]
 ```
 **How it runs:**
-`custom_scripts/hot_inbox_intake.py` is called at the start of each `g-go-go` iteration
-(before the PCAC gate, before the claim loop). It:
+`gald3r inbox` (engine verb — absorbed the retired `scripts/hot_inbox_intake.py`, T1652 D6) runs at the start of each `g-go-go` iteration
+(before the WPAC gate, before the claim loop). It:
 1. Assigns the next sequential task/bug ID
 2. Writes a proper task file to `tasks/open/` with full frontmatter
 3. Appends the index row to `TASKS.md` / `BUGS.md`
@@ -991,9 +991,9 @@ subsystems: [TASK_MANAGEMENT]
 The intake commit is the **sole writer** of `TASKS.md` / `BUGS.md` in that step — so the
 housekeeping gate classifies it as `safe-gald3r-housekeeping` and auto-commits without blocking.
 **Manual invocation:**
-```powershell
-.\custom_scripts\hot_inbox_intake.py -DryRun   # preview
-.\custom_scripts\hot_inbox_intake.py            # apply
+```bash
+gald3r inbox --dry-run   # preview
+gald3r inbox             # apply
 ```
 **Inbox is empty → exits 0, no commit, no output (use -Quiet).**
 ---
@@ -1176,6 +1176,41 @@ They are `null` / absent on non-software projects and on software projects with 
 - Database model holds three nullable columns (`issue_ref`, `pr_url`, `pr_status`); migration is a separate epic.
 - Fields stay `null` until populated by their respective GitHub commands (`g-pr-open` → T1287).
 
+### Release Staging — `release_hold` Field (T419)
+
+Optional task frontmatter controlling whether an awaiting-verification task is swept into a release by `g-ship`. The state folder for awaiting tasks is `tasks/awaiting-verification/` (status `awaiting-verification`).
+
+```yaml
+release_hold: none            # default; g-ship picks this up (omitting = none)
+release_hold: manual          # human-gated hold; g-ship skips; must be explicitly cleared
+release_hold: sync_required   # ship coordinated with another component; g-ship skips
+sync_with:                    # only meaningful with release_hold: sync_required
+  - project: gald3r_agent
+    task: T890
+    reason: "API contract change -- both sides must ship together"
+release_hold_reason: "Holding for coordinated deploy"   # optional, free text
+```
+
+**Valid `release_hold` values:** `none` (default / omitted), `manual`, `sync_required`. Any other value is a validation error (engine `schema/task.py` `RELEASE_HOLD_VALUES`). `sync_with` is a list of `{project, task, reason}` entries; carry it only with `sync_required`.
+
+#### SET RELEASE_HOLD
+
+Engine-backed (`TaskSystem.set_release_hold`). Sets `release_hold` (and optional `release_hold_reason` / `sync_with`) on a task, re-validates, rewrites the task file, and regenerates `TASKS.md`. `set-release-hold <id> none` is equivalent to CLEAR.
+
+- **CLI:** `gald3r task set-release-hold <id> <none|manual|sync_required> [--reason "..."] [--sync-project <id> --sync-task <id>]`
+- **MCP:** `gald3r_task_set_release_hold(id, hold, reason="", sync_with=[{project, task, reason}])`
+- **Command:** `@g-task set-release-hold <id> <none|manual|sync_required> "<reason>"` (see `@g-task-upd`)
+
+#### CLEAR RELEASE_HOLD
+
+Engine-backed (`TaskSystem.clear_release_hold`). Removes `release_hold`, `release_hold_reason`, and `sync_with` from the task (equivalent to `release_hold: none`), rewrites the file, regenerates `TASKS.md`.
+
+- **CLI:** `gald3r task clear-release-hold <id>`
+- **MCP:** `gald3r_task_clear_release_hold(id)`
+- **Command:** `@g-task clear-release-hold <id>` (see `@g-task-upd`)
+
+**Manual fallback (no engine):** add/remove the `release_hold` / `sync_with` / `release_hold_reason` frontmatter keys by hand, then run SYNC CHECK. `g-ship` and `g-status` read these fields directly.
+
 ### [🕵️] Verification Claim Rules
 
 `[🕵️]` prevents multiple review agents from verifying the same task at once.
@@ -1276,7 +1311,7 @@ snapshot once and use it as the source of truth for valid statuses + symbols:
 # Resolves the hybrid activation chain (task frontmatter > PROJECT.md >
 # .identity project_type= > freeform) and prints a JSON snapshot.
 # -TaskFile lets a per-task workflow_profile: override win.
-uv run python .claude/skills/g-skl-project-types/scripts/load_profile.py `
+gald3r project-type resolve `
     -TaskFile .gald3r/tasks/open/task<id>_<slug>.md
 ```
 
@@ -1405,8 +1440,8 @@ When **CREATE TASK** is invoked (step 3, before writing the file), perform a top
 
 Options:
   [1] Keep entire task here (this-project only)
-  [2] Split: create local task (backend slice) + PCAC order to gald3r_frontend (frontend slice)
-  [3] Split + spawn: create local + PCAC order + spawn new project for "mobile"
+  [2] Split: create local task (backend slice) + WPAC order to gald3r_frontend (frontend slice)
+  [3] Split + spawn: create local + WPAC order + spawn new project for "mobile"
   [s] Skip topology check
 
 Choice [1/2/3/s]:
@@ -1415,7 +1450,7 @@ Choice [1/2/3/s]:
 ### On Split Confirmed (Option 2 or 3)
 
 1. **Create local task** — description scoped to this-project's domain slice
-2. **For each remote domain**: invoke `g-skl-pcac-order` to create a PCAC order to the target project with:
+2. **For each remote domain**: invoke `g-skl-wpac-order` to create a WPAC order to the target project with:
    - `remote_task_title`: full original task title
    - `description`: the remote slice
    - `cross_project_ref`: `{domain}-{task_slug}` (shared canonical name across all participating projects)
@@ -1432,17 +1467,17 @@ Choice [1/2/3/s]:
    ```
    ✅ Split complete:
    → this-project: task{NNN} (backend slice)
-   → gald3r_frontend: PCAC order ord-{id} sent (frontend slice)
+   → gald3r_frontend: WPAC order ord-{id} sent (frontend slice)
    cross_project_ref: "auth-unified-login"
    ```
 
 ### On Spawn Confirmed (Option 3 with new capability)
 
-1. Immediately after split write: invoke `g-pcac-spawn` with:
+1. Immediately after split write: invoke `g-wpac-spawn` with:
    - `--description`: "{capability} capability extracted from task {original_title}"
    - `--capabilities`: [the capability domain]
    - `--parent` or `--sibling` (let user choose)
-2. After spawn completes: send the spawn's slice as a PCAC order to the newly created project
+2. After spawn completes: send the spawn's slice as a WPAC order to the newly created project
 
 ### Skip / No Topology
 

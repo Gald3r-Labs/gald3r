@@ -13,17 +13,19 @@ HEARTBEAT no_agent watchdog output (T968), cross-project WPAC inbox
 summary, and GUARDRAILS.md. Emits a compact JSON response
 {"continue": true, "additional_context": ...} and always exits 0.
 
-Vault path resolution is a native port of g-hk-vault-resolve.ps1 (the PS1
-dot-sources that helper); the vault status banner is a native port of
-g-hk-vault-verify.ps1's Get-Gald3rVaultStatusBanner. Sibling helper
-scripts that the PS1 invokes as child processes (the WPAC inbox check and
-the TASKS.md archive gate) are invoked with a .py-sibling-first /
-PowerShell-fallback strategy so the hook works mid-migration.
+Vault path resolution is a native port of the retired g-hk-vault-resolve.ps1
+(the PS1 dot-sources that helper); the vault status banner is a native port
+of the retired g-hk-vault-verify.ps1's Get-Gald3rVaultStatusBanner. The WPAC
+inbox check is invoked as a .py sibling; the TASKS.md archive gate was absorbed
+into the engine `gald3r task archive-gate` verb (T1665) and is dispatched via
+the zero-IP gald3r_bin.py resolver (degrades to no banner when no engine is
+installed).
 """
 # @subsystems: LOGGING_SYSTEM
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import os
 import re
@@ -62,40 +64,76 @@ IDENTITY_KEYS = (
     "vault_location",
 )
 
+#: T1649 install nudge — one-time marker written under the project's .gald3r/.
+#: Its presence (whatever the content) permanently suppresses the nudge.
+INSTALL_NUDGE_MARKER_NAME = ".install_nudge_shown"
+
 
 def _powershell_exe():
-    """Locate a PowerShell executable for .ps1 fallback invocations."""
+    """Locate a PowerShell executable to run a user-configured HEARTBEAT
+    watchdog script that happens to be .ps1 (arbitrary user script, not a
+    gald3r-shipped .py/.ps1 twin pair — see _run_watchdogs)."""
     return shutil.which("powershell") or shutil.which("pwsh")
 
 
 def _run_sibling(base_name, args, cwd=None):
-    """Run a sibling hook/script: prefer <base>.py, fall back to <base>.ps1.
+    """Run a sibling hook/script: <base>.py only (T1600 — .ps1 fallback removed).
 
-    Returns a CompletedProcess or None when neither variant is runnable.
+    Returns a CompletedProcess or None when the .py variant is not runnable.
     """
     py_path = SCRIPT_DIR / (base_name + ".py")
-    ps1_path = SCRIPT_DIR / (base_name + ".ps1")
-    return _run_script_pair(py_path, ps1_path, args, cwd=cwd)
+    return _run_script_pair(py_path, args, cwd=cwd)
 
 
-def _run_script_pair(py_path, ps1_path, args, cwd=None):
+def _run_script_pair(py_path, args, cwd=None):
     try:
         if py_path is not None and py_path.is_file():
             return subprocess.run(
                 [sys.executable, str(py_path)] + list(args),
                 capture_output=True, text=True, cwd=cwd,
             )
-        if ps1_path is not None and ps1_path.is_file():
-            exe = _powershell_exe()
-            if exe:
-                return subprocess.run(
-                    [exe, "-NoProfile", "-ExecutionPolicy", "Bypass",
-                     "-File", str(ps1_path)] + list(args),
-                    capture_output=True, text=True, cwd=cwd,
-                )
     except (OSError, subprocess.SubprocessError):
         return None
     return None
+
+
+def _resolve_engine_cmd(project_root):
+    """Resolve the gald3r engine command prefix via the zero-IP resolver.
+
+    The TASKS.md archive gate was absorbed (T1665) into the engine
+    `gald3r task archive-gate` verb. Returns the command prefix (e.g.
+    ``["gald3r"]``) or ``None`` when the resolver is not shipped (old install)
+    or no engine can be found — the caller then degrades to no banner.
+    """
+    root = Path(project_root)
+    resolver_path = root / ".gald3r_sys" / "scripts" / "gald3r_bin.py"
+    if not resolver_path.is_file():
+        return None
+    try:
+        spec = importlib.util.spec_from_file_location(
+            "g_hk_ss_gald3r_bin", str(resolver_path))
+        if not spec or not spec.loader:
+            return None
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod.resolve_engine_cmd(root)
+    except Exception:
+        return None
+
+
+def _run_engine(engine_cmd, args, cwd=None):
+    """Run a resolved engine command prefix + args, capturing output.
+
+    Returns a CompletedProcess or None on failure (fail-open — a missing or
+    erroring engine must never break session start).
+    """
+    try:
+        return subprocess.run(
+            list(engine_cmd) + list(args),
+            capture_output=True, text=True, cwd=cwd,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
 
 
 def parse_identity_file(path, extra_keys=()):
@@ -140,8 +178,35 @@ def _markdown_count(path):
     return count
 
 
+# BUG-209/BUG-210: an unexpanded identity placeholder (e.g. the shipped default
+# ``repos_location={LOCAL_REPOS}``, or any ``{TOKEN}`` setup never filled) must be
+# treated as "use local", never as a real path. Matches the ``{LOCAL}`` vault
+# sentinel plus ANY ``{ALL_CAPS_OR_ident}`` token so the two spellings can never
+# diverge into a filesystem side effect again.
+_PLACEHOLDER_RE = re.compile(r"^\{[A-Za-z0-9_]+\}$")
+
+
+def _is_local_sentinel(value):
+    """True when a location value means "use the local fallback".
+
+    That is: empty/None, the canonical ``{LOCAL}`` sentinel, or any still-
+    unexpanded ``{PLACEHOLDER}`` token (BUG-209/BUG-210).
+    """
+    if not value:
+        return True
+    v = value.strip()
+    return v == "{LOCAL}" or bool(_PLACEHOLDER_RE.match(v))
+
+
 def _path_writable(path_str):
-    """Port of Test-Gald3rPathWritable: mkdir -Force + write probe."""
+    """Port of Test-Gald3rPathWritable: mkdir -Force + write probe.
+
+    BUG-209: never mkdir an unexpanded ``{PLACEHOLDER}`` path — that is what
+    materialized a literal ``{LOCAL_REPOS}`` directory in project roots. Such a
+    value is rejected up front (callers route it to the local fallback instead).
+    """
+    if not path_str or _PLACEHOLDER_RE.match(str(path_str).strip()):
+        return False
     try:
         p = Path(path_str)
         p.mkdir(parents=True, exist_ok=True)
@@ -196,7 +261,7 @@ def resolve_vault(project_root):
         env_path, ["GALD3R_REPOS_LOCATION"]
     )
 
-    if not vault_location or vault_location == "{LOCAL}":
+    if _is_local_sentinel(vault_location):
         vault_path = vault_local
     elif _path_writable(vault_location):
         vault_path = Path(vault_location)
@@ -207,7 +272,7 @@ def resolve_vault(project_root):
             "`.gald3r/vault/`."
         )
 
-    if not repos_location or repos_location == "{LOCAL}":
+    if _is_local_sentinel(repos_location):
         repos_path = repos_local
     elif _path_writable(repos_location):
         repos_path = Path(repos_location)
@@ -363,6 +428,136 @@ def _run_watchdogs(project_root):
     return banner
 
 
+# ── One-time install nudge (T1649 — prompt, not force) ──────────────────────
+
+
+def _install_home_default():
+    """Zero-IP mirror of gald3r.home.resolve_install_home's default order.
+
+    The engine SOURCE does not ship (T1645), so this hook cannot import
+    ``gald3r.home`` — it replicates only the tiny path resolution
+    (``GALD3R_HOME`` env var, else the per-OS default) needed for the
+    best-effort Throne probe. No engine logic lives here.
+    """
+    override = os.environ.get("GALD3R_HOME", "").strip()
+    if override:
+        return Path(override)
+    if sys.platform == "win32":
+        base = os.environ.get("LOCALAPPDATA", "").strip()
+        parent = Path(base) if base else Path.home() / "AppData" / "Local"
+    elif sys.platform == "darwin":
+        parent = Path.home() / "Library" / "Application Support"
+    else:
+        xdg = os.environ.get("XDG_DATA_HOME", "").strip()
+        parent = Path(xdg) if xdg else Path.home() / ".local" / "share"
+    return parent / "gald3r"
+
+
+def _throne_present():
+    """Best-effort Throne probe: ``gald3r install throne`` caches the
+    downloaded installer under ``<install-home>/cache/throne`` — any file
+    there means the user has (at least) fetched Throne. Absence just means
+    the one-time nudge mentions it; this is a soft offer, never a gate."""
+    try:
+        cache = _install_home_default() / "cache" / "throne"
+        return cache.is_dir() and any(p.is_file() for p in cache.iterdir())
+    except OSError:
+        return False
+
+
+def _engine_missing(project_root):
+    """True only on a REAL gald3r_bin.py resolver miss (EngineNotFoundError).
+
+    Delegates to the shipped zero-IP resolver so the nudge can never drift
+    from the actual resolution order (GALD3R_BIN env var -> PATH -> bundled
+    binary -> dev source). Any probe failure — resolver not shipped (old
+    install), import error — returns False: silence over noise.
+    """
+    resolver_path = project_root / ".gald3r_sys" / "scripts" / "gald3r_bin.py"
+    if not resolver_path.is_file():
+        return False
+    try:
+        spec = importlib.util.spec_from_file_location(
+            "g_hk_nudge_gald3r_bin", str(resolver_path))
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        not_found = getattr(mod, "EngineNotFoundError", None)
+        if not_found is None:
+            return False
+        try:
+            mod.resolve_engine_cmd(project_root)
+            return False
+        except not_found:
+            return True
+    except Exception:
+        return False
+
+
+def _install_nudge_banner(project_root):
+    """T1649 — one-time, non-blocking install nudge (prompt, not force).
+
+    When the compiled gald3r engine binary is missing (a real resolver miss;
+    dev checkouts with engine source never trigger) and/or Throne is not
+    detected, emit ONE banner pointing at ``g-install-agent`` /
+    ``g-install-throne``, then drop a marker file in ``.gald3r/`` so the
+    nudge never repeats for this project. The zero-engine SKILL.full.md
+    fallback keeps working either way — the banner says so explicitly.
+    Never blocks: banner-only, and if the marker cannot be persisted the
+    nudge stays silent rather than risk repeating forever.
+    """
+    marker = project_root / ".gald3r" / INSTALL_NUDGE_MARKER_NAME
+    try:
+        if marker.exists():
+            return ""
+    except OSError:
+        return ""
+
+    # Pre-T1642 installs do not ship the resolver (and may not carry the
+    # g-install-* commands the nudge points at) — stay silent entirely.
+    resolver_path = project_root / ".gald3r_sys" / "scripts" / "gald3r_bin.py"
+    if not resolver_path.is_file():
+        return ""
+
+    engine_missing = _engine_missing(project_root)
+    throne_missing = not _throne_present()
+    if not engine_missing and not throne_missing:
+        return ""
+
+    lines = ["## Unlock the Engine-Backed Experience"]
+    if engine_missing:
+        lines.append(
+            "- The compiled gald3r engine binary was not found (resolver "
+            "miss). Run **`g-install-agent`** to install the signed Gald3r "
+            "Agent binary from the public releases."
+        )
+    if throne_missing:
+        lines.append(
+            "- Gald3r Throne (the desktop app) was not detected. Run "
+            "**`g-install-throne`** to install it."
+        )
+    lines.append(
+        "Nothing is broken: skills keep working in the file-first "
+        "SKILL.full.md fallback mode without them. This is a one-time "
+        "notice — it will not be shown again for this project."
+    )
+    banner = "\n".join(lines) + "\n\n---\n"
+
+    try:
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text(json.dumps({
+            "shown_at": datetime.now(timezone.utc).strftime(
+                "%Y-%m-%dT%H:%M:%SZ"),
+            "engine_missing": engine_missing,
+            "throne_missing": throne_missing,
+            "task": "T1649",
+        }, indent=2) + "\n", encoding="utf-8")
+    except OSError:
+        # Cannot persist the dismissal -> do not show the nudge at all
+        # ("never repeats" outranks "always shown once").
+        return ""
+    return banner
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="gald3r session-start hook (Python port of "
@@ -374,7 +569,6 @@ def main():
         root = SCRIPT_DIR.parent.parent
         _run_script_pair(
             root / "setup_gald3r_project.py",
-            root / "setup_gald3r_project.ps1",
             ["-Platform", "cursor", "-Quiet"],
         )
     except Exception:
@@ -546,27 +740,31 @@ def main():
         pass
 
     # ── TASKS.md archive gate ────────────────────────────────────────────────
+    # The gald3r_tasks_archive_gate.py skill script was absorbed into the engine
+    # `gald3r task archive-gate` verb (T1665, v3 IP round). Exit codes are
+    # parity-locked: 0 clean, 1 warn (>=900), 2 breach (>1200), 3 error. A
+    # missing engine (old install / no binary) degrades to no banner.
     archive_gate_banner = ""
     try:
-        scripts_dir = SCRIPT_DIR.parent / "scripts"
-        res = _run_script_pair(
-            scripts_dir / "gald3r_tasks_archive_gate.py",
-            scripts_dir / "gald3r_tasks_archive_gate.ps1",
-            ["-CheckOnly", "-ProjectRoot", str(project_root)],
-        )
-        gate_exit = res.returncode if res is not None else 0
+        engine = _resolve_engine_cmd(project_root)
+        gate_exit = 0
+        if engine is not None:
+            res = _run_engine(
+                engine,
+                ["task", "archive-gate", "--check-only",
+                 "--project-root", str(project_root)],
+            )
+            gate_exit = res.returncode if res is not None else 0
         if gate_exit == 2:
             archive_gate_banner = (
                 "WARNING: TASKS.md ARCHIVE GATE: file exceeds 1200 lines. "
-                "Run: .cursor/skills/g-skl-tasks/scripts/"
-                "gald3r_tasks_archive_gate.ps1 -Apply to archive terminal "
+                "Run: gald3r task archive-gate --apply to archive terminal "
                 "tasks.\n---\n"
             )
         elif gate_exit == 1:
             archive_gate_banner = (
                 "WARNING: TASKS.md approaching archive threshold (>=900 "
-                "lines). Consider: .cursor/skills/g-skl-tasks/scripts/"
-                "gald3r_tasks_archive_gate.ps1 -Apply\n---\n"
+                "lines). Consider: gald3r task archive-gate --apply\n---\n"
             )
     except Exception:
         pass
@@ -589,9 +787,16 @@ def main():
     except Exception:
         pass
 
+    # ── One-time install nudge (T1649 — prompt, not force) ──────────────────
+    nudge_banner = ""
+    try:
+        nudge_banner = _install_nudge_banner(project_root)
+    except Exception:
+        nudge_banner = ""
+
     additional_context = (
         setup_banner + reflection_banner + vault_banner
-        + archive_gate_banner + watchdog_banner + inbox_banner
+        + archive_gate_banner + watchdog_banner + inbox_banner + nudge_banner
         + "gald3r task management system is active. Check .gald3r/TASKS.md "
           "for current tasks."
     )

@@ -4,6 +4,11 @@ subsystem_memberships: [AGENT_ORCHESTRATION]
 
 # SubAgents User Guide
 
+> **v3 note (T1652 / D1):** the experimental Python Agent SDK that previously
+> lived at `agents/sdk/` was moved to the gald3r maintainer tree and **no longer
+> ships** in installs. SDK/Hybrid content below is retained for historical
+> reference; prompt-based subagents are the shipped path.
+
 **Version**: 2.0 (Hybrid Architecture)
 **Last Updated**: 2025-11-01
 **Related**: [Task 052](../../.gald3r/tasks/task052_anthropic_agent_sdk_integration.md)
@@ -506,7 +511,7 @@ Day 3: "Mix SDK and prompt-based agents in same workflow"
 ### Community Resources
 - **GitHub Issues**: Report problems
 - **GitHub Discussions**: Ask questions
-- **Examples**: `.cursor/agents/sdk/examples/`
+- **Examples**: moved to the maintainer tree with the SDK (T1652 D1)
 
 ---
 

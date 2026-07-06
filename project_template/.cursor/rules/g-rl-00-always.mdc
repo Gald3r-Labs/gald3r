@@ -52,6 +52,7 @@ subsystem_memberships: [LOGGING_SYSTEM]
    | Env var read | `$env:VAR` | `$VAR` / `${VAR}` |
    | Path separator | `\` (forward `/` also accepted on Windows) | `/` |
    | File-exists test | `Test-Path $p` | `[ -f "$p" ]` / `[ -e "$p" ]` |
+   | Python interpreter | `python` (bare `python3` usually missing or a broken Store stub) | `python3` (bare `python` absent on stock modern distros) |
    | Pipeline filter | `Where-Object { ... }` | `grep` / `awk` / `xargs` |
    | Subshell / cmd substitution | `$(...)` (expression eval) | `$(...)` (command output) |
 

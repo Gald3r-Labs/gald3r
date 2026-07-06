@@ -218,7 +218,7 @@ and `.kiro/settings/mcp.json`.
 - **Events available**: `agentSpawn` (≈ sessionStart), `userPromptSubmit`, `preToolUse`, `postToolUse`, `stop` (≈ session end)
 - **Event payload format**: JSON via STDIN (fields include `hook_event_name`, `cwd`, `session_id`); `matcher` scopes pre/postToolUse to internal tools (`fs_read`/`fs_write`/`execute_bash`/`use_aws`)
 - **Blocking semantics**: exit code `2` (PreToolUse only) blocks tool execution and returns STDERR to the LLM; other non-zero = failure warning
-- **gald3r hook files**: `g-hk-*.ps1` map to `agentSpawn`/`stop`/`preToolUse`/`postToolUse` via STDIN-JSON command entries — wiring is per-agent JSON; gald3r `.ps1` must read `$input`/stdin (not `$env:*`). gald3r wiring is **[STUB] / unverified** — confirm field names before authoring.
+- **gald3r hook files**: `.kiro/hooks/g-hk-on-<event>.py` map to `agentSpawn`/`stop`/`preToolUse`/`postToolUse`/`userPromptSubmit` via direct `python <path>` command entries in the agent JSON (T1601, PS1-KILL epic T667 — no PowerShell shim needed since the `command` field accepts an arbitrary command string). Each entrypoint's `g_hk_core.dispatch(<event>)` reads stdin directly.
 
 ## Atypical Handling
 

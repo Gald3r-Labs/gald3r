@@ -14,7 +14,7 @@ subsystem_memberships: [BUG_AND_QUALITY]
 **What it does:** bug tracking + quality gates (zero-tolerance error logging).
 
 ## Preferred — fetch the centralized judgment
-`uv run --project .gald3r_sys/engine gald3r prompt get role.qa_engineer`   ·   MCP `gald3r_prompt_get id=role.qa_engineer`
+`gald3r prompt get role.qa_engineer`   ·   MCP `gald3r_prompt_get id=role.qa_engineer`
 
 ## Manual fallback (engine not provisioned)
 Follow **`SKILL.full.md`** in this directory, plus any `rules.md` / `reference/` / `examples/`.

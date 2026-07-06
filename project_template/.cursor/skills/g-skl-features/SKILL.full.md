@@ -58,7 +58,7 @@ cross_project_ref:
 Run from repo root:
 
 ```powershell
-uv run python .claude/skills/g-skl-features/scripts/gald3r_feature_hierarchy_sync.py -ProjectRoot .
+gald3r feature sync
 ```
 
 Detects duplicate `id:` values, missing `parent_feature` targets, stale `children:` entries, and `depth:` vs folder mismatches. Use `-WarnOnly` for advisory exit code 0; `-Json` for machine-readable output.

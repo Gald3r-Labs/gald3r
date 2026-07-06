@@ -14,7 +14,7 @@ subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 **What it does:** planning & feature-staging judgment.
 
 ## Preferred — fetch the centralized judgment
-`uv run --project .gald3r_sys/engine gald3r prompt get playbook.plan`   ·   MCP `gald3r_prompt_get id=playbook.plan`
+`gald3r prompt get playbook.plan`   ·   MCP `gald3r_prompt_get id=playbook.plan`
 
 ## Manual fallback (engine not provisioned)
 Follow **`SKILL.full.md`** in this directory, plus any `rules.md` / `reference/` / `examples/`.

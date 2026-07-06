@@ -16,7 +16,7 @@ worktree scaffolding works even when `github_integration: disabled` (only the PR
    - `type: hotfix`, `priority: high` (or `critical` if stated).
    - `target_branches: [main]` (add `develop` when a `develop` branch exists — Gitflow).
    - `--description <text>` populates the objective.
-4. **Allocate worktree**: `gald3r_worktree.py -Action Create` on the hotfix branch (records
+4. **Allocate worktree**: `gald3r worktree create` on the hotfix branch (records
    `worktree_branch`, `worktree_owner`, etc. in the task frontmatter).
 5. **Optional Draft PR**: if `github_integration: enabled` and not `--no-pr`, invoke
    `g-pr-open --task <id>` (base = `main`).

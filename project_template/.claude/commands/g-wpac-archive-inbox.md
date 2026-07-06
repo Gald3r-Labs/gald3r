@@ -5,7 +5,7 @@ Archive stale [DONE] WPAC inbox messages and prune the index: $ARGUMENTS
 
 ## What This Command Does
 
-Moves resolved (`[DONE]`/`[RESOLVED]`) WPAC inbox messages older than a threshold (default **30 days**) out of the active index and into `.gald3r/linking/messages/archive/`, then prunes their rows from `INBOX.md`. Keeps the active index lightweight (target: <= 50 active rows). Uses the shared script `gald3r_wpac_inbox.py` (or its `.py` twin).
+Moves resolved (`[DONE]`/`[RESOLVED]`) WPAC inbox messages older than a threshold (default **30 days**) out of the active index and into `.gald3r/linking/messages/archive/`, then prunes their rows from `INBOX.md`. Keeps the active index lightweight (target: <= 50 active rows). Uses the shared script `gald3r workspace inbox` (or its `.py` twin).
 
 The inbox is a lightweight INDEX table (`INBOX.md`) backed by one file per message under `.gald3r/linking/messages/`. Archiving never deletes data: messages are relocated, and an append-only `archive_index.md` records what was moved and when.
 
@@ -19,10 +19,10 @@ Run the archive operation:
 
 ```powershell
 # Default 30-day threshold
-python .gald3r_sys/scripts/gald3r_wpac_inbox.py -Archive -ProjectRoot .
+gald3r workspace inbox archive --project-root .
 
 # Custom threshold (e.g. 14 days)
-python .gald3r_sys/scripts/gald3r_wpac_inbox.py -Archive -ThresholdDays 14 -ProjectRoot .
+gald3r workspace inbox archive --threshold-days 14 --project-root .
 ```
 
 Or, equivalently, via the inbox-check hook:
@@ -56,4 +56,4 @@ Confirm how many messages were archived and the resulting active row count.
   never archived.
 
 ## Delegates To
-`.gald3r_sys/scripts/gald3r_wpac_inbox.py` (Archive operation); `g-skl-wpac-read` for reviewing inbox items.
+`gald3r workspace inbox` (Archive operation); `g-skl-wpac-read` for reviewing inbox items.
