@@ -12,11 +12,21 @@ vault), then triggers a reindex of the destination:
   file mtime): newer-or-equal source wins; older source is kept at the
   destination and reported as a conflict. -Force always overwrites.
 
+Registered on the canonical `session-start` event with `--if-diverged`
+(T1627 / WS-A-4): in that mode the hook consults g-hk-vault-resolve's
+divergence signal (`VaultMigrationCandidate` — the local `.gald3r/vault/`
+holds markdown notes while a DIFFERENT shared vault_location is configured
+and writable) and no-ops unless it is set, so the migration fires only on
+actual vault_location divergence. Wired in `g_hk_core.py`
+CONCERN_CHAIN["session-start"], Claude `settings.json` `hooks.SessionStart`,
+and Cursor `hooks.json` `sessionStart`.
+
 Session-idempotent via GALD3R_HK_VAULT_MIGRATE_APPLIED (override with
--ForceRun). Cross-script calls prefer the .py siblings
-(g-hk-vault-resolve.py / g-hk-vault-reindex.py) and fall back to invoking
-the .ps1 via PowerShell. Exit codes: 0 on success/no-op, 1 when the source
-path does not exist (preserved from the .ps1).
+-ForceRun). Cross-script calls use the .py siblings only
+(g-hk-vault-resolve.py / g-hk-vault-reindex.py) — the .ps1 fallback
+branches were removed once .ps1-only installs went EOL (T1600). Exit
+codes: 0 on success/no-op, 1 when the source path does not exist
+(preserved from the original .ps1).
 """
 # @subsystems: VAULT_AND_RESEARCH
 from __future__ import annotations
@@ -25,7 +35,6 @@ import argparse
 import datetime
 import hashlib
 import importlib.util
-import json
 import os
 import re
 import shutil
@@ -40,54 +49,22 @@ import _hook_common  # noqa: E402,F401
 _HOOK_DIR = Path(__file__).resolve().parent
 
 
-def _powershell_exe() -> str:
-    if os.name == "nt":
-        return shutil.which("powershell.exe") or shutil.which("pwsh") or "powershell.exe"
-    return shutil.which("pwsh") or "pwsh"
-
-
 def load_resolve_context() -> Dict[str, Any]:
-    """Load vault paths from the g-hk-vault-resolve sibling.
-
-    Prefers the .py sibling (imported in-process); falls back to dot-sourcing
-    the .ps1 via PowerShell and reading the exported variables as JSON.
-    """
+    """Load vault paths from the g-hk-vault-resolve sibling (.py, imported in-process)."""
     py_sibling = _HOOK_DIR / "g-hk-vault-resolve.py"
-    if py_sibling.is_file():
-        spec = importlib.util.spec_from_file_location("g_hk_vault_resolve", str(py_sibling))
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        return mod.resolve()
-    ps_sibling = _HOOK_DIR / "g-hk-vault-resolve.ps1"
-    cmd = [
-        _powershell_exe(), "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command",
-        f". '{ps_sibling}'; @{{"
-        "VaultPath=$VaultPath; ReposPath=$ReposPath;"
-        "VaultLocalPath=$VaultLocalPath; ReposLocalPath=$ReposLocalPath;"
-        "VaultUsingFallback=$VaultUsingFallback;"
-        "VaultMigrationCandidate=$VaultMigrationCandidate;"
-        "VaultMessages=@($VaultMessages)"
-        "} | ConvertTo-Json -Compress",
-    ]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-    return json.loads(result.stdout.strip())
+    spec = importlib.util.spec_from_file_location("g_hk_vault_resolve", str(py_sibling))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.resolve()
 
 
 def run_reindex(destination: str) -> None:
-    """Invoke the g-hk-vault-reindex sibling for the destination vault.
+    """Invoke the g-hk-vault-reindex sibling (.py) for the destination vault.
 
-    Prefers the .py sibling (run with this interpreter); falls back to the
-    .ps1 via PowerShell. Output is suppressed (matches `| Out-Null`).
+    Output is suppressed (matches `| Out-Null`).
     """
     py_sibling = _HOOK_DIR / "g-hk-vault-reindex.py"
-    if py_sibling.is_file():
-        cmd = [sys.executable, str(py_sibling), "-VaultOverride", destination]
-    else:
-        cmd = [
-            _powershell_exe(), "-NoProfile", "-ExecutionPolicy", "Bypass",
-            "-File", str(_HOOK_DIR / "g-hk-vault-reindex.ps1"),
-            "-VaultOverride", destination,
-        ]
+    cmd = [sys.executable, str(py_sibling), "-VaultOverride", destination]
     subprocess.run(cmd, capture_output=True, timeout=600)
 
 
@@ -176,6 +153,14 @@ def main(argv=None) -> int:
         "-ForceRun", "--force-run", dest="force_run", action="store_true",
         help="Bypass the once-per-session idempotency guard.",
     )
+    parser.add_argument(
+        "-IfDiverged", "--if-diverged", dest="if_diverged", action="store_true",
+        help=(
+            "Lifecycle-hook mode (T1627): only migrate when g-hk-vault-resolve"
+            " reports vault_location divergence (VaultMigrationCandidate);"
+            " otherwise no-op. Used by the session-start registration."
+        ),
+    )
     args = parser.parse_args(argv)
 
     # -- Idempotency guard -----------------------------------------------------
@@ -186,12 +171,24 @@ def main(argv=None) -> int:
 
     source_path = args.source_path
     destination_path = args.destination_path
-    if not source_path or not destination_path:
+    ctx: Dict[str, Any] = {}
+    if args.if_diverged or not source_path or not destination_path:
         ctx = load_resolve_context()
-        if not source_path:
-            source_path = ctx["VaultLocalPath"]
-        if not destination_path:
-            destination_path = ctx["VaultPath"]
+
+    # -- Divergence gate (T1627 / WS-A-4) ---------------------------------------
+    # At session-start the migration must fire ONLY when the local vault has
+    # content while a different shared vault is configured and writable.
+    if args.if_diverged and not ctx.get("VaultMigrationCandidate"):
+        print(
+            "[SKIP] g-hk-vault-migrate: no vault_location divergence"
+            " (nothing to migrate)."
+        )
+        return 0
+
+    if not source_path:
+        source_path = ctx["VaultLocalPath"]
+    if not destination_path:
+        destination_path = ctx["VaultPath"]
 
     if source_path == destination_path:
         print("Source and destination are the same. Nothing to migrate.")

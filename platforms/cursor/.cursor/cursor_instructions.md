@@ -15,7 +15,6 @@
 ├── agents/          # SubAgent definitions — specialized AI assistants
 │   ├── g-agnt-*.md  # gald3r agents (g-agnt- prefix)
 │   ├── README.md    # Agent index and usage guide
-│   └── sdk/         # Python agent SDK (experimental, not auto-loaded)
 ├── commands/        # @-commands — invoked with @g-command-name
 │   └── g-*.md
 ├── hooks/           # PowerShell automation hooks (auto-executed by Cursor)

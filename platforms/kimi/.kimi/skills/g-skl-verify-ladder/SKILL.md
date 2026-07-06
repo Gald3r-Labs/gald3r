@@ -16,7 +16,7 @@ subsystem_memberships: [BUG_AND_QUALITY]
 **What it does:** adversarial verification ladder (evidence standards, two-stage gate).
 
 ## Preferred — fetch the centralized judgment
-`uv run --project .gald3r_sys/engine gald3r prompt get role.verifier`   ·   MCP `gald3r_prompt_get id=role.verifier`
+`gald3r prompt get role.verifier`   ·   MCP `gald3r_prompt_get id=role.verifier`
 
 ## Manual fallback (engine not provisioned)
 Follow **`SKILL.full.md`** in this directory, plus any `rules.md` / `reference/` / `examples/`.

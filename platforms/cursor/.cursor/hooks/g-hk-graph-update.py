@@ -1,13 +1,21 @@
 #!/usr/bin/env python3
 """Python port of g-hk-graph-update.ps1 (T1584).
 
-Post-commit hook: refresh the gald3r_muninn codebase graph index after each
-commit (T1158). Runs the muninn indexers (Python AST + TypeScript) over the
-changed files in the latest commit so graph_impact, graph_callers, etc. return
-current results for the next g-go-code Step b0 Impact Scan.
+Refresh the gald3r_muninn codebase graph index (T1158). Runs the muninn
+indexers (Python AST + TypeScript) incrementally so graph_impact,
+graph_callers, etc. return current results for the next g-go-code Step b0
+Impact Scan.
+
+Wiring (T1624, WS-A-1): fires on the canonical `stop` event —
+`CONCERN_CHAIN["stop"]` in g_hk_core.py plus the Claude/Cursor trigger
+configs — so the graph refreshes at the end of every agent turn (commits
+happen mid-turn; a turn-end refresh keeps the next turn's Impact Scan
+current). It remains directly invocable as a git post-commit hook.
 
 Non-blocking by design: if the muninn plugin / Python / Node.js are not
-available, the hook logs the reason and exits 0 so the commit is never blocked.
+available, the hook logs the reason and exits 0. Installs without the muninn
+plugin (the common case) skip in milliseconds. Each indexer run is capped at
+60 seconds so a wedged indexer can never stall the host session's stop chain.
 """
 # @subsystems: PROJECT_IDENTITY_SETUP
 from __future__ import annotations
@@ -94,17 +102,24 @@ def main() -> int:
                 text=True,
                 encoding="utf-8",
                 errors="replace",
+                timeout=60,
             )
             out = " ".join(((result.stdout or "") + (result.stderr or "")).splitlines())
             write_muninn_log(
                 f"muninn-update | {label} | exit={result.returncode} | {out}"
             )
+        except subprocess.TimeoutExpired:
+            # T1624: this hook now runs on the live stop chain — a wedged
+            # indexer must never stall the host session.
+            write_muninn_log(f"muninn-update | {label} | timeout after 60s")
         except (OSError, subprocess.SubprocessError) as exc:
             write_muninn_log(f"muninn-update | {label} | exception={exc}")
 
     # Python AST indexer
+    # BUG-207: launch with the interpreter this hook is already running under
+    # -- bare `python` does not exist on stock python3-only Linux.
     if python_indexer.exists():
-        run_indexer("python-indexer", "python", python_indexer)
+        run_indexer("python-indexer", sys.executable, python_indexer)
 
     # TypeScript / JavaScript indexer (Node.js)
     if ts_indexer.exists():

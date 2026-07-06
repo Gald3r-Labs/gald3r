@@ -18,6 +18,31 @@ When you want to say "FYI" across project boundaries without creating a task or 
 
 **INFO messages**: no task created, no approval needed, no local task blocked.
 
+## Transport layer (WPAC-v2 — T1608)
+
+**Step 0-T — transport verdict (code decides, never the model — g-rl-38).** Before the
+file steps below, attempt an event publish (T1609 shim underneath):
+
+```
+gald3r workspace outbox send --verb event --payload-file <payload.json>
+```
+
+Payload = the live `world_tree` `PublishEventRequest` contract: `{"type": "<catalogued
+type>", "project_id": "<optional subject uuid>", "payload": {…per-type schema…}}`.
+The event catalog is a CLOSED set (`release.published`, `coordinator.*`, `claim.*`,
+`merge_request.*`, `budget.breached`, `task.delegated`); the transport short-circuits a
+non-catalogued type to the `fallback` verdict client-side — no doomed round-trip.
+
+| Verdict | Action |
+|---|---|
+| `ok` | Published via `POST /api/v1/events` (org-scoped coordination log; subscribers see it in realtime). SKIP the target INBOX write — the send is delivered. |
+| `fallback` | Type not catalogued (all freeform INFO subtypes today) — the file INBOX write below IS the delivery path. Expected + free. |
+| `offline` / `error` | Perform the file steps below exactly as today; queued entry reconciled by `gald3r workspace outbox flush` on reconnect. |
+| `auth_required` / `upgrade_required` | File steps below (+ `gald3r login` hint / upgrade line). Entry parked (not retried). |
+
+Everything below this section is the **OFFLINE / FILE FALLBACK transport** — the verb
+surface (name + arguments) is unchanged.
+
 ## INFO Message Format
 
 Written to target project's `.gald3r/workspace/inbox.md`:

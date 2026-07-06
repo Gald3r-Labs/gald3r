@@ -14,7 +14,7 @@ subsystem_memberships: [MEMORY_AND_KNOWLEDGE, VAULT_AND_RESEARCH]
 **What it does:** file-first knowledge vault (vault/).
 
 ## Preferred — invoke the engine
-- **CLI:** `uv run --project .gald3r_sys/engine gald3r vault …`  (or the installed `gald3r`)
+- **CLI:** `gald3r vault …`  (or the installed `gald3r`)
 - **MCP tools:** `gald3r_vault_*`   ·   facade `Gald3r(...).vault`
 
 The engine owns ID allocation, file placement, status→folder moves, index regeneration, and
@@ -23,3 +23,9 @@ validation. `.gald3r/` markdown stays the data source of truth.
 ## Manual fallback (engine not provisioned)
 Follow **`SKILL.full.md`** (full procedure) + the schema in `.gald3r_sys/schemas/` (`generic`).
 Everything needed ships in the install — nothing external.
+
+---
+
+**Legacy `topics:` frontmatter**: the engine vault migrates `topics:` → `tags:`
+silently during ingest/lint (D021). The standalone `scripts/migrate_topics_to_tags.py`
+helper was retired (T1652 D7).

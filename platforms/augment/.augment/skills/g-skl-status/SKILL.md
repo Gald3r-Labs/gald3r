@@ -34,7 +34,7 @@ Only when PCAC is active, call `g-hk-pcac-inbox-check.ps1 -BlockOnConflict` when
    per T1285+); otherwise `disabled`. No-op silently when invoked outside a gald3r project.
 
    **Workflow line (T1239)**: resolve the active profile via the loader
-   (`load_profile.py` in the active skill folder — see g-skl-tasks "Reading the
+   (`gald3r project-type resolve` in the active skill folder — see g-skl-tasks "Reading the
    active profile") and surface it as a dedicated session-context line:
    ```
    Workflow: Content Creation (content_creation.yaml)

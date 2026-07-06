@@ -92,7 +92,7 @@ not sufficient. If the check reports `INBOX CONFLICT GATE` or exits code `2`, st
 After the WPAC gate passes and before the Clean Controller Gate:
 
 ```powershell
-.\scripts\gald3r_housekeeping_commit.py -Mode preflight -Apply -Json
+gald3r housekeep -Mode preflight -Apply -Json
 ```
 
 - `clean` → continue
@@ -124,7 +124,7 @@ Mark the bug `[🔄]` / `status: in-progress` in both BUGS.md and the bug file. 
 
 Create or reuse a coding worktree:
 ```powershell
-.\scripts\gald3r_worktree.py -Action Create -BugId {bug_id} -Role code -Owner {platform_or_agent_slug} -Json
+gald3r worktree create -BugId {bug_id} -Role code -Owner {platform_or_agent_slug} -Json
 ```
 
 ### 2. Read the Bug Spec

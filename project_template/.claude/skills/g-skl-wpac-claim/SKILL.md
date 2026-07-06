@@ -19,6 +19,28 @@ this project up to another. Run from the **child** project. Mirror of `g-skl-wpa
 - `parent_project_path` — absolute path to the parent project (e.g. `<workspace>\<master_control>`)
 - `--one-way` — update only THIS project's topology; skip writing to the parent (use when parent is remote or read-only)
 
+## Transport layer (WPAC-v2 — T1608)
+
+**Step 0-T — register the edge in the world_tree linking registry (T1625; code decides,
+never the model — g-rl-38).** After reading both identities (steps 1–2), when BOTH
+projects carry a registered `project_id` UUID in `.gald3r/.identity`, run:
+
+```
+gald3r workspace outbox send --verb link \
+    --project-uuid <this_project_id> \
+    --payload '{"target_project_id": "<parent_project_id>", "relation": "parent"}'
+```
+
+| Verdict | Action |
+|---|---|
+| `ok` | Edge registered server-side (`POST /api/v1/projects/{id}/links`) — the registry is the online source of truth; the local topology writes below become its mirror. Note `transport: world_tree` in the confirm output. |
+| `error` with HTTP 409 | Edge/parent already registered server-side — treat as the "Already claimed" idempotent case; continue the local mirror writes. |
+| `offline` / other `error` | Local file topology (below) is authoritative offline; the queued entry is reconciled by `gald3r workspace outbox flush` on reconnect. |
+| `auth_required` / `upgrade_required` | File topology below (+ `gald3r login` hint / upgrade line — server linking is paid-Team gated; file topology stays free). Entry parked (not retried). |
+
+The local `link_topology.md` / peers writes below ALWAYS run (they are the local
+mirror); the verb surface (name + arguments) is unchanged.
+
 ## Steps
 
 ### 1. Read current project identity

@@ -42,6 +42,9 @@ Legend: ✅ verified · ⚠️ partial · ❌ not supported · ❓ untested.
 | void | ❌ | ✅ | ❌ | ❌ | ✅ | MCP (L2) | .cursorrules |
 | warp | ❌ | ✅ | ✅ | ⚠ | ✅ | MCP (L2) | .md |
 | windsurf | ✅ | ✅ | ✅ | ✅ | ✅ | MCP (L2) | .md |
+| zcode | ❌ | ✅ | ✅ | ✅ | ✅ | MCP (L2) | .md |
+| zed | ❌ | ✅ | ✅ | ❌ | ✅ | MCP (L2) | .md |
+| pi | ✅ | ✅ | ✅ | ✅ | ❌ | files-only (L0) | .md |
 | subq | ❌ | ❌ | ❌ | ❌ | ❌ | files-only (L0) | .md |
 
 ---

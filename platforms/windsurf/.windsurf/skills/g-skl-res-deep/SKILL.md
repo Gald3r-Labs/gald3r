@@ -354,26 +354,6 @@ In `FEATURES.md`:
 
 ---
 
-## Migration Helper
-
-For projects that have existing `research/harvests/*/` folders from before T081, run:
-
-```
-python .cursor/skills/g-skl-res-deep/scripts/migrate_harvests_to_recon_index.py
-```
-
-This script:
-1. Resolves `vault_location` from `.gald3r/.identity`
-2. Scans existing `research/harvests/*/` (local) and/or `{vault}/research/recon/*/` (shared)
-3. For each harvest folder: reads existing frontmatter, adds any missing Obsidian fields (`date`, `type`, `source`, `title`, `tags`) with best-effort values
-4. Seeds `_recon_index.yaml` with one entry per harvest folder
-5. Appends a migration row to `{vault}/log.md` (or `research/log.md`)
-6. **Never deletes files** — migration is additive only
-
-Idempotent: re-running the script updates existing entries without duplicating them.
-
----
-
 ## Integration
 
 **With `g-skl-res-review`**: `g-skl-res-review` reads the same vault-aware path and `_recon_index.yaml`. When a source is cached, review surfaces the existing report rather than re-harvesting.

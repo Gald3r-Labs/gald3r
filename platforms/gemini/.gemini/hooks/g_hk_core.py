@@ -35,10 +35,11 @@ explicitly blocked a tool call (exit 2, tool events only).
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import _hook_common  # noqa: E402
@@ -185,12 +186,40 @@ PLATFORM_EVENT_MAP: Dict[str, Dict[str, str]] = {
 # handlers so behavior is authored once. tool-end / user-prompt-submit have
 # no concern hooks yet — their canonical handler is a clean pass-through that
 # platforms can now fire (and future concern hooks register here).
+#
+# T1624 (WS-A-1) wired the logging chain into the canonical core:
+# - g-hk-pre-session-trace  -> session-start (opens the session trace marker)
+# - g-hk-post-session-trace -> stop (logs cumulative elapsed) and
+#                              session-end --finalize (closes/removes the marker)
+# - g-hk-crash-record       -> stop (records one `hook` activation for the stop
+#                              chain; zero-overhead no-op unless GALD3R_CRASH_STATS
+#                              is enabled)
+# - g-hk-graph-update       -> stop (refreshes the muninn graph index; instant
+#                              skip when the muninn plugin does not ship)
+# The gald3r-internal pre_session/post_session event names are RETIRED (D-8):
+# session tracing now rides the canonical session-start/stop events.
+#
+# T1627 (WS-A-4) wired the vault chain + raw-inbox watcher:
+# - g-hk-vault-resolve   -> session-start (resolves vault paths, creates layout)
+# - g-hk-vault-migrate   -> session-start with --if-diverged (no-op unless the
+#                           local vault diverges from a configured shared vault)
+# - g-hk-vault-verify    -> stop (one-line vault structure status banner)
+# - raw-inbox-watcher    -> stop with --hook-mode (processes/flags {vault}/raw/
+#                           drops; never exits non-zero in hook mode)
+# - g-hk-vault-reindex   -> stop (debounced: regenerates _index.yaml + the
+#                           OKF-style index.md views only when notes changed)
+# Order matters on stop: the watcher routes inbox files into the vault BEFORE
+# the reindex runs, so newly ingested notes land in the same regen.
 CONCERN_CHAIN: Dict[str, List[List[str]]] = {
     "session-start": [
         ["g-hk-session-start"],
+        ["g-hk-pre-session-trace"],
+        ["g-hk-vault-resolve"],
+        ["g-hk-vault-migrate", "--if-diverged"],
     ],
     "session-end": [
         ["g-hk-session-end"],
+        ["g-hk-post-session-trace", "--finalize"],
     ],
     "user-prompt-submit": [],
     "tool-start": [
@@ -198,6 +227,7 @@ CONCERN_CHAIN: Dict[str, List[List[str]]] = {
         ["g-hk-pre-tool-call-gald3r-guard"],
         ["g-hk-pre-tool-call-prd-freeze"],
         ["g-hk-pre-tool-call-member-gald3r-guard"],
+        ["g-hk-policy-check"],
         ["g-hk-pre-tool-call"],
     ],
     "tool-end": [],
@@ -206,8 +236,107 @@ CONCERN_CHAIN: Dict[str, List[List[str]]] = {
         ["g-hk-nightly-learn"],
         ["g-hk-encoding-normalize", "-Quiet"],
         ["g-hk-ggo-stop-detect"],
+        ["g-hk-post-session-trace"],
+        ["g-hk-crash-record", "--component-type", "hook",
+         "--component-name", "stop-chain", "--trigger-source", "g_hk_core"],
+        ["g-hk-graph-update"],
+        ["g-hk-vault-verify"],
+        ["raw-inbox-watcher", "--hook-mode"],
+        ["g-hk-vault-reindex"],
     ],
 }
+
+# ── Concerns invoked INDIRECTLY by a chained concern (T1624, WS-A-5 input) ──
+# Hook scripts that ship next to this core and fire through another concern's
+# subprocess launch rather than their own CONCERN_CHAIN entry. Machine-readable
+# so the hook-parity lint (WS-A-5) can distinguish "chained (indirect)" from
+# "orphaned". Key = the chained launcher, values = hook basenames it invokes.
+# g-hk-claude-chat-logger is launched by g-hk-agent-complete (stop chain) with
+# the discovered transcript path — registering it directly as well would write
+# every chat log twice. The launcher resolves it through this map via
+# resolve_indirect_concerns() below (T1625 / BUG-133), never by filename.
+INDIRECT_CONCERNS: Dict[str, List[str]] = {
+    "g-hk-agent-complete": ["g-hk-claude-chat-logger"],
+}
+
+# ── Install-directory name -> platform key (T1625 / BUG-133) ────────────────
+# Maps the dot-directory a platform ships its gald3r hooks under to the
+# platform key used in PLATFORM_EVENT_MAP, so concern hooks can label their
+# artifacts (e.g. the chat log's `--platform` slug) without hardcoding a
+# platform name. `.agents` is shared by antigravity and the goose plugin
+# bundle; detect_platform() disambiguates via the goose bundle's
+# `gald3r-hooks` plugin folder.
+PLATFORM_INSTALL_DIRS: Dict[str, str] = {
+    ".claude": "claude",
+    ".cursor": "cursor",
+    ".codex": "codex",
+    ".gemini": "gemini",
+    ".agent": "gemini",
+    ".qwen": "qwen",
+    ".github": "copilot",
+    ".windsurf": "windsurf",
+    ".openhands": "openhands",
+    ".augment": "augment",
+    ".clinerules": "cline",
+    ".kiro": "kiro-cli",
+    ".opencode": "opencode",
+    ".agents": "antigravity",
+    ".junie": "junie",
+}
+
+
+def detect_platform(script_dir: Optional[Path] = None) -> str:
+    """Resolve the platform key for the install a hook is running from.
+
+    Resolution order: the ``GALD3R_HOOK_PLATFORM`` env override (must be a
+    PLATFORM_EVENT_MAP key), then the nearest ancestor directory of
+    ``script_dir`` (default: this core's directory) whose name maps via
+    PLATFORM_INSTALL_DIRS. Falls back to ``"claude"`` — the unified chat
+    logger's own default — when nothing matches.
+    """
+    env = (os.environ.get("GALD3R_HOOK_PLATFORM") or "").strip().lower()
+    if env in PLATFORM_EVENT_MAP:
+        return env
+    here = Path(script_dir) if script_dir is not None else SCRIPT_DIR
+    part_names = [here.name] + [p.name for p in here.parents]
+    for name in part_names:
+        platform = PLATFORM_INSTALL_DIRS.get(name)
+        if platform is None:
+            continue
+        if platform == "antigravity" and "gald3r-hooks" in part_names:
+            return "goose"
+        return platform
+    return "claude"
+
+
+def _resolve_script(base_name: str, script_dir: Path) -> Optional[Path]:
+    """Resolve a hook basename to a shipped script, preferring .py over .ps1."""
+    for suffix in (".py", ".ps1"):
+        candidate = script_dir / (base_name + suffix)
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+def resolve_indirect_concerns(
+    launcher: str, script_dir: Optional[Path] = None
+) -> List[Path]:
+    """Resolve the shipped scripts a launcher invokes indirectly (T1625).
+
+    Looks up INDIRECT_CONCERNS — the same machine-readable map the WS-A-5
+    hook-parity lint consumes — and resolves each basename next to
+    ``script_dir`` (default: this core's directory) via _resolve_script.
+    Concern scripts that do not ship in this install are omitted; callers
+    MUST emit a visible warning when the list comes back empty (BUG-133:
+    a missing logger must never be a silent no-op).
+    """
+    here = Path(script_dir) if script_dir is not None else SCRIPT_DIR
+    resolved: List[Path] = []
+    for base in INDIRECT_CONCERNS.get(launcher, []):
+        path = _resolve_script(base, here)
+        if path is not None:
+            resolved.append(path)
+    return resolved
 
 
 def _read_raw_stdin() -> str:
@@ -222,17 +351,17 @@ def _read_raw_stdin() -> str:
 
 def _locate(base_name: str):
     """Resolve a concern hook to a runnable command, preferring .py over .ps1."""
-    py_path = SCRIPT_DIR / (base_name + ".py")
-    if py_path.is_file():
-        return [sys.executable, str(py_path)]
-    ps1_path = SCRIPT_DIR / (base_name + ".ps1")
-    if ps1_path.is_file():
-        import shutil
+    path = _resolve_script(base_name, SCRIPT_DIR)
+    if path is None:
+        return None
+    if path.suffix == ".py":
+        return [sys.executable, str(path)]
+    import shutil
 
-        exe = shutil.which("powershell") or shutil.which("pwsh")
-        if exe:
-            return [exe, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
-                    str(ps1_path)]
+    exe = shutil.which("powershell") or shutil.which("pwsh")
+    if exe:
+        return [exe, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
+                str(path)]
     return None
 
 

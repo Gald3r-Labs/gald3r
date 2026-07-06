@@ -1,5 +1,8 @@
 # .kimi/config.yaml — gald3r project configuration for Kimi Code
-# Docs: https://www.kimi.com/code/docs/en
+# Docs: https://www.kimi.com/code/docs/en (mirror: https://moonshotai.github.io/kimi-code/en/)
+# NOTE (2026-07-03 rebrand): the CLI's current native config file is TOML
+# ($KIMI_CODE_HOME/config.toml, default ~/.kimi-code/config.toml), not this project-level
+# YAML. This file is kept as a gald3r reference scaffold; see ../PLATFORM_SPEC.md.
 
 model:
   provider: moonshot

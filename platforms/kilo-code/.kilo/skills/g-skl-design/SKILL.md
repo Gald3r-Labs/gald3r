@@ -36,7 +36,7 @@ subsystem_memberships: [UI_AND_OUTPUT]
 **What it does:** design engineering — stunning-not-functional, anti-slop.
 
 ## Preferred — fetch the centralized judgment
-`uv run --project .gald3r_sys/engine gald3r prompt get playbook.design`   ·   MCP `gald3r_prompt_get id=playbook.design`
+`gald3r prompt get playbook.design`   ·   MCP `gald3r_prompt_get id=playbook.design`
 
 ## Manual fallback (engine not provisioned)
 Follow **`SKILL.full.md`** in this directory, plus any `rules.md` / `reference/` / `examples/`.

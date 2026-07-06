@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
+import json
 import os
 import re
 import subprocess
@@ -125,6 +126,49 @@ def load_secret_patterns(repo_root: str) -> list:
         except OSError:
             pass
     return list(DEFAULT_SECRET_PATTERNS)
+
+
+def load_engine(repo_root: str):
+    """Return the gald3r `Gald3r` class if the engine is importable, else None.
+
+    Tries the ambient import first, then the installed engine source at
+    `<repo>/.gald3r_sys/engine/src`. Returns None (so the validation gate degrades to a
+    skip/WARN, never blocking) when the engine or its deps aren't available."""
+    try:
+        from gald3r.core import Gald3r  # type: ignore
+        return Gald3r
+    except Exception:
+        pass
+    src = Path(repo_root) / ".gald3r_sys" / "engine" / "src"
+    if src.is_dir():
+        sys.path.insert(0, str(src))
+        try:
+            from gald3r.core import Gald3r  # type: ignore
+            return Gald3r
+        except Exception:
+            return None
+    return None
+
+
+def resolve_engine_cmd(repo_root: str):
+    """Resolve the gald3r engine command prefix via the zero-IP resolver (A6/T1663).
+
+    The org policy CHECK op was absorbed from g-skl-policy's `policy_engine.py`
+    into the `gald3r policy check` verb. Returns the command prefix
+    (e.g. ``["gald3r"]``) or ``None`` (skip, never block) when the resolver is
+    not shipped or no engine can be found."""
+    resolver = Path(repo_root) / ".gald3r_sys" / "scripts" / "gald3r_bin.py"
+    if not resolver.is_file():
+        return None
+    try:
+        spec = importlib.util.spec_from_file_location("gald3r_bin_precommit", str(resolver))
+        if spec and spec.loader:
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)  # type: ignore[union-attr]
+            return mod.resolve_engine_cmd(Path(repo_root))
+    except Exception:
+        return None
+    return None
 
 
 def main(argv: list) -> int:
@@ -347,6 +391,77 @@ def main(argv: list) -> int:
         block = True
     else:
         print("Stub annotation: PASS")
+
+    # --- 6. .gald3r VALIDATION GATE (BLOCK) — T520 ---
+    # Run the deterministic engine validator on staged task/bug files: schema, status
+    # vocabulary, and folder placement. The engine ENFORCES what g-rl-34/35/38 advise.
+    staged_gald3r = [
+        f for f in staged_files
+        if re.search(r"\.gald3r[/\\](tasks|bugs)[/\\].*\.md$", f.replace("\\", "/"), re.IGNORECASE)
+    ]
+    if staged_gald3r:
+        Gald3r = load_engine(repo_root)
+        if Gald3r is None:
+            warns.append("WARN: staged .gald3r task/bug files but the engine isn't importable — validation skipped.")
+            print("validate gate: SKIP (engine not importable)")
+        else:
+            try:
+                g = Gald3r(root=repo_root)
+                abs_paths = [str((Path(repo_root) / f)) for f in staged_gald3r]
+                rep = g.validate.run(paths=abs_paths)
+                if rep["ok"]:
+                    print(f"validate gate: PASS ({rep['checked']} staged file(s))")
+                else:
+                    print(f"validate gate: BLOCK — {rep['errors']} error(s), "
+                          f"{rep['fixable']} fixable in staged .gald3r files:")
+                    shown = [v for v in rep["violations"] if v["kind"] in ("error", "fixable")]
+                    for v in shown[:10]:
+                        print(f"  [{v['kind']}] {v['file']}: {v['message']}")
+                    if len(shown) > 10:
+                        print(f"  ... and {len(shown) - 10} more")
+                    print("  -> run `gald3r validate --fix` for fixable items, then repair errors.")
+                    block = True
+            except Exception as e:
+                warns.append(f"WARN: validate gate errored ({e.__class__.__name__}); skipped.")
+                print("validate gate: SKIP (validator error)")
+
+    # --- 7. ORG POLICY-AS-CODE GUARDRAIL (BLOCK) — T1611 ---
+    # Deterministic CHECK op against the active org policy bundle (g-skl-policy).
+    # No-ops on free/retail installs (no org tier / no rules) — never fixed inline
+    # unless the fix is 1-3 lines and zero-risk per g-rl-38; enforcement is by code.
+    engine_cmd = resolve_engine_cmd(repo_root)
+    if engine_cmd is None:
+        print("org policy: SKIP (gald3r engine not installed)")
+    else:
+        try:
+            event = {
+                "hook_event_name": "pre-commit",
+                "staged_files": "\n".join(staged_files),
+                "diff": diff,
+            }
+            # `gald3r policy check` reads the event JSON from STDIN and emits the
+            # verdict object on stdout. --exit-zero keeps a `block` verdict from
+            # raising exit 2 so we branch on the parsed JSON instead.
+            proc = subprocess.run(
+                [*engine_cmd, "policy", "check", "--json", "--exit-zero", "--root", repo_root],
+                input=json.dumps(event),
+                capture_output=True,
+                text=True,
+                timeout=15,
+            )
+            result = json.loads(proc.stdout.strip() or "{}")
+            if result.get("verdict") == "block":
+                print(f"org policy: BLOCK — {result.get('message')}")
+                print("  -> Fix the violation, or confirm with an org admin, before committing.")
+                block = True
+            elif result.get("verdict") == "warn":
+                warns.append(f"WARN: org policy — {result.get('message')}")
+                print("org policy: WARN")
+            else:
+                print("org policy: PASS")
+        except Exception as e:
+            warns.append(f"WARN: org policy check errored ({e.__class__.__name__}); skipped.")
+            print("org policy: SKIP (engine error)")
 
     print()
 

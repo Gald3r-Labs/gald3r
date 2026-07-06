@@ -14,6 +14,14 @@ JSON payload describing the component that just activated. Rule "activation"
 has no native event (rules are always-loaded context), so a faithful
 "rule fired" signal must be reported here explicitly.
 
+T1624 (WS-A-1) additionally wired this hook into the canonical core's stop
+chain (`CONCERN_CHAIN["stop"]` in g_hk_core.py, mirrored in the Claude/Cursor
+trigger configs). Because the harness stop payload carries no CRASH fields,
+the chained entry declares the component explicitly via CLI args
+(``--component-type hook --component-name stop-chain --trigger-source
+g_hk_core``). Payload fields, when present, always win over the CLI
+declaration — the stdin JSON remains the primary interface.
+
 Payload arrives on stdin as JSON and SHOULD include:
     component_type   one of: command | rule | agent | skill | hook
     component_name   e.g. g-skl-tasks, g-rl-00-always, g-hk-encoding-normalize
@@ -104,6 +112,16 @@ def main() -> int:
                     "g-hk-crash-record.ps1)")
     parser.add_argument("--project-root", dest="project_root", default="",
                         help="override project-root detection")
+    # T1624: chained-invocation declaration args. When this hook runs inside a
+    # canonical concern chain the stdin payload is the harness event (no CRASH
+    # fields), so the chain entry declares the component here. Payload fields,
+    # when present, always take precedence.
+    parser.add_argument("--component-type", dest="component_type", default="",
+                        help="component type fallback when absent from payload")
+    parser.add_argument("--component-name", dest="component_name", default="",
+                        help="component name fallback when absent from payload")
+    parser.add_argument("--trigger-source", dest="trigger_source", default="",
+                        help="trigger source fallback when absent from payload")
     args, _ = parser.parse_known_args()
 
     # ── Zero-overhead gate: only record when CRASH stats are enabled ─────────
@@ -111,14 +129,18 @@ def main() -> int:
         print(json.dumps({"continue": True}))
         return 0
 
-    # ── stdin payload (gald3r CRASH-event schema) ───────────────────────────
+    # ── stdin payload (gald3r CRASH-event schema; CLI args as fallback) ─────
     payload = _hook_common.read_stdin_json()
-    component_type = str(payload.get("component_type") or "skill").strip().lower()
+    component_type = str(
+        payload.get("component_type") or args.component_type or "skill"
+    ).strip().lower()
     if component_type not in _COMPONENT_TYPES:
         # Tolerate free-form types like the engine does (no hard rejection).
         component_type = component_type or "skill"
-    component_name = str(payload.get("component_name") or "unknown")
-    trigger_source = str(payload.get("trigger_source") or "")
+    component_name = str(
+        payload.get("component_name") or args.component_name or "unknown"
+    )
+    trigger_source = str(payload.get("trigger_source") or args.trigger_source or "")
     elapsed_ms = payload.get("elapsed_ms")
     session_id = _resolve_session_id(str(payload.get("session_id") or ""))
 
@@ -129,6 +151,12 @@ def main() -> int:
     recorded = False
     if _hook_common.bootstrap_engine():
         try:
+            # T1624: gald3r.crash.record_activation has no session_id parameter —
+            # it resolves the id itself from GALD3R_SESSION_ID. Bridge the
+            # payload/harness session id through this process's env so the
+            # engine-path record matches the stdlib-path record.
+            if session_id and not session_id.startswith("proc-"):
+                os.environ.setdefault("GALD3R_SESSION_ID", session_id)
             from gald3r import crash as _crash
 
             _crash.record_activation(

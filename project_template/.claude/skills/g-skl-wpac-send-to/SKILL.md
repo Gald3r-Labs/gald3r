@@ -38,6 +38,25 @@ Difference from `g-skl-wpac-move`:
 
 ---
 
+## Transport layer (WPAC-v2 — T1608)
+
+File copying is inherently LOCAL — steps 1–4 and 6–8 always run as written. Only the
+destination-INBOX notification (Step 5) gains an online path. Before Step 5, run:
+
+```
+gald3r workspace outbox send --verb event --payload-file <payload.json>
+```
+
+Payload = `PublishEventRequest`; the world_tree event catalog is CLOSED and has no
+send-notification type yet, so the transport short-circuits to the `fallback` verdict
+client-side and Step 5's INBOX write remains the delivery path. On `ok` (a future
+catalogued type) skip Step 5; on `offline`/`error` the queued entry is reconciled by
+`gald3r workspace outbox flush`; on `auth_required`/`upgrade_required` print the shim's
+hint/upgrade line and proceed with Step 5. Verb surface (name + arguments) unchanged;
+online-vs-offline is decided by code, not the model (g-rl-38).
+
+---
+
 ## Command Syntax
 
 ```

@@ -24,12 +24,37 @@ First-time setup of gald3r in a project. @g-setup command.
 
 ## Steps
 
+### Step 0.1 — Guard bypass for first-run scaffold writes (T1591)
+
+First-run setup legitimately writes into `.gald3r/` (`.identity`, the folder layout, `PROJECT.md`/`PLAN.md`/`CONSTRAINTS.md`, …), but the pre-tool-call **gald3r-guard** hook (`g-hk-pre-tool-call-gald3r-guard`) denies unsupervised Edit/Write to `.gald3r/` paths per `g-rl-33` (".gald3r/ Folder Gate"). Setup *is* an authorized first-run write, so it must run with the guard bypass set — otherwise the guard false-denies legitimate scaffolding (BUG-179 secondary half).
+
+**Set `GALD3R_HOOK_BYPASS=1` for the scaffold writes only, then clear it** once the `.gald3r/` control plane exists. Keep the bypass **scoped to this setup step** — do not export it globally or leave it set for the rest of the session, so the guard keeps blocking unsupervised `.gald3r/` writes after setup completes.
+
+```powershell
+# Windows / PowerShell — scope the bypass to the setup scaffold writes
+$env:GALD3R_HOOK_BYPASS = '1'
+try {
+    # ... perform the first-run .gald3r/ scaffold writes (Steps 1-8 below) ...
+} finally {
+    Remove-Item Env:GALD3R_HOOK_BYPASS -ErrorAction SilentlyContinue
+}
+```
+
+```bash
+# macOS / Linux / Git Bash — scope the bypass to the setup scaffold writes
+export GALD3R_HOOK_BYPASS=1
+# ... perform the first-run .gald3r/ scaffold writes (Steps 1-8 below) ...
+unset GALD3R_HOOK_BYPASS   # always clear it once .gald3r/ exists
+```
+
+`GALD3R_ACTIVE_AGENT=<agent_id>` is the equivalent allow signal when setup runs under an active gald3r agent — either one satisfies the guard. **Regression guard:** after setup clears the bypass, an unsupervised Edit/Write to `.gald3r/` (no bypass, no active agent) must still be **denied** by the hook. See `.claude/rules/g-rl-33-enforcement_catchall.md` and the guard hook `g-hk-pre-tool-call-gald3r-guard`.
+
 ### Step 0 — Workspace-Control member-repo guard (BUG-021 / Task 213 v1.1 / g-rl-36)
 
 **Before any folder or file creation**, verify the target install path is not a Workspace-Control controlled_member or migration_source repository. `g-skl-setup` is for installing a full standalone gald3r project; member repositories use a marker-only `.gald3r/` shape that is owned by `g-wrkspc-spawn` / `g-wrkspc-adopt` plus the bootstrap helper, NOT full setup.
 
 ```powershell
-uv run python .claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.py -TargetPath "<absolute_install_target>"
+gald3r workspace member guard --target-path "<absolute_install_target>"
 ```
 
 Outcomes:
@@ -37,10 +62,10 @@ Outcomes:
 - exit `0` (ALLOW) — target is the workspace control project, outside any workspace, or a template directory; proceed with full setup.
 - exit `1` (BLOCK) — target is a Workspace-Control controlled_member or migration_source. **Stop**. Direct the user to either:
   1. Run setup against the workspace control project instead, OR
-  2. Run `@g-wrkspc-spawn` (new empty member) or `@g-wrkspc-adopt` (existing standalone gald3r project) if the target should be a workspace member. Both paths use `.claude/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.py` to create the marker pair (`.identity` + `PROJECT.md`) — they do NOT install the full gald3r control plane in members.
+  2. Run `@g-wrkspc-spawn` (new empty member) or `@g-wrkspc-adopt` (existing standalone gald3r project) if the target should be a workspace member. Both paths use `gald3r workspace member bootstrap` to create the marker pair (`.identity` + `PROJECT.md`) — they do NOT install the full gald3r control plane in members.
 - exit `2` (ERROR) — manifest unparseable. Resolve before continuing. If the project is genuinely standalone (no `.gald3r/linking/workspace_manifest.yaml` in any ancestor), the helper returns ALLOW; an actual exit `2` indicates a broken manifest.
 
-Installed projects ship the same helper at `.claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.py`. External template repos (`<ECOSYSTEM_ROOT>/<template_slim>`, `<ECOSYSTEM_ROOT>/<template_full>`, `<ECOSYSTEM_ROOT>/<template_adv>`) are the only legitimate exception for live `.gald3r/` writes outside the control project.
+Installed projects ship the same helper at `gald3r workspace member guard`. External template repos (`<ECOSYSTEM_ROOT>/<template_slim>`, `<ECOSYSTEM_ROOT>/<template_full>`, `<ECOSYSTEM_ROOT>/<template_adv>`) are the only legitimate exception for live `.gald3r/` writes outside the control project.
 
 ### Step 0.5 — Git Readiness Check
 
@@ -204,6 +229,29 @@ The template (`assets/gitattributes-lfs.template`) covers: `.psd .ai .fbx .obj
      and Command Set are active (e.g. GitHub integration activates only for
      `software_development`).
 
+4c. **Public-publish history mode** (T423 — explicit, OFF-by-default safety toggle):
+   Ask only when the project may graduate/publish to a public repo (i.e. `graduation_tier`
+   is `dual`/`triple`, or the user asks for a public sibling). Otherwise skip silently and
+   leave the safe default in place. This is **also asked on `@g-setup --upgrade-existing`**
+   so existing projects can opt in deliberately.
+   ```
+   Public publish: how should git history be handled when you publish to a public repo?
+     1. carry  (default) — keep full git history. Non-destructive, safe.
+     2. scrub  (Mode A)  — publish with ZERO git history for IP protection.
+                            DESTRUCTIVE: the public repo's history is replaced and cannot
+                            be recovered there. Requires explicit confirmation at publish time.
+   [1]
+   ```
+   - Default selection (enter / no answer / declining the prompt) = **`carry`** — never scrub by default.
+   - Honor a `--publish-history=<carry|scrub>` CLI flag to skip the prompt.
+   - Write the chosen value to `.gald3r/.identity` as `publish_history_mode=<carry|scrub>`
+     (key=value, lowercase). If the project never publishes publicly, the key may be omitted
+     (readers treat an absent value as `carry`).
+   - Choosing `scrub` here only RECORDS the intent; the destructive operation still requires an
+     explicit `-ConfirmScrub` (or engine equivalent) at publish time (g-skl-release / graduate).
+   - Confirm: `Public-publish history mode set to: {value}` (and, for scrub, a one-line reminder
+     that publish will still require -ConfirmScrub).
+
 5. **Verify structure** (slim v3 layout — ground truth from <project-root>\.gald3r):
    ```
    .gald3r/ ✅
@@ -267,16 +315,16 @@ The template (`assets/gitattributes-lfs.template`) covers: `.psd .ai .fbx .obj
 
 8. **Write skills lock file** (T1043):
    After platform skill directories are placed (whether by `gald3r_install` MCP, by `bin/install.js`, or manually), write `gald3r-skills-lock.json` at project root via:
-   ```powershell
-   python scripts/gald3r_skills_lock.py -Action WRITE -ProjectPath . -Tier <slim|full|adv>
+   ```bash
+   gald3r skills-lock
    ```
    - Records SHA-256 hash of each installed `SKILL.md` so future runs can detect tamper / drift.
-   - Pair with `-Action VERIFY` during `gald3r_validate.py` runs.
+   - Pair with `-Action VERIFY` during `gald3r validate` runs (engine verb, T520).
    - Pair with `-Action UPGRADE -SourceRoot <<gald3r_source> path>` to classify each installed skill as `unchanged | local-modified | upstream-changed | both-changed | new | removed` before pulling a new gald3r version.
    - Lock file format and operations documented in `docs/SKILLS_LOCK_FORMAT.md`.
 
 8b. **Codebase Graph Initialization (gald3r_muninn, T1149)** — non-blocking, always optional:
-   - Check index state via `graph_status` (MCP) or `.claude/skills/g-skl-muninn/scripts/graph_impact.py -File <any source file> -Json`. If it reports `index_missing` / `warning: not_indexed`, offer to build it now:
+   - Check index state via `graph_status` (MCP) or `python .claude/skills/g-skl-muninn/scripts/graph_impact.py -File <any source file> -Json`. If it reports `index_missing` / `warning: not_indexed`, offer to build it now:
      ```powershell
      python -m docker.gald3r.tools.plugins.muninn.indexers.python_indexer --root .   # Python sources
      node  docker/gald3r/tools/plugins/muninn/indexers/ts_indexer.js  --root .       # TS/JS sources (needs Node.js)
@@ -309,7 +357,7 @@ The template (`assets/gitattributes-lfs.template`) covers: `.psd .ai .fbx .obj
    - Create first task with @g-tasks (CREATE) (sequential task IDs)
    - Draft or refine `.gald3r/PLAN.md` and Feature under `features/` as needed
    - Declare cross-project relationships in **Project Linking** (`@g-project (Project Linking section)`) when ready
-   - **Optional**: Install domain-specific skill packs from `skill_packs/` directory — run `.\skill_packs\{pack}\install.ps1` for infrastructure, ai-ml-dev, startup-tools, and other packs
+   - **Optional**: Install domain-specific skill packs from `skill_packs/` directory — run `.\skill_packs\{pack}\install.py` for infrastructure, ai-ml-dev, startup-tools, and other packs
 
 ---
 
@@ -353,15 +401,19 @@ If a user invokes `@g-setup` on a project that has no IDE platform dirs yet, poi
 
 ---
 
-## gald3r Engine (bundled) <!-- gald3r-engine-note -->
+## gald3r Engine (compiled binary) <!-- gald3r-engine-note -->
 
-This install bundles the gald3r **engine** at `.gald3r_sys/engine/` — a deterministic Mode-A
-core (no LLM calls) that the slimmed skills call for state CRUD (tasks, bugs, features, prds,
-ideas, constraints, subsystems, release, vault) and to serve the centralized judgment prompts.
+The gald3r **engine** — a deterministic Mode-A core (no LLM calls) that the slimmed skills
+call for state CRUD (tasks, bugs, features, prds, ideas, constraints, subsystems, release,
+vault) and to serve the centralized judgment prompts — ships as a **compiled binary**, not
+readable source (IP leak-stop, T1645). `.gald3r_sys/engine/` in this install contains only
+a stub README; the zero-IP resolver `.gald3r_sys/scripts/gald3r_bin.py` finds the engine
+(`GALD3R_BIN` env var → `gald3r` on PATH → bundled `.gald3r_sys/bin/` → dev source).
 
-- **Provision / verify** (one-time): `pwsh .gald3r_sys/engine/provision_engine.ps1`
-  (macOS/Linux without pwsh: `sh .gald3r_sys/engine/provision_engine.sh`). The only prerequisite
-  is `uv`, which the script installs if missing. The installer runs this automatically.
-- Slimmed skills then call: `uv run --project .gald3r_sys/engine gald3r <verb>` (or MCP `gald3r_*`).
-- If the engine isn't provisioned, every slimmed skill still works via its **`SKILL.full.md`**
-  fallback — nothing points outside the install.
+- **Install / verify** (one-time): run the `g-install-agent` command (`/g-install-agent`
+  in Claude Code, `@g-install-agent` in Cursor) — it downloads the signed, SHA-256-verified
+  `gald3r` binary from the public Gald3r-Labs/gald3r_agent releases into the gald3r home
+  `bin/` (T1615). Verify with `gald3r --version`.
+- Slimmed skills then call: `gald3r <verb>` (or MCP `gald3r_*`).
+- If no engine binary is installed, every slimmed skill still works via its
+  **`SKILL.full.md`** fallback — nothing points outside the install.

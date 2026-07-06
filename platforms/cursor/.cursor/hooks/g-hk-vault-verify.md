@@ -6,9 +6,14 @@ writes do not silently fail.
 
 ## Fires On
 
-Sourced and invoked by `g-hk-session-start.py` while building the Vault Context
-banner. Can also be run standalone (`uv run python g-hk-vault-verify.py`) to
-print the status line.
+The **canonical `stop` event** (T1627, WS-A-4). Wired in `g_hk_core.py`
+`CONCERN_CHAIN["stop"]` and registered directly on the Claude Code
+(`.claude/settings.json` `hooks.Stop`) and Cursor (`.cursor/hooks.json`
+`stop`) triggers, so a broken/partial vault surfaces at the end of every
+agent turn. Its banner logic is also sourced inline by
+`g-hk-session-start.py` while building the Vault Context banner, and it can
+still be run standalone (`uv run python g-hk-vault-verify.py`) to print the
+status line.
 
 ## What It Does
 
@@ -34,6 +39,7 @@ in `skills/g-skl-vault/SKILL.md`.
 
 ## Related Tasks
 
+- T1627 (WS-A-4) — registered the vault chain on the canonical events.
 - T1456 — Add vault existence/structure verification at session start.
 - Companion resolver: `g-hk-vault-resolve.py` (resolves/creates the working vault
   path; this hook verifies the *configured* path independently).

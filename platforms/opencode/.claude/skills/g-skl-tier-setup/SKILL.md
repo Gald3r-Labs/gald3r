@@ -428,7 +428,7 @@ Inference defaults match this table: `docker` signals → `docker` tier; `api-ke
 
 ## Script backing
 
-The interactive flow can run either in-chat (the agent asks and the user answers in conversation) or via the optional PowerShell script at `scripts/tier_setup.py` (shipped inside this skill folder for Cursor only, per D015 canonical-scripts pattern). Both paths produce identical file outputs. Agents should prefer the in-chat flow when the user is present — the script is for unattended/CI usage.
+The interactive flow can run either in-chat (the agent asks and the user answers in conversation) or via the optional PowerShell script at `gald3r tier setup` (shipped inside this skill folder for Cursor only, per D015 canonical-scripts pattern). Both paths produce identical file outputs. Agents should prefer the in-chat flow when the user is present — the script is for unattended/CI usage.
 
 ---
 

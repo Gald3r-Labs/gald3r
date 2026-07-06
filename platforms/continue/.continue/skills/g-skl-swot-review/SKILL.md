@@ -17,7 +17,7 @@ subsystem_memberships: [BUG_AND_QUALITY]
 **What it does:** structured SWOT analysis of the current project phase.
 
 ## Preferred — fetch the centralized judgment
-`uv run --project .gald3r_sys/engine gald3r prompt get rubric.swot`   ·   MCP `gald3r_prompt_get id=rubric.swot`
+`gald3r prompt get rubric.swot`   ·   MCP `gald3r_prompt_get id=rubric.swot`
 
 ## Manual fallback (engine not provisioned)
 Follow **`SKILL.full.md`** in this directory, plus any `rules.md` / `reference/` / `examples/`.

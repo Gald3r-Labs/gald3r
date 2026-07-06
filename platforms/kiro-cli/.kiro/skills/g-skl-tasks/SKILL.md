@@ -15,7 +15,7 @@ subsystem_memberships: [TASK_MANAGEMENT]
 **What it does:** task lifecycle over TASKS.md + tasks/<status>/.
 
 ## Preferred — invoke the engine
-- **CLI:** `uv run --project .gald3r_sys/engine gald3r task …`  (or the installed `gald3r`)
+- **CLI:** `gald3r task …`  (or the installed `gald3r`)
 - **MCP tools:** `gald3r_task_*`   ·   facade `Gald3r(...).tasks`
 
 The engine owns ID allocation, file placement, status→folder moves, index regeneration, and

@@ -59,7 +59,7 @@ When L1 triage detects a **structural gap** matching a known framework constrain
 a repo that predates C-023 release files), the corresponding heal path backfills it. Heals are
 **dry-run by default**; pass `--apply` to write. Every operation is logged to
 `.gald3r/logs/medic_heal_YYYYMMDD.log` (only when `--apply`). Runner:
-`.claude/skills/g-skl-medic/scripts/gald3r_medic_heal.py`.
+`gald3r medic heal`.
 
 ```
 @g-medic --heal-c023 --dry-run     # plan release-file backfill from CHANGELOG (no writes)
@@ -72,12 +72,12 @@ a repo that predates C-023 release files), the corresponding heal path backfills
 
 | Flag | What it heals | Mechanism |
 |------|---------------|-----------|
-| `--heal-c023` | Missing `.gald3r/releases/RELEASE_*` files | Delegates to `g-skl-release/scripts/backfill_release_files.py` |
+| `--heal-c023` | Missing `.gald3r/releases/RELEASE_*` files | Delegates to `gald3r ship` |
 | `--heal-version` | Missing root `VERSION` file | Derives from latest CHANGELOG versioned header |
 | `--heal-constraints` | Inheritable framework constraints absent locally | Reports gap; `--apply` appends an adoption-pointer stub (cautious: never injects full bodies, never creates CONSTRAINTS.md) |
 | `--heal-all` | All of the above | Runs in dependency order: version → c023 → constraints |
 
-Direct invocation: `gald3r_medic_heal.py -ProjectRoot <path> -Heal c023|version|constraints|all [-Apply] [-Json]`.
+Direct invocation: `gald3r medic heal`.
 
 > **Safety:** heals never touch workspace member marker-only `.gald3r/` trees, never delete,
 > and the constraints heal is deliberately cautious (pointer stub only). Pass `-Json` for
@@ -97,9 +97,9 @@ Direct invocation: `gald3r_medic_heal.py -ProjectRoot <path> -Heal c023|version|
 
 ### Curation mode (`--curate`, Task 517)
 
-**Default (dry-run)**: runs `.claude/skills/g-skl-medic/scripts/gald3r_medic_curate.py` — counts feature/subsystem sprawl (recursive subsystem count), runs hierarchy sync helpers with `-WarnOnly`, adds a **fragmentation** section (duplicate `feat-NNN` hits in `FEATURES.md`, subsystem specs on disk not indexed in `SUBSYSTEMS.md` via sync JSON), and writes a human report plus `medic_curate_proposal_<stamp>.json` under `.gald3r/reports/` (gitignored). The proposal keeps top-level `moves` empty for safety, but now includes non-binding `suggested_moves` and `index_candidates` with source, target, risk/confidence, and rationale so the reviewer has concrete candidates to approve/edit/reject.
+**Default (dry-run)**: runs `gald3r medic curate` — counts feature/subsystem sprawl (recursive subsystem count), runs hierarchy sync helpers with `-WarnOnly`, adds a **fragmentation** section (duplicate `feat-NNN` hits in `FEATURES.md`, subsystem specs on disk not indexed in `SUBSYSTEMS.md` via sync JSON), and writes a human report plus `medic_curate_proposal_<stamp>.json` under `.gald3r/reports/` (gitignored). The proposal keeps top-level `moves` empty for safety, but now includes non-binding `suggested_moves` and `index_candidates` with source, target, risk/confidence, and rationale so the reviewer has concrete candidates to approve/edit/reject.
 
-**No report files (CI / no disk side effects)**: pass `-NoReportFiles` to `gald3r_medic_curate.py` — prints the same report + proposal JSON to stdout only (no `medic_curate_*.md` / proposal files / `medic_curate_latest.json`).
+**No report files (CI / no disk side effects)**: pass `-NoReportFiles` to `gald3r medic curate` — prints the same report + proposal JSON to stdout only (no `medic_curate_*.md` / proposal files / `medic_curate_latest.json`).
 
 **Apply**: **never** implied. Requires `-ProposalJson` pointing at a proposal JSON that includes non-empty top-level `moves`; dry-run `suggested_moves` are advisory only and must be copied into `moves` after review. Script **backs up** each source under `.gald3r/reports/medic_curate_backup_<stamp>/`, performs `git mv` for each entry (paths must stay under `.gald3r/features/` or `.gald3r/subsystems/`; duplicate from/to rejected), **literal path replace** in `FEATURES.md`, `SUBSYSTEMS.md`, and `.gald3r/tasks/*.md` for moved paths, writes a manifest JSON, then runs `gald3r_subsystem_diagrams_generate.py`. Refuses when the working tree has unrelated dirty paths. **Never targets** workspace member marker-only `.gald3r/` trees — pass controller repo root only.
 

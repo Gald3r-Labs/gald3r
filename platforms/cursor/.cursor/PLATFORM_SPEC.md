@@ -131,10 +131,12 @@ repo's `.cursor/hooks.json`:
 - **Extended contract (T600)**: HTTP hook type, glob tool matcher, `block_on_failure`, shell-safe
   arg substitution, and the 6-event worktree lifecycle — see SKILL.md §3a. Some T600 features
   (HTTP hook caller) currently live in `.claude/hooks/` and are a parity follow-up to `.cursor/`.
-- **gald3r-internal events (T1055)**: `pre_skill` / `post_skill` / `pre_session` / `post_session`
-  are NOT auto-wired into `hooks.json` (Cursor has no native skill-boundary event) — dispatched by
-  the gald3r runner. Reference hooks present: `g-hk-pre-skill-timing`, `g-hk-post-skill-timing`,
-  `g-hk-pre-session-trace`, `g-hk-post-session-trace`.
+- **gald3r-internal events (T1055/T1624)**: `pre_skill` / `post_skill` are NOT auto-wired into
+  `hooks.json` (Cursor has no native skill-boundary event) — dispatched by the gald3r runner.
+  Reference hooks present: `g-hk-pre-skill-timing`, `g-hk-post-skill-timing`. The former
+  `pre_session` / `post_session` internal events were retired by T1624 (WS-A-1, decision D-8):
+  `g-hk-pre-session-trace` and `g-hk-post-session-trace` now fire on the canonical
+  `sessionStart`/`stop` wiring in `hooks.json` + `g_hk_core.py` CONCERN_CHAIN.
 - **Reference status**: ✅ verified working — this is the canonical hook layout.
 
 ---

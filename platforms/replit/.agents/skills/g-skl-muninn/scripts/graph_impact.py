@@ -5,7 +5,7 @@ Cross-file impact analysis for gald3r projects (T1158). Returns a list of
 files that import, call, or reference the target file/symbol.
 
 Wraps the gald3r_muninn `graph_impact` MCP tool (replaces the deprecated
-gitnexus-based gitnexus_impact script).
+gitnexus-based gitnexus_impact script — retired T1652 D8).
 
 Backend resolution order:
 1. muninn (preferred) — invoke the muninn plugin core in-process

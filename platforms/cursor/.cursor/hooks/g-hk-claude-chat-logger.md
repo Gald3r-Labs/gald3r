@@ -5,20 +5,23 @@ Claude Code chat-logging hook — the Claude-side mirror of the Cursor logging f
 
 ## Fires On
 
-Claude Code **`Stop`** event (when Claude finishes responding to a turn). Wired in
-`.claude/settings.json` under `hooks.Stop`. Receives the Stop JSON payload on stdin
-(`session_id`, `transcript_path`, `cwd`, `hook_event_name`, `stop_hook_active`).
+The canonical **`stop`** event, **indirectly via `g-hk-agent-complete`** (T1624, WS-A-1).
+`g-hk-agent-complete` is the registered stop concern (`g_hk_core.py` `CONCERN_CHAIN["stop"]`,
+`.claude/settings.json` `hooks.Stop`, `.cursor/hooks.json` `stop`); it extracts/discovers the
+transcript path (T1232 fallback included) and launches this logger as a subprocess. The indirect
+wiring is recorded machine-readably in `g_hk_core.py` `INDIRECT_CONCERNS` so the hook-parity lint
+(WS-A-5) treats it as chained, not orphaned. Registering this file directly as well would write
+every chat log twice. Launcher platform-map resolution polish is tracked in T1625 (BUG-133).
 
 ## What It Does
 
-1. Reads the Stop payload from stdin and extracts `transcript_path` + `session_id`.
-2. Resolves the project root (payload `cwd`, else walks up from the script to `.gald3r/`).
-3. Locates Python (`py` → `python` → `python3`) and invokes
-   `g-hk-claude-chat-logger.py --transcript-path <path> --platform claude
-   --conversation-id <session_id>`.
-4. The Python engine reads Claude's transcript JSONL and writes a human-readable
-   transcript to `.gald3r/logs/{YYYY-MM-DD}_{session_id}_claude_chat.log` in the
-   same format the Cursor logger produces.
+1. `g-hk-agent-complete` reads the stop payload, resolves `transcript_path` +
+   `conversation_id`/`session_id` (payload → env → T1232 agent-transcripts scan), and invokes
+   `g-hk-claude-chat-logger.py --transcript-path <path> --project-path <root>
+   [--conversation-id <id>] ...`.
+2. This script reads the transcript JSONL and writes a human-readable
+   transcript to `.gald3r/logs/{YYYY-MM-DD}_{id}_{platform}_chat.log` in the
+   same format the Cursor logger produced.
 
 ## Side Effects
 

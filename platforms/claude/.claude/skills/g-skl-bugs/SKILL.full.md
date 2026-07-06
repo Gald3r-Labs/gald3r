@@ -50,7 +50,7 @@ workspace_touch_policy: source_only
 - Member repo fixes require explicit member IDs, compatible touch policy, bug or linked-task text authorizing member writes or generated output, reviewed member git status, and manifest write permission or a task-specific override. During bootstrap, planned member repos with `write_allowed: false` are blocked.
 - Widening a bug from current-repo-only to member repos, or changing policy to `generated_output`/`multi_repo`, requires a Status History note or equivalent explicit instruction explaining the scope change.
 - `BUGS.md` should omit these fields for current-repo-only bugs. For workspace-scoped bugs, add only a compact suffix when useful, for example `workspace: <template_full>; policy: generated_output`.
-- These fields complement `cross_project_ref`: workspace routing controls filesystem scope; `cross_project_ref` tracks PCAC coordination state.
+- These fields complement `cross_project_ref`: workspace routing controls filesystem scope; `cross_project_ref` tracks WPAC coordination state.
 
 ---
 

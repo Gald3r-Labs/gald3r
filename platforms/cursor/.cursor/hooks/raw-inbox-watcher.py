@@ -8,8 +8,12 @@ destination via the existing g-skl-ingest-* scripts. On success files move
 to {vault}/raw/processed/YYYY-MM-DD/. On failure they move to
 {vault}/raw/failed/ alongside an error.md sibling explaining the reason.
 
-Phase 2 explicitly does NOT install a filesystem-watcher service. It is
-invoked manually via @g-vault-process-inbox or directly:
+Phase 2 explicitly does NOT install a filesystem-watcher service. Since
+T1627 (WS-A-4) it is registered on the canonical `stop` event with
+`--hook-mode` (`g_hk_core.py` CONCERN_CHAIN["stop"], Claude `settings.json`
+`hooks.Stop`, Cursor `hooks.json` `stop`), so the inbox is processed (or its
+items flagged into raw/failed/) at the end of every agent turn. It remains
+invocable manually via @g-vault-process-inbox or directly:
 
   python .claude/hooks/raw-inbox-watcher.py
   python .claude/hooks/raw-inbox-watcher.py -DryRun
@@ -19,7 +23,9 @@ Re-running on an empty raw/ is a no-op. Vault path resolution is a native
 port of g-hk-vault-resolve.ps1 (which the PS1 dot-sources).
 
 Exit codes: 0 = success or no work, 1 = unrecoverable error, 2 = some
-failures or deferred files.
+failures or deferred files. In --hook-mode (lifecycle registration) the
+exit code is ALWAYS 0 — failures are still moved/flagged and summarized,
+but a lifecycle hook must never block or crash the host session.
 """
 # @subsystems: WORKSPACE_COORDINATION
 from __future__ import annotations
@@ -237,6 +243,12 @@ def main():
     parser.add_argument("-Verbose", "--verbose", dest="verbose",
                         action="store_true",
                         help="Print per-file classification details.")
+    parser.add_argument("-HookMode", "--hook-mode", dest="hook_mode",
+                        action="store_true",
+                        help="Lifecycle-hook mode (T1627, stop chain): always "
+                             "exit 0 so the host session is never blocked; "
+                             "failures are still moved to raw/failed/ and "
+                             "flagged with an error.md sibling.")
     args, _unknown = parser.parse_known_args()
     dry_run = args.dry_run
     VERBOSE = args.verbose
@@ -570,8 +582,9 @@ def main():
     print(summary)
 
     # Exit codes: 0 = success or no work, 1 = unrecoverable error,
-    # 2 = some failures
-    if failed_count > 0 or deferred_count > 0:
+    # 2 = some failures. Hook mode (T1627): a lifecycle hook must never
+    # block the host session, so the exit code is always 0 there.
+    if (failed_count > 0 or deferred_count > 0) and not args.hook_mode:
         return 2
     return 0
 
@@ -590,6 +603,10 @@ if __name__ == "__main__":
         raise
     except Exception as exc:
         # Parity with $ErrorActionPreference = "Stop": unrecoverable -> 1.
+        # In hook mode a lifecycle hook must never crash the host session
+        # (T1627), so even unrecoverable errors exit 0 there.
         print("raw-inbox-watcher: unrecoverable error: %s" % exc,
               file=sys.stderr)
+        if "--hook-mode" in sys.argv or "-HookMode" in sys.argv:
+            sys.exit(0)
         sys.exit(1)

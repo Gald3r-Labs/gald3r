@@ -5,7 +5,7 @@ Manage workflow profiles (project types): $ARGUMENTS
 
 `@g-pt` ("project type") lists, switches, copies, locates, and validates gald3r
 **Workflow Profiles** — the per-domain task-lifecycle vocabularies under
-`.gald3r/config/workflow_profiles/*.yaml` that `load_profile.py` (T1239/T1335)
+`.gald3r/config/workflow_profiles/*.yaml` that `gald3r project-type resolve` (T1239/T1335)
 resolves at runtime. It is the management front-end for those profiles, so you
 never have to hand-edit the YAML to switch or fork one.
 
@@ -15,14 +15,14 @@ never have to hand-edit the YAML to switch or fork one.
 
 ## Behavior
 
-Runs the helper `.claude/skills/g-skl-project-types/scripts/g_pt.py`:
+Runs the helper `gald3r project-type`:
 
 ```powershell
-uv run python .claude/skills/g-skl-project-types/scripts/g_pt.py list
-uv run python .claude/skills/g-skl-project-types/scripts/g_pt.py use content_creation
-uv run python .claude/skills/g-skl-project-types/scripts/g_pt.py copy software_dev my_workflow
-uv run python .claude/skills/g-skl-project-types/scripts/g_pt.py edit my_workflow
-uv run python .claude/skills/g-skl-project-types/scripts/g_pt.py validate my_workflow
+gald3r project-type list
+gald3r project-type use content_creation
+gald3r project-type copy software_dev my_workflow
+gald3r project-type edit my_workflow
+gald3r project-type validate my_workflow
 ```
 
 ## Subcommands
@@ -37,7 +37,7 @@ uv run python .claude/skills/g-skl-project-types/scripts/g_pt.py validate my_wor
 
 ## How the active profile is resolved
 
-`list` reuses `load_profile.py`'s hybrid activation chain (highest priority
+`list` reuses `gald3r project-type resolve`'s hybrid activation chain (highest priority
 first): task frontmatter `workflow_profile:` → `PROJECT.md` `workflow_profile:`
 → `.gald3r/.identity` `project_type=` → `.gald3r/.project_type` → `freeform`.
 Legacy ids are alias-normalized (e.g. `software_development` → `software_dev`).

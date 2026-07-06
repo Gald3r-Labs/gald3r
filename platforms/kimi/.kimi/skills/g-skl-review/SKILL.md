@@ -14,7 +14,7 @@ subsystem_memberships: [BUG_AND_QUALITY]
 **What it does:** code/work review.
 
 ## Preferred — fetch the centralized judgment
-`uv run --project .gald3r_sys/engine gald3r prompt get role.code_reviewer`   ·   MCP `gald3r_prompt_get id=role.code_reviewer`
+`gald3r prompt get role.code_reviewer`   ·   MCP `gald3r_prompt_get id=role.code_reviewer`
 
 ## Manual fallback (engine not provisioned)
 Follow **`SKILL.full.md`** in this directory, plus any `rules.md` / `reference/` / `examples/`.

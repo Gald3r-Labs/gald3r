@@ -1,38 +1,42 @@
 # Hook: g-hk-pre-session-trace
 
-Example reference hook for the **`pre_session`** lifecycle event (T1055).
-Demonstrates per-session observability/tracing at the gald3r session boundary.
+Session-trace opener for per-session observability at the session boundary.
+Originally the T1055 `pre_session` reference example; T1624 (WS-A-1, decision
+D-8) retired the gald3r-internal event name and wired this hook into the
+canonical core.
 
 ## Fires On
 
-The gald3r-internal **`pre_session`** lifecycle event at the very start of a gald3r
-work session. This is distinct from the harness-native `sessionStart` event (which
-wires `g-hk-session-start.py`): `pre_session` is the **gald3r-level** boundary,
-dispatched by the gald3r skill/command runner or fired manually, so gald3r can
-trace its own session lifecycle independent of which harness (Cursor / Claude /
-CLI) launched the session. It is **not auto-wired** into `hooks.json`. The payload
-arrives on stdin as JSON and SHOULD carry `session_id` (if available) and
-`project_path`.
+The **canonical `session-start` event**. Wired in `g_hk_core.py`
+`CONCERN_CHAIN["session-start"]` (all dispatcher-driven platforms) and
+registered directly on the harness-native trigger for Claude Code
+(`.claude/settings.json` `hooks.SessionStart`) and Cursor (`.cursor/hooks.json`
+`sessionStart`). The payload arrives on stdin as JSON; `session_id` (Claude),
+`conversation_id` (Cursor), and `cwd`/`project_path` are all accepted. The
+former gald3r-internal `pre_session` event name is retired (D-8).
 
 ## What It Does
 
-Parses the session-event payload (falling back to a timestamp-derived `session_id`
-when none is supplied), resolves the project root, and stages a per-session start
-marker (`.gald3r/logs/session_trace_<session>.json`) with the start timestamp and
-an epoch-ms stamp. The companion `g-hk-post-session-trace` reads it to compute
-session duration. Non-blocking by design.
+Parses the session-event payload (falling back to a timestamp-derived
+`session_id` when none is supplied), resolves the project root, prunes stale
+trace markers (older than 7 days), and stages a per-session start marker
+(`.gald3r/logs/session_trace_<session>.json`) with the start timestamp and an
+epoch-ms stamp. The companion `g-hk-post-session-trace` reads it to compute
+session duration on `stop` / `session-end`. Non-blocking by design.
 
 ## Side Effects
 
 - Writes `.gald3r/logs/session_trace_<session>.json` (start marker).
-- Appends a `pre_session | session=... | project=...` line to
+- Prunes `session_trace_*.json` markers older than 7 days.
+- Appends a `session-start | session=... | project=...` line to
   `.gald3r/logs/session_lifecycle.log`.
 - Always returns `{ continue = true }` and exits 0 — never blocks session start,
   never touches control-plane state (TASKS.md, BUGS.md, task/bug files).
 
 ## Related Tasks
 
-- T1055 — Add plugin lifecycle hooks (pre/post skill/session). This is the
-  `pre_session` reference example.
-- Companion: `g-hk-post-session-trace` (closes the session trace).
+- T1624 (WS-A-1) — wired the logging chain into the canonical hook core;
+  retired the internal `pre_session`/`post_session` event names (D-8).
+- T1055 — original plugin lifecycle hooks (this was the `pre_session` example).
+- Companion: `g-hk-post-session-trace` (logs/closes the session trace).
 - Pattern: `commands/g-create-hook.md` (event list + scaffolding contract).

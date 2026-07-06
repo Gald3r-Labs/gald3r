@@ -14,7 +14,7 @@ subsystem_memberships: [RELEASE_AND_VERSIONING]
 **What it does:** release records (RELEASES.md + releases/).
 
 ## Preferred — invoke the engine
-- **CLI:** `uv run --project .gald3r_sys/engine gald3r release …`  (or the installed `gald3r`)
+- **CLI:** `gald3r release …`  (or the installed `gald3r`)
 - **MCP tools:** `gald3r_release_*`   ·   facade `Gald3r(...).release`
 
 The engine owns ID allocation, file placement, status→folder moves, index regeneration, and
@@ -23,3 +23,11 @@ validation. `.gald3r/` markdown stays the data source of truth.
 ## Manual fallback (engine not provisioned)
 Follow **`SKILL.full.md`** (full procedure) + the schema in `.gald3r_sys/schemas/` (`generic`).
 Everything needed ships in the install — nothing external.
+
+## Public-publish history mode (T423)
+Publishing/graduating to a **public** repo chooses how git history is handled:
+`carry` (default — keep history, safe) vs `scrub` (Mode A — zero-history publish for IP
+protection, DESTRUCTIVE). `scrub` is OFF by default, opted in at `@g-setup`
+(`publish_history_mode` in `.gald3r/.identity`), and at publish time **requires an explicit
+`-ConfirmScrub`**. Full contract + the current-architecture caveat are in **`SKILL.full.md`**
+-> "Public-Publish History Mode (T423)".

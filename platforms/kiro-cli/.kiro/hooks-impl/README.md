@@ -4,32 +4,37 @@ Kiro CLI declares lifecycle hooks **inside the agent JSON config**
 (`.kiro/agents/<name>.json` `hooks` field) — NOT as standalone hook files. The
 gald3r agent config is `.kiro/agents/gald3r.json`.
 
-## Architecture (T424 — canonical event + shared core)
+## Architecture (T424 — canonical event + shared core; T1601 — PS1-KILL)
 
 Each native kiro-cli event maps to a gald3r **canonical event** and delegates to
 the **shared Python core** (`g_hk_core.py`) so behavior matches every other
-platform:
+platform. As of T1601 (PS1-KILL epic T667), `gald3r.json`'s `command` field
+invokes `python .kiro/hooks/g-hk-on-<event>.py` directly — no PowerShell shim is
+needed, because kiro-cli's agent-JSON `command` field accepts an arbitrary
+command string (unlike Augment's hook runner, which requires a script-file path
+with a specific extension). This folder (`hooks-impl/`) is now retained only for
+historical/documentation purposes; it no longer holds any hook implementation
+files.
 
-| kiro-cli native event | canonical event | shim |
+| kiro-cli native event | canonical event | entrypoint (invoked directly) |
 |---|---|---|
-| `agentSpawn` | `session-start` | `g-hk-kiro-cli-session-start.ps1` |
-| `userPromptSubmit` | `user-prompt-submit` | `g-hk-kiro-cli-user-prompt-submit.ps1` |
-| `preToolUse` | `tool-start` | `g-hk-kiro-cli-tool-start.ps1` |
-| `postToolUse` | `tool-end` | `g-hk-kiro-cli-tool-end.ps1` |
-| `stop` | `stop` | `g-hk-kiro-cli-stop.ps1` |
+| `agentSpawn` | `session-start` | `.kiro/hooks/g-hk-on-session-start.py` |
+| `userPromptSubmit` | `user-prompt-submit` | `.kiro/hooks/g-hk-on-user-prompt-submit.py` |
+| `preToolUse` | `tool-start` | `.kiro/hooks/g-hk-on-tool-start.py` |
+| `postToolUse` | `tool-end` | `.kiro/hooks/g-hk-on-tool-end.py` |
+| `stop` | `stop` | `.kiro/hooks/g-hk-on-stop.py` |
 
 (kiro-cli has no native `sessionEnd` — `stop` is its session-end-equivalent, so
 `session-end` is not wired here.)
 
-## Shim contract
+## Invocation contract
 
-- The shims in this folder are **thin trigger wiring ONLY** — no business logic.
-- kiro-cli delivers the event payload as **JSON on STDIN**. Each shim reads
-  `$input` and pipes it to the canonical entrypoint
-  `.kiro/hooks/g-hk-on-<event>.py`, which calls `g_hk_core.dispatch(<event>)`.
+- kiro-cli delivers the event payload as **JSON on STDIN**. Each canonical
+  entrypoint's `g_hk_core.dispatch(<event>)` reads `sys.stdin` directly — the
+  gald3r agent-JSON `command` inherits the parent process's stdin automatically,
+  so no explicit piping wrapper is required.
 - Flow control is by **exit code**: `0` ok; `2` (preToolUse / `tool-start`)
   blocks the tool call and returns STDERR to the LLM.
-- gald3r `.ps1` shims read STDIN (`$input`), **not** `$env:*`.
 
 ## Runtime note
 

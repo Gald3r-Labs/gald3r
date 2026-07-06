@@ -3,6 +3,16 @@ subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 ---
 # Hook: g-hk-component-tag-check
 
+## Keep-Justification (T1624, decision D-7)
+
+Reviewed for retire-vs-keep under D-7 ("delete setup-user/component-tag-check if
+superseded"): **KEPT — not superseded.** This is the only enforcement path for
+`g-rl-38` subsystem tagging on `.gald3r_sys/` components. `gald3r validate`
+(T520) enforces the task/bug *file* contract on staged `.gald3r/**` only — it
+does not check component tagging. Intentionally NOT an agent-lifecycle event
+hook: it is a git `pre-commit` / direct-check tool (allowlist it in the WS-A-5
+hook-parity lint alongside `g-hk-pre-commit` / `g-hk-pre-push`).
+
 ## Fires On
 Git `pre-commit` event. Inspects every staged file under `.gald3r_sys/` at commit time.
 Not auto-wired to `hooks.json` — activated via `git config core.hooksPath`.

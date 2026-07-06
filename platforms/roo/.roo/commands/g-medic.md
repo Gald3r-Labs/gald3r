@@ -37,7 +37,7 @@ Usage:
   @g-medic --heal-constraints [--apply] → report inheritable framework constraints missing locally (--apply appends adoption-pointer stub)
   @g-medic --heal-all [--apply]       → run every Phase 1 heal in dependency order (version → c023 → constraints)
 
-Heal paths map to `gald3r_medic_heal.py -Heal <c023|version|constraints|all> [-Apply] [-Json]`.
+Heal paths map to `gald3r medic heal`.
 Heals are dry-run by default and log to `.gald3r/logs/medic_heal_YYYYMMDD.log` (only with `--apply`).
 
 Dry-run/output rules:

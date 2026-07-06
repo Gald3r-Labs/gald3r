@@ -494,7 +494,7 @@ worktree_owner: "{agent_id_or_platform_slug}"
 
 - Worktree metadata is optional for legacy/direct-root work and required only when a workflow actually creates or reuses a worktree.
 - `worktree_path` must resolve outside the active repository checkout; nested worktrees inside the primary working tree are invalid.
-- Worktrees must be created/reported/removed through `scripts/gald3r_worktree.py` so cleanup can prove ownership with `.gald3r-worktree.json`.
+- Worktrees must be created/reported/removed through `gald3r worktree` so cleanup can prove ownership with `.gald3r-worktree.json`.
 - Stale cleanup is report-only by default and may remove only worktrees with gald3r ownership metadata plus explicit apply confirmation.
 
 4. **For completed** — also set `completed_date: "YYYY-MM-DD"` and update subsystem Activity Logs (see g-subsystems)
@@ -981,7 +981,7 @@ type: bug_fix
 subsystems: [TASK_MANAGEMENT]
 ```
 **How it runs:**
-`scripts/hot_inbox_intake.py` is called at the start of each `g-go-go` iteration
+`gald3r inbox` (engine verb — absorbed the retired `scripts/hot_inbox_intake.py`, T1652 D6) runs at the start of each `g-go-go` iteration
 (before the WPAC gate, before the claim loop). It:
 1. Assigns the next sequential task/bug ID
 2. Writes a proper task file to `tasks/open/` with full frontmatter
@@ -992,8 +992,8 @@ The intake commit is the **sole writer** of `TASKS.md` / `BUGS.md` in that step 
 housekeeping gate classifies it as `safe-gald3r-housekeeping` and auto-commits without blocking.
 **Manual invocation:**
 ```bash
-uv run python scripts/hot_inbox_intake.py -DryRun   # preview
-uv run python scripts/hot_inbox_intake.py            # apply
+gald3r inbox --dry-run   # preview
+gald3r inbox             # apply
 ```
 **Inbox is empty → exits 0, no commit, no output (use -Quiet).**
 ---
@@ -1197,7 +1197,7 @@ release_hold_reason: "Holding for coordinated deploy"   # optional, free text
 
 Engine-backed (`TaskSystem.set_release_hold`). Sets `release_hold` (and optional `release_hold_reason` / `sync_with`) on a task, re-validates, rewrites the task file, and regenerates `TASKS.md`. `set-release-hold <id> none` is equivalent to CLEAR.
 
-- **CLI:** `uv run --project .gald3r_sys/engine gald3r task set-release-hold <id> <none|manual|sync_required> [--reason "..."] [--sync-project <id> --sync-task <id>]`
+- **CLI:** `gald3r task set-release-hold <id> <none|manual|sync_required> [--reason "..."] [--sync-project <id> --sync-task <id>]`
 - **MCP:** `gald3r_task_set_release_hold(id, hold, reason="", sync_with=[{project, task, reason}])`
 - **Command:** `@g-task set-release-hold <id> <none|manual|sync_required> "<reason>"` (see `@g-task-upd`)
 
@@ -1205,7 +1205,7 @@ Engine-backed (`TaskSystem.set_release_hold`). Sets `release_hold` (and optional
 
 Engine-backed (`TaskSystem.clear_release_hold`). Removes `release_hold`, `release_hold_reason`, and `sync_with` from the task (equivalent to `release_hold: none`), rewrites the file, regenerates `TASKS.md`.
 
-- **CLI:** `uv run --project .gald3r_sys/engine gald3r task clear-release-hold <id>`
+- **CLI:** `gald3r task clear-release-hold <id>`
 - **MCP:** `gald3r_task_clear_release_hold(id)`
 - **Command:** `@g-task clear-release-hold <id>` (see `@g-task-upd`)
 
@@ -1311,7 +1311,7 @@ snapshot once and use it as the source of truth for valid statuses + symbols:
 # Resolves the hybrid activation chain (task frontmatter > PROJECT.md >
 # .identity project_type= > freeform) and prints a JSON snapshot.
 # -TaskFile lets a per-task workflow_profile: override win.
-uv run python .claude/skills/g-skl-project-types/scripts/load_profile.py `
+gald3r project-type resolve `
     -TaskFile .gald3r/tasks/open/task<id>_<slug>.md
 ```
 

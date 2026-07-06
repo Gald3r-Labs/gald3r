@@ -148,7 +148,7 @@ Collect all unique `subsystems:` values from task files. Compare to SUBSYSTEMS.m
 **Hierarchy validation (dry-run, no writes)** — recursively scans `.gald3r/subsystems/**/*.md` (excluding generated artifact names), validates parent/child metadata, duplicate names, `locations:` for **index-listed** specs, optional parent/child **domain** mismatch, **SUBSYSTEMS.md** link targets that point at missing files, and emits `disk_not_indexed` in `-Json` for specs not referenced from the index.
 
 ```powershell
-uv run python .claude/skills/g-skl-subsystems/scripts/gald3r_subsystem_hierarchy_sync.py -ProjectRoot .
+gald3r subsystem sync
 ```
 
 Use `-WarnOnly` for advisory exit 0; `-Json` for automation. **Do not conflate** this with the dependency graph: `dependencies:` / `dependents:` describe runtime coupling; `parent_subsystem` / `children` / nested folders describe documentation ownership grouping.

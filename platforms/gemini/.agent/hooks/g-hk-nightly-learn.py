@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Python port of g-hk-nightly-learn.ps1 (T1584).
+"""Python port of g-hk-nightly-learn.ps1 (T1584); engine-verb dispatch (T1665).
 
 Nightly hook: trigger session summary extraction into learned-facts.md
 (T928, T1233). Fires under `stop` (agent session complete). Lightweight by
@@ -11,12 +11,14 @@ design:
    `nightly_learn_interval` (default 5; configurable in
    `.gald3r/config/AGENT_CONFIG.md`).
 3. Checks `nightly_learn:` in HEARTBEAT.md for an explicit off switch.
-4. Spawns the heavy helper (`gald3r_nightly_learn.py` preferred, falling
-   back to `gald3r_nightly_learn.ps1` via PowerShell) as a fully detached
-   background process. The hook itself returns within milliseconds — it
-   never blocks the agent UI waiting for LLM extraction.
+4. Resolves the compiled gald3r engine via the zero-IP `gald3r_bin.py`
+   resolver and spawns `gald3r learn nightly` (the absorbed GATHER loop,
+   T1670) as a fully detached background process. The readable
+   `gald3r_nightly_learn.py` skill script was stripped in the v3 IP round
+   (T1665); the methodology now lives in the compiled binary. The hook
+   itself returns within milliseconds — it never blocks the agent UI.
 5. Writes `.gald3r/logs/nightly-learn-last-run.log` with the spawn time,
-   PID, helper path, and counter state so future hangs are diagnosable.
+   PID, engine command, and counter state so future hangs are diagnosable.
 
 Never crashes the host session: any unexpected error exits 0.
 """
@@ -25,8 +27,8 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import importlib.util
 import os
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -46,32 +48,27 @@ def _find_project_root() -> str:
         d = d.parent
 
 
-def _resolve_helper(project_root: str) -> Path:
-    """Prefer a .py sibling of the helper script; fall back to the .ps1.
+def _resolve_engine_cmd(project_root: Path):
+    """Resolve the gald3r engine command prefix via the zero-IP resolver.
 
-    Candidate locations (same order as the PS1, with a D015 legacy fallback):
-      1. .gald3r_sys/skills/g-skl-learn/scripts/gald3r_nightly_learn.*
-      2. scripts/gald3r_nightly_learn.*  (legacy)
-    Returns the first existing candidate; when none exist, returns the
-    legacy .ps1 path (matching the PS1's final value used in the log line).
+    The nightly-learn GATHER loop was absorbed (T1670) into the
+    `gald3r learn nightly` verb. Returns the command prefix (e.g.
+    ``["gald3r"]``) or ``None`` when the resolver is not shipped (old install)
+    or no engine can be found — the caller then logs and skips (fail-open).
     """
-    root = Path(project_root)
-    bases = [
-        root / ".gald3r_sys" / "skills" / "g-skl-learn" / "scripts" / "gald3r_nightly_learn",
-        root / "scripts" / "gald3r_nightly_learn",
-    ]
-    for base in bases:
-        for ext in (".py", ".ps1"):
-            candidate = base.with_suffix(ext)
-            if candidate.is_file():
-                return candidate
-    return bases[-1].with_suffix(".ps1")
-
-
-def _powershell_exe() -> str:
-    if os.name == "nt":
-        return shutil.which("powershell.exe") or shutil.which("pwsh") or "powershell.exe"
-    return shutil.which("pwsh") or "pwsh"
+    resolver = project_root / ".gald3r_sys" / "scripts" / "gald3r_bin.py"
+    if not resolver.is_file():
+        return None
+    try:
+        spec = importlib.util.spec_from_file_location(
+            "gald3r_bin_nightly_learn", str(resolver))
+        if not spec or not spec.loader:
+            return None
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)  # type: ignore[union-attr]
+        return mod.resolve_engine_cmd(project_root)
+    except Exception:
+        return None
 
 
 def main(argv=None) -> int:
@@ -90,7 +87,6 @@ def main(argv=None) -> int:
 
     project_root = args.project_root or _find_project_root()
 
-    helper_script = _resolve_helper(project_root)
     logs_dir = Path(project_root) / ".gald3r" / "logs"
     counter_file = logs_dir / "learn-counter"
     last_run_log = logs_dir / "nightly-learn-last-run.log"
@@ -132,34 +128,27 @@ def main(argv=None) -> int:
         counter_file.write_text(str(counter), encoding="ascii")
         return 0
 
-    # ---- Helper script existence check --------------------------------------
+    # ---- Resolve the engine (compiled binary via the zero-IP resolver) ------
     now_iso = datetime.datetime.now().astimezone().isoformat()
-    if not helper_script.is_file():
+    engine = _resolve_engine_cmd(Path(project_root))
+    if engine is None:
         with last_run_log.open("a", encoding="utf-8") as fh:
             fh.write(
-                f"[{now_iso}] gald3r_nightly_learn.ps1 not found at {helper_script}"
+                f"[{now_iso}] gald3r engine not resolved (run g-install-agent)"
                 " -- hook skipped.\n"
             )
-        # Reset counter so a fixed helper doesn't immediately re-fire on next session.
+        # Reset counter so an installed engine doesn't immediately re-fire.
         counter_file.write_text("0", encoding="ascii")
         return 0
 
-    # ---- Detached spawn of the heavy extraction work ------------------------
+    # ---- Detached spawn of the `gald3r learn nightly` GATHER loop ------------
     # Critical: detached creation flags + redirected stdout/stderr keep the
-    # hook non-blocking even when the helper takes minutes.
+    # hook non-blocking even if the engine takes a moment.
     helper_out = logs_dir / "nightly-learn-helper.out.log"
     helper_err = logs_dir / "nightly-learn-helper.err.log"
 
-    helper_args = ["-ProjectRoot", project_root, "-LookbackDays", "1"]
-    if helper_script.suffix.lower() == ".py":
-        cmd = [sys.executable, str(helper_script)] + helper_args
-    else:
-        cmd = [
-            _powershell_exe(),
-            "-NoProfile",
-            "-ExecutionPolicy", "Bypass",
-            "-File", str(helper_script),
-        ] + helper_args
+    cmd = [*engine, "learn", "nightly", "--project-root", project_root,
+           "--lookback-days", "1"]
 
     try:
         popen_kwargs = {}
@@ -185,11 +174,11 @@ def main(argv=None) -> int:
 
         with last_run_log.open("a", encoding="utf-8") as fh:
             fh.write(
-                f"[{now_iso}] spawned PID={proc.pid} helper={helper_script}"
+                f"[{now_iso}] spawned PID={proc.pid} cmd={' '.join(cmd)}"
                 f" counter_was={counter} interval={interval}\n"
             )
 
-        # Surface a one-line note to the agent's terminal; the heavy work runs detached.
+        # Surface a one-line note to the agent's terminal; the work runs detached.
         print(
             f"[g-hk-nightly-learn] background extraction queued (PID {proc.pid});"
             f" see {last_run_log}"
@@ -197,7 +186,7 @@ def main(argv=None) -> int:
     except Exception as exc:  # spawn failure must never block the agent's exit path
         try:
             with last_run_log.open("a", encoding="utf-8") as fh:
-                fh.write(f"[{now_iso}] FAILED to spawn helper: {exc}\n")
+                fh.write(f"[{now_iso}] FAILED to spawn engine: {exc}\n")
         except OSError:
             pass
         print(f"WARNING: [g-hk-nightly-learn] spawn failed: {exc}", file=sys.stderr)

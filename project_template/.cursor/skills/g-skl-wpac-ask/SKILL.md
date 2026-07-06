@@ -11,6 +11,27 @@ subsystem_memberships: [WORKSPACE_COORDINATION]
 ## When to Use
 `@g-wpac-ask` command. When this project needs a parent project to DO something before work here can proceed.
 
+## Transport layer (WPAC-v2 — T1608)
+
+**Step 0-T — transport verdict (code decides, never the model — g-rl-38).** Before the
+file steps below, build the ask payload (the live `world_tree` `AskRequest` contract:
+`question` = the full request incl. why/what-it-unblocks; optional `project_id`,
+`context_budget`) and run the shared transport (T1609 shim underneath):
+
+```
+gald3r workspace outbox send --verb ask --payload-file <payload.json>
+```
+
+| Verdict | Action |
+|---|---|
+| `ok` | Delivered via `POST /api/v1/ask` — the server answers from the target's project state (replacing the INBOX request drop for answerable asks). Record the answer + citations in the sent_orders ledger (step 5) with `transport: world_tree`. If the ask still requires HUMAN parent action (not just an answer), ALSO perform the INBOX write (step 4) so the parent actions it. |
+| `offline` / `error` | Perform ALL file steps below exactly as today. The message was write-aheaded to `.gald3r/linking/outbox/` — `gald3r workspace outbox flush` reconciles on reconnect. |
+| `auth_required` | File steps below + tell the user to run `gald3r login`. Entry parked (not retried). |
+| `upgrade_required` | File steps below + print the shim's upgrade line (file transport stays free). Entry parked (not retried). |
+
+Everything below this section is the **OFFLINE / FILE FALLBACK transport** — the verb
+surface (name + arguments) is unchanged.
+
 ## Steps
 
 1. **Read `.gald3r/workspace/topology.md`** — get parent info

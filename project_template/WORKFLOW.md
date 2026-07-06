@@ -4,8 +4,8 @@
 ## Session Start
 
 Run the session-start hook or manually execute:
-`powershell
-.\setup_gald3r_project.ps1 -Platform auto
+`bash
+python setup_gald3r_project.py --platform auto
 `
 
 ## Task Lifecycle

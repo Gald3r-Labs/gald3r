@@ -27,7 +27,7 @@ g-skill-pack-add <pack-name> <skill-name>     Install one skill from the pack
    This is advisory only — installation continues after the warning. `core` and `local` skills install without a warning. (Canonical wording: `skl-skill-create/SKILL.md` → `### skill_trust_level:` declaration.)
 4. Run install:
    ```powershell
-   .gald3r_sys/skill_packs/<pack-name>/install.ps1 -ProjectRoot . [-Skill <skill-name>]
+   .gald3r_sys/skill_packs/<pack-name>/install.py --project-root . [--skill <skill-name>]
    ```
 5. Update `.gald3r/.identity` `installed_skill_packs:` block:
    - If pack not listed: add entry with `pack`, `version`, `skills`, `installed_date`
