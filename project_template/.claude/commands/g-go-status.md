@@ -22,12 +22,13 @@ writes `.gald3r/` state, never touches the marker, and never commits.
 @g-go-status --json               # machine-readable (for scripts / CI gates / dashboards)
 ```
 
-Run the reader directly (stdlib-only; `uv run python` also works):
+Run the reader directly (absorbed into the engine as a `go` sibling verb, T285 -- no
+loose script, no Python invocation required):
 
 ```bash
-python .gald3r_sys/scripts/ggo_status.py
-python .gald3r_sys/scripts/ggo_status.py --json
-python .gald3r_sys/scripts/ggo_status.py --project-root <dir>
+gald3r go-status
+gald3r go-status --json
+gald3r go-status --project-root <dir>
 ```
 
 ## What it reports
@@ -59,7 +60,8 @@ The default thresholds are tuned to the conductor's behavior: the per-coordinato
 defaults to 25 min and a single Phase 1 + Phase 2 iteration legitimately runs many minutes while
 waiting on the model, so the 10–30 min band is the normal "long iteration" zone (IDLE-WAIT),
 and only past ~30 min with no new commits is it called STALLED. Edit `ALIVE_THRESHOLD_SEC` /
-`STALLED_THRESHOLD_SEC` in `ggo_status.py` to retune.
+`STALLED_THRESHOLD_SEC` in `gald3r_core.coordination.autopilot.status` (the engine module
+backing this verb, T285) to retune.
 
 Exit code: `0` for every verdict except **STALLED**, which exits `1` so a watchdog or CI gate
 can trigger on a likely wedge.
