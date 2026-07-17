@@ -194,8 +194,8 @@ gald3r autopilot loop   (Python, NOT an LLM)
   while budget_remaining > 0:
     read ggo_run_state.json + TASKS.md from disk   (never cached across iterations)
     invoke a FRESH coordinator LLM session (blank context) for ONE iteration via
-      `claude --dangerously-skip-permissions -p "<brief>"`   (brief generated from
-      .gald3r_sys/scripts/ggo_coordinator_brief_template.txt, filled entirely from disk state)
+      `claude --dangerously-skip-permissions -p "<brief>"`   (brief generated from the
+      engine's embedded coordinator-brief template, filled entirely from disk state)
         |-> coordinator spawns Phase 1 g-go-code-swarm (full N), fan-in, reconcile, commit
         |-> coordinator spawns Phase 2 g-go-review-swarm, writes verdicts, commits
         |-> coordinator appends its compact summary + refreshes stash, then EXITS
