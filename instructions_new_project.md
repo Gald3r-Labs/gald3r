@@ -54,7 +54,7 @@ Find your tool in the list below and note the folder name:
 
 **Option A - Clone and copy:**
 ```bash
-git clone https://github.com/wrm3/gald3r.git
+git clone https://github.com/Gald3r-Labs/gald3r.git
 cp -r gald3r/<your-tool>/ my-new-project/
 cd my-new-project
 ```

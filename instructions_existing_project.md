@@ -18,13 +18,13 @@ See the tool/folder table in [instructions_new_project.md](./instructions_new_pr
 You only need one folder - not the whole repo.
 
 **Option A - GitHub Download (no git required):**
-1. Browse to https://github.com/wrm3/gald3r/tree/main/<your-tool>/
+1. Browse to https://github.com/Gald3r-Labs/gald3r/tree/main/<your-tool>/
 2. Click **Code → Download ZIP** (downloads the full repo)
 3. Unzip and find <your-tool>/ inside
 
 **Option B - Sparse checkout (advanced):**
 ```bash
-git clone --no-checkout --depth=1 https://github.com/wrm3/gald3r.git gald3r-temp
+git clone --no-checkout --depth=1 https://github.com/Gald3r-Labs/gald3r.git gald3r-temp
 cd gald3r-temp
 git sparse-checkout init --cone
 git sparse-checkout set <your-tool>

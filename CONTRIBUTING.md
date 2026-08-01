@@ -4,7 +4,7 @@ Thank you for your interest in gald3r.
 
 ## Reporting Bugs
 
-Use the [bug report template](https://github.com/wrm3/gald3r/issues/new?template=bug_report.yml) on GitHub Issues. The form asks for:
+Use the [bug report template](https://github.com/Gald3r-Labs/gald3r/issues/new?template=bug_report.yml) on GitHub Issues. The form asks for:
 
 - Which AI platform or IDE you are using (Cursor, Claude Code, GitHub Copilot, Kiro, Windsurf, Cline, and 15+ others)
 - The gald3r version from your `.gald3r/.identity` file
@@ -15,7 +15,7 @@ For security vulnerabilities, please do not open a public issue. Email the maint
 
 ## Requesting Features
 
-Use the [feature request template](https://github.com/wrm3/gald3r/issues/new?template=feature_request.yml). Describe:
+Use the [feature request template](https://github.com/Gald3r-Labs/gald3r/issues/new?template=feature_request.yml). Describe:
 
 - The problem you are trying to solve
 - How you currently work around it
@@ -23,7 +23,7 @@ Use the [feature request template](https://github.com/wrm3/gald3r/issues/new?tem
 
 ## Asking Questions
 
-Use the [question template](https://github.com/wrm3/gald3r/issues/new?template=question.yml) or open a [GitHub Discussion](https://github.com/wrm3/gald3r/discussions) for usage questions, integration help, or general conversation.
+Use the [question template](https://github.com/Gald3r-Labs/gald3r/issues/new?template=question.yml) or open a [GitHub Discussion](https://github.com/Gald3r-Labs/gald3r/discussions) for usage questions, integration help, or general conversation.
 
 ## Code Contributions
 
@@ -34,7 +34,7 @@ We review all feature requests and bug reports and may incorporate ideas into ga
 You are welcome and encouraged to:
 
 - Build plugins, skills, extensions, or other works that interoperate with gald3r (the FSL license explicitly permits this)
-- Share what you build in [Discussions](https://github.com/wrm3/gald3r/discussions)
+- Share what you build in [Discussions](https://github.com/Gald3r-Labs/gald3r/discussions)
 - Report bugs and suggest improvements via issues
 
 ## How gald3r Is Developed
