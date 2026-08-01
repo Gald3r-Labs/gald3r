@@ -56,7 +56,7 @@ AI already knows the project. Nothing lives in a vendor's session history.
 
 | | | |
 |---|---|---|
-| **gald3r** (this repo) | The framework | The `.gald3r/` brain, plus 116 skills, 182 commands, 13 rules, 38 hooks, and 15 agents — packaged for 39 AI coding platforms. This is what lands *in your project*. |
+| **gald3r** (this repo) | The framework | The `.gald3r/` brain, plus 116 skills, 182 commands, 12 rules, 38 hooks, and 15 agents — packaged for 39 AI coding platforms. This is what lands *in your project*. |
 | **[gald3r_core](https://github.com/Gald3r-Labs/gald3r_core)** | The engine | One signed binary. Runs every deterministic operation — task and bug lifecycle, validation, the local database, multi-agent orchestration — with **zero LLM calls**. |
 
 The framework is what your AI reads. The engine is what actually executes. You can run the
@@ -112,7 +112,7 @@ no Docker.
   `/g-bug-report`, `/g-plan`
 - **38 hooks** that fire on real IDE events — session start, file save, pre-commit — so
   discipline is *enforced*, not merely suggested
-- **13 rules** loaded every session to keep the agent honest
+- **12 rules** loaded every session to keep the agent honest
 - **15 specialized agents** for review, verification, QA, and infrastructure work
 - **39 platforms supported**, with Cursor and Claude Code at full parity
 

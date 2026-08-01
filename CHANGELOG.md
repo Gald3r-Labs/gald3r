@@ -34,7 +34,7 @@ _Pending notes accumulate here and are promoted at release time._
 - **Version line unified.** "gald3r 4.0" now names the framework and the engine together.
   Version 3.x was template-only, installed per IDE; 4.0 is the first release where the two
   ship as one product.
-- **Shipped component counts:** 116 skills, 182 commands, 38 hooks, 13 rules.
+- **Shipped component counts:** 116 skills, 182 commands, 38 hooks, 12 rules.
 - **Install guidance split by product.** The framework installs from this repo; the engine
   installs from `gald3r_core`; the desktop app installs from `gald3r_throne`. Each product
   is fetched from its own release channel.
