@@ -99,3 +99,6 @@ personality_packs/
 **/personality_packs/
 .gald3r_sys/personality_packs/
 project_template/.gald3r_sys/personality_packs/
+
+# retired 2026-08-02 (BUG-639): .gald3r_sys is compiled-into-binary IP, never ships loose
+.gald3r_sys/
