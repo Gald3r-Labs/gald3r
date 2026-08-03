@@ -78,7 +78,9 @@ def read_frontmatter_title(path: Path) -> str:
             end = content.find("\n---", 3)
             if end != -1:
                 fm = content[3:end]
-                m = re.search(r'(?m)^title:\s*["\']?(.+?)["\']?\s*$', fm)
+                # [ \t] not \s -- BUG-486/T510 class: \s crosses newlines, so
+                # a blank title: would capture the NEXT frontmatter line's text.
+                m = re.search(r'(?m)^title:[ \t]*["\']?(.+?)["\']?[ \t]*$', fm)
                 if m:
                     return m.group(1).strip().strip('"\'')
     except Exception:

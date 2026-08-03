@@ -24,6 +24,16 @@ token_budget: low
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
 
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 # g-skl-platform-zed
 
 Activate for: setting up gald3r with Zed, authoring skills/AGENTS.md for Zed, or verifying the Zed
@@ -103,7 +113,7 @@ Test-Path .agents/skills         # Agent Skills tree
 
 | Feature | Status | Notes |
 |---|---|---|
-| Hooks (`g-hk-*.ps1`) | ❌ | no published event taxonomy/schema for hand-authored hooks; Tool Permissions/Agent Sandboxing are access-control, not an event bus |
+| Hooks (`g-hk-*.py`) | ❌ | no published event taxonomy/schema for hand-authored hooks; Tool Permissions/Agent Sandboxing are access-control, not an event bus |
 | Skills (`g-skl-*/SKILL.md`) | ✅ | native Agent Skills in `.agents/skills/` (project) + `~/.agents/skills/` (global), `name`/`description` frontmatter, direct-children-only; same convention as Codex/Amp/Deep Code |
 | Agents (`g-agnt-*.md`) | ❌ | no project-scoped agent roster; Zed's own agent is Profile/UI-configured, External Agents attach via ACP `agent_servers` |
 | Commands (`@g-*`) | ❌ | no dedicated user-authored slash-command file format; only built-in `/compact` documented — Skills fill the invocation role |

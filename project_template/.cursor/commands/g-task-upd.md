@@ -1,5 +1,7 @@
 ---
+description: 'Update a task''s status, priority, dependencies, promotion/demotion, or release-hold fields.'
 subsystem_memberships: [TASK_MANAGEMENT]
+execution_tier: guarded_prompt
 ---
 Update task status or fields. Activates **g-skl-tasks** → UPDATE STATUS operation.
 

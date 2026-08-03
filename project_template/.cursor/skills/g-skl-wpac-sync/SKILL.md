@@ -1,9 +1,19 @@
-﻿---
+---
 name: g-skl-wpac-sync
 description: Initiate or respond to sibling contract sync — advisory only, non-blocking. Both sides update local peer topology copies.
 token_budget: medium
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
 
 > **Multi-agent framework (T1094):** Negotiation — advisory sibling contract sync (net-positive, non-blocking).
 # g-skl-wpac-sync
@@ -44,27 +54,27 @@ surface (name + arguments) is unchanged.
 
 ### Initiating a Sync (I changed a contract)
 
-1. **Read `.gald3r/workspace/topology.md`** — get siblings list
+1. **Read `.gald3r/linking/link_topology.md`** — get siblings list
 2. **Select target sibling and contract**
-3. **Update local peer copy** at `.gald3r/workspace/peers/{sibling_name}.md`:
+3. **Update local peer copy** at `.gald3r/linking/_peers/{sibling_name}.md`:
    - Bump version number
    - Update content (the spec that changed)
    - Update `last_synced` date
    - Set `sync_status: current` on your copy
-4. **Include capabilities snapshot** — also copy this project's `capabilities.md` to sibling's `.gald3r/workspace/peers/{this_project_slug}_capabilities.md`:
-   - Read `.gald3r/workspace/capabilities.md`
-   - Write a copy to `sibling/.gald3r/workspace/peers/{this_slug}_capabilities.md`
+4. **Include capabilities snapshot** — also copy this project's `capabilities.md` to sibling's `.gald3r/linking/_peers/{this_project_slug}_capabilities.md`:
+   - Read `.gald3r/linking/capabilities.md`
+   - Write a copy to `sibling/.gald3r/linking/_peers/{this_slug}_capabilities.md`
    - If sibling path not accessible: note in the INBOX notification that capabilities are attached
-5. **Write to `sibling/.gald3r/workspace/inbox.md`** (if path accessible):
+5. **Write to `sibling/.gald3r/linking/INBOX.md`** (if path accessible):
    ```markdown
    ## [OPEN] SYNC-XXX — from: [this project] — YYYY-MM-DD
    **Type:** peer_sync
    **Contract:** [contract_name]
    **Version:** [old] → [new]
    **Change:** [brief description of what changed and why]
-   **Capabilities snapshot:** .gald3r/workspace/peers/[this_slug]_capabilities.md (written)
-   **Your action:** Update your copy at `.gald3r/workspace/peers/[name].md`
-   **Canonical spec path:** [this project]/.gald3r/workspace/peers/[name].md
+   **Capabilities snapshot:** .gald3r/linking/_peers/[this_slug]_capabilities.md (written)
+   **Your action:** Update your copy at `.gald3r/linking/_peers/[name].md`
+   **Canonical spec path:** [this project]/.gald3r/linking/_peers/[name].md
    **Status:** action_needed
    ```
 6. **Create task in sibling's `.gald3r/`** (if path accessible):
@@ -85,14 +95,14 @@ surface (name + arguments) is unchanged.
 
    The sender does NOT create a `[Peer Sync] Notified ... — awaiting ack` task. Outbound sync is fire-and-forget at the task level. Optionally record a sync-specific entry in the sent_orders ledger for traceability (`type: sync`, `status: sent`); but if you skip even that, the sibling's INBOX entry plus the local peer copy are sufficient audit trail. There is no project-side wait task.
 
-8. **If sibling path not accessible**: stage the notification at `.gald3r/workspace/pending_requests/sync_[sibling].md`
+8. **If sibling path not accessible**: stage the notification at `.gald3r/linking/pending_requests/sync_[sibling].md`
 
 ### Responding to a Sync (Sibling notified me)
 
 1. **Read INBOX item** (`SYNC-XXX` in INBOX.md) or check the created task
-2. **Read their updated contract** (if path accessible) at `sibling/.gald3r/workspace/peers/{name}.md`
-3. **Check for capabilities snapshot** — if `sibling/.gald3r/workspace/peers/{this_slug}_capabilities.md` was written (or attached in INBOX), read it and confirm our local peer snapshot is current
-4. **Update local peer copy** at `.gald3r/workspace/peers/{sibling_name}.md`:
+2. **Read their updated contract** (if path accessible) at `sibling/.gald3r/linking/_peers/{name}.md`
+3. **Check for capabilities snapshot** — if `sibling/.gald3r/linking/_peers/{this_slug}_capabilities.md` was written (or attached in INBOX), read it and confirm our local peer snapshot is current
+4. **Update local peer copy** at `.gald3r/linking/_peers/{sibling_name}.md`:
    - Match their version number
    - Update content to match canonical
    - Set `sync_status: current`
@@ -104,7 +114,7 @@ surface (name + arguments) is unchanged.
 ```
 Peer sync complete:
 - Contract: [name] — v[new]
-- Local peer copy updated: .gald3r/workspace/peers/[sibling_name].md ✅
+- Local peer copy updated: .gald3r/linking/_peers/[sibling_name].md ✅
 - Sibling notified/confirmed: [sibling_id] ✅
 - Tasks created/closed ✅
 ```

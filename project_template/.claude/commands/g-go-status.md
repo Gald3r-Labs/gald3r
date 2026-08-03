@@ -1,5 +1,8 @@
 ---
+description: 'Report whether an active g-go-go autopilot run is ALIVE, IDLE-WAIT, STALLED, or STOPPED (read-only).'
+argument-hint: '[--json]'
 subsystem_memberships: [AGENT_ORCHESTRATION]
+execution_tier: orchestration
 ---
 Show whether an active g-go-go run is ALIVE, IDLE-WAIT, or STALLED: $ARGUMENTS
 
@@ -50,18 +53,20 @@ marker sits between per-iteration stamps; a frozen marker with no commits reads 
 | Verdict | Condition | Meaning |
 |---------|-----------|---------|
 | **ALIVE** | progress within `ALIVE_THRESHOLD_SEC` (default 10m) | making progress |
-| **IDLE-WAIT** | progress between 10m and `STALLED_THRESHOLD_SEC` (default 30m) | healthy but waiting on the model — API I/O wait (0% CPU but progressing), **not** a wedge |
-| **STALLED** | no progress > 30m and no recent commit | likely wedged — check the conductor |
+| **IDLE-WAIT** | progress between 10m and `STALLED_THRESHOLD_SEC` (default 55m) | healthy but waiting on the model — API I/O wait (0% CPU but progressing), **not** a wedge |
+| **STALLED** | no progress > 55m and no recent commit | likely wedged — check the conductor |
 | **STOPPED** | marker has `authorized_hard_stop` | run halted with a recorded reason |
 | **INACTIVE** | marker present but `active:false` | the run has finished |
 | **NO-ACTIVE-RUN** | no marker found | nothing running (graceful) |
 
 The default thresholds are tuned to the conductor's behavior: the per-coordinator hang timeout
-defaults to 25 min and a single Phase 1 + Phase 2 iteration legitimately runs many minutes while
-waiting on the model, so the 10–30 min band is the normal "long iteration" zone (IDLE-WAIT),
-and only past ~30 min with no new commits is it called STALLED. Edit `ALIVE_THRESHOLD_SEC` /
-`STALLED_THRESHOLD_SEC` in `gald3r_core.coordination.autopilot.status` (the engine module
-backing this verb, T285) to retune.
+defaults to 50 min (BUG-214/T336, raised from 25 min — a full Phase 1 + Phase 2 iteration at
+hard-cap N=5 measured 22m49s even after contracting N down to fit the old 25-min budget) and a
+single iteration legitimately runs many minutes while waiting on the model, so the 10–55 min band
+is the normal "long iteration" zone (IDLE-WAIT), and only past ~55 min with no new commits is it
+called STALLED. Edit `ALIVE_THRESHOLD_SEC` / `STALLED_THRESHOLD_SEC` in
+`gald3r_core.coordination.autopilot.status` (the engine module backing this verb, T285) to
+retune.
 
 Exit code: `0` for every verdict except **STALLED**, which exits `1` so a watchdog or CI gate
 can trigger on a likely wedge.

@@ -233,7 +233,13 @@ def index_is_fresh(index_yaml_path: Path, index_md_path: Path, files: List[Path]
         header = index_yaml_path.read_text(encoding="utf-8-sig", errors="replace")
     except OSError:
         return False
-    m = re.search(r"^# Total notes:\s*(\d+)\s*$", header, re.MULTILINE)
+    # [ \t] not \s -- BUG-486/T510 class: \s crosses newlines, so a blank
+    # "# Total notes:" value could reach into the NEXT header line's text.
+    # `\r?` before `$` -- T510 Phase-2 review FAIL: `read_text()` above is
+    # the default (normalizing) mode, not `newline=""`, so this site is not
+    # reachable with a literal \r today -- hardened anyway (restrictive
+    # `\d+` group) for defense-in-depth per the swept fix shape.
+    m = re.search(r"^# Total notes:[ \t]*(\d+)[ \t]*\r?$", header, re.MULTILINE)
     if not m or int(m.group(1)) != len(files):
         return False
     if _legacy_moc_views(index_yaml_path.parent):

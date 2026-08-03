@@ -1,17 +1,20 @@
 ---
+description: 'Compare platform capability support against the Cursor reference via g-skl-platform-monitor CHECK.'
+argument-hint: '[platform]'
 subsystem_memberships: [PLATFORM_INTEGRATION]
+execution_tier: orchestration
 ---
 Check platform capability gaps vs. the Cursor reference: $ARGUMENTS
 
 ## What This Command Does
 
-Reports the current capability state of one platform (or all 23 if no argument) by comparing
+Reports the current capability state of one platform (or the full roster if no argument) by comparing
 its declared support against the Cursor reference implementation. Delegates to
 `g-skl-platform-monitor` operation `CHECK` and the `check_platform_status.py` script.
 
 ## Delegates To
 
-- Script: `skills/g-skl-platform-monitor/scripts/check_platform_status.py -Platform <name>` (default: all)
+- Engine: `gald3r platform status --platform <name>` (default: all); fallback `skills/g-skl-platform-monitor/scripts/check_platform_status.py`.
 - Skill: `g-skl-platform-monitor` → `CHECK`
 - Agent: `g-agnt-platformer`
 
@@ -27,7 +30,7 @@ its declared support against the Cursor reference implementation. Delegates to
 ## Usage Examples
 
 ```
-@g-platform-check                # all 23 platforms
+@g-platform-check                # every roster platform
 @g-platform-check windsurf       # one platform
 ```
 

@@ -1,5 +1,8 @@
 ---
+description: 'Mine a human-prose wishlist doc into gald3r tasks via g-skl-wishlist-mine, read-only against the doc'
+argument-hint: '[doc-path] [--dry-run] [--target-repo <repo_id>] [--cascade]'
 subsystem_memberships: [TASK_MANAGEMENT]
+execution_tier: guarded_prompt
 ---
 # g-wishlist-mine - Mine a human-prose wishlist/intent doc into tasks (READ-ONLY)
 

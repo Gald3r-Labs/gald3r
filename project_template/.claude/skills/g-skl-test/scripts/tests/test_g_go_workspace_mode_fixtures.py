@@ -44,22 +44,18 @@ from typing import Dict, List, Optional, Sequence
 
 
 def _bootstrap_engine_utils() -> bool:
-    """Make gald3r.utils importable: installed package, else walk up to .gald3r_sys/engine/src."""
+    """Make gald3r.utils importable via the installed package.
+
+    T274 (P5-E blocker): the pre-retirement ".gald3r_sys/engine/src" fallback
+    walk is removed -- ".gald3r_sys/" is actively purged from every project
+    by the deploy pipeline (T335) and never exists in a fresh install, so
+    that branch was permanently dead code, not a real fallback.
+    """
     try:
         import gald3r.utils  # noqa: F401
         return True
     except ImportError:
-        pass
-    for parent in Path(__file__).resolve().parents:
-        cand = parent / ".gald3r_sys" / "engine" / "src"
-        if (cand / "gald3r" / "utils" / "__init__.py").is_file():
-            sys.path.insert(0, str(cand))
-            try:
-                import gald3r.utils  # noqa: F401
-                return True
-            except ImportError:
-                return False
-    return False
+        return False
 
 
 _HAS_UTILS = _bootstrap_engine_utils()

@@ -25,6 +25,17 @@ token_budget: low
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
 
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
+
 # g-skl-platform-hermes
 
 Activate for: setting up gald3r with Hermes Agent (Nous Research CLI / gateway), authoring or porting skills onto Hermes, wiring MCP via `~/.hermes/config.yaml`, shipping `AGENTS.md` as the instruction surface, or verifying the Hermes gald3r install.
@@ -108,7 +119,7 @@ Select-String -Path $HOME/.hermes/config.yaml -Pattern '^hooks:'   # confirm the
 
 | Feature | Status | Notes |
 |---|---|---|
-| Hooks (`g-hk-*.ps1`) | ✅ | native `config.yaml` `hooks:` shell hooks (JSON-stdin, 17+ events incl. `on_session_start`/`pre_tool_call`); `pre_tool_call` blocks via `{action:block}`; non-blocking on hook error |
+| Hooks (`g-hk-*.py`) | ✅ | native `config.yaml` `hooks:` shell hooks (JSON-stdin, 17+ events incl. `on_session_start`/`pre_tool_call`); `pre_tool_call` blocks via `{action:block}`; non-blocking on hook error |
 | Skills (`g-skl-*/SKILL.md`) | ✅ | agentskills.io standard; `~/.hermes/skills/<cat>/<name>/SKILL.md`; `/skill-name`; **directly portable** (only `name`+`description` required) → distribute as a tap |
 | Agents (`g-agnt-*`) | ✅ | native subagents via `delegate_task` (`goal`/batch `tasks:[...]`; `delegation.*` bounds); no declared agent file → deliver as Skills |
 | Commands (`@g-*`) | ⚠️ | built-in slash set + every skill = `/skill-name`; **no command-file primitive** |

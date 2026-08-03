@@ -6,6 +6,17 @@ min_tier: slim
 token_budget: medium
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 # g-skl-workspace
 
 **Files Read**: `.gald3r/linking/workspace_manifest.yaml`, task/bug frontmatter when validating routing metadata, repository paths named by the manifest, and per-repository git status/worktree metadata.
@@ -141,10 +152,11 @@ Default [1] autonomous_child. Choose [1/2]:
 
   ```powershell
   # $memberPath = <absolute_member_path>
-  & "<<template_adv>_root>\setup_gald3r_project.ps1" -TargetPath $memberPath -Platforms cursor,claude
+  gald3r platform install cursor --into $memberPath --generated
+  gald3r platform install claude --into $memberPath --generated
   ```
 
-  Verify `.claude/`, `.cursor/`, `.gald3r_sys/`, `CLAUDE.md` exist on the target afterward. For an already-populated gald3r repo prefer the PROMOTE path (`@g-wpac-promote`) which performs the same installer step.
+  Verify `.claude/` and `.cursor/` exist on the target afterward (`platform install` also writes the per-platform root docs — e.g. `CLAUDE.md`/`GALD3R.md` — per T357; `.gald3r_sys/` is permanently retired and is never produced by any current verb, D016/D017/T335/T274 — see BUG-189). For an already-populated gald3r repo prefer the PROMOTE path (`@g-wpac-promote`) which performs the same installer step.
 - When the user selects **`controlled_member`**, keep the marker-only bootstrap path (`gald3r workspace member bootstrap`) and do NOT run the full installer.
 
 ### MEMBER ADD APPLY Gate
@@ -222,14 +234,15 @@ SPAWN_APPLY may run only when all gates pass:
 
      The guard at exit `1` (BLOCK) refuses apply with `BLOCK spawn_member_repo_gald3r_guard_block`. Exit `2` (ERROR) refuses with `BLOCK spawn_member_repo_gald3r_guard_error`. Bootstrap may itself BLOCK with `BLOCK spawn_member_gald3r_has_control_plane` when the existing `.gald3r/` already contains forbidden content — in that case point the user to `gald3r workspace member remediate` first. Only the combination of guard ALLOW + bootstrap success completes SPAWN_APPLY.
 
-   - **`autonomous_child`** — full-framework deploy (T1452): the marker-only guard does NOT apply. After the git root and manifest entry are created, run the full installer on the target so the child gets `.claude/`, `.cursor/`, `.gald3r_sys/`, root docs, and a full `.gald3r/`:
+   - **`autonomous_child`** — full-framework deploy (T1452): the marker-only guard does NOT apply. After the git root and manifest entry are created, run the platform installer on the target so the child gets its IDE overlay (`.claude/`, `.cursor/`) plus that platform's root docs, then scaffold the child's `.gald3r/` control plane with `gald3r setup`. (`.gald3r_sys/` is permanently retired and is never produced by any current or planned verb — D016/D017/T335/T274; this is not a gap, see BUG-189):
 
      ```powershell
      # $memberPath = <absolute_target_path>
-     & "<<template_adv>_root>\setup_gald3r_project.ps1" -TargetPath $memberPath -Platforms cursor,claude
+     gald3r platform install cursor --into $memberPath --generated
+     gald3r platform install claude --into $memberPath --generated
      ```
 
-     Verify `.claude/`, `.cursor/`, `.gald3r_sys/`, `CLAUDE.md` exist on the target afterward. `setup_gald3r_project.ps1` lives at the root of any `<template_adv>` install (reuse the controller's copy when it was installed from an adv template).
+     Verify `.claude/` and `.cursor/` exist on the target afterward (`gald3r platform install` writes the IDE overlay AND that platform's root docs — e.g. `CLAUDE.md`/`GALD3R.md` for claude, T357/BUG-341/T408; `.gald3r_sys/` is intentionally never produced, see BUG-189). `gald3r platform install <platform> --into <dir> --generated` is a `gald3r` engine CLI verb, self-contained (T177) — it reads the neutral component set embedded in the engine binary, no `<template_adv>` checkout required.
 
 Allowed apply writes:
 
@@ -1144,18 +1157,22 @@ Apply never:
 source repo as a marker-only `controlled_member` by default (it imports state into the controller and
 re-marks the source via `gald3r workspace member bootstrap`). It does NOT install the full framework
 into the source. When the intent is instead to make the adopted repo an independent `autonomous_child`
-(full `.gald3r/` plus `.claude/`, `.cursor/`, `.gald3r_sys/`, root docs), do NOT hand-build those
+(full `.gald3r/` plus `.claude/`, `.cursor/`, root docs — `.gald3r_sys/` is NOT part of this
+postcondition, it is permanently retired, D016/D017/T335/T274), do NOT hand-build those
 files: promote the member via PROMOTE_APPLY (`@g-wpac-promote`) and then run the full installer on the
 target path:
 
 ```powershell
 # $memberPath = <absolute_member_path>
-& "<<template_adv>_root>\setup_gald3r_project.ps1" -TargetPath $memberPath -Platforms cursor,claude
+gald3r platform install cursor --into $memberPath --generated
+gald3r platform install claude --into $memberPath --generated
 ```
 
-`setup_gald3r_project.ps1` is at the root of any `<template_adv>` install (reuse the controller's
-copy when it was installed from an adv template). Verify `.claude/`, `.cursor/`, `.gald3r_sys/`,
-`CLAUDE.md` exist on the target afterward.
+`gald3r platform install <platform> --into <dir> --generated` is a `gald3r` engine CLI verb,
+self-contained (T177) — it reads the neutral component set embedded in the engine binary, no
+`<template_adv>` checkout required. Verify `.claude/` and `.cursor/` exist on the target
+afterward (it also writes that platform's root docs — e.g. `CLAUDE.md`/`GALD3R.md` for claude,
+T357/BUG-341/T408; `.gald3r_sys/` is intentionally never produced, see BUG-189).
 
 ### Refusals (BLOCK Findings)
 
@@ -1306,7 +1323,7 @@ PROMOTE is distinct from the other lifecycle modes:
 3. If the role is already `autonomous_child` -> exit with an informational message (no-op).
 4. If the role is `controlled_member` or `migration_source` -> build the promotion plan:
    - missing standard files to scaffold: `RELEASES.md`, `releases/`, `vocab.md`,
-     `workspace/topology.md`, `workspace/inbox.md`, `FEATURES.md`, `BUGS.md`, `PLAN.md`
+     `linking/link_topology.md`, `linking/INBOX.md`, `FEATURES.md`, `BUGS.md`, `PLAN.md`
    - `.identity` changes: `workspace_role -> autonomous_child`, remove
      `member_gald3r_marker_only`, bump `gald3r_version` to the current framework version
    - manifest change: `repositories[<member-id>].workspace_role -> autonomous_child`
@@ -1330,16 +1347,25 @@ files PROMOTE scaffolds. Run the full installer on the promoted path (T1452):
 
 ```powershell
 # $memberPath = <absolute_member_path>
-& "<<template_adv>_root>\setup_gald3r_project.ps1" -TargetPath $memberPath -Platforms cursor,claude
+gald3r platform install cursor --into $memberPath --generated
+gald3r platform install claude --into $memberPath --generated
 ```
 
-This deploys `.claude/`, `.cursor/` (skills, agents, commands, rules, hooks), `.gald3r_sys/`, and
-root docs (`CLAUDE.md`, `AGENTS.md`, `WORKFLOW.md`, `GUARDRAILS.md`, `GALD3R-PROMPT.md`,
-`GALD3R-MIGRATION.md`, `scripts/`). `setup_gald3r_project.ps1` lives at the root of any
-`<template_adv>` install; the same script is already present at the controller's project root
-when it was installed from an adv template -- reuse it. `@g-skl-setup --upgrade-existing` is the
-equivalent skill-driven path. After the install, verify `.claude/`, `.cursor/`, `.gald3r_sys/`, and
-`CLAUDE.md` exist on the target, then run `@g-wrkspc-validate` to confirm.
+This deploys `.claude/`, `.cursor/` (skills, agents, commands, rules, hooks) plus that platform's
+root docs (a subset of `CLAUDE.md`/`AGENTS.md`/`GALD3R.md`, per-platform filtering, T357/BUG-341/
+T408). `.gald3r_sys/` is NOT part of this deploy — it is permanently retired (D016/D017/T335/T274)
+and no current or planned verb writes it; treat that as intentional, not a gap (BUG-189). Likewise
+`WORKFLOW.md`, `GUARDRAILS.md`, `GALD3R-PROMPT.md`, `GALD3R-MIGRATION.md`, and `scripts/` are not
+produced by `platform install` — they are not part of the root-doc set it manages. `gald3r platform
+install <platform> --into <dir> --generated` is a self-contained `gald3r` engine CLI verb (T177) —
+it reads the neutral component set embedded in the engine binary, no `<template_adv>` checkout
+required; run it once per platform. `@g-setup --autonomy full` (an idempotent `.gald3r/` top-up;
+never overwrites existing files) is the equivalent skill-driven path for the `.gald3r/` content
+half — it does not deploy `.claude/`/`.cursor/` platform surfaces or root docs, which still require
+the `gald3r platform install` calls above.
+After the install, verify `.claude/`
+and `.cursor/` (and that platform's root docs) exist on the target, then run `@g-wrkspc-validate`
+to confirm.
 
 ### Helper script
 
@@ -1631,7 +1657,7 @@ gald3r workspace outbox \
          (--payload '<json>' | --payload-file <path>) [--json]
 gald3r workspace outbox pull   [--json]
 gald3r workspace outbox flush  [--json]
-gald3r workspace outbox status [--json]
+gald3r workspace outbox        [--json]   (base verb, no subcommand = status view)
 ```
 
 Verb → live endpoint: `order` → `POST /api/v1/tasks/delegation/intake` (wpac-order;

@@ -1,5 +1,8 @@
 ---
+description: 'Append a follow-up prompt to a running g-go-code worktree''s queue.md, or list pending items'
+argument-hint: 'T<id> "<prompt>" [--role <role>] [--owner <owner>] | T<id> --list'
 subsystem_memberships: [TASK_MANAGEMENT]
+execution_tier: orchestration
 ---
 Queue follow-up work into a running g-go-code worktree session, to run after the main goal completes: $ARGUMENTS
 

@@ -14,7 +14,7 @@ docs_url_secondary:
   - https://opencode.ai/docs/mcp-servers/
 last_doc_scan: 2026-06-02
 capability_status:
-  hooks: "✅ native lifecycle hooks via JS/TS plugins in .opencode/plugins/ (20 events incl. tool.execute.before/after, session.created, file.edited); gald3r .ps1 need a JS/TS shim; no first-class git pre-commit event"
+  hooks: "✅ native lifecycle hooks via JS/TS plugins in .opencode/plugins/ (20 events incl. tool.execute.before/after, session.created, file.edited); gald3r g-hk-*.py (python <path>) need a JS/TS shim; no first-class git pre-commit event"
   rules: "✅ AGENTS.md primary (CLAUDE.md fallback; AGENTS.md wins if both local) + opencode.json instructions array; no .mdc glob-scoped rule engine"
   skills: "✅ Agent Skills (SKILL.md) loaded on-demand via native skill tool; discovered in .opencode/skills / .claude/skills / .agents/skills"
   commands: "✅ custom commands .opencode/commands/*.md ($ARGUMENTS/$1 + !bash; frontmatter description/agent/model/subtask)"
@@ -23,6 +23,17 @@ capability_status:
 token_budget: low
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 
 # g-skl-platform-opencode
 
@@ -34,7 +45,8 @@ Activate for: setting up gald3r with OpenCode (`sst/opencode`), authoring `.open
 > parity** — OpenCode natively supports commands, rules, agents, skills, hooks (via JS/TS plugins),
 > and MCP, and reads `AGENTS.md`/`CLAUDE.md` + discovers `.claude/skills/` + `.agents/skills/`, so
 > gald3r's Claude-Code artifacts are largely reusable. The one friction point: hooks are JS/TS
-> plugins (no `.ps1`, no first-class git pre-commit). (Verified 2026-06-02 against
+> plugins (gald3r's `.py` hooks need a JS/TS shim; no first-class git pre-commit). (Verified
+> 2026-06-02 against
 > https://opencode.ai/docs.)
 
 ## Crawl Freshness Gate
@@ -76,8 +88,8 @@ OpenCode.** Global configs live under `~/.config/opencode/`.
 **Cheapest high-parity install: ship gald3r's `.claude/skills/` tree + `AGENTS.md`/`CLAUDE.md`** —
 OpenCode loads them natively. Put commands in `.opencode/commands/*.md` and agents in
 `.opencode/agents/*.md`. Register MCP under `opencode.json -> mcp`. For hooks, author a thin **JS/TS
-plugin** in `.opencode/plugins/` that shells out to PowerShell (gald3r `.ps1` hooks do not run as
-plugins directly).
+plugin** in `.opencode/plugins/` that shells out to `python <path>` (gald3r `.py` hooks do not run
+as plugins directly).
 
 ### Verify
 ```powershell
@@ -92,8 +104,9 @@ Test-Path .opencode/plugins          # JS/TS hook shim (if hooks are wired)
 - **Instruction file is `AGENTS.md`, not `CLAUDE.md`** — and **if both exist locally, only
   `AGENTS.md` is read** (the reverse of Claude Code). Keep gald3r rule content in `AGENTS.md` (or
   the `instructions` array) for OpenCode.
-- **Hooks are JS/TS plugins**, not `.ps1` and not a JSON wiring file. gald3r `g-hk-*.ps1` must be
-  shelled out from a JS/TS plugin (Bun shell API) on `session.created` / `tool.execute.before` /
+- **Hooks are JS/TS plugins**, not `.py` scripts directly and not a JSON wiring file. gald3r
+  `g-hk-*.py` must be shelled out (via `python <path>`) from a JS/TS plugin (Bun shell API) on
+  `session.created` / `tool.execute.before` /
   `tool.execute.after`. There is **no first-class git pre-commit / pre-push event** — wire via
   `command.executed` or external git hooks.
 - **`opencode.json` lives at the project root**, NOT inside `.opencode/`.
@@ -104,7 +117,7 @@ Test-Path .opencode/plugins          # JS/TS hook shim (if hooks are wired)
 
 | Feature | Status | Notes |
 |---|---|---|
-| Hooks (`g-hk-*.ps1`) | ✅ | JS/TS plugins in `.opencode/plugins/` (20 events); `.ps1` need a JS/TS shim; no git pre-commit event |
+| Hooks (`g-hk-*.py`) | ✅ | JS/TS plugins in `.opencode/plugins/` (20 events); `.py` need a JS/TS shim; no git pre-commit event |
 | Skills (`g-skl-*/SKILL.md`) | ✅ | native `skill` tool, on-demand; discovered in `.opencode/skills/` / `.claude/skills/` / `.agents/skills/` |
 | Agents (`g-agnt-*.md`) | ✅ | native primary (Build/Plan) + subagents (General/Explore/Scout) `.opencode/agents/`; `@mention` + Task tool |
 | Commands (`@g-*`) | ✅ | `.opencode/commands/*.md`; `$ARGUMENTS`/`$1` + `!bash`; frontmatter description/agent/model/subtask |

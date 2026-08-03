@@ -48,11 +48,54 @@ from ai_classify import classify_entry, load_dotenv
 GITHUB_API = "https://api.github.com"
 
 
-def find_project_root(start: Path) -> Path:
+def _is_gitignored(path: Path) -> "bool | None":
+    """T516: cheap, authoritative gitignore check (same guard shape as T512's
+    `find_gald3r_root` fix, commit 3682aa64). `None` (check could not run)
+    is treated as fail-open by the caller."""
+    try:
+        result = subprocess.run(  # noqa: S603 -- fixed argv, no shell
+            ["git", "check-ignore", "-v", str(path)],
+            cwd=str(path.parent),
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if result.returncode == 0:
+        return True
+    if result.returncode == 1:
+        return False
+    return None
+
+
+def find_project_root(
+    start: Path, *, ambiguous_candidates: "list[Path] | None" = None
+) -> Path:
+    """Walk up from `start` for the nearest `.gald3r/` ancestor.
+
+    T516 (T512 inventory row 27): a candidate whose `.gald3r/` is gitignored
+    is refused (never adopted -- the walk continues upward for the real,
+    tracked root), same guard shape as `find_gald3r_root`'s T512 fix. A
+    second, non-gitignored candidate further up than the nearest one is
+    appended to `ambiguous_candidates` (when supplied) but the NEAREST
+    candidate still wins. Still raises `RuntimeError` when nothing
+    resolvable is found -- strictly better than the historical silent cwd
+    fallback most sibling resolvers use, and unchanged by this guard.
+    """
     current = start.resolve()
+    resolved: "Path | None" = None
     for candidate in [current, *current.parents]:
-        if (candidate / ".gald3r").exists():
-            return candidate
+        marker = candidate / ".gald3r"
+        if marker.exists():
+            if _is_gitignored(marker):
+                pass  # T516: refuse -- never silently adopt a decoy.
+            elif resolved is None:
+                resolved = candidate
+            elif ambiguous_candidates is not None:
+                ambiguous_candidates.append(candidate)
+    if resolved is not None:
+        return resolved
     raise RuntimeError("Could not locate project root with .gald3r/")
 
 

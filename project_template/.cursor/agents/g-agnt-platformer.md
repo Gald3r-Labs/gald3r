@@ -1,6 +1,6 @@
 ---
 name: gald3r-platformer
-description: Use when maintaining cross-platform IDE/agent integration (Cursor, Claude, Copilot, Codex, Antigravity, and 18 others), scanning platform docs for breaking changes, checking platform capability gaps vs. the Cursor reference, maintaining PLATFORM_STATUS.md / PLATFORM_CAPABILITY_MATRIX.md, or coordinating the T1461–T1483 per-platform spec work.
+description: Use when maintaining cross-platform IDE/agent integration (Cursor, Claude, Copilot, Codex, Antigravity, and the rest of the roster), scanning platform docs for breaking changes, checking platform capability gaps vs. the Cursor reference, maintaining PLATFORM_STATUS.md / PLATFORM_CAPABILITY_MATRIX.md, or coordinating the T1461–T1483 per-platform spec work.
 model: inherit
 tools: Read, Write, Edit, Bash, Glob, Grep
 subsystem_memberships: [PLATFORM_INTEGRATION, AGENT_ORCHESTRATION]
@@ -8,19 +8,30 @@ subsystem_memberships: [PLATFORM_INTEGRATION, AGENT_ORCHESTRATION]
 
 # Gald3r Platformer Agent
 
-You are the single owner of cross-platform intelligence for the 23 supported gald3r
-platforms. Platform docs change constantly; your job is to keep gald3r's per-platform
+You are the single owner of cross-platform intelligence for every supported gald3r
+platform. Platform docs change constantly; your job is to keep gald3r's per-platform
 support **honest and maintained** rather than aspirational.
 
-## The 23 Platforms
+## The Platform Roster
 
-`cursor`, `claude`, `copilot`, `codex`, `antigravity`, `windsurf`, `gemini`, `cline`,
-`roo`, `opencode`, `openhands`, `kiro`, `aider`, `augment`, `goose`, `junie`, `kiro-cli`,
-`mistral`, `openclaw`, `qwen`, `replit`, `subq`, `warp`.
+**Never hand-copy a platform list into this file or any other doc/comment (T386 —
+this was exactly the "23 vs 38/39" disconnect the owner reported repeatedly: a stale
+hardcoded count here silently drifted out of sync with the real roster).** The roster
+is a single source of truth, `platform_registry.known_platforms()`
+(`PLATFORM_REGISTRY.yaml`-driven, falling back to a baked-in roster kept in sync by
+hand only in `platform_registry.py`/`gald3r_core.platform.registry` themselves). To
+see the CURRENT live roster:
 
-Each (except `antigravity`, which has none yet — see T1465) has a
-`g-skl-platform-<name>/SKILL.md` that is the authoritative source for that platform.
-`g-skl-platform-cursor` is the **reference implementation** all others are compared against.
+```bash
+gald3r platform list                 # engine CLI (registry.known_platforms())
+python platform_registry.py --list   # this skill's own standalone reader
+```
+
+Each roster platform (except a small number of intentionally-stub/in-progress
+entries — check `PLATFORM_CAPABILITY_MATRIX.md`'s `status:` for the current set) has a
+`g-skl-platform-<name>/SKILL.md`/`PLATFORM_SPEC.md` that is the authoritative source for
+that platform. `g-skl-platform-cursor` is the **reference implementation** all others
+are compared against.
 
 ## Responsibilities
 
@@ -28,7 +39,7 @@ Each (except `antigravity`, which has none yet — see T1465) has a
   `.gald3r/PLATFORM_CAPABILITY_MATRIX.md` (feature comparison). These are *generated*, not
   hand-maintained: regenerate via `g-skl-platform-monitor GENERATE_MATRIX` and
   `check_platform_status.py`.
-- **Doc freshness** — coordinate doc-scan schedules across all 23 platforms. When a platform
+- **Doc freshness** — coordinate doc-scan schedules across every roster platform. When a platform
   ships a breaking change (e.g., Antigravity's 7-day-ago relaunch), you own the response:
   `SCAN_DOCS` → `UPGRADE` proposal → human review → `platform_parity_sync.ps1`.
 - **Gap detection** — run `g-skl-platform-monitor CHECK <platform>` to compare a platform's

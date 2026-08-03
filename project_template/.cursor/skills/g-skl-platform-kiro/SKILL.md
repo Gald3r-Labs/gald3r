@@ -24,6 +24,17 @@ token_budget: low
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
 
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
+
 # g-skl-platform-kiro
 
 Activate for: setting up gald3r with Kiro (the Kiro IDE or the Kiro CLI), authoring steering/prompts/agents/skills/hooks, mapping the spec-driven workflow, or verifying the Kiro gald3r install.
@@ -84,8 +95,9 @@ Test-Path AGENTS.md               # always-included instruction file
   does **not** honor steering inclusion modes.
 - Use `.md` (not Cursor's `.mdc`) for steering/rules — parity sync swaps the extension. gald3r's
   `alwaysApply: true` → **Always** mode; `description:`-scoped → **Auto**/**Conditional**.
-- gald3r lifecycle `g-hk-*.ps1` map cleanly to the **CLI** events; the **IDE** file-event model fits
-  file-save-style hooks only. A `.ps1` runs as the `Run Command` / shell action.
+- gald3r lifecycle `g-hk-*.py` map cleanly to the **CLI** events; the **IDE** file-event model fits
+  file-save-style hooks only. A `.py` hook runs via `python <path>` as the `Run Command` / shell
+  action.
 - MCP transport types (stdio/SSE/HTTP) and any steering size limit were not documented on the pages
   crawled — re-verify on the next scan.
 
@@ -93,7 +105,7 @@ Test-Path AGENTS.md               # always-included instruction file
 
 | Feature | Status | Notes |
 |---|---|---|
-| Hooks (`g-hk-*.ps1`) | ✅ | IDE file-event Agent Hooks + CLI lifecycle (`agentSpawn`/`userPromptSubmit`/`preToolUse`/`postToolUse`/`Stop`); model differs by surface |
+| Hooks (`g-hk-*.py`) | ✅ | IDE file-event Agent Hooks + CLI lifecycle (`agentSpawn`/`userPromptSubmit`/`preToolUse`/`postToolUse`/`Stop`); model differs by surface |
 | Skills (`g-skl-*/SKILL.md`) | ✅ | agentskills.io standard in `.kiro/skills/` — **same standard gald3r uses**, directly portable (Kiro 0.9) |
 | Agents (`g-agnt-*.md`) | ✅ | native subagents `.kiro/agents/` (IDE md+YAML; CLI JSON; parallel, own context window, appear as slash commands) |
 | Commands (`@g-*`) | ✅ | slash commands + local prompts `.kiro/prompts/*.md` (`@name`); skills/subagents auto-register |

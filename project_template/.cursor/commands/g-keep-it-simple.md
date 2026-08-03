@@ -1,5 +1,8 @@
 ---
+description: 'Toggle terse mode (suppress persona, structure, footer) on, off, or report status via g-skl-keep-it-simple.'
+argument-hint: '[on|off|status]'
 subsystem_memberships: [MEMORY_AND_KNOWLEDGE]
+execution_tier: orchestration
 ---
 Toggle terse mode on or off: $ARGUMENTS
 

@@ -22,9 +22,12 @@ CLI:
 
 Readiness (T533): is_ready() / ready_platforms() / readiness_map() derive a
 >=80%-working boolean from each entry's existing lifecycle + support_level fields
-(ready == lifecycle `active` AND support_level tier1/tier2). The installer's
---all-ready bulk-install set is sourced from ready_platforms(); see
-setup_gald3r_project.py.
+(ready == lifecycle `active` AND support_level tier1/tier2). Consumed by this
+module's own `--list --ready` CLI flag above. Historically the retired
+setup_gald3r_project.py bulk installer sourced its --all-ready set from
+ready_platforms(); that installer never shipped as a file in gald3r_core and
+has been superseded by the per-platform `gald3r platform install <platform>
+--into <dir> --generated` CLI verb (T248).
 """
 # @subsystems: PLATFORM_INTEGRATION
 from __future__ import annotations
@@ -57,7 +60,7 @@ from typing import Dict, List, Optional
 # PLATFORM_REGISTRY.yaml. Used ONLY when the registry file cannot be located. This is a
 # safe fallback (the tooling still runs), never the primary source.
 _FALLBACK_PLATFORMS: List[str] = [
-    "cursor", "claude", "copilot", "codex", "antigravity", "windsurf", "gemini",
+    "cursor", "claude", "copilot", "codex", "antigravity", "windsurf",
     "cline", "opencode", "openhands", "kiro", "kiro-cli", "augment", "goose",
     "junie", "openclaw", "qwen", "aider", "mistral", "warp", "replit", "deepcode",
     "trae", "kilo-code", "amp", "codebuddy", "hermes", "kimi", "qoder", "continue",

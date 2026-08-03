@@ -1,5 +1,8 @@
 ---
+description: 'Parallel swarm variant of g-go-bugs: partitions open bugs into buckets, fixes then reviews them concurrently'
+argument-hint: '[severity:LEVEL[,LEVEL]] [bug:BUG-N[,BUG-N]] [--dry-run] [--provider <id>[:<model>]] [--model <id>] [--implementer-model <id>] [--reviewer-model <id>]'
 subsystem_memberships: [BUG_AND_QUALITY]
+execution_tier: orchestration
 ---
 Parallel bug-fix swarm — coordinate multiple bug fixes simultaneously: $ARGUMENTS
 
@@ -15,6 +18,11 @@ the swarm bucket architecture from `@g-go --swarm`.
 > **Coordinator-owned writes**: Bucket agents return patch bundles, evidence, and proposed
 > status rows only. The coordinator performs all shared `.gald3r/` writes, CHANGELOG, and
 > commits. Bucket agents MUST NOT write BUGS.md, bug files, or shared coordination surfaces.
+
+> **Provider & model selection (T580, BUG-612 companion)**: same `--provider`/`--model`/
+> `--implementer-model`/`--reviewer-model` surface as `@g-go-bugs`, resolved independently per
+> bucket. See `g-go-go.md`'s "Provider & Model Routing" for the full precedence and host-mapping
+> table (Cursor -> `cursor-agent` + `gpt-5.6-terra-medium` by default).
 
 ---
 
@@ -161,12 +169,11 @@ For each assigned bug:
 ### Coordinator Final Writes
 
 After all review payloads:
-1. Batch-update BUGS.md (PASS → `[✅]` Resolved; FAIL → back to `[🔴]`/`[🟠]`)
-2. Batch-update bug files (PASS → `resolved`; FAIL → `open`)
-3. Update linked fix tasks (PASS → `[✅]`; FAIL → `[📋]`)
-4. Stuck-loop check: ≥3 FAILs → `[🚨]` (T047 circuit breaker)
-5. Post-write housekeeping gate
-6. Review-result commit (one per swarm run):
+1. **Invoke `gald3r bug resolve <id>` (PASS) or `gald3r bug update <id> --status open --note "FAIL: ..."` (FAIL) for every reviewed bug — mandatory, once per item (BUG-511).** This resyncs the bug file + `BUGS.md` in the same call — do not hand-edit either.
+2. For each linked fix task (`fix_task_id`), invoke `gald3r task verify <id> --pass` (PASS) or `gald3r task verify <id> --fail --reason "..."` (FAIL) — same mandatory rule; do not hand-edit the task file or `TASKS.md`.
+3. Stuck-loop check: ≥3 FAILs → `[🚨]` (T047 circuit breaker) — no CLI verb exists for this escalation status yet; this one step only is a direct hand-edit of the bug file/`BUGS.md` indicator.
+4. Post-write housekeeping gate
+5. Review-result commit (one per swarm run):
    ```
    fix(bugs): review result — {N} resolved, {M} failed
    

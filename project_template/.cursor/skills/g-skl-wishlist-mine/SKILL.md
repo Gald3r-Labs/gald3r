@@ -5,6 +5,17 @@ token_budget: medium
 subsystem_memberships: [TASK_MANAGEMENT, MEMORY_AND_KNOWLEDGE]
 skill_trust_level: core
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 # g-skl-wishlist-mine — prose wishlist → tasks (READ-ONLY mining)
 
 A user keeps a free-form, human-prose **wishlist / intent document** in their own words — no schema,
@@ -105,7 +116,7 @@ For each surviving READY want (and each VISION epic), create a task via **`g-skl
 
 ### Step 6 — WPAC overhead-view routing (optional, AC6)
 
-When this repo is a WPAC **controller** (`.gald3r/workspace/topology.md` present, or a
+When this repo is a WPAC **controller** (`.gald3r/linking/link_topology.md` present, or a
 `workspace_manifest.yaml` declaring members), a mined want may target a member repo rather than
 local. The controller mines ONE intent doc and cascades resulting tasks into member repos via the
 existing order/direct-write mechanism:

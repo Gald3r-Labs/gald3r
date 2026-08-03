@@ -50,22 +50,18 @@ from typing import Any, Dict, List, Optional, Sequence
 
 
 def _bootstrap_engine_utils() -> bool:
-    """Make gald3r.utils importable: installed package, else walk up to .gald3r_sys/engine/src."""
+    """Make gald3r.utils importable via the installed package.
+
+    T274 (P5-E blocker): the pre-retirement ".gald3r_sys/engine/src" fallback
+    walk is removed -- ".gald3r_sys/" is actively purged from every project
+    by the deploy pipeline (T335) and never exists in a fresh install, so
+    that branch was permanently dead code, not a real fallback.
+    """
     try:
         import gald3r.utils  # noqa: F401
         return True
     except ImportError:
-        pass
-    for parent in Path(__file__).resolve().parents:
-        cand = parent / ".gald3r_sys" / "engine" / "src"
-        if (cand / "gald3r" / "utils" / "__init__.py").is_file():
-            sys.path.insert(0, str(cand))
-            try:
-                import gald3r.utils  # noqa: F401
-                return True
-            except ImportError:
-                return False
-    return False
+        return False
 
 
 _HAS_UTILS = _bootstrap_engine_utils()
@@ -285,6 +281,27 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         cprint(f"Summary: {passed}/{total} test suites passed, {failed} failed "
                f"(plan {args.level})", "green" if failed == 0 else "red")
         print("")
+
+    # Fail loudly on unresolved manifest paths instead of letting them blend into
+    # the ordinary pass/fail count. A missing test file is a tests_manifest.psd1
+    # defect (stale/renamed path), not a test regression, and must never be
+    # silently absorbed into "N failed" -- see BUG-130.
+    unresolved = [r for r in run_results if r["status"] == "error"]
+    if unresolved:
+        # Emit to STDERR so a `--json` run's stdout stays valid, parseable JSON
+        # (BUG-130 panel): the JSON summary was already written to stdout above;
+        # these diagnostics must not corrupt that stream for machine consumers.
+        print("", file=sys.stderr)
+        print("[HARNESS ERROR] tests_manifest.psd1 has unresolved test path(s):", file=sys.stderr)
+        for r in unresolved:
+            print(f"  - {r['name']}: {r['note']}", file=sys.stderr)
+        print(
+            "[HARNESS ERROR] This is a manifest/config defect, not a test regression -- "
+            "fix tests_manifest.psd1 (or remove the stale entry) before trusting the "
+            "pass/fail count above.",
+            file=sys.stderr,
+        )
+        return 2
 
     return 0 if failed == 0 else 1
 

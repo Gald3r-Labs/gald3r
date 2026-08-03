@@ -1,5 +1,8 @@
-﻿---
+---
+description: 'Create a well-structured git commit with task-aware message generation and staging safety checks'
+argument-hint: '[task <id>] [phase <n>] [<message>]'
 subsystem_memberships: [SECURITY_AND_COMPLIANCE]
+execution_tier: guarded_prompt
 ---
 Create a git commit: $ARGUMENTS
 

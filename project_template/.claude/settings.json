@@ -1,25 +1,4 @@
 {
-  "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENTS_TEAMS": "true"
-  },
-  "permissions": {
-    "defaultMode": "bypassPermissions",
-    "allow": []
-  },
-  "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": [],
-  "mcpServers": {
-    "gald3r_docker": {
-      "url": "http://localhost:8092/mcp",
-      "transport": "streamable-http"
-    },
-    "chrome-devtools": {
-      "command": "npx",
-      "args": [
-        "chrome-devtools-mcp@latest"
-      ]
-    }
-  },
   "hooks": {
     "SessionStart": [
       {
@@ -69,6 +48,10 @@
           {
             "type": "command",
             "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/g-hk-ggo-stop-detect.py\""
+          },
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/g-hk-goal-stop-detect.py\""
           },
           {
             "type": "command",

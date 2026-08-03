@@ -1,5 +1,7 @@
-﻿---
+---
+description: 'Mark a subsystem deprecated in its spec and SUBSYSTEMS.md via g-skl-subsystems DEPRECATE SUBSYSTEM.'
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
+execution_tier: orchestration
 ---
 Deprecate a subsystem. Activates **g-skl-subsystems** → DEPRECATE SUBSYSTEM operation.
 

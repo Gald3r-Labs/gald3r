@@ -166,7 +166,7 @@ gald3r silently delete/rename a pre-existing `.rules` file it does not own.
 - **Tool Permissions** / **Agent Sandboxing** provide confirmation-gating around tool calls
   (allow/deny prompts, sandboxed execution), which is access-control, not an event-hook bus a
   project can extend with its own scripts.
-- **gald3r gap**: there is no verified wiring target for `g-hk-*.ps1` files on Zed — do not fabricate
+- **gald3r gap**: there is no verified wiring target for `g-hk-*.py` files on Zed — do not fabricate
   a `hooks.json`/settings-driven hook file.
 - Source: absence confirmed against the full AI docs nav under https://zed.dev/docs/ai/overview.
 
@@ -227,7 +227,7 @@ gald3r silently delete/rename a pre-existing `.rules` file it does not own.
 | # | Gap | Severity |
 |---|---|---|
 | 1 | **No project-scoped agent roster** — Zed's own agent is Profile/UI-configured; third-party agents attach via ACP (`agent_servers` in `.zed/settings.json`, itself Zed-owned); gald3r's `g-agnt-*.md` set has no committed-file landing zone. (§3) | High |
-| 2 | **No hand-authored hooks** — no published event taxonomy/schema; Tool Permissions/Sandboxing are access-control, not an extensible event bus. gald3r `g-hk-*.ps1` have no verified wiring target. (§6) | High |
+| 2 | **No hand-authored hooks** — no published event taxonomy/schema; Tool Permissions/Sandboxing are access-control, not an extensible event bus. gald3r `g-hk-*.py` have no verified wiring target. (§6) | High |
 | 3 | **No dedicated commands surface** — only one built-in slash command (`/compact`) is documented; gald3r's `@g-*` commands must ride on the Skills tree instead of a separate `commands/` folder. (§5) | Medium |
 | 4 | **`.zed/settings.json` is a single Zed-owned file** covering `agent_servers` + `context_servers` + all other editor settings — gald3r cannot safely ship a full replacement file without risking clobbering unrelated user settings; a merge-snippet/documentation-only approach is required until a safe JSON-merge installer exists. (§8, §9) | Medium |
 | 5 | **`.rules` outranks `AGENTS.md`** if both exist — a project migrating from Cursor/Windsurf/Cline may have a stale `.rules` file that silently wins over gald3r's `AGENTS.md` until removed. (§2, §7) | Low |
@@ -244,7 +244,7 @@ agent from one config surface).
 - **Config file**: none published for user-authored hooks
 - **Events available**: none documented
 - **Event payload format**: [STUB] — undocumented
-- **gald3r hook files**: none verified — `g-hk-*.ps1` have no confirmed wiring target on Zed
+- **gald3r hook files**: none verified — `g-hk-*.py` have no confirmed wiring target on Zed
 
 ## Atypical Handling
 

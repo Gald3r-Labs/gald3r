@@ -138,7 +138,7 @@ pattern gald3r uses for Qwen/Gemini/Antigravity (`QWEN.md` / `GEMINI.md` importi
   Skill, MCP Servers, Plugin, Command, Usage Stats — no "Hooks" entry).
 - The **Plugin** system's capability list does mention "Hooks — automation triggered by specific
   events" as something a plugin **can** bundle, but there is **no published event taxonomy, file
-  format, or schema** for a project to author its own hooks the way gald3r's `g-hk-*.ps1` files do.
+  format, or schema** for a project to author its own hooks the way gald3r's `g-hk-*.py` files do.
   This mirrors the Mistral Vibe CLI precedent (`g-skl-platform-mistral`): a hook *concept* exists at
   the plugin-bundling level, but with no documented contract for hand-authored hooks — **do not
   fabricate a `hooks.json`/settings-driven hook file**.
@@ -194,7 +194,7 @@ pattern gald3r uses for Qwen/Gemini/Antigravity (`QWEN.md` / `GEMINI.md` importi
 | # | Gap | Severity |
 |---|---|---|
 | 1 | **No project-level agents** — subagents are Beta and global/user-level only (`~/.zcode/agents/`); gald3r's `g-agnt-*.md` roster has no per-project landing zone. (§3) | High |
-| 2 | **No hand-authored hooks** — no published event taxonomy/schema; only plugin-bundled hooks are mentioned, with no user-authoring contract. gald3r `g-hk-*.ps1` have no verified wiring target. (§6) | High |
+| 2 | **No hand-authored hooks** — no published event taxonomy/schema; only plugin-bundled hooks are mentioned, with no user-authoring contract. gald3r `g-hk-*.py` have no verified wiring target. (§6) | High |
 | 3 | **Flat AGENTS.md, no imports** — no `@file.md` import/include, no per-subdirectory scan; gald3r's `g-rl-*` rule set must be flattened into one workspace `AGENTS.md` body. (§2, §7) | Medium |
 | 4 | **MCP config file location undocumented** — servers are UI-managed (Form or Full-config JSON) and persisted to an unspecified `.zcode` config path; no confirmed direct-file-write target for a gald3r installer. (§8) | Medium |
 | 5 | **Commands have no argument templating** beyond a free-text `Argument hint` label — no `{{args}}`-style substitution documented. (§5) | Low |
@@ -210,7 +210,7 @@ with a documented import path from Claude Code/Codex/OpenCode configs.
 - **Events available**: none documented (Plugin bundling can include "Hooks" but with no published
   event taxonomy)
 - **Event payload format**: [STUB] — undocumented
-- **gald3r hook files**: none verified — `g-hk-*.ps1` have no confirmed wiring target on ZCode
+- **gald3r hook files**: none verified — `g-hk-*.py` have no confirmed wiring target on ZCode
 
 ## Atypical Handling
 

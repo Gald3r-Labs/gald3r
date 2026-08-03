@@ -1,5 +1,7 @@
-﻿---
+---
+description: 'Capture a local file (PDF/DOCX/XLSX/etc.) into the vault knowledge store via g-skl-recon-file'
 subsystem_memberships: [VAULT_AND_RESEARCH]
+execution_tier: guarded_prompt
 ---
 # g-recon-file
 
@@ -35,7 +37,7 @@ Activates **g-skl-recon-file** → CAPTURE operation.
 
 ## --deep flag
 
-After capturing, runs analysis and writes a recon report to `vault/research/recon/{slug}/`.
+After capturing, runs analysis and writes a recon report to `vault/research/CRR_FunctionalSpecs/{slug}/`.
 
 ## Clean Room Boundary
 

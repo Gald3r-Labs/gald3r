@@ -1,5 +1,7 @@
-﻿---
+---
+description: 'Capture a YouTube video transcript into the vault via g-skl-recon-yt (--deep for full analysis)'
 subsystem_memberships: [VAULT_AND_RESEARCH]
+execution_tier: guarded_prompt
 ---
 # g-recon-yt
 
@@ -28,7 +30,7 @@ Activates **g-skl-recon-yt** → CAPTURE operation.
 ## --deep flag
 
 After capturing, runs deep analysis of the transcript and writes a recon report to
-`vault/research/recon/{slug}/`. Equivalent to running `@g-res-deep` on the video note.
+`vault/research/CRR_FunctionalSpecs/{slug}/`. Equivalent to running `@g-res-deep` on the video note.
 
 ## Clean Room Boundary
 

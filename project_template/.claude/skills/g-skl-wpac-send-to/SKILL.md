@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-wpac-send-to
 description: >
   Send files, features, specs, ideas, or code from the current project to any
@@ -9,6 +9,16 @@ description: >
 token_budget: medium
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
 
 > **Multi-agent framework (T1094):** Direct communication — point-to-point transfer to any related project.
 
@@ -116,7 +126,7 @@ If `--dry-run`: print full preview and stop.
 ### Step 1 — Resolve destination project
 
 ```
-Check .gald3r/workspace/topology.md for <project_name> in:
+Check .gald3r/linking/link_topology.md for <project_name> in:
   parent | children[] | siblings[]
 
 If found: use recorded project_path
@@ -173,7 +183,7 @@ Scan the newly copied feature files in `<dest_project>/.gald3r/features/`:
 
 ### Step 5 — Write INBOX notification in destination
 
-Append to `<dest_project>/.gald3r/workspace/inbox.md` (create file if missing):
+Append to `<dest_project>/.gald3r/linking/INBOX.md` (create file if missing):
 
 ```markdown
 ## [OPEN] SEND-<YYYYMMDD>-<slug> — from: <source_project> — <YYYY-MM-DD>
@@ -187,7 +197,7 @@ Append to `<dest_project>/.gald3r/workspace/inbox.md` (create file if missing):
 **Action needed:** Review received content and integrate as appropriate.
 ```
 
-If `<dest_project>/.gald3r/workspace/inbox.md` doesn't exist, create it with a standard header first.
+If `<dest_project>/.gald3r/linking/INBOX.md` doesn't exist, create it with a standard header first.
 
 ### Step 6 — Log provenance in source project
 
@@ -238,7 +248,7 @@ If features were deleted from source:
 ✅ SEND COMPLETE
   Sent    : <N files> from <source_path>
   To      : <dest_project>/<dest_path>
-  INBOX   : entry written at <dest_project>/.gald3r/workspace/inbox.md
+  INBOX   : entry written at <dest_project>/.gald3r/linking/INBOX.md
   Source  : kept | deleted
   Log     : vault/log.md updated
 

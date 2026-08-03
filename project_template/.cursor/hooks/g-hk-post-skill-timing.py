@@ -47,15 +47,17 @@ import _hook_common
 
 def _find_project_root() -> str:
     """Walk up from the hook's own directory to the nearest .gald3r/ ancestor;
-    fall back to the current working directory (mirrors the PS1)."""
-    d = Path(__file__).resolve().parent
-    while True:
-        if (d / ".gald3r").exists():
-            return str(d)
-        if d.parent == d:
-            break
-        d = d.parent
-    return os.getcwd()
+    fall back to the current working directory (mirrors the PS1).
+
+    T516 (T512 inventory row 14 -- low blast radius: telemetry): applies the
+    shared T512 gitignore-refusal + ambiguity-warning walk-up guard
+    (`_hook_common.guarded_walk_up`).
+    """
+    here = Path(__file__).resolve().parent
+    root = _hook_common.guarded_walk_up(
+        here, exclude=_hook_common.resolved_global_gald3r_home()
+    )
+    return str(root) if root is not None else os.getcwd()
 
 
 def main() -> int:

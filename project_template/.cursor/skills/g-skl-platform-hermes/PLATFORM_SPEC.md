@@ -195,11 +195,11 @@ Source: https://github.com/NousResearch/hermes-agent/blob/main/website/docs/user
   guardrail must succeed and explicitly emit the block action to enforce. (Community issues also
   report hooks not always firing in some builds — treat hard enforcement as best-effort and verify
   with an install test.)
-- **gald3r impact**: `g-hk-*.ps1` lifecycle hooks **do map** onto Hermes via the `config.yaml`
+- **gald3r impact**: `g-hk-*.py` lifecycle hooks **do map** onto Hermes via the `config.yaml`
   `hooks:` block — wire a SessionStart-style `.gald3r/` context injector onto **`on_session_start`**
   and a PreToolUse-style guardrail onto **`pre_tool_call`** (returning the `block` action for hard
-  gating). Because Hermes shell hooks run an arbitrary command, point them at a small shell wrapper
-  that invokes the gald3r hook logic (PowerShell via `pwsh` or a `.sh` shim). Folding guardrails into
+  gating). Because Hermes shell hooks run an arbitrary command, point them directly at
+  `python <path>` (post-T1584 Python port; no PowerShell involved, no wrapper needed). Folding guardrails into
   `AGENTS.md` (§2) remains a useful belt-and-suspenders layer, but is **no longer the only option** —
   native `pre_tool_call` blocking is available.
 - Sources: https://hermes-agent.nousresearch.com/docs/user-guide/features/hooks ·
@@ -283,8 +283,9 @@ only, no separate command-file primitive). Hermes's distinctive strengths are th
 - **Blocking**: `pre_tool_call` may return `{"action":"block","message":"…"}` to short-circuit a tool
 - **Reliability caveat**: hooks are **non-blocking on error** — a failing hook is logged, not enforced;
   only an explicit `block` action gates a tool (verify firing with an install test)
-- **gald3r hook files**: `g-hk-*.ps1` **map natively** — wire SessionStart logic onto
-  `on_session_start` and PreToolUse logic onto `pre_tool_call` via a shell wrapper (`pwsh`/`.sh` shim)
+- **gald3r hook files**: `g-hk-*.py` **map natively** — wire SessionStart logic onto
+  `on_session_start` and PreToolUse logic onto `pre_tool_call` by invoking `python <path>` directly
+  (no shell wrapper needed, post-T1584 Python port)
 
 ## Atypical Handling
 
@@ -305,10 +306,11 @@ only, no separate command-file primitive). Hermes's distinctive strengths are th
 
 - **Ship `AGENTS.md`** as the instruction surface — Hermes auto-injects it (no `CLAUDE.md` shim, no
   migration step). Fold `g-rl-*` always-apply rules into it.
-- **Wire `g-hk-*` hooks via `config.yaml`**: map SessionStart `.gald3r/` injection onto
+- **Wire `g-hk-*.py` hooks via `config.yaml`**: map SessionStart `.gald3r/` injection onto
   `on_session_start` and PreToolUse guardrails onto `pre_tool_call` (return `{"action":"block",…}` to
-  hard-gate). Use a shell wrapper (`pwsh`/`.sh`) to invoke the gald3r hook logic; remember hook
-  *failures* are swallowed, so the guardrail must succeed and emit the block action to enforce.
+  hard-gate). Invoke `python <path>` directly (no shell wrapper needed, post-T1584 Python port);
+  remember hook *failures* are swallowed, so the guardrail must succeed and emit the block action to
+  enforce.
 - **Distribute gald3r Skills as a Hermes tap**: publish `g-skl-*/SKILL.md` to a repo, then
   `hermes skills tap add <repo>`; they index + surface as `/<name>` natively. A baseline `SKILL.md`
   (`name`+`description`) loads as-is; `version`/`author`/`license` are optional distribution polish.

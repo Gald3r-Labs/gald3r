@@ -28,6 +28,24 @@ silently dropped — it makes **no capability claims**.
 
 ---
 
+## Spec-Only Ruling (T444)
+
+**No `SKILL.md` is scaffolded for this directory.** This `PLATFORM_SPEC.md` is a T516 all-`❓`
+stub with zero verified or curated capability content — every section below reads "no verified
+info, pending a live docs crawl." A `SKILL.md` written from this spec today would be pure
+boilerplate (the generic HELP CONTRACT plus "nothing is known yet" restated six ways), which the
+zero-fabrication discipline this repo enforces (g-rl-34/g-rl-35) forbids. Once
+`@g-platform-scan-docs amp` (or a curated `platform_matrix_data.json` pass, per the BUG-137
+pattern already used for `g-skl-platform-astrbot`/`g-skl-platform-void`) populates at least one
+real, dir-specific capability fact, re-scaffold a genuine `SKILL.md` from that content. Ruled
+spec-only 2026-07-21 (T444).
+
+> **Cross-check (BUG-497, 2026-07-28)**: the T498 skill-compilability audit initially flagged this
+> directory as "misfiled" (spec-only, no `SKILL.md`). It is not — this section is the standing
+> resolution. Do not move this file or scaffold a `SKILL.md` without first reading BUG-497.
+
+---
+
 ## 1. Folder Hierarchy
 
 **Status: ❓ untested — no verified info.** The platform's config-folder layout has not been
@@ -76,7 +94,7 @@ only after a verified scan.
 - **Config file**: unknown
 - **Events available**: unknown
 - **Event payload format**: unknown
-- **gald3r hook files**: portability of `g-hk-*.ps1` is unverified
+- **gald3r hook files**: portability of `g-hk-*.py` is unverified
 
 ## Atypical Handling
 
