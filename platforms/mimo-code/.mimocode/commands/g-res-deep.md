@@ -1,11 +1,12 @@
 ﻿---
 description: Deep analysis of a captured repo, URL, or vault note — produces a structured recon report. Agents are reporters; humans are editors.
 subsystem_memberships: [VAULT_AND_RESEARCH]
+execution_tier: guarded_prompt
 ---
 # g-res-deep
 
 Activates `g-skl-res-deep`. Performs a 5-pass deep analysis of any external repository or
-captured vault content and produces `vault/research/recon/{slug}/` — no `.gald3r/` writes
+captured vault content and produces `vault/research/CRR_FunctionalSpecs/{slug}/` — no `.gald3r/` writes
 until you run `@g-res-apply`.
 
 > **Replaces**: `@g-reverse-spec` (deprecated alias — prints warning, then calls this)
@@ -25,7 +26,7 @@ until you run `@g-res-apply`.
 
 ## Output
 
-Writes to `vault/research/recon/{slug}/`:
+Writes to `vault/research/CRR_FunctionalSpecs/{slug}/`:
 - `01_skeleton.md` — repo structure + tech fingerprint
 - `02_module_map.md` — module/component decomposition
 - `03_feature_scan.md` — raw feature inventory

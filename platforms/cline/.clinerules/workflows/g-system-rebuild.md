@@ -1,5 +1,7 @@
 ---
+description: 'Regenerate PRODUCT_SYSTEMS.md by scanning SKILL.md subsystem_memberships and parent_system tags.'
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
+execution_tier: orchestration
 ---
 # @g-system-rebuild
 
@@ -25,24 +27,22 @@ Activates **g-skl-subsystems**.
 
 ## Steps
 
-1. Resolve script path (from `.gald3r_sys/scripts/` or `custom_scripts/`):
-   ```powershell
-   $script = Get-ChildItem -Recurse -Filter "aggregate_subsystems.ps1" | Select-Object -First 1
+1. Run dry-run first to check for unknown group warnings:
+   ```bash
+   gald3r subsystem aggregate --root .
    ```
-2. Run dry-run first to check for unknown group warnings:
-   ```powershell
-   & $script.FullName -ProjectPath . -WorkspaceOnly
+2. If no unknown groups → apply:
+   ```bash
+   gald3r subsystem aggregate --root . --apply
    ```
-3. If no unknown groups → apply:
-   ```powershell
-   & $script.FullName -ProjectPath . -Apply
-   ```
-4. Report: "PRODUCT_SYSTEMS.md regenerated — N groups populated, M ungrouped."
-5. If unknown group warnings: stop and ask user to correct the tags before applying.
+3. Report: "PRODUCT_SYSTEMS.md regenerated — N groups populated, M ungrouped."
+4. If unknown group warnings: stop and ask user to correct the tags before applying (or pass
+   `--force` to write anyway once the reference is confirmed intentional).
 
 ## Related
 
 - `@g-subsystem-audit` — detailed audit of tagging compliance (T1458)
-- `aggregate_subsystems.ps1` — the underlying script (T1459)
+- `gald3r subsystem aggregate` — the real implementation of this regeneration (BUG-196; replaces
+  the never-authored/lost `aggregate_subsystems.ps1`, T1459)
 - `add_subsystem_tags.ps1` — bulk tagger for initial pass (T1457)
 - `PRODUCT_SYSTEMS.md` — the output (read by `@g-subsystem-audit` and `g-skl-subsystems` CREATE)

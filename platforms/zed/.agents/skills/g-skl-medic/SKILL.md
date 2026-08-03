@@ -21,6 +21,16 @@ token_budget: high
 subsystem_memberships: [PROJECT_IDENTITY_SETUP, AGENT_ORCHESTRATION]
 ---
 
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 # g-medic
 
 **Replaces**: `g-medic` (deprecated — delegates to `g-medic`)
@@ -111,7 +121,7 @@ Direct invocation: `gald3r medic heal`.
 
 Before mode detection, determine whether the project is a WPAC participant. WPAC is active only when `.gald3r/linking/link_topology.md` declares at least one parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares WPAC project linking relationships. A Workspace-Control manifest and local `INBOX.md` alone do not make a project part of a WPAC group.
 
-Only when WPAC is active, call `g-hk-wpac-inbox-check.ps1` without `-BlockOnConflict` when present and capture the result. L1 triage must continue even when `INBOX CONFLICT GATE` is reported so health scoring can surface the conflict. Open WPAC conflicts block L2-L4 planning/apply work, task claiming, implementation, and verification after L1 completes; require `@g-wpac-read` before continuing. Non-conflict requests, broadcasts, and syncs remain advisory and should be surfaced in output. If WPAC is not active, skip the hook and report `WPAC: not configured / skipped`.
+Only when WPAC is active, call `g-hk-wpac-inbox-check.py` without `-BlockOnConflict` when present and capture the result. L1 triage must continue even when `INBOX CONFLICT GATE` is reported so health scoring can surface the conflict. Open WPAC conflicts block L2-L4 planning/apply work, task claiming, implementation, and verification after L1 completes; require `@g-wpac-read` before continuing. Non-conflict requests, broadcasts, and syncs remain advisory and should be surfaced in output. If WPAC is not active, skip the hook and report `WPAC: not configured / skipped`.
 
 ## Mode Detection (Run Before Any Level)
 
@@ -170,51 +180,53 @@ In `--dry-run`, report missing folders as `would_create` and do not create them.
 
 ### L1-B: Root File Audit
 
-Check each required root file. When a file is missing, **restore the pristine canonical
-copy from `.gald3r_sys/template_verification/.gald3r/` first** (T1442); fall back to an empty
-in-skill template only when the canonical file is unavailable.
+Check each required root file. When a file is missing, **restore it via the engine's
+`gald3r schema-migrate --restore-missing` op first** (T1442; embedded-first, works today); fall
+back to an empty in-skill template only when the engine restore cannot produce the file.
 
 #### Restore-from-canonical (T1442 — preferred heal path)
 
-The framework ships a pristine `.gald3r/` template instance at
-`.gald3r_sys/template_verification/.gald3r/` on every install. When a required `.gald3r/` file
-or folder is missing, g-medic L1 **restores it from that canonical source** instead of reporting
-error-only or writing a bare stub. This guarantees the restored file carries the correct
-T1439 versioned frontmatter (`schema_version` / `gald3r_rel_version`) for the installed release.
-**Never reconstruct a missing index (BUGS.md / TASKS.md) from memory** — only the canonical
-template or the empty in-skill stub are valid sources.
+The engine ships a pristine `.gald3r/` reference set embedded directly in the `gald3r` binary.
+When a required `.gald3r/` file or folder is missing, g-medic L1 **restores it via the engine's
+embedded-first restore op** instead of reporting error-only or writing a bare stub. This
+guarantees the restored file carries the correct T1439 versioned frontmatter (`schema_version` /
+`gald3r_rel_version`) for the installed release. **Never reconstruct a missing index (BUGS.md /
+TASKS.md) from memory** — only the engine restore or the empty in-skill stub are valid sources.
+
+> **T280 note**: the on-disk `.gald3r_sys/template_verification/.gald3r/` unpacked reference tree
+> this section used to read directly no longer ships with installed projects (135 loose files
+> stripped). The engine's own embedded copy is unaffected — `--restore-missing` reads it
+> regardless — so there is no manual-copy tier anymore; the engine restore IS the default heal.
 
 Restore order for any missing required file:
 
-1. **Canonical copy** — if `.gald3r_sys/template_verification/.gald3r/<relpath>` exists, copy it
-   to `.gald3r/<relpath>` (creating parent folders as needed). This is the default heal.
-2. **Engine shell-out (optional)** — for a batch restore of all missing single-file artifacts,
-   shell out to the canonical engine rather than re-implementing the copy:
+1. **Engine restore (Tier 1 — works today)** — shell out to the canonical engine rather than
+   hand-copying anything:
    ```
    gald3r schema-migrate --root <proj> --restore-missing --apply
    ```
-   (`--restore-missing` without `--apply` reports what it would restore — use for `--dry-run`.)
-   The engine resolves the same `template_verification/.gald3r/` canonical source.
-3. **Empty in-skill template** — only when the canonical file is absent from
-   `template_verification/.gald3r/` (e.g. a corrupt or partial install). Fall back to the
-   per-file stub in the table below.
+   (`--restore-missing` without `--apply` is a dry-run — reports what it would restore; use that
+   form for `@g-medic --dry-run`.) The engine resolves its own embedded canonical `.gald3r/`
+   snapshot first, falling back automatically through further embedded/on-disk tiers (see
+   `resolve_restore_missing_source` in the engine source) — confirm the exact flag spelling with
+   `gald3r schema-migrate --help` if the CLI surface ever changes.
+2. **Empty in-skill template (last resort)** — only when the engine restore cannot produce the
+   file (e.g. a stripped engine build with no embedded reference set for that path, or a file
+   outside the schema registry's restorable patterns). Fall back to the per-file stub below.
 
-Resolve the canonical path script-adjacent (`.gald3r_sys/template_verification/.gald3r/`) or
-project-local (`<proj>/.gald3r_sys/template_verification/.gald3r/`). Never hardcode a dev-machine path.
-
-| File | If Missing (canonical absent) | Health Check |
+| File | If Missing (engine restore unavailable) | Health Check |
 |---|---|---|
-| `TASKS.md` | Restore from template_verification, else empty template | Task Sync (L1-D) |
-| `BUGS.md` | Restore from template_verification, else empty template | Bug Sync (L1-D) |
-| `PLAN.md` | Restore from template_verification, else empty template | Has `## Current Focus`? |
-| `FEATURES.md` | Restore from template_verification, else empty template | Has `## PRD Index` table? |
-| `PROJECT.md` | Restore from template_verification, else empty template | Goals Check (L1-D) |
-| `CONSTRAINTS.md` | Restore from template_verification, else header-only stub | Has `## Architectural Constraints`? |
-| `SUBSYSTEMS.md` | Restore from template_verification, else empty template | Subsystem Sync (L1-D) |
-| `IDEA_BOARD.md` | Restore from template_verification, else empty template | Has `## Active Ideas`? |
+| `TASKS.md` | Empty template | Task Sync (L1-D) |
+| `BUGS.md` | Empty template | Bug Sync (L1-D) |
+| `PLAN.md` | Empty template | Has `## Current Focus`? |
+| `FEATURES.md` | Empty template | Has `## PRD Index` table? |
+| `PROJECT.md` | Empty template | Goals Check (L1-D) |
+| `CONSTRAINTS.md` | Header-only stub | Has `## Architectural Constraints`? |
+| `SUBSYSTEMS.md` | Empty template | Subsystem Sync (L1-D) |
+| `IDEA_BOARD.md` | Empty template | Has `## Active Ideas`? |
 
-In `--dry-run`, report missing files as `would_restore` (from template_verification) or
-`would_create` (canonical absent) and do not write them.
+In `--dry-run`, report missing files as `would_restore` (engine restore available) or
+`would_create` (engine restore unavailable, falling to empty template) and do not write them.
 
 ### L1-C: .identity Integrity
 
@@ -685,36 +697,41 @@ With `--apply`:
   <!-- BUG[MEDIC-L3]: Interface mismatch — A outputs {format}; B expects {format} -->
   ```
 
-### L3-G: Structural Release Upgrade (T430 — engine op)
+### L3-G: Structural Release Upgrade (T430 — historical design; corrected T341)
 
-In **UPGRADE mode** (`.identity` `gald3r_version` < current framework version), L3 can apply
-the **structural** diff between two `.gald3r/` release snapshots — complementing the L1-L
-per-file schema migration. This is delegated to the canonical engine op `gald3r upgrade`
-(shell-out only; never re-implement the diff/merge logic):
+In **UPGRADE mode** (`.identity` `gald3r_version` < current framework version), T430 originally
+planned a **structural** diff between two `.gald3r/` release snapshots — ADD/MERGE/DEPRECATE
+per-file classification with a backup/rollback wrapper — delegated to a canonical engine op
+`gald3r upgrade`. That op was never carried into gald3r_core's compiled CLI: `gald3r upgrade` is
+not a valid subcommand (see `gald3r --help`), and the legacy engine source path this section used
+to cite no longer exists in this repo.
+
+The shipped equivalent L3 can shell out to today is **`gald3r schema-migrate`**, the same
+per-file schema/frontmatter migration L1-L already uses, run with `--restore-missing` added so it
+also restores accidentally-deleted single-file `.gald3r/` artifacts from the embedded canonical
+snapshot before migrating:
 
 ```
 # dry-run plan (zero writes) — part of the L3 report
-gald3r --root <proj> upgrade --from-dir <from_snapshot/.gald3r> --to-dir <to_snapshot/.gald3r> --json
-# with --apply (L3 requires explicit --apply): execute + write .gald3r/logs/upgrade_*.log
-gald3r --root <proj> upgrade --from-dir <from/.gald3r> --to-dir <to/.gald3r> --apply
+gald3r schema-migrate --root <proj> --restore-missing --json
+# with --apply (L3 requires explicit --apply): execute + write migrated files to disk
+gald3r schema-migrate --root <proj> --restore-missing --apply
 ```
 
-Per-file classification: **[ADD]** (new in target) / **[MERGE]** (frontmatter/schema changed —
-user data preserved, new template keys added, `schema_version`/`gald3r_rel_version` bumped) /
-**[DEPRECATE]** (removed in target — archived with `_deprecated_YYYYMMDD`). The engine enforces
-an **ABSOLUTE user-data denylist** (`tasks/**`, `bugs/**`, `PLAN.md`, `IDEA_BOARD.md`, `BUGS.md`,
-`TASKS.md`) that is **never** touched, and the operation is **idempotent** (a second `--apply`
-reports zero changes).
+This is **not** the ADD/MERGE/DEPRECATE snapshot-to-snapshot diff T430 originally envisioned —
+there is no `--from-dir`/`--to-dir` pair, no cross-snapshot file classification, and no
+backup-zip/rollback wrapper in the shipped verb. Per-file migration statuses are `to-migrate` /
+`migrated` / `skipped-current` / `skipped-newer` / `skipped-no-frontmatter`; restore statuses (with
+`--restore-missing`) are `restored` / `to-restore` / `restore-unavailable`. A true structural
+snapshot-diff upgrade remains an unimplemented follow-up idea (T422's deferred consumer-upgrade
+subsystem), not a current guarantee.
 
 > **Safety**: L3-G runs only in UPGRADE mode and only with `--apply` (consistent with the L3
-> "explicit --apply required" rule). In `--dry-run` it reports the planned ADD/MERGE/DEPRECATE
-> actions without writing. The engine writes a migration log under `.gald3r/logs/` on apply.
-> **Snapshot prerequisite**: the framework currently ships only the single current canonical
-> snapshot (`.gald3r_sys/template_verification/.gald3r/`); versioned `vN/` snapshots are a
-> tracked prerequisite (T430 finding) — until then, `--from-dir`/`--to-dir` are supplied explicitly.
+> "explicit --apply required" rule). In dry-run it reports the planned per-file migration/restore
+> actions without writing.
 
-Engine source: `.gald3r_sys/engine/src/gald3r/systems/upgrade.py` (op: `Gald3r.upgrade`,
-CLI: `gald3r upgrade`). Tests: `.gald3r_sys/engine/tests/test_upgrade.py`.
+Engine source: `src/gald3r_core/project/schema_migrate/engine.py` (CLI: `gald3r schema-migrate`,
+`src/gald3r_core/cli/commands/schema_migrate_cmd.py`).
 
 ### L3 Output
 

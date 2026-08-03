@@ -24,6 +24,16 @@ token_budget: low
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
 
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 # g-skl-platform-antigravity
 
 Activate for: setting up gald3r with Google **Antigravity** (IDE / CLI / SDK), authoring
@@ -84,7 +94,7 @@ already generates `AGENTS.md` → **baseline integration works as-is on Antigrav
 **Cheapest high-parity install: ship gald3r's `AGENTS.md` + `g-skl-*/SKILL.md`** — Antigravity reads
 the instruction file and discovers Anthropic-format skills natively. Put **Antigravity-only must-win
 directives in `GEMINI.md`** (it outranks `AGENTS.md`). Map `@g-*` commands to **Workflows**, `g-rl-*`
-to **Always On** / **Model Decision** rules, and wire `g-hk-*.ps1` via `hooks.json`
+to **Always On** / **Model Decision** rules, and wire `g-hk-*.py` via `hooks.json`
 (`before_model_call` ≈ session-start, `on_loop_stop` ≈ stop, `before_tool_call` ≈ pre-tool guard).
 Fold `g-agnt-*` into rules/skills — subagents are **dynamic** (no file-based role discovery).
 
@@ -105,15 +115,16 @@ Test-Path .agents/skills ; Test-Path .antigravity/skills ; Test-Path .agent/skil
 - **Managed Agents ≠ harness**: don't rate hooks/subagents from the hosted Gemini API surface.
 - **Skill dir not canonical**: `.agents/skills` vs `.antigravity/skills` vs `.agent/skills` — pin via
   install test before hard-coding.
-- **Hooks are shell scripts**: official examples are `.sh`; wire `g-hk-*.ps1` via
-  `{ "type":"command", "command":"powershell -File …" }`; **pin payload schema** via install test.
+- **Hooks are shell commands**: official examples are `.sh`; wire `g-hk-*.py` via
+  `{ "type":"command", "command":"python <path> …" }` (post-T1584 Python port; no PowerShell
+  involved); **pin payload schema** via install test.
 - **File-size caps**: rule and workflow files are limited to **12,000 chars** each.
 
 ## 5. Capability Summary
 
 | Feature | Status | Notes |
 |---|---|---|
-| Hooks (`g-hk-*.ps1`) | ✅ | `hooks.json`; before/after_tool_call, before/after_model_call, on_loop_stop, on_error; stdin/stdout JSON; shell (`.ps1` via `powershell -File`) |
+| Hooks (`g-hk-*.py`) | ✅ | `hooks.json`; before/after_tool_call, before/after_model_call, on_loop_stop, on_error; stdin/stdout JSON; shell (`.py` via `python <path>`) |
 | Skills (`g-skl-*/SKILL.md`) | ✅ | Anthropic `SKILL.md` standard; `.agents`/`.antigravity`/`.agent` skills dirs (pin path) + `~/.gemini/antigravity/skills/` |
 | Agents (`g-agnt-*.md`) | ✅ / ⚠️ | ✅ native **dynamic** subagents (Orchestrator); ⚠️ **no** file-based `g-agnt-*.md` discovery — fold into rules/skills |
 | Commands (`@g-*`) | ✅ | Workflows `/workflow-name`; title/description/steps; `~/.gemini/antigravity/global_workflows/`; ≤12,000 chars |

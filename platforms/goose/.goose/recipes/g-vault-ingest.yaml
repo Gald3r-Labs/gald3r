@@ -1,0 +1,20 @@
+version: 1.0.0
+title: g-vault-ingest
+description: 'Ingest or update vault content: $ARGUMENTS'
+instructions: "Ingest or update vault content: $ARGUMENTS\n\n## What This Command\
+  \ Does\n\nRoutes new knowledge into the file-first gald3r vault with Obsidian-safe\
+  \ wikilinks.\n\n## Workflow\n\n1. Use `g-skl-vault`\n2. Resolve vault and repos\
+  \ paths\n3. Decide between:\n   - quick ingest: source note only\n   - full ingest:\
+  \ source note plus compiled wiki pages\n4. Write or update the relevant note\n5.\
+  \ Append a `log.md` entry\n6. Run `g-hk-vault-reindex.py`\n\n## Special Case: GitHub\
+  \ Repos\n\nIf the source is a tracked repo or gist:\n\n- raw mirror goes to `repos_location`\n\
+  - curated summary note goes to `research/github/`\n- do not ingest raw upstream\
+  \ markdown into the vault"
+prompt: Run the gald3r `g-vault-ingest` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-vault-ingest, e.g. quoted text or --flag
+    values, exactly as you would type them after the command name.

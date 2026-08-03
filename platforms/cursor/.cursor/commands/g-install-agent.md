@@ -1,52 +1,66 @@
 ---
-subsystem_memberships: [PROJECT_IDENTITY_SETUP]
+description: 'DEPRECATED alias for /g-install-update -- gald3r_agent (the separate Agent CLI binary product) is retired; this now installs the current gald3r_core release instead.'
+argument-hint: '[--release vX.Y.Z] [--require-verification|--allow-unsigned] [--token <token>] [--json]'
+subsystem_memberships: [RELEASE_AND_VERSIONING]
+execution_tier: orchestration
 ---
-Install the Gald3r Agent CLI from the latest public GitHub Release: $ARGUMENTS
+DEPRECATED -- use `/g-install-update` instead: $ARGUMENTS
 
 ## What This Command Does
 
-Wraps the engine install verb to download the precompiled, signed **Gald3r Agent** binary
-from the public `Gald3r-Labs/gald3r_agent` releases, verify it (SHA-256 sidecar), and place
-it in the gald3r home `bin/` directory. This does NOT reimplement install logic — it invokes
-the `gald3r install agent` engine verb (T1615) when an engine is reachable, and falls back
-to a zero-engine bootstrap when none is (installs ship NO engine source — T1645).
+**gald3r_agent (the standalone "Agent CLI binary" product) is RETIRED (BUG-587).** It was
+combined with the templates repo to BECOME gald3r_core -- there is no current "Agent CLI
+binary" product separate from gald3r_core itself, and the public repo this command used to
+download from (`Gald3r-Labs/gald3r_agent`) is a dead, superseded artifact. A user who ran the
+old version of this command would download a stale binary from that dead repo and believe it
+was current `gald3r`.
+
+This command now runs `gald3r install agent`, which is itself a **deprecated CLI alias** that
+redirects to `gald3r install update` (T302/BUG-587; `cli/commands/install.py` +
+`core.install.github_release`) -- it prints a deprecation warning, then installs the CURRENT
+`gald3r_core` binary from `Gald3r-Labs/gald3r_core`, verified via SHA-256 sidecar, over
+whatever `gald3r` currently resolves to on PATH.
+
+**Prefer `/g-install-update` directly** for any new script or workflow. This command is kept
+only so an existing script or muscle-memory invocation still does something correct instead of
+silently failing or fetching a superseded artifact.
 
 ## Steps
 
-1. Resolve how to invoke the engine (the gald3r_bin.py order: `GALD3R_BIN` env var →
-   `gald3r` on PATH → bundled `.gald3r_sys/bin/gald3r[.exe]` → dev source):
-   ```powershell
-   python .gald3r_sys/scripts/gald3r_bin.py
-   ```
-2. **If an engine command resolved** — run the verb in dry-run first to show the plan,
-   then for real:
+1. Resolve how to invoke `gald3r` for this machine: an already-installed `gald3r`/`gald3r.exe`
+   on PATH (MSI, npm, winget, homebrew, ...), or `uv run gald3r` from a gald3r_core dev
+   checkout. If nothing resolves at all, see "Zero-binary fallback" below.
+2. Run the verb in dry-run first to show the plan (fully offline — no network call at plan
+   time), then for real:
    ```powershell
    gald3r install agent --dry-run
    gald3r install agent
    ```
-   (Use the exact command prefix step 1 printed — e.g. a `GALD3R_BIN` path — if bare
-   `gald3r` is not on PATH.)
-3. **Zero-engine bootstrap** (fresh install, nothing resolved — the normal first run):
-   download the binary directly from the latest `Gald3r-Labs/gald3r_agent` GitHub release:
-   - Asset: `gald3r-windows-x86_64.exe` (Windows) / `gald3r-linux-x86_64` (Linux);
-     macOS assets are not published yet (use `--from-source` on a dev checkout).
-   - Also download the `.sha256` sidecar and VERIFY the checksum before trusting the
-     binary (fail closed on mismatch; BUG-198).
-   - Place it in the gald3r home `bin/` as `gald3r-agent[.exe]`
-     (Windows: `%LOCALAPPDATA%\gald3r\bin`; POSIX: `~/.local/bin` — the same directory
-     `gald3r install agent` targets), `chmod +x` on POSIX.
-   - Register the `gald3r` launcher on PATH: `python .gald3r_sys/scripts/install_global_cli.py`
-     (the launcher execs the compiled binary; idempotent).
-4. Pass through any user flags from `$ARGUMENTS` (e.g. `--release vX.Y.Z`, `--from-source`,
-   `--require-verification`).
-5. After install, report the resolved version (`gald3r --version`) and the PATH advisory
-   the engine prints (the binary lands in the gald3r home `bin/`; PATH is not auto-mutated).
+3. Pass through any user flags from `$ARGUMENTS` (e.g. `--release vX.Y.Z`,
+   `--require-verification`, `--allow-unsigned`, `--token`, `--json`).
+4. Report the printed deprecation warning AND the resolved version (`gald3r --version` against
+   the refreshed binary) -- tell the user to switch to `/g-install-update` / `gald3r install
+   update` going forward.
+
+## Zero-binary fallback (no `gald3r` reachable at all — the true first-run case)
+
+If nothing resolves in step 1 (a brand-new machine with no gald3r install of any kind and no
+dev checkout), there is no verb to run yet — download the asset directly, by hand or script,
+from the CURRENT release repo, `Gald3r-Labs/gald3r_core` (never `Gald3r-Labs/gald3r_agent` --
+that repo is retired):
+- Asset: `gald3r.exe` (Windows) / `gald3r` (Linux/macOS) from the latest
+  `Gald3r-Labs/gald3r_core` release.
+- Also download the matching `.sha256` sidecar and verify the checksum before trusting the
+  binary (fail closed on mismatch; BUG-198).
+- Place it on PATH as `gald3r`, `chmod +x` on POSIX.
+- From that point on, `/g-install-update` (or `gald3r install update`) handles every future
+  update.
 
 ## Notes
 
 - `--release vX.Y.Z` pins a specific release; default is latest.
-- `--from-source` falls back to the legacy `uv sync` source build — dev checkouts only
-  (installs do not carry engine source; T1645).
 - `--require-verification` fails closed if the `.sha256` checksum is missing or mismatched (BUG-198).
-- On network failure / 404 / missing asset the engine degrades gracefully — surface the
-  message, do not retry blindly.
+- `--allow-unsigned` proceeds past a missing `.sha256` sidecar (not recommended); overridden
+  by `--require-verification` when both are passed (fail-closed wins).
+- On network failure / 404 (no release at that repo/tag) / missing asset the verb degrades
+  gracefully with an honest, specific message — surface it, do not retry blindly.

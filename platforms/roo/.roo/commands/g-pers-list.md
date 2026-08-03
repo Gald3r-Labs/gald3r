@@ -1,5 +1,7 @@
-﻿---
+---
+description: 'List available personality packs and show which one is currently active.'
 subsystem_memberships: [PLATFORM_INTEGRATION]
+execution_tier: orchestration
 ---
 # g-pers-list — List available personality packs
 

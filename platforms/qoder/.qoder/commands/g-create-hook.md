@@ -1,5 +1,7 @@
 ---
+description: 'Scaffold a new gald3r hook script plus its companion hook.md across all IDE targets and wire hooks.json.'
 subsystem_memberships: [PLATFORM_INTEGRATION]
+execution_tier: orchestration
 ---
 Scaffold a new gald3r hook script + companion `hook.md` self-description in one step.
 
@@ -77,7 +79,8 @@ The scaffolded `.ps1` hook MUST include `# @subsystems: GROUP` in its first 15 l
 This is already part of the scaffold template output. If omitted, the git pre-commit hook
 `g-hk-component-tag-check` will block the next commit. Valid groups listed in `g-rl-38`.
 After scaffolding, offer to regenerate `PRODUCT_SYSTEMS.md`:
-`pwsh .gald3r_sys/scripts/aggregate_subsystems.ps1`
+`gald3r subsystem aggregate --apply` (BUG-196; replaces the never-authored/lost
+`aggregate_subsystems.ps1`)
 
 ## After scaffolding
 

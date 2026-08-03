@@ -14,7 +14,7 @@ docs_url_secondary:
   - https://docs.openclaw.ai/cli/mcp
 last_doc_scan: 2026-06-02
 capability_status:
-  hooks: "✅ native event-driven hooks (HOOK.md + handler.ts, openclaw.json) — TypeScript handlers, OpenClaw event taxonomy; gald3r .ps1 NOT drop-in (rewrite to handler.ts)"
+  hooks: "✅ native event-driven hooks (HOOK.md + handler.ts, openclaw.json) — TypeScript handlers, OpenClaw event taxonomy; gald3r g-hk-*.py NOT drop-in (rewrite to handler.ts)"
   rules: "✅ AGENTS.md (operating rules) + SOUL.md (hard 'never do X') + MEMORY.md injected every session; prose-only, no .mdc typed rules"
   skills: "✅ Agent Skills (folder-per-skill SKILL.md) precedence-loaded; install to ~/.openclaw/workspace/skills/; skills double as slash commands"
   commands: "✅ user-invocable skills → /skill <name>; direct command registration; native Discord/Telegram registration (~v2026.2.23)"
@@ -23,6 +23,17 @@ capability_status:
 token_budget: low
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 
 # g-skl-platform-openclaw
 
@@ -35,7 +46,7 @@ gald3r install.
 > Full 9-section breakdown + evidence URLs in `PLATFORM_SPEC.md` (this folder). **Status: ✅ full
 > parity** — OpenClaw natively supports commands, rules, agents, skills, hooks, and MCP (client +
 > server), and reads `AGENTS.md` + `SOUL.md`, so gald3r's `AGENTS.md` + `g-skl-*/SKILL.md` artifacts
-> are largely reusable. The one real porting cost is **hooks** (`.ps1` → `handler.ts`). (Verified
+> are largely reusable. The one real porting cost is **hooks** (`.py` → `handler.ts`). (Verified
 > 2026-06-02 against https://docs.openclaw.ai; supersedes the prior `last_doc_scan: never` /
 > `status: ⚠️` assessment.)
 
@@ -74,7 +85,8 @@ into the workspace `skills/` dir.
 **`SOUL.md`** (hard guardrails) — both load every session — and install gald3r `g-skl-*/SKILL.md`
 into the OpenClaw **workspace** `skills/` dir (folder-per-skill is identical to gald3r; each
 `user-invocable` skill is automatically a `/skill <name>` slash command). Re-declare MCP servers via
-`openclaw mcp set`. **Hooks need a TypeScript rewrite** (`handler.ts`) — `.ps1` is not portable.
+`openclaw mcp set`. **Hooks need a TypeScript rewrite** (`handler.ts`) — gald3r's `.py` hooks
+(`python <path>`) are not portable as-is.
 
 ### Verify
 ```powershell
@@ -90,8 +102,8 @@ Test-Path "$HOME/.openclaw/workspace/skills/g-skl-tasks/SKILL.md"   # a gald3r s
   "never do X" guardrails in `SOUL.md`. No `OPENCLAW.md` exists.
 - **Hooks are TypeScript** (`HOOK.md` + `handler.ts`) with an OpenClaw event taxonomy
   (`gateway:startup` / `agent:bootstrap` / `command:new` / `session:compact:*` / `message:*`) — gald3r
-  `g-hk-*.ps1` are **[STUB] / unverified**; rewrite to `handler.ts` (or shell out from one). Do not
-  fabricate an event→hook mapping.
+  `g-hk-*.py` are **[STUB] / unverified**; rewrite to `handler.ts` (or shell out from one via
+  `python <path>`). Do not fabricate an event→hook mapping.
 - **Rules are prose, not typed.** No Cursor-style `rules/*.mdc` or per-glob scoping — fold `g-rl-*`
   into `AGENTS.md` / `SOUL.md`.
 - **Skills install to the workspace** (`~/.openclaw/workspace/skills/`), not the repo root
@@ -104,7 +116,7 @@ Test-Path "$HOME/.openclaw/workspace/skills/g-skl-tasks/SKILL.md"   # a gald3r s
 
 | Feature | Status | Notes |
 |---|---|---|
-| Hooks (`g-hk-*.ps1`) | ✅ | native `HOOK.md` + `handler.ts` (TypeScript) in `openclaw.json`; events `command:*` / `session:compact:*` / `agent:bootstrap` / `gateway:*` / `message:*`; gald3r `.ps1` NOT drop-in — rewrite to `handler.ts` ([STUB]) |
+| Hooks (`g-hk-*.py`) | ✅ | native `HOOK.md` + `handler.ts` (TypeScript) in `openclaw.json`; events `command:*` / `session:compact:*` / `agent:bootstrap` / `gateway:*` / `message:*`; gald3r `.py` NOT drop-in — rewrite to `handler.ts` ([STUB]) |
 | Skills (`g-skl-*/SKILL.md`) | ✅ | folder-per-skill `SKILL.md` (`name`+`description`); precedence-loaded; install to `~/.openclaw/workspace/skills/`; skills double as slash commands |
 | Agents (`g-agnt-*.md`) | ✅ | per-persona agents via `bindings` + runtime sub-agents via `sessions_spawn` (`maxSpawnDepth` default 1; `/subagents` inspect-only) |
 | Commands (`@g-*`) | ✅ | user-invocable skills → `/skill <name>`; direct command registration; native Discord/Telegram registration (~v2026.2.23); Lobster workflow pipelines |

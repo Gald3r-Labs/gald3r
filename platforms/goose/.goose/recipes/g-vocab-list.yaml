@@ -1,0 +1,36 @@
+version: 1.0.0
+title: g-vocab-list
+description: g-vocab-list
+instructions: '# g-vocab-list
+
+
+  Display all active abbreviations from `.gald3r/vocab.md`.
+
+
+  ## Usage
+
+
+  ```
+
+  @g-vocab-list
+
+  @g-vocab-list "CRASH"    # show definition for a specific abbreviation
+
+  ```
+
+
+  ## Output Format
+
+
+  Renders the full `## Active Vocabulary` table from `vocab.md`, plus the command
+  group
+
+  convention table. If a term is provided, shows only matching rows (see `@g-vocab-search`).'
+prompt: Run the gald3r `g-vocab-list` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-vocab-list, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

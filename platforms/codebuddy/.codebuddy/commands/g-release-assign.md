@@ -1,5 +1,7 @@
-﻿---
+---
+description: 'Assign task IDs to a release, updating its tasks list and RELEASES.md (g-skl-release ASSIGN)'
 subsystem_memberships: [RELEASE_AND_VERSIONING]
+execution_tier: orchestration
 ---
 Assign tasks to a release. Activates **g-skl-release** → ASSIGN operation.
 

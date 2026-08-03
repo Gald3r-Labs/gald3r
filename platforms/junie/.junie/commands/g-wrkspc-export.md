@@ -1,5 +1,8 @@
-﻿---
+---
+description: 'Dry-run plan a Workspace-Control export of manifest members via g-skl-workspace EXPORT_PLAN'
+argument-hint: '[--dry-run]'
 subsystem_memberships: [WORKSPACE_COORDINATION]
+execution_tier: orchestration
 ---
 Plan a Workspace-Control export dry-run: $ARGUMENTS
 

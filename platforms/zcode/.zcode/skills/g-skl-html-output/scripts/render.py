@@ -33,6 +33,7 @@ if _g3ct_env not in ("", "0", "off", "false", "no") or _g3ct_os.path.isfile(
 import argparse
 import os
 import re
+import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -40,22 +41,18 @@ from typing import List, Optional, Sequence
 
 
 def _bootstrap_engine_utils() -> bool:
-    """Make gald3r.utils importable: installed package, else walk up to .gald3r_sys/engine/src."""
+    """Make gald3r.utils importable via the installed package.
+
+    T274 (P5-E blocker): the pre-retirement ".gald3r_sys/engine/src" fallback
+    walk is removed -- ".gald3r_sys/" is actively purged from every project
+    by the deploy pipeline (T335) and never exists in a fresh install, so
+    that branch was permanently dead code, not a real fallback.
+    """
     try:
         import gald3r.utils  # noqa: F401
         return True
     except ImportError:
-        pass
-    for parent in Path(__file__).resolve().parents:
-        cand = parent / ".gald3r_sys" / "engine" / "src"
-        if (cand / "gald3r" / "utils" / "__init__.py").is_file():
-            sys.path.insert(0, str(cand))
-            try:
-                import gald3r.utils  # noqa: F401
-                return True
-            except ImportError:
-                return False
-    return False
+        return False
 
 
 _HAS_UTILS = _bootstrap_engine_utils()
@@ -83,14 +80,52 @@ def cprint(msg: str, color: Optional[str] = None) -> None:
         print(msg)
 
 
-def find_project_root() -> str:
-    """Walk up from cwd until .gald3r is found (PS1 semantics: stop at FS root)."""
+def _is_gitignored(path: Path) -> "bool | None":
+    """T516: cheap, authoritative gitignore check (same guard shape as T512's
+    `find_gald3r_root` fix, commit 3682aa64). `None` (check could not run)
+    is treated as fail-open by the caller."""
+    try:
+        result = subprocess.run(  # noqa: S603 -- fixed argv, no shell
+            ["git", "check-ignore", "-v", str(path)],
+            cwd=str(path.parent),
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if result.returncode == 0:
+        return True
+    if result.returncode == 1:
+        return False
+    return None
+
+
+def find_project_root(*, ambiguous_candidates: "List[Path] | None" = None) -> str:
+    """Walk up from cwd until .gald3r is found (PS1 semantics: stop at FS root).
+
+    T516 (T512 inventory row 21 -- low blast radius: report output path): a
+    candidate whose `.gald3r/` is gitignored is refused (never adopted --
+    the walk continues upward for the real, tracked root). A second,
+    non-gitignored candidate further up than the nearest one is appended to
+    `ambiguous_candidates` (when supplied) but the NEAREST candidate still
+    wins -- no behavior change for the ordinary single-`.gald3r/` case.
+    """
     d = Path.cwd()
-    while not (d / ".gald3r").exists():
+    resolved: Optional[Path] = None
+    while True:
+        marker = d / ".gald3r"
+        if marker.exists():
+            if _is_gitignored(marker):
+                pass  # T516: refuse -- never silently adopt a decoy.
+            elif resolved is None:
+                resolved = d
+            elif ambiguous_candidates is not None:
+                ambiguous_candidates.append(d)
         if d.parent == d:
             break
         d = d.parent
-    return str(d)
+    return str(resolved) if resolved is not None else str(d)
 
 
 _MERMAID_KEYWORDS_RX = re.compile(

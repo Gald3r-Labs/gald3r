@@ -1,0 +1,29 @@
+version: 1.0.0
+title: g-feat-del
+description: Archive a feature staging doc. Activates **g-skl-features** → ARCHIVE
+  FEATURE operation.
+instructions: 'Archive a feature staging doc. Activates **g-skl-features** → ARCHIVE
+  FEATURE operation.
+
+
+  ```
+
+  @g-feat-del feat-NNN
+
+  @g-feat-del feat-NNN --reason "Superseded by feat-MMM"
+
+  ```
+
+
+  Marks feature as `status: archived` in YAML and FEATURES.md index. Moves file to
+  `features/archive/`.
+
+  Does NOT hard-delete — audit trail preserved.'
+prompt: Run the gald3r `g-feat-del` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-feat-del, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

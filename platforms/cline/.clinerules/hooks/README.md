@@ -1,35 +1,79 @@
-# gald3r canonical hooks — Cline (T512)
+# gald3r Claude Code Hooks
 
-> **PLATFORM NOTE: Cline hooks are macOS/Linux ONLY (no Windows).**
-> **STATUS: authored against cline.bot/blog/cline-v3-36-hooks (2025-11-06) — PENDING live-install
-> verification** (exact PreToolUse field names + TaskStart/Resume/Cancel payload shapes were not
-> fully documented).
+These are the Claude Code lifecycle hooks for gald3r, wired via
+`.claude/settings.json` under the `"hooks"` key (PascalCase events:
+`SessionStart`, `PreToolUse`, …) — the canonical, doc-verified Claude Code hook
+surface (T420). The legacy top-level `.claude/hooks.json` is a retired pointer
+stub. They are Python scripts (T1584 port) that import the shared bootstrap
+`_hook_common.py`. Other platforms use **different** hook models — see each
+platform's `PLATFORM_SPEC.md` `## Hook System` section before assuming a hook is
+portable.
 
-Cline (v3.36+) discovers hooks as **executable scripts named exactly the hook type, with NO
-extension**, in `.clinerules/hooks/` (project) or `~/Documents/Cline/Rules/Hooks/` (global). Cline
-runs the file directly, so each must have a `#!/usr/bin/env python3` shebang and the executable bit.
+## Canonical event model (T424)
 
-Because Cline's I/O contract (`{cancel, errorMessage, contextModification}`) differs from the gald3r
-canonical core (`{continue, reason, additional_context}`), the six hook-type files are **thin shims**
-that call `_cline_adapter.py`, which keeps `g_hk_core.py` byte-identical and translates.
+gald3r is consolidating Cursor's ~18 native hook events down to a **canonical
+reduced set of 6** events that are commonly supported across hook-capable
+platforms, all served by **one shared Python core**:
 
-## Files
-- `PreToolUse`, `PostToolUse`, `UserPromptSubmit`, `TaskStart`, `TaskResume`, `TaskCancel` —
-  no-extension executable shims (each `exec`s `_cline_adapter.py <canonical-event>`).
-- `_cline_adapter.py` — normalizes cline's payload, runs the standard `g-hk-on-<event>.py`, emits
-  cline's `{cancel, contextModification}`. (NOT named a hook type, so cline ignores it as a hook.)
-- `g_hk_core.py` + `g-hk-on-*.py` + `g-hk-*.py` — the shared core, entrypoints, and concern hooks
-  (byte-identical to every other platform copy).
+| Canonical event | Meaning |
+|---|---|
+| `session-start` | A new agent session/conversation begins (context injection) |
+| `session-end` | An agent session terminates (final cleanup/reflection) |
+| `user-prompt-submit` | The user submits a prompt, before the agent acts |
+| `tool-start` | Before a tool/action executes (the blocking guard point) |
+| `tool-end` | After a tool/action completes |
+| `stop` | The agent finishes responding to a turn (≠ `session-end`) |
 
-## Native hook → canonical
-| Cline hook | canonical | translation |
-|---|---|---|
-| `PreToolUse` | `tool-start` | `cancel = !continue`, `errorMessage = reason` |
-| `PostToolUse` | `tool-end` | `contextModification = additional_context` |
-| `UserPromptSubmit` | `user-prompt-submit` | context only |
-| `TaskStart` | `session-start` | context only |
-| `TaskResume` | `session-start` | context only |
-| `TaskCancel` | `session-end` | context only |
+`pre-commit` is intentionally **not** a canonical agent-lifecycle event — it is a
+git-level hook handled by `g-hk-pre-commit`.
 
-The six shim files must keep their executable bit on macOS/Linux (set in git via
-`git update-index --chmod=+x`). Source: cline.bot/blog/cline-v3-36-hooks.
+### Files
+
+- **`g_hk_core.py`** — the shared canonical event core. Holds the canonical
+  event set, the platform→canonical event map (`PLATFORM_EVENT_MAP`), and the
+  per-event concern chain (`CONCERN_CHAIN`). `dispatch(event)` reads the harness
+  payload once, runs every concern hook in the chain, merges their
+  `additional_context`, honors the first blocking verdict, and emits one
+  unified envelope. **This is where behavior is authored once.**
+- **`g-hk-on-<event>.py`** — six thin canonical entrypoints (one per event) that
+  just call `g_hk_core.dispatch("<event>")`. Platform triggers point here. They
+  contain NO business logic.
+- **`g-hk-<concern>.py`** — the existing per-concern hooks (e.g.
+  `g-hk-session-start.py`, `g-hk-pre-tool-call-gald3r-guard.py`,
+  `g-hk-agent-complete.py`). These are the actual behavior; the core fans out to
+  them via `CONCERN_CHAIN`.
+- **`g-hk-*.md`** — T1171 companion docs for the wired hooks (companion path is
+  derived from the script name; `settings.json` carries no `_hook_md` key).
+
+> **Naming note:** canonical event entrypoints are named `g-hk-on-<event>` (e.g.
+> `g-hk-on-tool-end`) rather than the bare `g-hk-<event>`, because several bare
+> names (`g-hk-session-start`, `g-hk-session-end`) are already the per-concern
+> handlers the core invokes. The `on-` prefix disambiguates "canonical event
+> entrypoint" from "concern handler" without renaming shipped infra mid-rebuild.
+
+## Migration status (T424 reference increment)
+
+- ✅ Shared core + 6 canonical entrypoints shipped (this folder + `.claude/hooks/`).
+- ✅ Claude `settings.json` `"hooks"` wires the two **new** canonical events
+  (`PostToolUse` → `g-hk-on-tool-end`, `UserPromptSubmit` →
+  `g-hk-on-user-prompt-submit`), alongside the consolidated `SessionStart`/
+  `Stop`/`PreToolUse` chains (T420). Fully additive.
+- 🔜 The pre-existing per-concern entries (`SessionStart`/`Stop`/`PreToolUse`)
+  are retained as-is; re-pointing them at the canonical entrypoints is the
+  **AC4 fan-out** follow-up.
+
+## Other platforms' hook models (do not assume portability)
+
+- **Claude Code** — `.claude/settings.json` `"hooks"` with PascalCase events
+  (`SessionStart`, `PreToolUse`, …) — the canonical surface (T420). Mirrors this
+  folder.
+- **Kiro IDE** — declarative `.kiro/hooks/*.kiro.hook` JSON (file/event
+  `fileEdited`/`userTriggered`, `askAgent`/`command`). Does NOT use the Python
+  core. See `platforms/kiro/.kiro/hooks/README.md`.
+- **Kiro CLI** — lifecycle hooks embedded in the agent JSON `hooks` field (no
+  standalone hook files); STDIN-JSON payload, exit-code flow control. Thin
+  `.ps1` shims pipe STDIN to the canonical entrypoints. See
+  `platforms/kiro-cli/.kiro/hooks-impl/README.md`.
+- **opencode / openclaw** — JS/TS plugin hooks (out of scope for the Python core).
+
+Authoritative per-platform capability: each `skills/g-skl-platform-<p>/PLATFORM_SPEC.md`.

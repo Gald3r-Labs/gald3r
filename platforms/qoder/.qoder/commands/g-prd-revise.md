@@ -1,5 +1,7 @@
-﻿---
+---
+description: 'Revise a released PRD via g-skl-prds REVISE, creating a new draft that supersedes it'
 subsystem_memberships: [RELEASE_AND_VERSIONING]
+execution_tier: guarded_prompt
 ---
 Revise a released PRD. Activates **g-skl-prds** → REVISE operation.
 

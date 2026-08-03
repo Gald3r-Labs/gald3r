@@ -24,6 +24,17 @@ token_budget: low
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
 
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
+
 # g-skl-platform-kiro-cli
 
 Activate for: setting up gald3r with Kiro CLI (terminal variant), authoring steering/skills/agents/hooks, understanding differences from Kiro IDE, or verifying the Kiro CLI gald3r install.
@@ -105,8 +116,8 @@ https://kiro.dev/docs/cli/reference/slash-commands/ before scripting CI.
 - **Custom agents are JSON, not markdown** — `g-agnt-*.md` need markdown→JSON translation (pin
   steering via `resources`), not a file drop.
 - **Hooks wire per-agent JSON, STDIN payload** — hooks live in each agent's `hooks` field (not a
-  central `hooks.json`); cross-agent automation is replicated per agent; gald3r `.ps1` hooks must
-  read `$input`/stdin (not `$env:*`); exit code `2` blocks (PreToolUse only).
+  central `hooks.json`); cross-agent automation is replicated per agent; gald3r `.py` hooks
+  (`python <path>`) must read `$input`/stdin (not `$env:*`); exit code `2` blocks (PreToolUse only).
 - **No per-rule glob scoping** — steering has no `alwaysApply`/`globs`; foundation files are always
   on, others scope via an agent `resources` glob.
 - **Shared `.kiro/` with Kiro IDE** — installing steering/MCP for one benefits the other, but the
@@ -116,7 +127,7 @@ https://kiro.dev/docs/cli/reference/slash-commands/ before scripting CI.
 
 | Feature | Status | Notes |
 |---|---|---|
-| Hooks (`g-hk-*.ps1`) | ✅ | agent JSON `hooks`; `agentSpawn`/`userPromptSubmit`/`preToolUse`/`postToolUse`/`stop`; STDIN-JSON; exit `2` blocks (PreToolUse); per-agent wiring |
+| Hooks (`g-hk-*.py`) | ✅ | agent JSON `hooks`; `agentSpawn`/`userPromptSubmit`/`preToolUse`/`postToolUse`/`stop`; STDIN-JSON; exit `2` blocks (PreToolUse); per-agent wiring |
 | Skills (`g-skl-*/SKILL.md`) | ✅ | Agent Skills auto-loaded from `.kiro/skills/` + `~/.kiro/skills/`; also `/skill-name` (v2.1) |
 | Agents (`g-agnt-*.md`) | ✅ | native **JSON** custom agents (filename=name) + subagents (isolated, up to 4); markdown→JSON translation |
 | Commands (`@g-*`) | ✅ | Skills-as-slash-commands (`/skill-name`) + `/prompts create`; no standalone command-file format |

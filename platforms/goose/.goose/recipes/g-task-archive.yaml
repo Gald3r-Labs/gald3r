@@ -1,0 +1,43 @@
+version: 1.0.0
+title: g-task-archive
+description: Archive terminal task history into `.gald3r/archive/` while keeping `TASKS.md`
+  as an active working index.
+instructions: "Archive terminal task history into `.gald3r/archive/` while keeping\
+  \ `TASKS.md` as an active working index.\n\n```\n@g-task-archive\n@g-task-archive\
+  \ --apply\n@g-task-archive --include-recent\n@g-task-archive --apply --include-recent\
+  \ --recent-window-days 7\n```\n\n## What This Command Does\n\nRuns the compiled\
+  \ **`gald3r task archive`** verb (T497 -- backs g-rl-33's Active Index\nArchive\
+  \ Gate, which previously had no deterministic implementation).\n\nThe verb moves\
+  \ completed/failed/cancelled task history out of the active index and into\ncount-based\
+  \ archive buckets:\n\n- Index files: `.gald3r/archive/archive_tasks_0000_0999.md`,\
+  \ `.gald3r/archive/archive_tasks_1000_1999.md`, ...\n- Task files: `.gald3r/archive/tasks/tasks_0000_0999/`,\
+  \ `.gald3r/archive/tasks/tasks_1000_1999/`, ...\n\nBuckets hold at most 1000 archive\
+  \ entries/files and are assigned by archive entry ordinal, not\nby original task\
+  \ ID. Each archived file's frontmatter gains an `archive:` provenance block\n(slot,\
+  \ index path, archived-at date, source project, original task id).\n\n## Flags\n\
+  \n| Flag | Effect |\n|---|---|\n| (none) | Dry-run preview -- classifies every candidate,\
+  \ writes nothing. |\n| `--apply` | Actually move files, update the DB, and rewrite\
+  \ `TASKS.md`. |\n| `--include-recent` | Also archive terminal tasks completed within\
+  \ the recency window (default: excluded). |\n| `--recent-window-days N` | Override\
+  \ the default 14-day recency window. |\n| `--json` | Machine-readable report (candidates,\
+  \ exclusions, held-back-as-recent). |\n\n## Safety\n\n- Dry-run is the default --\
+  \ `--apply` is required to write anything.\n- A task still listed as a `dependencies:`\
+  \ target of any other on-disk task is excluded from\n  archival (reported under\
+  \ \"Excluded\"), regardless of that referencing task's own status --\n  archiving\
+  \ it would leave the referencing task's dependency dangling.\n- Recently completed\
+  \ tasks stay active unless `--include-recent` is supplied.\n- Never deletes history:\
+  \ files move, they are not removed. The task/bug row in `gald3r.db` is\n  relocated\
+  \ out of the live `tasks` table (so `gald3r db verify` never reports an `orphan_row`)\n\
+  \  -- `status_history` rows are preserved as permanent audit trail.\n- Apply leaves\
+  \ an `## Archive Pointers` section in `TASKS.md` linking every archive index file.\n\
+  - As with any `--apply` destructive verb, only run it when the active task explicitly\n\
+  \  authorizes archival work -- the CLI itself has no session/task-authorization\
+  \ concept, so this\n  is an agent-level discipline, not something the verb enforces."
+prompt: Run the gald3r `g-task-archive` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-task-archive, e.g. quoted text or --flag
+    values, exactly as you would type them after the command name.

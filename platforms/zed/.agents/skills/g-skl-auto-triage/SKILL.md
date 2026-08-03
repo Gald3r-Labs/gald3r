@@ -3,6 +3,15 @@ name: g-skl-auto-triage
 description: Triage non-code defects (spec_defect, policy_incongruity, design_gap): assess risk, auto-fix bounded safe issues, and log the rest as tracked bugs.
 ---
 
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
 
 ## Purpose
 
@@ -94,7 +103,7 @@ risk_score = base_kind_score + file_sensitivity_bonus + scope_multiplier
 | `CONSTRAINTS.md` body | +∞ (block) |
 | `TASKS.md`, `tasks/` | +∞ (block) |
 | `BUGS.md`, `bugs/` | +∞ (block) |
-| `workspace/` topology | +∞ (block) |
+| `linking/` topology | +∞ (block) |
 | Any source code file | +∞ (block) |
 
 ### Scope multiplier
@@ -137,7 +146,7 @@ triage_notes: 'Added clarifying comment to workspace_manifest.yaml line 1205'
 
 1. **Never touch** `TASKS.md`, `tasks/`, `BUGS.md`, `bugs/` — coordination state is sacred
 2. **Never touch** `CONSTRAINTS.md` body text
-3. **Never touch** `workspace/` topology files
+3. **Never touch** `linking/` topology files
 4. **Never touch** source code in member repos
 5. **Never fix** anything requiring a design decision (`design_gap`)
 6. **Never fix** more than 3 files in a single triage run

@@ -1,12 +1,23 @@
-﻿---
+---
 name: g-skl-res-review
-description: Analyze external sources (GitHub repos, URLs) for adoptable patterns and improvements. Vault-aware — reads from {vault}/research/recon/ when a shared vault is configured, else falls back to local research/harvests/. Uses _recon_index.yaml for cross-project dedup. Produces structured harvest reports and optional IDEA_BOARD suggestions. Zero-change-without-approval.
+description: Analyze external sources (GitHub repos, URLs) for adoptable patterns and improvements. Vault-aware — reads from {vault}/research/CRR_FunctionalSpecs/ when a shared vault is configured, else falls back to local research/CRR_FunctionalSpecs/. Uses _recon_index.yaml for cross-project dedup. Produces structured harvest reports and optional IDEA_BOARD suggestions. Zero-change-without-approval.
 token_budget: very_high
 subsystem_memberships: [VAULT_AND_RESEARCH]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 # g-skl-res-review
 
-**Vault output** (vault-aware, T081): `{vault}/research/recon/` when `vault_location` ≠ `{LOCAL}`, else `research/harvests/`.
+**Vault output** (vault-aware, T081): `{vault}/research/CRR_FunctionalSpecs/` when `vault_location` ≠ `{LOCAL}`, else `research/CRR_FunctionalSpecs/`.
 
 **Activate for**: "harvest ideas from", "analyze this repo for patterns", "what can we learn from", "review past harvests", any request to borrow ideas from external sources.
 
@@ -37,12 +48,12 @@ Every operation resolves the output base path before doing anything else.
 1. Read .gald3r/.identity (key=value, no quotes)
 2. Extract vault_location=
 3. If vault_location is {LOCAL} or missing:
-     recon_base  = "research/harvests/"
-     index_path  = "research/harvests/_recon_index.yaml"
+     recon_base  = "research/CRR_FunctionalSpecs/"
+     index_path  = "research/CRR_FunctionalSpecs/_recon_index.yaml"
      vault_mode  = "local"
 4. Else:
-     recon_base  = f"{vault_location}/research/recon/"
-     index_path  = f"{vault_location}/research/recon/_recon_index.yaml"
+     recon_base  = f"{vault_location}/research/CRR_FunctionalSpecs/"
+     index_path  = f"{vault_location}/research/CRR_FunctionalSpecs/_recon_index.yaml"
      vault_mode  = "shared"
 ```
 
@@ -116,7 +127,7 @@ suggestions_adopted: 0
 
 **Step 6a — `target_repo:` triage (WPAC-aware, T1430).** This triage step is the canonical
 place to set or change where a promoted idea's artifacts will land. When
-`.gald3r/workspace/topology.md` is present, for each suggestion routed to `idea`/`feature`:
+`.gald3r/linking/link_topology.md` is present, for each suggestion routed to `idea`/`feature`:
 
 > Surface the current `target_repo:` (default `local`) and ask: *"Route to which repo?
 > (local / `<repo_id>` / list / workspace)"*.
@@ -289,7 +300,7 @@ When `@g-res-review {github_url}` targets an unmirrored repo:
 
 ## Topology-Aware Routing (T118)
 
-When a PCAC topology is configured (`.gald3r/linking/link_topology.md` exists with `children:` entries), each suggestion in a harvest is assigned a **routing suggestion** before presenting to the user. This ensures findings reach the right project rather than all landing in the current project.
+When a WPAC topology is configured (`.gald3r/linking/link_topology.md` exists with `children:` entries), each suggestion in a harvest is assigned a **routing suggestion** before presenting to the user. This ensures findings reach the right project rather than all landing in the current project.
 
 ### Topology Load Sequence
 
@@ -322,7 +333,7 @@ For each finding `F` in the harvest report:
      - If this-project owns a matching capability: suggest "this-project"
      - Otherwise: suggest "new-project" (explain what capability is missing)
 
-4. "new-project" suggestion text: "⚡ No project owns [{domain}] — consider spawning a [{type}] project via @g-pcac-spawn"
+4. "new-project" suggestion text: "⚡ No project owns [{domain}] — consider spawning a [{type}] project via @g-wpac-spawn"
 ```
 
 ### Display Format
@@ -348,7 +359,7 @@ After reviewing routing suggestions, user confirms each routing. Then:
 
 - `→ this-project`: standard APPLY (writes to current project)
 - `→ {peer_slug}`: calls `g-skl-res-apply APPLY --target {peer_slug}`
-- `⚡ new-project`: offers `@g-pcac-spawn {type}` with capability description
+- `⚡ new-project`: offers `@g-wpac-spawn {type}` with capability description
 - `→ multiple:...`: prompts user to choose or split
 
 ### TOPOLOGY_STATUS Operation
@@ -361,4 +372,4 @@ Displays current topology awareness:
 - Lists all known peers and their loaded capabilities
 - Shows which capabilities are `ready` vs `planned`
 - Shows `peers/` snapshot staleness (age in days; >7 days flagged)
-- If no topology: prints `"No PCAC topology configured — run @g-pcac-adopt to link projects"`
+- If no topology: prints `"No WPAC topology configured — run @g-wpac-adopt to link projects"`

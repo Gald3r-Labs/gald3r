@@ -1,46 +1,79 @@
-# Kiro IDE Agent Hooks (`.kiro.hook`)
+# gald3r Claude Code Hooks
 
-Kiro IDE uses a **file/event Agent Hook** model that is fundamentally different
-from the gald3r canonical agent-lifecycle event set (`session-start`,
-`session-end`, `user-prompt-submit`, `tool-start`, `tool-end`, `stop`). It does
-**not** delegate to the shared Python core (`g_hk_core.py`) — its hooks are
-declarative JSON that ask the agent (or run a shell command) on file events.
+These are the Claude Code lifecycle hooks for gald3r, wired via
+`.claude/settings.json` under the `"hooks"` key (PascalCase events:
+`SessionStart`, `PreToolUse`, …) — the canonical, doc-verified Claude Code hook
+surface (T420). The legacy top-level `.claude/hooks.json` is a retired pointer
+stub. They are Python scripts (T1584 port) that import the shared bootstrap
+`_hook_common.py`. Other platforms use **different** hook models — see each
+platform's `PLATFORM_SPEC.md` `## Hook System` section before assuming a hook is
+portable.
 
-## File format
+## Canonical event model (T424)
 
-One JSON file per hook with the **`.kiro.hook`** extension (NOT `.json`):
+gald3r is consolidating Cursor's ~18 native hook events down to a **canonical
+reduced set of 6** events that are commonly supported across hook-capable
+platforms, all served by **one shared Python core**:
 
-```json
-{
-  "enabled": true,
-  "name": "Hook display name",
-  "description": "What this hook does",
-  "version": "1",
-  "when": { "type": "fileEdited", "patterns": ["src/**/*.ts"] },
-  "then": { "type": "askAgent", "prompt": "Natural-language instruction" }
-}
-```
+| Canonical event | Meaning |
+|---|---|
+| `session-start` | A new agent session/conversation begins (context injection) |
+| `session-end` | An agent session terminates (final cleanup/reflection) |
+| `user-prompt-submit` | The user submits a prompt, before the agent acts |
+| `tool-start` | Before a tool/action executes (the blocking guard point) |
+| `tool-end` | After a tool/action completes |
+| `stop` | The agent finishes responding to a turn (≠ `session-end`) |
 
-- `when.type`: `fileEdited` (file events — requires `patterns` glob[]) or
-  `userTriggered` (manual/on-demand). Other serialized event strings exposed in
-  the Hook UI (File Create/Delete, Prompt Submit, Agent Stop, Pre/Post Tool Use,
-  Pre/Post Task Execution) were not documented on the crawled pages — confirm the
-  exact `when.type` string before authoring non-`fileEdited` hooks.
-- `then.type`: `askAgent` (uses `prompt`) or `command` (shell `Run Command`,
-  uses `command`).
-- Caveat: `enabled` is currently not honored at runtime (hooks fire regardless)
-  — Kiro issue kirodotdev/Kiro#9298.
+`pre-commit` is intentionally **not** a canonical agent-lifecycle event — it is a
+git-level hook handled by `g-hk-pre-commit`.
 
-## Shipped hooks
+### Files
 
-- `g-hk-kiro-file-change.kiro.hook` — `askAgent` on `.gald3r/**/*.md` edits,
-  reminding the agent to keep `TASKS.md` / `BUGS.md` in sync.
+- **`g_hk_core.py`** — the shared canonical event core. Holds the canonical
+  event set, the platform→canonical event map (`PLATFORM_EVENT_MAP`), and the
+  per-event concern chain (`CONCERN_CHAIN`). `dispatch(event)` reads the harness
+  payload once, runs every concern hook in the chain, merges their
+  `additional_context`, honors the first blocking verdict, and emits one
+  unified envelope. **This is where behavior is authored once.**
+- **`g-hk-on-<event>.py`** — six thin canonical entrypoints (one per event) that
+  just call `g_hk_core.dispatch("<event>")`. Platform triggers point here. They
+  contain NO business logic.
+- **`g-hk-<concern>.py`** — the existing per-concern hooks (e.g.
+  `g-hk-session-start.py`, `g-hk-pre-tool-call-gald3r-guard.py`,
+  `g-hk-agent-complete.py`). These are the actual behavior; the core fans out to
+  them via `CONCERN_CHAIN`.
+- **`g-hk-*.md`** — T1171 companion docs for the wired hooks (companion path is
+  derived from the script name; `settings.json` carries no `_hook_md` key).
 
-## Canonical lifecycle hooks
+> **Naming note:** canonical event entrypoints are named `g-hk-on-<event>` (e.g.
+> `g-hk-on-tool-end`) rather than the bare `g-hk-<event>`, because several bare
+> names (`g-hk-session-start`, `g-hk-session-end`) are already the per-concern
+> handlers the core invokes. The `on-` prefix disambiguates "canonical event
+> entrypoint" from "concern handler" without renaming shipped infra mid-rebuild.
 
-For agent-lifecycle behavior (session start/end, tool guards, stop), use the
-**Kiro CLI** surface — it has real lifecycle hooks in the agent JSON `hooks`
-field that delegate to gald3r's shared canonical core. See
-`platforms/kiro-cli/.kiro/hooks-impl/README.md`.
+## Migration status (T424 reference increment)
 
-Authoritative schema: `skills/g-skl-platform-kiro/PLATFORM_SPEC.md` `## Hook System`.
+- ✅ Shared core + 6 canonical entrypoints shipped (this folder + `.claude/hooks/`).
+- ✅ Claude `settings.json` `"hooks"` wires the two **new** canonical events
+  (`PostToolUse` → `g-hk-on-tool-end`, `UserPromptSubmit` →
+  `g-hk-on-user-prompt-submit`), alongside the consolidated `SessionStart`/
+  `Stop`/`PreToolUse` chains (T420). Fully additive.
+- 🔜 The pre-existing per-concern entries (`SessionStart`/`Stop`/`PreToolUse`)
+  are retained as-is; re-pointing them at the canonical entrypoints is the
+  **AC4 fan-out** follow-up.
+
+## Other platforms' hook models (do not assume portability)
+
+- **Claude Code** — `.claude/settings.json` `"hooks"` with PascalCase events
+  (`SessionStart`, `PreToolUse`, …) — the canonical surface (T420). Mirrors this
+  folder.
+- **Kiro IDE** — declarative `.kiro/hooks/*.kiro.hook` JSON (file/event
+  `fileEdited`/`userTriggered`, `askAgent`/`command`). Does NOT use the Python
+  core. See `platforms/kiro/.kiro/hooks/README.md`.
+- **Kiro CLI** — lifecycle hooks embedded in the agent JSON `hooks` field (no
+  standalone hook files); STDIN-JSON payload, exit-code flow control. Thin
+  `.ps1` shims pipe STDIN to the canonical entrypoints. See
+  `platforms/kiro-cli/.kiro/hooks-impl/README.md`.
+- **opencode / openclaw** — JS/TS plugin hooks (out of scope for the Python core).
+
+Authoritative per-platform capability: each `skills/g-skl-platform-<p>/PLATFORM_SPEC.md`.

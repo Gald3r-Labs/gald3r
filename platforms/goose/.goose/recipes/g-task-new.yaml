@@ -1,0 +1,21 @@
+version: 1.0.0
+title: g-task-new
+description: '> **Deprecated**: Use `@g-task-add` instead. This alias is kept for
+  backward compatibility.'
+instructions: '> **Deprecated**: Use `@g-task-add` instead. This alias is kept for
+  backward compatibility.
+
+
+  Create a new task. Activates **g-skl-tasks** → CREATE TASK operation.
+
+
+  Provide: task title and brief description. The skill handles ID assignment, complexity
+  scoring, file creation, and TASKS.md entry atomically.'
+prompt: Run the gald3r `g-task-new` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-task-new, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

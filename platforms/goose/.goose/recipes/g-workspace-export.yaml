@@ -1,0 +1,47 @@
+version: 1.0.0
+title: g-workspace-export
+description: 'Compatibility Alias for `@g-wrkspc-export`: $ARGUMENTS'
+instructions: "Compatibility Alias for `@g-wrkspc-export`: $ARGUMENTS\n\n## What This\
+  \ Command Does\n\nThis long-form Workspace-Control command remains supported for\
+  \ backwards compatibility. Prefer `@g-wrkspc-export` for day-to-day use.\n\n## Delegates\
+  \ To\n\n`g-skl-workspace` -> `EXPORT_PLAN`\n\n---\n\nPlan a Workspace-Control export\
+  \ dry-run: $ARGUMENTS\n\n## What This Command Does\n\nShows what a future Workspace-Control\
+  \ export would do without writing files. Delegates to `g-skl-workspace` operation\
+  \ `EXPORT PLAN`.\n\n## Workflow\n\n1. Activate `g-skl-workspace`.\n2. Run operation\
+  \ `EXPORT PLAN`.\n3. Treat `.gald3r/linking/workspace_manifest.yaml` as the canonical\
+  \ registry.\n4. Validate the manifest first and stop on blocking parse findings.\n\
+  5. For each controlled member, report source template path, destination local path,\
+  \ independent git root, branch, dirty status, remotes, worktree context, write policy,\
+  \ clean-repo expectations, and future apply gates.\n6. For Task 184 template member\
+  \ bootstrap/export detail, use the control-project helper in dry-run mode:\n   `.\\\
+  custom_scripts\\workspace_template_export.ps1`\n7. End with the required dry-run\
+  \ statement from `g-skl-workspace`.\n\n## Required Dry-Run Behavior\n\nDry-run only:\
+  \ no files are written. Member repository writes remain disabled until a later task\
+  \ explicitly authorizes apply mode.\n\n## Task 184 Bootstrap Export Helper\n\n`custom_scripts/workspace_template_export.ps1`\
+  \ reads the canonical manifest, plans and applies exports to external workspace\
+  \ member repos `<ECOSYSTEM_ROOT>/<template_slim>`, `<ECOSYSTEM_ROOT>/<template_full>`,\
+  \ and `<ECOSYSTEM_ROOT>/<template_adv>`, and reports:\n\n- source folders and destination\
+  \ member repo paths with independent git roots\n- planned creates, updates, unchanged\
+  \ files, skipped files, and provenance output\n- no-symlink/no-junction, git-root,\
+  \ branch, clean-status, remote, worktree-context, rollback-boundary, and hygiene\
+  \ gates\n- apply blockers before any member repo write\n\nDefault invocation is\
+  \ dry-run only:\n\n```powershell\n.\\custom_scripts\\workspace_template_export.ps1\n\
+  ```\n\nApply mode is intentionally gated behind explicit flags on the helper and\
+  \ must re-run preflight immediately before writing. Do not invoke apply mode from\
+  \ this command unless the active task explicitly authorizes member writes.\n\n##\
+  \ Safety Boundaries\n\n- Do not copy, move, delete, run export scripts, run parity\
+  \ sync, run tier sync, or stage files from this command.\n- Undeclared member repo\
+  \ writes are forbidden.\n- Member repositories remain separate git roots with independent\
+  \ status, branch, remote, rollback, and worktree boundaries. Branch/worktree names\
+  \ must include the member repo ID for multi-repo isolation.\n- Generated output\
+  \ must name its canonical source in any future apply task.\n\n## Usage Examples\n\
+  \n```\n@g-workspace-export --dry-run\n/g-workspace-export --dry-run\n```\n\n## Delegates\
+  \ To\n\n`g-skl-workspace` -> `EXPORT PLAN`"
+prompt: Run the gald3r `g-workspace-export` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-workspace-export, e.g. quoted text or --flag
+    values, exactly as you would type them after the command name.

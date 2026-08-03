@@ -1,9 +1,19 @@
-﻿---
+---
 name: g-skl-cli-copilot
 description: GitHub Copilot CLI (gh copilot command) — natural language to shell/git/gh commands, agent mode, chat sessions, workspace instructions, and multi-agent coordination via .github/copilot-instructions.md.
 token_budget: low
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
 
 # g-skl-cli-copilot — GitHub Copilot CLI
 
@@ -89,8 +99,10 @@ In Cursor, VS Code, and JetBrains IDEs with Copilot enabled, Copilot reads:
 gald3r's always-apply rules are automatically compiled into `.github/copilot-instructions.md` by:
 
 ```bash
-python .gald3r_sys/skills/g-skl-platform-copilot/scripts/generate_copilot_instructions.py
+python .claude/skills/g-skl-platform-copilot/scripts/generate_copilot_instructions.py
 ```
+
+(path relative to the installed skills root -- `.cursor/skills/...` etc. on other platforms; T274: `.gald3r_sys/` is purged from every project and never a valid path)
 
 Regenerate after any change to `.cursor/rules/g-rl-*.mdc` files.
 
@@ -124,7 +136,7 @@ Phase 2 will add `.github/agents/*.agent.md` to enable agent-mode invocation onc
 
 - **No session continuation** — each `gh copilot suggest` is stateless
 - **No MCP tool integration** — Phase 2 dependency
-- **No hooks** — `g-hk-session-start.ps1` and inbox-check hooks are Cursor/Claude-only
+- **No hooks** — `g-hk-session-start.py` and inbox-check hooks are Cursor/Claude-only
 - **No skill invocation** — skills require `@workspace` or explicit IDE paste; no `@g-*` command shorthand in Copilot Chat
 
 ## Dangerous Patterns to Avoid

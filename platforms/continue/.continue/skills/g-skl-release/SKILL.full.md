@@ -271,8 +271,8 @@ handled. This is a USER-SAFETY toggle: a destructive history scrub must never be
 
 **How the mode is chosen (precedence, highest first):**
 1. Explicit `-HistoryMode <carry|scrub>` (or engine equivalent) passed to the publish call.
-2. `.gald3r/.identity` -> `publish_history_mode=<carry|scrub>` (recorded at `@g-setup` / `--upgrade-existing`, T423 AC2).
-3. `agent_config_defaults.publish_history_mode` in the project type (`development.yaml`) — defaults to `carry`.
+2. `.gald3r/.identity` -> `publish_history_mode=<carry|scrub>` (recorded at `@g-setup` / `@g-setup --autonomy full`, T423 AC2).
+3. `agent_config_defaults.publish_history_mode` in the project type (`software_development.yaml`) — defaults to `carry`.
 4. (Deprecated) `test_to_public_history` is read only for back-compat; `publish_history_mode` wins. The
    pre-T423 default of this key was the UNSAFE `scrub`; it is now aligned to `carry`.
 

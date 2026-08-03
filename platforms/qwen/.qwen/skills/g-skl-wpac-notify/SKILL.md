@@ -1,13 +1,23 @@
-﻿---
+---
 name: g-skl-wpac-notify
 description: Send lightweight [INFO] freeform notifications to one or more project INBOXes — no task created, no approval needed. FYI-only cross-project messaging.
 token_budget: low
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
 
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 > **Multi-agent framework (T1094):** Broadcast — one-to-many [INFO] notification, no task created.
 
-# g-skl-wpac-notify — PCAC Freeform Notifications
+# g-skl-wpac-notify — WPAC Freeform Notifications
 
 ## When to Use
 
@@ -18,9 +28,34 @@ When you want to say "FYI" across project boundaries without creating a task or 
 
 **INFO messages**: no task created, no approval needed, no local task blocked.
 
+## Transport layer (WPAC-v2 — T1608)
+
+**Step 0-T — transport verdict (code decides, never the model — g-rl-38).** Before the
+file steps below, attempt an event publish (T1609 shim underneath):
+
+```
+gald3r workspace outbox send --verb event --payload-file <payload.json>
+```
+
+Payload = the live `world_tree` `PublishEventRequest` contract: `{"type": "<catalogued
+type>", "project_id": "<optional subject uuid>", "payload": {…per-type schema…}}`.
+The event catalog is a CLOSED set (`release.published`, `coordinator.*`, `claim.*`,
+`merge_request.*`, `budget.breached`, `task.delegated`); the transport short-circuits a
+non-catalogued type to the `fallback` verdict client-side — no doomed round-trip.
+
+| Verdict | Action |
+|---|---|
+| `ok` | Published via `POST /api/v1/events` (org-scoped coordination log; subscribers see it in realtime). SKIP the target INBOX write — the send is delivered. |
+| `fallback` | Type not catalogued (all freeform INFO subtypes today) — the file INBOX write below IS the delivery path. Expected + free. |
+| `offline` / `error` | Perform the file steps below exactly as today; queued entry reconciled by `gald3r workspace outbox flush` on reconnect. |
+| `auth_required` / `upgrade_required` | File steps below (+ `gald3r login` hint / upgrade line). Entry parked (not retried). |
+
+Everything below this section is the **OFFLINE / FILE FALLBACK transport** — the verb
+surface (name + arguments) is unchanged.
+
 ## INFO Message Format
 
-Written to target project's `.gald3r/workspace/inbox.md`:
+Written to target project's `.gald3r/linking/INBOX.md`:
 
 ```markdown
 ## [OPEN] INFO-{NNN} — from: {source_project} — {YYYY-MM-DD}
@@ -34,7 +69,7 @@ Written to target project's `.gald3r/workspace/inbox.md`:
 
 ## Capability-Change Notifications (Subtype: capability_update)
 
-When a capability or responsibility status changes in `.gald3r/workspace/capabilities.md`, use the `capability_update` subtype to notify peers:
+When a capability or responsibility status changes in `.gald3r/linking/capabilities.md`, use the `capability_update` subtype to notify peers:
 
 ```markdown
 ## [OPEN] INFO-{NNN} — from: {source_project} — {YYYY-MM-DD}
@@ -53,7 +88,7 @@ When a capability or responsibility status changes in `.gald3r/workspace/capabil
 
 When sending a `capability_update`:
 1. Write the INBOX notification as above
-2. Also write/overwrite `.gald3r/workspace/peers/{this_slug}_capabilities.md` in the target project with the current content of your `capabilities.md`
+2. Also write/overwrite `.gald3r/linking/_peers/{this_slug}_capabilities.md` in the target project with the current content of your `capabilities.md`
 
 ## Routing Options
 
@@ -74,7 +109,7 @@ Multiple flags are allowed: `--parent --all-siblings` notifies parent and all si
    - Subtype: `general` (default), `broadcast_completion` (T037), or `advisory`
 3. **Write to target INBOX.md** (append at top, after the header)
    - If target path is accessible: write directly
-   - If target path is NOT accessible: stage in `.gald3r/workspace/pending_requests/info_[target].md`
+   - If target path is NOT accessible: stage in `.gald3r/linking/pending_requests/info_[target].md`
      (same staging pattern as g-skl-wpac-ask)
 4. **Read back to confirm** the entry was written
 5. **Report**: "Notified [project_name]: INFO-NNN — {subject}"
@@ -82,10 +117,10 @@ Multiple flags are allowed: `--parent --all-siblings` notifies parent and all si
 ## Staging When Target Inaccessible
 
 ```
-.gald3r/workspace/pending_requests/info_[target_project_name].md
+.gald3r/linking/pending_requests/info_[target_project_name].md
 ```
 
-Staged notifications are delivered the next time any PCAC command accesses that project.
+Staged notifications are delivered the next time any WPAC command accesses that project.
 
 ## What This Does NOT Do (T167)
 

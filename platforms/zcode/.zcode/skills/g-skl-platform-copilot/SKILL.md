@@ -11,7 +11,7 @@ docs_url_secondary:
   - https://docs.github.com/en/copilot/concepts/context/mcp
 last_doc_scan: 2026-06-02
 capability_status:
-  hooks: "✅ native Copilot CLI lifecycle hooks in .github/hooks/*.json (sessionStart/userPromptSubmitted/preToolUse/postToolUse/sessionEnd/errorOccurred; preToolUse deny blocks; bash/.ps1; CLI GA, VS Code preview)"
+  hooks: "✅ native Copilot CLI lifecycle hooks in .github/hooks/*.json (sessionStart/userPromptSubmitted/preToolUse/postToolUse/sessionEnd/errorOccurred; preToolUse deny blocks; bash / python <path>; CLI GA, VS Code preview)"
   rules: "✅ .github/copilot-instructions.md (always-on) + .github/instructions/*.instructions.md (applyTo:) + reads AGENTS.md/CLAUDE.md/GEMINI.md; plus Agentic Memory"
   skills: "✅ Agent Skills (SKILL.md) discovered in .github/skills/, .claude/skills/, .agents/skills/ (cross-tool standard)"
   commands: "✅ prompt-file slash commands .github/prompts/*.prompt.md (VS Code only — NOT the CLI)"
@@ -20,6 +20,16 @@ capability_status:
 token_budget: low
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
 
 # g-skl-platform-copilot
 
@@ -52,7 +62,7 @@ Models are user-selectable per session (Anthropic / OpenAI / Google).
     ├── prompts/       *.prompt.md      ← prompt-file slash commands (VS Code only)
     ├── agents/        AGENT-NAME.md    ← custom agents (persona + tool restrictions)
     ├── skills/        <name>/SKILL.md  ← Agent Skills (YAML: name + description)
-    └── hooks/         *.json           ← Copilot CLI lifecycle hooks (bash / PowerShell)
+    └── hooks/         *.json           ← Copilot CLI lifecycle hooks (bash / python <path>)
 
 .claude/skills/ · .agents/skills/      ← Copilot ALSO discovers Agent Skills here  (cross-tool)
 mcp.json (IDE) · ~/.copilot/mcp-config.json (CLI) · repo settings (cloud)  ← MCP per surface
@@ -67,8 +77,8 @@ Claude-Code skill tree works as-is on Copilot.**
 **Cheapest high-parity install: ship gald3r's `.claude/skills/` tree, plus a generated
 `.github/copilot-instructions.md` (from always-apply rules) and `AGENTS.md`** — Copilot loads them
 natively. Map `g-agnt-*` → `.github/agents/AGENT-NAME.md`, `g-rl-*` → `copilot-instructions.md`
-(or `.github/instructions/` for path-scoped, adv tier), `g-hk-*.ps1` → `.github/hooks/*.json`
-(PowerShell variant, CLI surface), `@g-*` → `.github/prompts/*.prompt.md` (VS Code surface).
+(or `.github/instructions/` for path-scoped, adv tier), `g-hk-*.py` → `.github/hooks/*.json`
+(`python <path>` invocation, CLI surface), `@g-*` → `.github/prompts/*.prompt.md` (VS Code surface).
 Distribute org-wide via `.github-private`; discover via `github/awesome-copilot`.
 
 ### Verify
@@ -99,7 +109,7 @@ Test-Path .github/agents ; Test-Path .github/prompts ; Test-Path .github/hooks
 
 | Feature | Status | Notes |
 |---|---|---|
-| Hooks (`g-hk-*.ps1`) | ✅ | `.github/hooks/*.json`; sessionStart/userPromptSubmitted/preToolUse/postToolUse/sessionEnd/errorOccurred; preToolUse `deny` blocks; CLI GA, VS Code preview |
+| Hooks (`g-hk-*.py`) | ✅ | `.github/hooks/*.json`; sessionStart/userPromptSubmitted/preToolUse/postToolUse/sessionEnd/errorOccurred; preToolUse `deny` blocks; CLI GA, VS Code preview |
 | Skills (`g-skl-*/SKILL.md`) | ✅ | Agent Skills standard; discovered in `.github/skills/` / `.claude/skills/` / `.agents/skills/` |
 | Agents (`g-agnt-*.md`) | ✅ | custom agents `.github/agents/AGENT-NAME.md` + subagents (JetBrains GA; VS 2026 v18.4+) |
 | Commands (`@g-*`) | ✅ | prompt-file slash commands `.github/prompts/*.prompt.md` — **VS Code only**, not the CLI |

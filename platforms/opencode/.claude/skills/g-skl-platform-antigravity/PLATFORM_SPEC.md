@@ -11,6 +11,8 @@ docs_url_secondary:
   - https://antigravity.google/docs/mcp
   - https://antigravity.google/docs/command
   - https://codelabs.developers.google.com/getting-started-with-antigravity-skills
+  - https://codelabs.developers.google.com/autonomous-ai-developer-pipelines-antigravity
+  - https://codelabs.developers.google.com/getting-started-google-antigravity
 crawl_max_age_days: 7
 vault_doc_path: research/platforms/antigravity/
 last_doc_scan: 2026-06-02
@@ -60,6 +62,7 @@ Antigravity 2.0 splits config between **project-local** dirs and **user-global**
 └── .agents/                         ← workspace customization root
     ├── rules/        *.md           ← Manual / Always On / Model Decision / Glob (≤12,000 chars each)
     ├── skills/       <name>/SKILL.md ← Agent Skills (Anthropic SKILL.md standard)  [path varies — see §4]
+    ├── workflows/    *.md           ← project-relative Workflows (slash commands)  [confirmed T384 — see §5]
     └── hooks.json                   ← lifecycle hooks (workspace scope)
 .antigravity/
     └── mcp.json                     ← project-local MCP config { "mcpServers": { ... } }
@@ -79,7 +82,7 @@ Antigravity 2.0 splits config between **project-local** dirs and **user-global**
 > skill discovery is unambiguous; the **exact canonical path should be pinned by a live install test**
 > before being hard-coded into gald3r installers. Global-scope is `~/.gemini/antigravity/skills/`.
 
-- **gald3r writes**: `AGENTS.md`, `GEMINI.md` (Antigravity-only directives), `.agents/skills/<name>/SKILL.md`, `.agents/rules/*.md`, `.agents/hooks.json`, `.antigravity/mcp.json`
+- **gald3r writes**: `AGENTS.md`, `GEMINI.md` (Antigravity-only directives), `.agents/skills/<name>/SKILL.md`, `.agents/rules/*.md`, `.agents/workflows/*.md` (T384), `.agents/hooks.json`, `.antigravity/mcp.json`
 - **Platform owns**: `~/.gemini/` global state, IDE settings, the Orchestrator/subagent runtime, System Rules (immutable)
 
 ---
@@ -133,8 +136,34 @@ Antigravity also has a durable **"memories"** concept (agent state) distinct fro
   are limited to **12,000 chars**. Created via **+ Global** (all workspaces) or **+ Workspace**;
   global workflows are stored at `~/.gemini/antigravity/global_workflows/`. A dedicated `/docs/command`
   page also exists.
+- **Project-relative directory CONFIRMED (T384, reversing the BUG-295 downgrade, re-scanned
+  2026-07-18):** "+ Workspace" Workflows resolve to a real, **project-relative** directory —
+  `<project-root>/.agents/workflows/*.md` — distinct from the global
+  `~/.gemini/antigravity/global_workflows/` path. Confirmed via the official first-party Google
+  Codelab (literal shell instruction `mkdir -p .agents/workflows .agents/skills` and file-creation
+  step `Create .agents/workflows/startcycle.md:`), cross-checked against a Google AI Developer Forum
+  thread describing workflows as resolving "in the current workspace" (project-scoped, not
+  global-only). **Path caveat (same ambiguity as §4 Skills):** third-party sources (a Google
+  Antigravity blog write-up and a community rules aggregator) spell the directory **singular**
+  (`.agent/workflows/`) rather than plural (`.agents/workflows/`); the first-party Google Codelab
+  uses plural, and gald3r's own `.agents/rules`, `.agents/hooks`, `.agents/skills` entries for this
+  platform are all plural, so `.agents/workflows` is adopted here for internal consistency — **pin
+  the exact spelling via a live install test** before treating it as immutable, same caveat already
+  carried for the skills path.
+  `layout_map.yaml` now carries a real `commands: {dir: ".agents/workflows", ext: ".md", prefix:
+  "g-"}` entry for `antigravity` (previously absent — BUG-295 found only the undocumented global
+  path and downgraded the matrix `Commands` cell to `⚠`). Flipping the live
+  `.gald3r/PLATFORM_CAPABILITY_MATRIX.md` `antigravity` `Commands` cell from `⚠` back to `✅` is a
+  **coordinator-owned** `.gald3r/` write (g-rl-33 Swarm Reconciliation Gate — bucket agents don't
+  write shared `.gald3r/` ledgers directly; same deferral pattern as T383's goose `Commands` cell),
+  not included in this authoring pass.
 - gald3r `@g-*` / `/g-*` commands map directly to Workflows (the closest analogue).
-- Source: https://antigravity.google/docs/rules-workflows
+- Source: https://antigravity.google/docs/rules-workflows ·
+  https://codelabs.developers.google.com/autonomous-ai-developer-pipelines-antigravity
+  (first-party Google Codelab — `mkdir -p .agents/workflows .agents/skills`;
+  `Create .agents/workflows/startcycle.md:`) ·
+  https://discuss.ai.google.dev/t/agents-not-reading-workflow-when-directed-with-slash-commands/115448
+  (community forum — workflows exist "in the current workspace")
 
 ## 6. Hooks System — ✅ NATIVE
 
@@ -145,7 +174,7 @@ Antigravity also has a durable **"memories"** concept (agent state) distinct fro
   as JSON**.
 - **Hook points**: `before_tool_call`, `after_tool_call` (logging), `before_model_call` (inject
   system instructions), `after_model_call` (override exit rules), `on_loop_stop`, `on_error`.
-- gald3r PowerShell hooks (`g-hk-*.ps1`) can be wired as the executed shell scripts:
+- gald3r `g-hk-*.py` hooks (`python <path>`, post-T1584 Python port; no PowerShell involved) can be wired as the executed shell scripts:
   `before_tool_call` ~ preToolUse, `on_loop_stop` ~ stop, `before_model_call` enables
   session-start-style instruction injection.
 - Source: https://antigravity.google/docs/hooks
@@ -203,9 +232,9 @@ largely reusable on Antigravity without a separate port**. The exact skill direc
 - **Config file**: `hooks.json` in the customization dir — `.agents/` (workspace) or `~/.gemini/config/` (global); **workspace precedence**
 - **Events available**: `before_tool_call`, `after_tool_call`, `before_model_call`, `after_model_call`, `on_loop_stop`, `on_error`
 - **Event payload format**: JSON via **stdin**; result returned as JSON via **stdout**
-- **Command extensions**: local **shell scripts** (official examples are `.sh`); gald3r `g-hk-*.ps1` wired via `{ "type":"command", "command":"powershell -File …" }`
-- **gald3r hook files**: `g-hk-*.ps1` map to `before_tool_call` (pre-tool guards), `on_loop_stop` (stop), `before_model_call` (session-start-style instruction injection)
-- **OS note**: hooks invoke local shell — Windows wiring routes through PowerShell; **pin payload schema via install test**
+- **Command extensions**: local **shell scripts** (official examples are `.sh`); gald3r `g-hk-*.py` wired via `{ "type":"command", "command":"python <path> …" }` (post-T1584 Python port; no PowerShell involved)
+- **gald3r hook files**: `g-hk-*.py` map to `before_tool_call` (pre-tool guards), `on_loop_stop` (stop), `before_model_call` (session-start-style instruction injection)
+- **OS note**: hooks invoke the local shell directly; `python <path>` runs cross-platform with no PowerShell dependency — **pin payload schema via install test**
 
 ## Atypical Handling
 
@@ -216,12 +245,17 @@ largely reusable on Antigravity without a separate port**. The exact skill direc
 - **Dynamic subagents**: Orchestrator spawns subagents on the fly — no static `g-agnt-*.md` dir.
 - **Global state** is Gemini-namespaced under `~/.gemini/` (shared with the Gemini CLI tree).
 - **Skill dir path** is not yet canonical across sources — pin via install test.
+- **Workflows dir path** (T384): confirmed project-relative (`.agents/workflows/` per the first-party
+  Google Codelab); same singular/plural spelling ambiguity as the skill dir across third-party
+  sources — pin via install test.
 
 ## gald3r Integration Notes
 
 - Ship gald3r's **`AGENTS.md` + `g-skl-*/SKILL.md`** — Antigravity reads/discovers them natively.
+- Ship gald3r's **`@g-*` / `/g-*` commands as Workflows at `.agents/workflows/*.md`** (T384 —
+  project-relative, `layout_map.yaml` `commands` entry now authored).
 - Put **Antigravity-only must-win directives in `GEMINI.md`** (outranks `AGENTS.md`).
-- Hooks fire natively (shell scripts; `.ps1` via `powershell -File`) — `before_model_call` covers
+- Hooks fire natively (shell commands; `g-hk-*.py` via `python <path>`, post-T1584 Python port; no PowerShell involved) — `before_model_call` covers
   session-start injection, `on_loop_stop` covers stop, `before_tool_call` covers `.gald3r/` guards.
 - Fold `g-agnt-*` guidance into **rules/skills** (no file-based subagent discovery).
 - Adopt **Scheduled Tasks** (crons) for gald3r heartbeat jobs.
@@ -251,7 +285,7 @@ Legend: ✅ verified working · ⚠️ partial / Cursor-generic · ❌ not suppo
 
 | Capability | How verified |
 |---|---|
-| Commands / Workflows | /docs/rules-workflows — Workflows = markdown saved-prompts, `/workflow-name`, title/description/steps, ≤12,000 chars, Global vs Workspace; also /docs/command |
+| Commands / Workflows | /docs/rules-workflows — Workflows = markdown saved-prompts, `/workflow-name`, title/description/steps, ≤12,000 chars, Global vs Workspace; also /docs/command. **T384 (2026-07-18):** Workspace scope is project-relative `.agents/workflows/*.md` — confirmed via codelabs.developers.google.com/autonomous-ai-developer-pipelines-antigravity (first-party Google Codelab, literal `mkdir -p .agents/workflows`) + discuss.ai.google.dev forum thread 115448 (workflows resolve "in the current workspace"); singular/plural spelling ambiguity noted, same as the skills path below |
 | Rules | /docs/rules-workflows — Markdown rules; activation Manual / Always On / Model Decision / Glob; ≤12,000 chars; `~/.gemini/GEMINI.md` (global) + `.agents/rules/` (workspace); precedence System Rules > GEMINI.md > AGENTS.md |
 | Agents | /docs/subagents — dynamic Orchestrator-spawned subagents (`start_subagent`), async/background, agent IDs, Agent Management; **no** file-based `g-agnt-*.md` discovery |
 | Skills | codelabs (getting-started-with-antigravity-skills) — Anthropic `SKILL.md` standard ("same as Claude Code, Cursor"); YAML frontmatter (`name` optional, `description` mandatory); on-demand load; path `.agents`/`.antigravity`/`.agent` skills (pin via install test) |

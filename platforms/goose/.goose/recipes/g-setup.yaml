@@ -1,0 +1,97 @@
+version: 1.0.0
+title: g-setup
+description: 'Initialize the gald3r system: $ARGUMENTS'
+instructions: "Initialize the gald3r system: $ARGUMENTS\n\n## What This Command Does\n\
+  \nInitializes or reinitializes the gald3r v3 task management system in the current\
+  \ project.\nActivates the **g-skl-setup** skill which handles the full initialization\
+  \ workflow.\n\n> **This is the slim gald3r version.** Experiments, linking, vault,\
+  \ config, and phases\n> are full-version features only and must not be created here.\n\
+  \n---\n\n## Step 0: First-IDE-Launch Platform Detection\n\nBefore doing anything\
+  \ else, detect whether this project has a `.gald3r_sys/` folder.\n\n### Case A:\
+  \ `.gald3r_sys/` EXISTS (gald3r already installed)\n```powershell\ngald3r platform\
+  \ install <platform> --into . --generated\n```\nThis regenerates the current platform's\
+  \ dirs straight from the neutral component set embedded\nin the `gald3r` engine\
+  \ binary (self-contained, T177 — no `.gald3r_sys/` checkout needed to read\nfrom).\
+  \ Proceed to Step 1.\n\n### Case B: `.gald3r_sys/` is MISSING (first-time setup\
+  \ / fresh clone)\nThe user needs the `gald3r` engine binary, then the self-contained\
+  \ platform installer:\n```\n1. Install the gald3r engine if not already present:\
+  \ run g-install-agent\n   (/g-install-agent in Claude Code, @g-install-agent in\
+  \ Cursor), or verify with\n   `gald3r --version`\n2. Run: gald3r platform install\
+  \ <platform> --into <target_path> --generated\n   (writes that platform's IDE dirs\
+  \ straight from the engine's embedded neutral\n   component set — asks/accepts an\
+  \ explicit platform id, e.g. cursor, claude)\n3. START A NEW SESSION after installation\
+  \ completes so skills/rules load\n4. Then re-run @g-setup (or /g-setup) in the new\
+  \ session\n```\n\nIf the `gald3r` engine binary is not yet installed, advise the\
+  \ user:\n> \"To set up gald3r for the first time, install the gald3r engine binary\
+  \ via\n> g-install-agent, then run `gald3r platform install <platform> --into <target_path>\n\
+  > --generated` from your project directory (no template download needed — the\n\
+  > component set ships inside the engine binary).\n> Then start a new IDE session\
+  \ so the skills and rules load into context.\"\n\n### Determining which platform\
+  \ to install\nAsk the user which IDE they primarily use if it cannot be auto-detected:\n\
+  1. **Cursor IDE** → `cursor`\n2. **Claude Code** (CLI) → `claude`\n3. **Antigravity**\
+  \ → `antigravity` (T454: `gemini` platform retired 2026-07-23, EOL 2026-06-18)\n\
+  4. **OpenAI Codex CLI** → `codex`\n5. **OpenCode (sst.dev)** → `opencode`\n6. **GitHub\
+  \ Copilot** → `copilot`\n\nMost users will use 1–2 platforms. Install only those\
+  \ to keep the project clean.\n\n### After platform dirs are populated\nRemind the\
+  \ user:\n> **Start a new session** so gald3r rules and skills load into context\
+  \ before continuing.\n> Platform dirs are regenerated automatically on each session\
+  \ start via hooks.\n\n---\n\n## Step 1: Check for Existing Installation\n\n```\n\
+  □ .gald3r/TASKS.md exists AND > 20 lines?\n□ .gald3r/tasks/ has > 5 files?\n□ PROJECT.md\
+  \ has non-template content?\n→ YES: EXISTING project → ask: Merge / Skip / Reset\
+  \ (DESTRUCTIVE)\n→ NO: FRESH install → proceed\n```\n\n---\n\n## Step 2: Create\
+  \ Directory Structure (slim v3 Layout)\n\nCreate these folders if they don't exist:\n\
+  - `.gald3r/` — Main working directory\n- `.gald3r/tasks/` — Individual task files\
+  \ (sequential IDs)\n- `.gald3r/features/` — PRD files\n- `.gald3r/bugs/` — Individual\
+  \ bug detail files\n- `.gald3r/subsystems/` — Per-subsystem spec files\n- `.gald3r/logs/`\
+  \ — Evidence and audit logs\n- `.gald3r/reports/` — Cleanup and health reports\n\
+  - `docs/` — Project documentation\n\n**Do NOT create**: `config/`, `experiments/`,\
+  \ `linking/`, `vault/`, `phases/`, `tracking/`, `project/`, `temp_scripts/` — these\
+  \ are full-version or legacy paths.\n\n---\n\n## Step 3: Create Core Files (slim\
+  \ v3)\n\nCreate these template files:\n- `.gald3r/TASKS.md` — Master task checklist\
+  \ (sequential task IDs)\n- `.gald3r/PLAN.md` — Master strategy and PRD index\n-\
+  \ `.gald3r/PROJECT.md` — Mission, vision, goals, project linking\n- `.gald3r/CONSTRAINTS.md`\
+  \ — Non-negotiable architectural constraints\n- `.gald3r/BUGS.md` — Bug index (root\
+  \ level)\n- `.gald3r/SUBSYSTEMS.md` — Component registry with mermaid graph\n- `.gald3r/IDEA_BOARD.md`\
+  \ — Ideas parking lot\n- `.gald3r/FEATURES.md` — PRD index\n- `.gald3r/.identity`\
+  \ — Project and user identity\n\n> **PRD FOLLOW-THROUGH RULE**: If PLAN.md is written\
+  \ with any PRD entries in its\n> Deliverable Index, you MUST create those Feature\
+  \ files under `features/` AND add them to\n> `FEATURES.md` in the same response.\
+  \ Do not defer. A PLAN.md that references PRD-001\n> through PRD-009 with no corresponding\
+  \ files is a broken state.\n\n---\n\n## Step 4: Generate .identity\n\n```\nproject_id={new-uuid}\n\
+  project_name={project_name}\nuser_id={user_id_from_appdata_or_ask}\nuser_name={user_name}\n\
+  gald3r_version=1.4\nvault_location={LOCAL}\n```\n\n---\n\n## Step 4b: Public-Publish\
+  \ History Mode (T423 — OFF by default)\n\nAsk **only** if the project may publish\
+  \ to a public repo (multi-tier graduation, or the user\nwants a public sibling).\
+  \ Skip silently otherwise — the safe default needs no prompt. Also offered\non `@g-setup\
+  \ --autonomy full` (the file top-up path for an already-scaffolded project — see\n\
+  `--upgrade-existing` deprecation, T364).\n\n```\nPublic publish: how should git\
+  \ history be handled when you publish to a public repo?\n  1. carry (default) —\
+  \ keep full git history (non-destructive, safe)\n  2. scrub (Mode A)  — publish\
+  \ with ZERO git history for IP protection\n                       (DESTRUCTIVE:\
+  \ public history replaced; requires -ConfirmScrub at publish)\n[1]\n```\n\n- Enter\
+  \ / decline / no answer = **`carry`** (never scrub by default).\n- Write to `.gald3r/.identity`\
+  \ as `publish_history_mode=<carry|scrub>` (lowercase). Absent = `carry`.\n- `scrub`\
+  \ here only records the intent; publish still requires explicit `-ConfirmScrub`.\n\
+  \n---\n\n## Step 5: Gather Architecture Constraints\n\nAsk the user:\n> \"Are there\
+  \ any non-negotiable technical constraints? (e.g., database technology, deployment\
+  \ target, public API stability, cost limits)\n> I'll document these in CONSTRAINTS.md\
+  \ so every agent session loads them automatically.\"\n\nAdd each constraint as a\
+  \ `C-NNN` entry in `.gald3r/CONSTRAINTS.md`.\n\n---\n\n## Step 6: Scan Existing\
+  \ Codebase (if applicable)\n\nFor existing projects:\n- Analyze current file structure\n\
+  - Identify existing components/subsystems\n- Create spec files in `.gald3r/subsystems/`\n\
+  - Populate SUBSYSTEMS.md with index and mermaid graph\n\n---\n\n## Task Status Indicators\
+  \ (v3)\n- `[ ]` — Pending (no task file yet)\n- `[\U0001F4CB]` — Ready (task file\
+  \ created, spec written)\n- `[\U0001F504]` — In Progress (claimed by agent, has\
+  \ TTL)\n- `[\U0001F50D]` — Awaiting Verification (different agent required)\n- `[✅]`\
+  \ — Completed (verified by different agent)\n- `[❌]` — Failed/Cancelled\n- `[⏸️]`\
+  \ — Paused\n\n---\n\n## When to Use\n- Starting a new project\n- Adding gald3r to\
+  \ an existing project\n- Reinitializing after major structural changes\n\nLet me\
+  \ set up the gald3r v3 system for you!"
+prompt: Run the gald3r `g-setup` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-setup, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

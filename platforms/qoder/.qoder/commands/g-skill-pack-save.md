@@ -1,5 +1,7 @@
-﻿---
+---
+description: 'Save a customized skill into its pack registry as an _evolved variant, surviving future updates.'
 subsystem_memberships: [PLATFORM_INTEGRATION]
+execution_tier: orchestration
 ---
 # g-skill-pack-save — Save an evolved skill back to the skill pack registry
 

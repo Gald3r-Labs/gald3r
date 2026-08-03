@@ -778,6 +778,7 @@ A reference is **stale** when:
 | g-skl-ingest-url | g-skl-recon-url | T121 |
 | g-skl-ingest-youtube | g-skl-recon-yt | T121 |
 | `research/harvests/` | `research/recon/` | T121 intent |
+| `research/recon/` | `research/CRR_FunctionalSpecs/` | T326 (2026-07-18) |
 | `prds/` | `features/` | T040 / T084-1 |
 | `topics:` (frontmatter) | `tags:` (frontmatter) | T039 |
 

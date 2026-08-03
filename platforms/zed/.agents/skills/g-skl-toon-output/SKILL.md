@@ -4,6 +4,17 @@ description: Emit gald3r output as TOON (Token-Oriented Object Notation) — a c
 token_budget: low
 subsystem_memberships: [UI_AND_OUTPUT]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 # g-skl-toon-output
 
 TOON (Token-Oriented Object Notation) is a gald3r-native output format optimized for
@@ -82,7 +93,7 @@ ENCODE→DECODE round-trip must equal the source object (lossless check); field 
 in `[N]{...}` must match the rows present.
 
 Edge-case coverage beyond the inline VALIDATE smoke-test lives in
-`scripts/toon_test.ps1` (T1384) — 16 round-trip assertions for deep nesting, empty /
+`scripts/toon_test.py` (T1384) — 16 round-trip assertions for deep nesting, empty /
 single-element / scalar arrays, null & empty-string tabular cells, pipe-escaped cells,
 numeric/bool-looking strings (preserved as strings), and safe special characters:
 ```powershell
@@ -94,7 +105,7 @@ Save under `html_output_dir` (default `docs/`) per `g-rl-01` with a `.toon` exte
 `YYYYMMDD_HHMMSS_<IDE>_<TOPIC>.toon`. `.toon` files are vault-ingestable via
 `g-skl-vault` / `g-skl-recon-file`.
 
-Helper: `.claude/skills/g-skl-toon-output/scripts/toon_output.ps1`
+Helper: `.claude/skills/g-skl-toon-output/scripts/toon_output.py`
 ```powershell
 uv run python .claude/skills/g-skl-toon-output/scripts/toon_output.py `
   -Command g-status -Schema status -DataJson $jsonString -OutDir docs -Topic STATUS

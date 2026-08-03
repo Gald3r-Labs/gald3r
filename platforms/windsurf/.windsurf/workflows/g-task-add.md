@@ -1,5 +1,7 @@
-﻿---
+---
+description: 'Create a new task (ID, complexity score, file, TASKS.md entry) via g-skl-tasks CREATE TASK.'
 subsystem_memberships: [TASK_MANAGEMENT]
+execution_tier: guarded_prompt
 ---
 Create a new task. Activates **g-skl-tasks** → CREATE TASK operation.
 
@@ -8,6 +10,8 @@ Create a new task. Activates **g-skl-tasks** → CREATE TASK operation.
 ```
 
 The skill handles: ID assignment, complexity scoring, file creation, TASKS.md entry — all atomically.
+
+> **Active agent run → inbox routing (T585):** during a `g-go-go` / `g-go-code` / swarm run (marker `.gald3r/logs/ggo_run_state.json` `active: true`, or env `GALD3R_AGENT_RUN=1`), the skill/engine writes the new task to `tasks/inbox/` as an **id-less draft** instead of assigning an id directly — the hot-inbox intake assigns the real id atomically at the next iteration boundary, so concurrent agents never collide on the next id. Display: *"Agent run detected — task queued to inbox for safe ID assignment."* No active run → direct create, unchanged.
 
 > **Alias**: `@g-task-new` also works (deprecated; use `@g-task-add` for new work).
 

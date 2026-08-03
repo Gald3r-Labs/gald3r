@@ -1,0 +1,20 @@
+version: 1.0.0
+title: g-bug-report
+description: '> **Deprecated**: Use `@g-bug-add` instead. This alias is kept for backward
+  compatibility.'
+instructions: '> **Deprecated**: Use `@g-bug-add` instead. This alias is kept for
+  backward compatibility.
+
+
+  Report a bug. Activates **g-skl-bugs** → REPORT BUG operation.
+
+
+  Describe the bug. Zero-tolerance: pre-existing and unrelated bugs still get logged.'
+prompt: Run the gald3r `g-bug-report` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-bug-report, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

@@ -54,10 +54,11 @@ if _g3ct_env not in ("", "0", "off", "false", "no") or _g3ct_os.path.isfile(
 
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import _hook_common  # noqa: E402
@@ -201,9 +202,9 @@ PLATFORM_EVENT_MAP: Dict[str, Dict[str, str]] = {
 # Each entry is [basename, *extra_args]. The dispatcher locates `<base>.py`
 # (preferred) or `<base>.ps1` (fallback) next to this file and runs it with
 # the same stdin payload. This reuses the T1584 Python hooks as the concern
-# handlers so behavior is authored once. tool-end / user-prompt-submit have
-# no concern hooks yet — their canonical handler is a clean pass-through that
-# platforms can now fire (and future concern hooks register here).
+# handlers so behavior is authored once. user-prompt-submit has no concern
+# hooks yet — its canonical handler is a clean pass-through that platforms
+# can now fire (and future concern hooks register here).
 #
 # T1624 (WS-A-1) wired the logging chain into the canonical core:
 # - g-hk-pre-session-trace  -> session-start (opens the session trace marker)
@@ -228,6 +229,24 @@ PLATFORM_EVENT_MAP: Dict[str, Dict[str, str]] = {
 #                           OKF-style index.md views only when notes changed)
 # Order matters on stop: the watcher routes inbox files into the vault BEFORE
 # the reindex runs, so newly ingested notes land in the same regen.
+#
+# T90 (D001 ratified 2026-07-13) wired the TEL host-CLI hook tap:
+# - g-hk-tel-tap --kind post_tool_use -> tool-end (maps Claude Code's
+#                                        PostToolUse payload onto the TEL
+#                                        normalized stream; SILENT, never
+#                                        prints to stdout)
+# - g-hk-tel-tap --kind transcript    -> stop (tails the Stop payload's
+#                                        transcript_path JSONL for new
+#                                        records since the last processed
+#                                        offset; also SILENT)
+# See gald3r_core.core.tel.host_adapter and g-hk-tel-tap.md for the full
+# match/decorate/write-ledger contract both registrations share.
+#
+# BUG-645 wired g-hk-goal-stop-detect -> stop (goal-mechanism quit-condition
+# enforcement -- terminal-state clause + re-invoke ceiling -- mirroring
+# g-hk-ggo-stop-detect's own proven pattern, scoped to
+# .gald3r/config/ACTIVE_GOAL.md instead of the g-go-go run marker; see that
+# hook's own module docstring / .md for the full rationale).
 CONCERN_CHAIN: Dict[str, List[List[str]]] = {
     "session-start": [
         ["g-hk-session-start"],
@@ -248,12 +267,15 @@ CONCERN_CHAIN: Dict[str, List[List[str]]] = {
         ["g-hk-policy-check"],
         ["g-hk-pre-tool-call"],
     ],
-    "tool-end": [],
+    "tool-end": [
+        ["g-hk-tel-tap", "--kind", "post_tool_use"],
+    ],
     "stop": [
         ["g-hk-agent-complete"],
         ["g-hk-nightly-learn"],
         ["g-hk-encoding-normalize", "-Quiet"],
         ["g-hk-ggo-stop-detect"],
+        ["g-hk-goal-stop-detect"],
         ["g-hk-post-session-trace"],
         ["g-hk-crash-record", "--component-type", "hook",
          "--component-name", "stop-chain", "--trigger-source", "g_hk_core"],
@@ -261,6 +283,7 @@ CONCERN_CHAIN: Dict[str, List[List[str]]] = {
         ["g-hk-vault-verify"],
         ["raw-inbox-watcher", "--hook-mode"],
         ["g-hk-vault-reindex"],
+        ["g-hk-tel-tap", "--kind", "transcript"],
     ],
 }
 
@@ -325,6 +348,163 @@ def detect_platform(script_dir: Optional[Path] = None) -> str:
             return "goose"
         return platform
     return "claude"
+
+
+# ── Codex apply_patch payload normalization (T426 / BUG-370 stage 2) ───────
+# BUG-370 stage 1 (T425) wired Codex's real `.codex/hooks.json` mechanism
+# directly to the shared canonical entrypoints (`g-hk-on-<event>.py` ->
+# `dispatch()`), on the documented assumption that Codex's harness already
+# constructs the exact `{tool_name, tool_input}` dict shape every concern
+# hook expects -- true for ordinary tools, but NOT for `apply_patch`, whose
+# real wire shape was independently re-verified for this fix (2026-07-18)
+# directly against Codex's OWN upstream Rust source (never assumed from
+# OpenCode's fork, despite a superficially similar patch-header grammar):
+#
+#   * `codex-rs/core/src/tools/hook_names.rs`'s `HookToolName::apply_patch()`
+#     -- "The serialized name remains `apply_patch` ... `Write` and `Edit`
+#     are accepted as matcher ALIASES [selection only], never the payload
+#     value." I.e. the real `tool_name` on the wire is the literal lowercase
+#     `"apply_patch"` -- it does NOT match the Claude-Code-shaped
+#     `"ApplyPatch"` already present in every concern hook's `WRITE_TOOLS`
+#     list, so the guard's `if tool not in WRITE_TOOLS: return _allow()`
+#     gate silently no-ops for every Codex apply_patch call today, before
+#     PATH_KEYS is even considered.
+#   * `codex-rs/core/src/tools/handlers/apply_patch.rs`'s
+#     `pre_tool_use_payload()` builds `tool_input` as literally
+#     `serde_json::json!({ "command": command })`, where `command` is the
+#     raw patch-body text the model passed as the tool call argument (NOT a
+#     shell/heredoc-wrapped invocation -- `apply_patch_payload_command()` in
+#     the same file pulls it straight from `ToolPayload::Custom { input }`).
+#     There is no discrete path key at all, matching OpenCode's own
+#     pre-BUG-369 gap, but under a different field name (`command`, not
+#     `patchText`) -- confirmed by reading the real handler source, not
+#     assumed from the field-name coincidence with Bash's `tool_input.command`
+#     docs prose (https://learn.chatgpt.com/docs/hooks, the redirect target
+#     of https://developers.openai.com/codex/hooks: "Bash and `apply_patch`
+#     use `tool_input.command`").
+#   * `codex-rs/apply-patch/src/parser.rs`'s `BEGIN_PATCH_MARKER` /
+#     `END_PATCH_MARKER` / `ADD_FILE_MARKER` / `DELETE_FILE_MARKER` /
+#     `UPDATE_FILE_MARKER` / `MOVE_TO_MARKER` constants confirm the header
+#     grammar (`"*** Begin Patch"`, `"*** Add File: "`, `"*** Delete File: "`,
+#     `"*** Update File: "`, `"*** Move to: "`, `"*** End Patch"`) is
+#     byte-for-byte the same convention BUG-369 already parsed for
+#     OpenCode's `apply_patch.ts` (both apparently descended from the
+#     original Codex CLI naming, per this task's own scope note) -- so the
+#     same line-oriented `.startswith(...)`/slice/`.strip()` extraction
+#     mirrors both real parsers correctly without a reinvented regex header
+#     grammar. (Lenient-mode legacy heredoc wrapping --
+#     `"<<'EOF'\\n*** Begin Patch\\n...*** End Patch\\nEOF\\n"`, documented in
+#     the same `parser.rs` for old GPT-4.1-style `local_shell` tool calls --
+#     is harmless to this line-scan: the extra heredoc marker lines simply
+#     never match any of the four header prefixes.)
+#
+# Per BUG-370's task text and the "concern hooks stay platform-agnostic"
+# precedent BUG-367/368/369 already established for OpenCode's generated
+# plugin, this normalization is Codex-gated (via `detect_platform()`, which
+# already exists in this shared dispatch CORE for unrelated reasons -- the
+# chat logger's `--platform` slug) and lives HERE, never inside
+# `g-hk-pre-tool-call-gald3r-guard.py` or its `tool-start` siblings (the PRD
+# freeze gate, the workspace-member guard): it renames `tool_name` to the
+# already-existing Claude-Code-shaped `"ApplyPatch"` WRITE_TOOLS entry (no
+# new vocabulary added to any concern hook) and injects a `file_path` key
+# alongside the untouched original `command` key, mirroring exactly how
+# BUG-368/369 added `file_path` alongside OpenCode's untouched `filePath`/
+# `patchText`.
+_CODEX_APPLY_PATCH_TOOL_NAME = "apply_patch"
+_CODEX_APPLY_PATCH_COMMAND_KEY = "command"
+_CODEX_APPLY_PATCH_CLAUDE_SHAPED_TOOL_NAME = "ApplyPatch"
+_CODEX_APPLY_PATCH_PATH_KEY = "file_path"
+
+#: Real header-line prefixes, verbatim from `codex-rs/apply-patch/src/
+#: parser.rs`'s own marker constants (trailing space included, matching that
+#: source exactly) -- never a reinvented grammar.
+_CODEX_APPLY_PATCH_HEADER_PREFIXES: List[str] = [
+    "*** Add File: ",
+    "*** Delete File: ",
+    "*** Update File: ",
+    "*** Move to: ",
+]
+
+#: Fail-safe fallback (mirrors BUG-369's own "fail safe, not fail open" AC):
+#: when the patch body contains NO recognized header line at all (malformed
+#: / unrecognized shape), this broader scan still catches a literal
+#: ``.gald3r/``-containing path token appearing anywhere else in the body,
+#: so an unparseable patch can never silently allow a real ``.gald3r/``
+#: target just because the strict header scan found nothing to anchor on.
+_CODEX_APPLY_PATCH_GALD3R_SUBSTRING_RE = re.compile(r"""([^\s"'`]*\.gald3r/[^\s"'`]*)""")
+
+
+def _extract_codex_apply_patch_header_paths(command: str) -> List[str]:
+    """Pull every recognized header-line path out of a Codex ``apply_patch``
+    ``tool_input.command`` body, mirroring ``codex-rs/apply-patch/src/
+    parser.rs``'s own line-oriented marker-prefix convention exactly."""
+    paths: List[str] = []
+    for line in command.splitlines():
+        for prefix in _CODEX_APPLY_PATCH_HEADER_PREFIXES:
+            if line.startswith(prefix):
+                candidate = line[len(prefix):].strip()
+                if candidate:
+                    paths.append(candidate)
+                break
+    return paths
+
+
+def _pick_codex_apply_patch_path(command: Any) -> Optional[str]:
+    """Choose the single path to surface as ``file_path`` for a Codex
+    ``apply_patch`` call. When the patch touches multiple files, whichever
+    header path resolves under ``.gald3r/`` wins over an earlier, unrelated
+    one (the shared containment check only ever inspects one path field, so
+    silently picking a non-``.gald3r/`` path first would defeat the guard on
+    a multi-file patch) -- mirrors ``pickApplyPatchPath()``'s OpenCode
+    precedent (BUG-369) exactly, adapted to Codex's real header set."""
+    if not isinstance(command, str):
+        return None
+    header_paths = _extract_codex_apply_patch_header_paths(command)
+    for candidate in header_paths:
+        if ".gald3r/" in candidate.replace("\\", "/"):
+            return candidate
+    if header_paths:
+        return header_paths[0]
+    # Fail-safe: no recognized header line at all.
+    match = _CODEX_APPLY_PATCH_GALD3R_SUBSTRING_RE.search(command)
+    return match.group(1) if match else None
+
+
+def _normalize_codex_apply_patch_event(raw_stdin: str) -> str:
+    """Codex-gated normalization (T426 / BUG-370 stage 2) -- see the module
+    comment block above for the full investigation and rationale. Returns
+    *raw_stdin* completely UNCHANGED whenever the detected platform is not
+    Codex, the payload does not parse as a JSON object, or `tool_name` is
+    not the real Codex `apply_patch` value -- deliberately narrow, and never
+    raises (any parse failure is treated as "nothing to normalize", not an
+    error), matching this whole module's fail-soft contract."""
+    if detect_platform() != "codex":
+        return raw_stdin
+    try:
+        event = json.loads(raw_stdin)
+    except (json.JSONDecodeError, ValueError, TypeError):
+        return raw_stdin
+    if not isinstance(event, dict):
+        return raw_stdin
+    if event.get("tool_name") != _CODEX_APPLY_PATCH_TOOL_NAME:
+        return raw_stdin
+    tool_input = event.get("tool_input")
+    if not isinstance(tool_input, dict):
+        return raw_stdin
+
+    normalized_input = dict(tool_input)
+    command = tool_input.get(_CODEX_APPLY_PATCH_COMMAND_KEY)
+    path = _pick_codex_apply_patch_path(command)
+    if path is not None:
+        normalized_input[_CODEX_APPLY_PATCH_PATH_KEY] = path
+
+    normalized_event = dict(event)
+    normalized_event["tool_name"] = _CODEX_APPLY_PATCH_CLAUDE_SHAPED_TOOL_NAME
+    normalized_event["tool_input"] = normalized_input
+    try:
+        return json.dumps(normalized_event)
+    except (TypeError, ValueError):
+        return raw_stdin
 
 
 def _resolve_script(base_name: str, script_dir: Path) -> Optional[Path]:
@@ -423,6 +603,19 @@ def _run_concern(cmd: List[str], extra_args: List[str], raw_stdin: str):
     return payload, res.returncode
 
 
+# ── Events where a concern hook's blocking verdict is session-halting ──────
+# (BUG-199) A blocking verdict (rc==2 or an equivalent JSON payload caught by
+# _is_block()) is only allowed to turn into continue:false / a process exit
+# code 2 for events in this set -- exactly the set the exit-code branch at
+# the bottom of dispatch() already used before this fix existed (Cursor
+# preToolUse, kiro-cli preToolUse exit 2). Every OTHER canonical event (stop,
+# tool-end, session-*, ...) never hard-blocks a harness turn/session either
+# way: a blocking verdict there is caught and folded into additional_context
+# instead of being dropped, per this same set being reused for both the
+# JSON continue/reason fields and the exit code below.
+TOOL_BLOCKING_EVENTS: Tuple[str, ...] = ("tool-start",)
+
+
 def dispatch(event: str) -> int:
     """Run the concern chain for a canonical event; emit a unified envelope.
 
@@ -434,6 +627,15 @@ def dispatch(event: str) -> int:
         return 0
 
     raw_stdin = _read_raw_stdin()
+    # T426 / BUG-370 stage 2: normalize Codex's raw apply_patch payload
+    # (lowercase tool_name, patch-body-only tool_input) to the Claude-Code-
+    # shaped vocabulary every WRITE_TOOLS/PATH_KEYS-consuming concern hook
+    # already reads, BEFORE it is fed to any of them -- see the Codex-gated
+    # normalization block above `_resolve_script()` for the full rationale.
+    # Only tool_name/tool_input-bearing events are relevant; the function
+    # itself is also a safe no-op for every other event/platform/tool.
+    if event in ("tool-start", "tool-end"):
+        raw_stdin = _normalize_codex_apply_patch_event(raw_stdin)
     context_parts: List[str] = []
     blocked = False
     block_reason = ""
@@ -456,16 +658,31 @@ def dispatch(event: str) -> int:
                 or ("%s blocked the %s event" % (base_name, event))
             )
 
-    response: Dict[str, Any] = {"continue": not blocked}
+    # BUG[BUG-199] kind=code (fixed): continue:false/reason must only carry a
+    # blocking verdict for the SAME event set that already hard-blocks via
+    # exit code (TOOL_BLOCKING_EVENTS, defined above dispatch()) — previously
+    # this was unconditional, so rc==2 from a tool-end/stop concern hook
+    # halted the session via the printed JSON even though its own exit code
+    # was 0. A blocking verdict on any other event is caught and folded into
+    # additional_context instead of being silently dropped. See
+    # .gald3r/bugs/open/bug199_g-hk-core-dispatch-treats-rc-2-from-any.md
+    tool_blocking = blocked and event in TOOL_BLOCKING_EVENTS
+    if blocked and not tool_blocking and block_reason:
+        context_parts.append(
+            "[non-blocking event %r caught a concern-hook blocking verdict]: %s"
+            % (event, block_reason)
+        )
+
+    response: Dict[str, Any] = {"continue": not tool_blocking}
     if context_parts:
         response["additional_context"] = "\n\n".join(context_parts)
-    if blocked and block_reason:
+    if tool_blocking and block_reason:
         response["reason"] = block_reason
 
     print(json.dumps(response, separators=(",", ":")))
     # Only tool events use exit-code blocking (Cursor preToolUse, kiro-cli
     # preToolUse exit 2). Lifecycle events never hard-block via exit code.
-    if blocked and event in ("tool-start",):
+    if tool_blocking:
         return 2
     return 0
 

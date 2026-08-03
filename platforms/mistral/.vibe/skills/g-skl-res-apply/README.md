@@ -8,7 +8,7 @@ subsystem_memberships: [PROJECT_IDENTITY_SETUP, VAULT_AND_RESEARCH]
 
 ## What it does
 
-Convert a reverse-spec FEATURES.md (produced by g-skl-res-deep) into gald3r artifacts: project goals, PRDs, subsystem specs (merge or create), and tasks. Vault-aware — reads from {vault}/research/recon/{slug}/FEATURES.md when a shared vault is configured, else falls back to local research/harvests/{slug}/FEATURES.md. …
+Convert a reverse-spec FEATURES.md (produced by g-skl-res-deep) into gald3r artifacts: project goals, PRDs, subsystem specs (merge or create), and tasks. Vault-aware — reads from {vault}/research/CRR_FunctionalSpecs/{slug}/FEATURES.md when a shared vault is configured, else falls back to local research/CRR_FunctionalSpecs/{slug}/FEATURES.md. …
 
 ## When to use
 

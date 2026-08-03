@@ -1,5 +1,8 @@
-﻿---
+---
+description: 'Adopt an existing populated gald3r project into Workspace-Control via g-skl-workspace ADOPT'
+argument-hint: '--discover <path> | --dry-run --source <path> --as <member_id> | --apply --source <path> --as <member_id> --plan <report-path>'
 subsystem_memberships: [WORKSPACE_COORDINATION]
+execution_tier: orchestration
 ---
 Adopt an existing gald3r project into Workspace-Control: $ARGUMENTS
 
@@ -139,7 +142,7 @@ Any of the following raise a `BLOCK` finding and abort:
 
 - `BLOCK source_repo_dirty_apply_mode` — uncommitted changes / merge in progress / pending worktrees on source; supply `--allow-source-dirty` or commit first
 - `BLOCK control_repo_dirty_apply_mode` — controller has uncommitted changes outside the writes ADOPT itself plans, and `--require-clean-controller` was supplied
-- `BLOCK pcac_conflict_gate_unresolved` — open `[CONFLICT]` in inbox; resolve via `@g-pcac-read` first
+- `BLOCK wpac_conflict_gate_unresolved` — open `[CONFLICT]` in inbox; resolve via `@g-wpac-read` first
 
 **Boundary preservation**
 
@@ -162,4 +165,4 @@ Any of the following raise a `BLOCK` finding and abort:
 - Sample dry-run fixture: `.gald3r/reports/adoption_dryrun_sample.md`.
 - Archive routing: Task 204 (`@g-task-archive`, `@g-bug-archive`).
 - Manifest registry: `.gald3r/linking/workspace_manifest.yaml`.
-- PCAC adoption (separate, complementary): `@g-pcac-adopt` registers parent/child topology for cross-project messaging; this command updates Workspace-Control state.
+- WPAC adoption (separate, complementary): `@g-wpac-adopt` registers parent/child topology for cross-project messaging; this command updates Workspace-Control state.

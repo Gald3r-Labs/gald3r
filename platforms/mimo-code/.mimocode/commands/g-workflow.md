@@ -1,5 +1,7 @@
-﻿---
+---
+description: 'Score task complexity and expand a task, or plan a sprint, via the g-tasks EXPAND/SPRINT PLAN operation'
 subsystem_memberships: [UI_AND_OUTPUT]
+execution_tier: guarded_prompt
 ---
 Score complexity and expand tasks or plan sprints. Activates **g-tasks** → EXPAND or SPRINT PLAN.
 

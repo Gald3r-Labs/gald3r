@@ -13,7 +13,11 @@ Hook contract (per Claude Code / Cursor PreToolUse spec):
             contract; a stdout body is ignored for exit 2). BUG-179 fix.
 
 Bypass: GALD3R_HOOK_BYPASS=1 (mirrors T600 §3.3 user override).
-Allow override (active gald3r command): GALD3R_ACTIVE_AGENT=<agent_id>.
+Allow override (active gald3r command): GALD3R_ACTIVE_AGENT=<agent_id>, OR a
+time-boxed marker written via `_hook_common.py set-active-agent <agent_id>`
+(BUG-414 -- lets an Agent-tool-launched subagent self-authorize a LATER,
+separately spawned hook subprocess, which an env var set inside its own
+tool-call subprocess cannot reach).
 
 Rule reference: .claude/rules/g-rl-33-enforcement_catchall.md
 """
@@ -61,11 +65,55 @@ def _allow() -> int:
     return 0
 
 
+def _is_within_project_gald3r(path: str, root: Path) -> bool:
+    """True when `path` resolves to a location inside THIS project's
+    root-level .gald3r/ (the live coordination directory g-rl-33 protects)
+    -- not merely a path that contains a ".gald3r/" segment somewhere
+    deeper in the tree (e.g. authored template source under
+    src/**/template_verification/.gald3r/...). See BUG-244.
+
+    BUG-373: a relative `path` is resolved against the discovered project
+    root (the caller's already-resolved `_hook_common.project_root()`,
+    which walks up from this hook script's own on-disk location --
+    cwd-independent), NOT `Path.cwd()`. Cursor and Claude Code both
+    guarantee the hook process's cwd == project root, so the two were
+    equivalent there and this was always harmless. BUG-372 anchored the
+    Codex *invocation command* to the git root so the hook script is
+    reliably located/launched even when the Codex agent's own session cwd
+    has drifted into a subdirectory -- but that anchoring does not change
+    what cwd the spawned hook subprocess itself inherits, so a drifted cwd
+    could previously make a project-root-relative `.gald3r/`-targeting path
+    resolve OUTSIDE `gald3r_dir` and silently fail open.
+
+    `root` is passed in by `main()` (computed once there via
+    `_hook_common.project_root()`) rather than re-resolved here, so a
+    single hook invocation only ever walks the filesystem to find the
+    project root once (BUG-414 cleanup -- this function used to call
+    `_hook_common.project_root()` itself, redundantly, on every call)."""
+    gald3r_dir = (root / ".gald3r").resolve()
+    candidate = Path(path)
+    if not candidate.is_absolute():
+        candidate = root / candidate
+    try:
+        candidate = candidate.resolve()
+    except OSError:
+        return False
+    try:
+        candidate.relative_to(gald3r_dir)
+    except ValueError:
+        return False
+    return True
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="PreToolUse guard: refuse unsupervised Edit/Write to .gald3r/ paths."
     )
     parser.parse_args()
+
+    # Resolved once and reused for both the containment check and the
+    # marker-file authorization check below (BUG-414 cleanup).
+    root = _hook_common.project_root()
 
     event = _hook_common.read_stdin_json()
     tool = str(event.get("tool_name") or "")
@@ -88,8 +136,15 @@ def main() -> int:
     # Normalize separators.
     norm = path.replace("\\", "/")
 
-    # Only enforce on .gald3r/ paths anywhere in the path.
+    # Cheap pre-filter: skip project-root resolution when no ".gald3r/"
+    # segment appears anywhere in the raw path.
     if not re.search(r"(^|/)\.gald3r/", norm):
+        return _allow()
+
+    # BUG-244: only enforce when the target resolves INSIDE this project's
+    # root-level .gald3r/ -- not merely because a ".gald3r/" segment appears
+    # somewhere deeper in the tree (authored template source under src/).
+    if not _is_within_project_gald3r(path, root):
         return _allow()
 
     # Bypass switches.
@@ -97,12 +152,41 @@ def main() -> int:
         return _allow()
     if os.environ.get("GALD3R_ACTIVE_AGENT"):
         return _allow()
+    # BUG-414: an env var set inside one tool call's own subprocess cannot
+    # propagate to a LATER, separately spawned Edit/Write hook subprocess --
+    # the marker file is a filesystem-backed, time-boxed equivalent an agent
+    # (main coordinator or an Agent-tool-launched subagent) can write to
+    # itself via a plain Bash call (`_hook_common.py set-active-agent`)
+    # before issuing the Edit/Write. Fails closed on anything ambiguous or
+    # expired (see `_hook_common.read_active_agent_marker`).
+    #
+    # BUG-414 Phase-2: the marker is SINGLE-USE. There is no harness signal
+    # tying this specific Edit/Write call to a particular agent process, so
+    # true per-process binding isn't achievable -- consuming the marker on
+    # its first authorized use instead collapses the window during which an
+    # unrelated concurrent agent could piggyback on someone else's still-
+    # valid marker from the full TTL (up to 300s) down to this one call.
+    #
+    # BUG-414 atomicity rework: the old read-then-consume two-step (a
+    # `read_active_agent_marker()` truthiness check followed by a separate
+    # `consume_active_agent_marker()` unlink) was a TOCTOU race -- each
+    # guard-hook invocation is its own freshly-spawned process, so two
+    # concurrent invocations could both read the marker as valid before
+    # either got around to deleting it (live-reproduced with up to 12/12
+    # concurrent invocations all allowed off one marker). `claim_active_
+    # agent_marker()` claims and validates the marker in a SINGLE atomic
+    # filesystem operation (an atomic rename that steals the marker's
+    # directory entry), so of N concurrent invocations racing the same
+    # marker, AT MOST ONE can ever observe it as valid.
+    if _hook_common.claim_active_agent_marker(root):
+        return _allow()
 
     # Refuse.
     msg = (
         "Direct Edit/Write to .gald3r/ refused by g-hk-pre-tool-call-gald3r-guard. "
         "Route the change through the appropriate gald3r agent (g-task-manager / g-qa-engineer / "
-        "g-planner / g-ideas-goals / etc.) or set GALD3R_ACTIVE_AGENT before the tool call. "
+        "g-planner / g-ideas-goals / etc.), set GALD3R_ACTIVE_AGENT before the tool call, or "
+        "pre-authorize via `_hook_common.py set-active-agent <agent_id>` (BUG-414). "
         "See .claude/rules/g-rl-33-enforcement_catchall.md § '.gald3r/ Folder Gate (HARD RULE)'."
     )
     # BUG-179: exit 2 is Claude Code's "blocking error" contract — the reason MUST

@@ -1,0 +1,131 @@
+version: 1.0.0
+title: g-valk-start
+description: '@g-valk-start — Start the Valkyrie world_tree connector'
+instructions: '# @g-valk-start — Start the Valkyrie world_tree connector
+
+
+  Run **`gald3r valk start`** to perform Valkyrie connector bookkeeping, or spawn
+  the resident,
+
+  world_tree-synced connector process with `--detach`. Valkyrie is the resident world_tree
+  sync
+
+  connector — the online coordination backbone that keeps this project''s `.gald3r/`
+  state in sync
+
+  with the world_tree server.
+
+
+  ---
+
+
+  ## Usage (PowerShell)
+
+
+  ```powershell
+
+  # Foreground bookkeeping only (no resident process) — acquires + releases the
+
+  # single-instance connector lock and records a boot marker. Returns immediately.
+
+  gald3r valk start
+
+
+  # Spawn the REAL resident connector: a detached background child that registers
+
+  # itself machine-wide and drives the world_tree poll loop until `valk stop`.
+
+  gald3r valk start --detach
+
+
+  # Common flags
+
+  gald3r valk start --root <path>                        # project root containing
+  .gald3r/ (default: discovered from cwd)
+
+  gald3r valk start --data-dir <path>                     # machine-wide gald3r data
+  dir (default: $GALD3R_DATA_DIR or ~/.gald3r)
+
+  gald3r valk start --project-id <id>                     # world_tree project id
+  recorded in the lock (auto-resolved under --detach if omitted)
+
+  gald3r valk start --detach --poll-interval <seconds>    # override the connector''s
+  base poll cadence (default ~10s; only takes effect under --detach)
+
+  ```
+
+
+  ## Modes
+
+
+  | Mode | Behavior |
+
+  |------|----------|
+
+  | **Foreground (default)** | Runs the same bookkeeping every start performs — acquires
+  the per-project single-instance connector lock, records the boot marker, releases
+  the lock, and returns. Transient only; no resident process, no world_tree poll loop.
+  |
+
+  | **`--detach`** | Spawns a real background child process. The child performs the
+  same bookkeeping, registers itself in the machine-wide connector registry, and stays
+  resident, polling world_tree on the connector''s cadence until stopped. This is
+  the only mode that runs an actual sync loop. |
+
+
+  ## Flags
+
+
+  | Flag | Applies to | Meaning |
+
+  |------|-----------|---------|
+
+  | `--root PATH` | both modes | Project root containing `.gald3r/` (default: discovered
+  by walking up from cwd). |
+
+  | `--data-dir PATH` | `--detach` only | Machine-wide per-user gald3r data dir the
+  connector registry lives under (default: `$GALD3R_DATA_DIR` or `~/.gald3r`). |
+
+  | `--project-id ID` | both modes | world_tree project id recorded in the lock. Optional
+  under `--detach` — auto-resolved from `.gald3r/.identity` if omitted; an explicit
+  value always wins. |
+
+  | `--poll-interval SECONDS` | `--detach` only | Overrides the resident connector''s
+  base poll cadence (default ~10s). Must be a finite positive number — invalid values
+  fail fast at the CLI. Harmlessly forwarded-but-unused in foreground mode. |
+
+  | `--detach` | — | Spawn the connector bookkeeping as a real detached background
+  child instead of running it in the foreground. |
+
+
+  ## After `--detach`
+
+
+  Run `@g-valk-status` or `@g-valk-list` to confirm the connector registered and is
+  alive — the
+
+  registered worker pid can differ from the launcher pid printed at spawn time (e.g.
+  on Windows
+
+  venvs where the interpreter''s own launcher spawns the real worker as a child).
+  Run
+
+  `@g-valk-stop` to stop it.
+
+
+  ## See also
+
+
+  - `@g-valk-status` — check whether the connector is running
+
+  - `@g-valk-stop` — stop the running connector
+
+  - `@g-valk-list` — list every registered connector on this machine'
+prompt: Run the gald3r `g-valk-start` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-valk-start, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

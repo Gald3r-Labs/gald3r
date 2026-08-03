@@ -1,5 +1,7 @@
-﻿---
+---
+description: 'Capture a docs URL into the vault with periodic staleness tracking via g-skl-recon-docs'
 subsystem_memberships: [VAULT_AND_RESEARCH]
+execution_tier: guarded_prompt
 ---
 # g-recon-docs
 
@@ -31,7 +33,7 @@ Scans `_index.yaml`, finds all entries past their `refresh_days` deadline, re-cr
 
 ## --deep flag
 
-After capturing, runs deep analysis and writes a recon report to `vault/research/recon/{slug}/`.
+After capturing, runs deep analysis and writes a recon report to `vault/research/CRR_FunctionalSpecs/{slug}/`.
 Equivalent to running `@g-res-deep` on the captured content.
 
 ## Clean Room Boundary

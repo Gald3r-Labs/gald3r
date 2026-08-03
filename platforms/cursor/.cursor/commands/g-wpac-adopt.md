@@ -1,5 +1,8 @@
 ---
+description: 'Adopt a target project as this project''s WPAC child, updating link_topology.md on both sides.'
+argument-hint: '<target-project-path> [--one-way]'
 subsystem_memberships: [WORKSPACE_COORDINATION]
+execution_tier: orchestration
 ---
 Register a child project under this project: $ARGUMENTS
 
@@ -34,7 +37,7 @@ Delegates to `g-skl-wpac-adopt`.
 ## What Happens
 
 1. Reads `.gald3r/.identity` from both this project and the target
-2. Creates `.gald3r/workspace/` in this project if missing
+2. Creates `.gald3r/linking/` in this project if missing
 3. Adds the target to `children[]` in this project's `link_topology.md`
 4. Sets this project as `parent` in the target's `link_topology.md` (unless `--one-way`)
 5. Writes `peers/` snapshots in both projects

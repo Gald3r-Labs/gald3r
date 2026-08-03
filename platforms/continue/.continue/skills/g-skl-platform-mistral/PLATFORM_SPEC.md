@@ -144,7 +144,7 @@ instruction file (✅ direct parity). **It does NOT read `CLAUDE.md`.**
   through v2.13.0. Broader event hooks remain **unshipped**: issue #250 ("feat: Hooks" — before/after
   shell-command hooks, modeled on Claude Code) is **CLOSED** with no implementation; issue #531
   ("feat: add BeforeTool hook") is still **OPEN**.
-- **gald3r gap**: gald3r's PowerShell pre-tool / session-start / pre-commit hooks have **no verified
+- **gald3r gap**: gald3r's `g-hk-*.py` pre-tool / session-start / pre-commit hooks have **no verified
   wiring target** — the one shipped event (post-agent-turn) does not cover them and its config schema
   is undocumented. Tool *permissions* (`[tools.bash] permission = "ask"|"always"`) and agent `safety`
   levels cover *some* guardrail ground hooks would otherwise serve, but they are not an event-hook
@@ -204,7 +204,7 @@ tool_timeout_sec = 120
 | # | Gap | Severity |
 |---|---|---|
 | 1 | **Three products, one config-driven** — only Vibe CLI reads config files. Mistral Code (IDE plugin) and Le Chat are not gald3r config targets. | High (scope) |
-| 2 | **Hooks experimental & minimal** — only a single post-agent-turn lifecycle point (v2.9.0), no published schema, no before-tool/session-start/pre-commit events; gald3r `g-hk-*.ps1` have no verified wiring target. (§6) | High |
+| 2 | **Hooks experimental & minimal** — only a single post-agent-turn lifecycle point (v2.9.0), no published schema, no before-tool/session-start/pre-commit events; gald3r `g-hk-*.py` have no verified wiring target. (§6) | High |
 | 3 | **No command-file directory** — slash commands are skill-provided only; gald3r's command files have no native 1:1 landing zone. (§5) | High |
 | 4 | **No scoped/glob rules** — persistent instructions collapse into a single layered `AGENTS.md` (+ optional custom system prompt); no per-file `globs` or on-demand loading. (§7) | Medium |
 | 5 | **Agent format mismatch** — Vibe agents are TOML behavior profiles; gald3r agents are markdown. No automatic conversion. `safety` is visual-only, not enforcement. (§3) | Medium |
@@ -229,7 +229,7 @@ markdown→TOML conversion.
 - **Limitations**: tool *permissions* (`[tools.bash] permission = "ask"|"always"`) and agent `safety`
   levels cover some hook-like ground but are NOT an event-hook system; broader hooks unshipped
   (issue #250 CLOSED unimplemented; issue #531 OPEN)
-- **gald3r hook files**: none verified — gald3r `g-hk-*.ps1` (pre-tool / session-start / pre-commit)
+- **gald3r hook files**: none verified — gald3r `g-hk-*.py` (pre-tool / session-start / pre-commit)
   have no confirmed target on Vibe; the one shipped event does not cover them [STUB]
 
 ## Atypical Handling

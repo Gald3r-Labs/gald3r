@@ -41,17 +41,17 @@ cross_project_ref:
   - order_id: "ord-abc123"          # links to .gald3r/linking/sent_orders/order_*.md
     project: "child_project_id"
     remote_task_title: "Implement JWT auth endpoint"
-    status: in-progress             # cached from last sync; updated by g-skl-pcac-read
+    status: in-progress             # cached from last sync; updated by g-skl-wpac-read
     last_synced: "YYYY-MM-DD"
 ---
 ```
 
 **`cross_project_ref:` semantics**:
 - Optional field. Missing or empty list = no cross-project dependency.
-- Populated when the feature requires work in a child/sibling project that was dispatched via `@g-pcac-order`.
+- Populated when the feature requires work in a child/sibling project that was dispatched via `@g-wpac-order`.
 - Each entry's `status` is a cached snapshot — the authoritative status lives in the matching `.gald3r/linking/sent_orders/order_*.md` ledger record.
-- `g-skl-pcac-read` updates the cached `status` and `last_synced` automatically when a `broadcast_completion` ping arrives from the remote project.
-- Session start (`g-rl-25`) and `@g-pcac-status` surface features with at least one entry where `status` is not `completed` as externally-gated.
+- `g-skl-wpac-read` updates the cached `status` and `last_synced` automatically when a `broadcast_completion` ping arrives from the remote project.
+- Session start (`g-rl-25`) and `@g-wpac-status` surface features with at least one entry where `status` is not `completed` as externally-gated.
 
 ### Hierarchy validation (dry-run, no writes)
 
@@ -378,7 +378,7 @@ Originator: {this-project-slug}
 - Format: `{primary-domain}-{short-description}` (kebab-case, max 40 chars)
 - Examples: `auth-unified-login`, `data-pipeline-etl`, `frontend-dashboard-v2`
 - ALL participating projects must use the **identical** slug string
-- `g-pcac-status` displays cross-project features grouped by their `cross_project_ref` slug
+- `g-wpac-status` displays cross-project features grouped by their `cross_project_ref` slug
 
 ### `cross_project_ref` Status Tracking
 
@@ -392,7 +392,7 @@ When `g-skl-features STATUS` is called and any features have `cross_project_ref`
     → example_app: [specced]   feat-047 (last sync: 2026-04-20)
 ```
 
-Peer statuses are cached from the last PCAC sync; `[unknown]` if never synced.
+Peer statuses are cached from the last WPAC sync; `[unknown]` if never synced.
 
 ---
 

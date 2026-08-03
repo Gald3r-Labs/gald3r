@@ -71,7 +71,7 @@ When creating a NEW component file, before writing any content:
 
 1. **Determine the subsystem group** — check `PRODUCT_SYSTEMS.md` `defined_groups:` or use the table above
 2. **Include the tag in the template** — do not create the file skeleton without the tag
-3. **After creation**: offer to run `aggregate_subsystems.ps1` to update `PRODUCT_SYSTEMS.md`
+3. **After creation**: offer to run `gald3r subsystem aggregate --apply` to update `PRODUCT_SYSTEMS.md` (BUG-196)
 4. **For skills and commands**: remind user to run `platform_parity_sync.ps1 -Sync` to propagate to all IDE targets
 
 ## Quick-reference: use creation commands
@@ -96,4 +96,4 @@ These commands scaffold the correct template with tagging pre-filled.
 | "It's a draft/prototype skill" | Draft skills get tagged too. Tag drives PRODUCT_SYSTEMS.md. |
 | "I don't know which group" | Pick the closest one and move on. UNGROUPED is a valid temporary value. |
 | "The hook is small, no need to tag" | Size is irrelevant. Every script in .gald3r_sys gets tagged. |
-| "I'll run aggregate_subsystems.ps1 next session" | Run it before the session ends. It takes 3 seconds. |
+| "I'll run gald3r subsystem aggregate next session" | Run it before the session ends. It takes 3 seconds. |

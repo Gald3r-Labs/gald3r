@@ -1,0 +1,32 @@
+version: 1.0.0
+title: g-release-status
+description: Show release status. Activates **g-skl-release** → STATUS operation.
+instructions: 'Show release status. Activates **g-skl-release** → STATUS operation.
+
+
+  ```
+
+  @g-release-status                  # summary of all active releases
+
+  @g-release-status 002              # detail for release 002
+
+  @g-release-status "Spring Drop"    # detail by name
+
+  ```
+
+
+  **With a release id or name**: renders a per-release table (target_date, days until
+  release, cadence, assigned tasks with task-file statuses, feature count, blocker
+  count).
+
+
+  **Without args**: lists every release with `status ∈ {planned, in_progress}`, highlights
+  overdue targets with `⚠️`.'
+prompt: Run the gald3r `g-release-status` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-release-status, e.g. quoted text or --flag
+    values, exactly as you would type them after the command name.

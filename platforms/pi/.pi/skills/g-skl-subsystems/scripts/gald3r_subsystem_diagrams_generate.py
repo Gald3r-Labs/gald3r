@@ -69,8 +69,13 @@ def get_frontmatter_block(content: str) -> Optional[str]:
 
 
 def get_yaml_scalar(block: str, key: str) -> Optional[str]:
-    """Read a scalar frontmatter value (regex fallback — no YAML dependency)."""
-    m = re.search(rf"(?m)^{re.escape(key)}\s*:\s*(.+)\s*$", block, re.IGNORECASE)
+    """Read a scalar frontmatter value (regex fallback — no YAML dependency).
+
+    Same-line-only whitespace ([ \t]) around the colon -- BUG-486/T510
+    severity-10 class: a bare \s* skip crosses newlines, so a blank value
+    captured the NEXT line's text as if it were the value.
+    """
+    m = re.search(rf"(?m)^{re.escape(key)}[ \t]*:[ \t]*(.+)[ \t]*$", block, re.IGNORECASE)
     if not m:
         return None
     v = m.group(1).strip()

@@ -1,5 +1,8 @@
-﻿---
+---
+description: 'Add or update an abbreviation entry in .gald3r/vocab.md, with optional WPAC propagation to the parent'
+argument-hint: '"ABBR = expansion — context" [--local]'
 subsystem_memberships: [MEMORY_AND_KNOWLEDGE]
+execution_tier: orchestration
 ---
 # g-vocab-add
 
@@ -19,7 +22,7 @@ Add or update an abbreviation in `.gald3r/vocab.md`.
 2. Checks if the abbreviation already exists in local `vocab.md` (case-insensitive)
 3. If new: appends a row to the `## Active Vocabulary` table
 4. If exists: updates the existing row
-5. **WPAC propagation** (unless `--local` flag): if `.gald3r/workspace/topology.md` exists and declares a resolvable local `parent:` path, also writes the entry to the parent's `.gald3r/vocab.md` — making it available workspace-wide
+5. **WPAC propagation** (unless `--local` flag): if `.gald3r/linking/link_topology.md` exists and declares a resolvable local `parent:` path, also writes the entry to the parent's `.gald3r/vocab.md` — making it available workspace-wide
 6. Confirms with: `📖 Added: ABBR → expansion [propagated to parent: {name}]` or `📖 Added: ABBR → expansion [local only]`
 
 ## Flags

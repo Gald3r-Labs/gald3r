@@ -139,8 +139,8 @@ gald3r merges task-management conventions into `replit.md`: task IDs in commits 
   that run a script — no `session-start`, `pre-tool`, `pre-commit`, or file-watch hook authoring.
   Git-workflow hooks are an **open community feature request**, not a shipped feature.
 - **Compounding constraint**: the container is **Linux** — even if hooks could be wired, gald3r's
-  `g-hk-*.ps1` scripts are PowerShell and would need bash equivalents (PowerShell is **not** present
-  by default in a standard Replit Nix container).
+  `g-hk-*.py` scripts need a `python` interpreter on the container (availability in a standard
+  Replit Nix container is unverified; no PowerShell dependency post-T1584 Python port).
 - **gald3r mapping**: session-start context injection, agent-complete, pre-commit, and shell-guard
   hooks must be replaced by `replit.md` prose (e.g. "before completing a task, re-read
   CONSTRAINTS.md") or git `core.hooksPath` bash scripts — not enforced gald3r code.
@@ -197,15 +197,15 @@ etc.) distinct from generic MCP.
   lifecycle surface is the Agent **task lifecycle** (`planned → running → ready → finished`), which is
   observational, not a script-execution hook
 - **Event payload format**: none
-- **Limitations**: container is **Linux** — even if wired, `g-hk-*.ps1` are PowerShell (not present
-  by default in a Nix container) and would need bash equivalents; container restarts reset
+- **Limitations**: container is **Linux** — even if wired, `g-hk-*.py` scripts need a `python`
+  interpreter on the container (availability unverified; no PowerShell dependency post-T1584 port); container restarts reset
   uncommitted state. Git-workflow hooks are an open community request, not shipped
 - **gald3r hook files**: none auto-fire — hook behaviors must run via `replit.md` prose, git
   `core.hooksPath` bash scripts, or manual invocation
 
 ## Atypical Handling
 
-- Cloud Linux container: PowerShell is not installed by default; gald3r `.ps1` hooks would need bash ports.
+- Cloud Linux container: gald3r `.py` hooks need a `python` interpreter on the container (availability unverified; no PowerShell dependency post-T1584 port).
 - Instruction file is **`replit.md`** (auto-created, auto-read, self-updated) — **not** AGENTS.md/CLAUDE.md.
 - Skills load from **`/.agents/skills/`** (agentskills.io standard) — a real native surface.
 - MCP/Integrations live in the cloud UI (not committed files); the gald3r MCP endpoint must be a
@@ -242,7 +242,7 @@ Legend: ✅ verified working · ⚠️ partial / Cursor-generic · ❌ not suppo
 | Skills | /replitai/skills — agentskills.io `SKILL.md` in **`/.agents/skills`**; lazy-loaded by name+description; Project/User/Enterprise scopes; "Use a skill" picker; ~April 2026 |
 | Agents | /replitai/agent — native Plan/Build modes + effort tiers (Lite/Economy/Power/Turbo); subagent roles are internal orchestration, not a user-definable file format; Agent 3 "Stacks" undocumented as config |
 | Commands / Workflows | blog.replit.com/introducing-workflows — Workflows = "Run button that can run any command(s)" (shell runners), not agent slash-commands; no `/command` authoring documented |
-| Hooks | /references/agent/task-lifecycle — task lifecycle `planned→running→ready→finished` documented, but no user-defined script hooks; git hooks are an open community request; Linux/PowerShell mismatch |
+| Hooks | /references/agent/task-lifecycle — task lifecycle `planned→running→ready→finished` documented, but no user-defined script hooks; git hooks are an open community request; no hook surface for gald3r `g-hk-*.py` to wire into |
 | MCP | /learn/model-context-protocol — Agent is an MCP client (connect pre-listed/custom server, auto tool discovery); Replit ships a hosted MCP server (`replit-mcp.com`, OAuth on first connect) for external orchestration |
-| Cloud constraints | Known-platform — Linux Nix container (no PowerShell by default), ephemeral state on restart, MCP/Integrations are cloud-UI surfaces, Replit Secrets replace `.env` |
+| Cloud constraints | Known-platform — Linux Nix container (`python` interpreter availability unverified), ephemeral state on restart, MCP/Integrations are cloud-UI surfaces, Replit Secrets replace `.env` |
 | Install / live connection | ❓ Not install-tested in this repo; no live Replit Agent run performed |

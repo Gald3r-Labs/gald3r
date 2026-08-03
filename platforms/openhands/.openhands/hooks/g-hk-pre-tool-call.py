@@ -123,7 +123,9 @@ def main(argv: list) -> None:
             cfg = config_file.read_text(encoding="utf-8", errors="replace")
         except OSError:
             cfg = ""
-        m = re.search(r"pre_tool_call_compress_lines:\s*(\d+)", cfg, re.IGNORECASE)
+        # [ \t] not \s -- BUG-486/T510 class: \s crosses newlines, so a blank
+        # pre_tool_call_compress_lines: could reach a digit on the NEXT line.
+        m = re.search(r"pre_tool_call_compress_lines:[ \t]*(\d+)", cfg, re.IGNORECASE)
         if m:
             max_lines = int(m.group(1))
     if max_lines <= 0:

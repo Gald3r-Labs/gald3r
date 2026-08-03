@@ -1,5 +1,8 @@
-﻿---
+---
+description: 'Scan and rewrite callers of a skill or API interface to match a new interface signature.'
+argument-hint: '<skill-name> --from "<old>" --to "<new>" [--apply] | --list-skills'
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
+execution_tier: guarded_prompt
 ---
 Migrate skill/API interface callers: $ARGUMENTS
 
@@ -165,7 +168,7 @@ Post-migration checklist:
 @g-migrate g-skl-bugs --from "g-bug-report" --to "g-bug-add" --apply
 
 # Migrate within a specific directory only
-@g-migrate g-skl-pcac-order --from "g-broadcast" --to "g-pcac-order" --scope .cursor/commands/
+@g-migrate g-skl-wpac-order --from "g-broadcast" --to "g-wpac-order" --scope .cursor/commands/
 
 # List all skills available for migration
 @g-migrate --list-skills

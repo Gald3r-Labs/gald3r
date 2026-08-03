@@ -1,5 +1,7 @@
-﻿---
+---
+description: 'Update a bug record field (status, severity, note, workspace-repos) via g-skl-bugs UPDATE BUG.'
 subsystem_memberships: [BUG_AND_QUALITY]
+execution_tier: guarded_prompt
 ---
 Update a bug record. Activates **g-skl-bugs** → UPDATE BUG operation.
 

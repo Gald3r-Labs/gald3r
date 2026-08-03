@@ -1,5 +1,7 @@
-﻿---
+---
+description: 'Parse pasted email/Slack/notes/URLs, classify into IDEA/BUG/TASK/INFO, then write after approval'
 subsystem_memberships: [BUG_AND_QUALITY]
+execution_tier: guarded_prompt
 ---
 # g-triage — External Backlog Intake
 

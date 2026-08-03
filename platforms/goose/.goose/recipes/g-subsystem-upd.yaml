@@ -1,0 +1,33 @@
+version: 1.0.0
+title: g-subsystem-upd
+description: Update an existing subsystem spec. Activates **g-skl-subsystems** → UPDATE
+  SUBSYSTEM operation.
+instructions: 'Update an existing subsystem spec. Activates **g-skl-subsystems** →
+  UPDATE SUBSYSTEM operation.
+
+
+  ```
+
+  @g-subsystem-upd subsystem-name
+
+  @g-subsystem-upd subsystem-name --field status --value active
+
+  @g-subsystem-upd subsystem-name --add-location "skill: g-skl-features"
+
+  @g-subsystem-upd subsystem-name --log "T084-2: g-skl-features skill added"
+
+  ```
+
+
+  Updates spec file fields (status, dependencies, locations). Appends to Activity
+  Log.
+
+  SUBSYSTEMS.md index row updated if status or name changes.'
+prompt: Run the gald3r `g-subsystem-upd` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-subsystem-upd, e.g. quoted text or --flag
+    values, exactly as you would type them after the command name.

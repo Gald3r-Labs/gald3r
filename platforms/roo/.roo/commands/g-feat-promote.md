@@ -1,5 +1,7 @@
-﻿---
+---
+description: 'Promote a specced feature to committed via g-skl-features PROMOTE, interactively creating tasks'
 subsystem_memberships: [RELEASE_AND_VERSIONING]
+execution_tier: guarded_prompt
 ---
 Promote a specced feature to committed — triggers interactive task creation. Activates **g-skl-features** → PROMOTE operation.
 

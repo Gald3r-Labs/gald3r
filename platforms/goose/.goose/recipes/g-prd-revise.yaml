@@ -1,0 +1,22 @@
+version: 1.0.0
+title: g-prd-revise
+description: Revise a released PRD. Activates **g-skl-prds** → REVISE operation.
+instructions: "Revise a released PRD. Activates **g-skl-prds** → REVISE operation.\n\
+  \n```\n@g-prd-revise prd-NNN\n@g-prd-revise prd-NNN --reason \"Updated risk assessment\
+  \ for new threat model\"\n```\n\nThe ONLY supported way to materially change a `released`\
+  \ PRD. Atomic operation:\n\n1. Reads source PRD (must be `status: released`)\n2.\
+  \ Creates a new file `prds/prdMMM_<slug>_v2.md` (or `_v3` etc.) with:\n   - Fresh\
+  \ sequential `id: prd-MMM`\n   - `status: draft` (revisions start in draft for re-review)\n\
+  \   - `supersedes: prd-NNN`\n3. Updates the old PRD atomically:\n   - `status: superseded`\n\
+  \   - `superseded_by: prd-MMM`\n   - Appends `## Change Log` row recording the supersede\
+  \ event\n4. Updates `PRDS.md`: old row → `### Superseded` section; new row → `###\
+  \ Draft`\n\nThis preserves the audit chain. Compliance reviewers can walk the `supersedes:`\
+  \ / `superseded_by:` linked list to see the full revision history."
+prompt: Run the gald3r `g-prd-revise` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-prd-revise, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

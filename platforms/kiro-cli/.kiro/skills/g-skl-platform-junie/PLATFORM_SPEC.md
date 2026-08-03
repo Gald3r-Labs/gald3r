@@ -138,7 +138,7 @@ them **NATIVE**, and hooks moved from "none" to **PARTIAL** (SessionStart-only, 
 - Notably, Junie's **extension** packaging concept (see §9) does **NOT** include hooks.
 - A YouTrack request **JUNIE-1961** ("Add Event Hooks / Lifecycle Callbacks for Agent Execution")
   tracks broader hook coverage.
-- **gald3r consequence**: SessionStart context injection (e.g. a `g-hk-*.ps1` that loads `.gald3r/`
+- **gald3r consequence**: SessionStart context injection (e.g. a `g-hk-*.py` that loads `.gald3r/`
   context) **is feasible now** via the personal `~/.junie/config.json` hooks block. PreToolUse
   `.gald3r/` guards, pre-commit gates, and file-watch automations are **not yet supported** — degrade
   those to git `core.hooksPath` or manual invocation. The IDE plugin has no hook surface.

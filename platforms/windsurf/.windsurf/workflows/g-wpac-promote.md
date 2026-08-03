@@ -1,5 +1,8 @@
 ---
+description: 'Promote a Workspace-Control controlled_member repo to a fully self-managed autonomous_child.'
+argument-hint: '<member-id> [--dry-run|--apply]'
 subsystem_memberships: [WORKSPACE_COORDINATION]
+execution_tier: orchestration
 ---
 Promote a controlled_member repository to a fully self-managed autonomous_child: $ARGUMENTS
 
@@ -50,14 +53,15 @@ Delegates to `g-skl-workspace` PROMOTE operation.
 3. **Dry-run**: prints the plan (files to scaffold, `.identity` edits, manifest change); writes nothing.
 4. **Apply**:
    - Creates only the **missing** standard files: `RELEASES.md`, `releases/`, `vocab.md`,
-     `workspace/topology.md`, `workspace/inbox.md`, `FEATURES.md`, `BUGS.md`, `PLAN.md`
+     `linking/link_topology.md`, `linking/INBOX.md`, `FEATURES.md`, `BUGS.md`, `PLAN.md`
      (existing files are preserved, never overwritten).
    - Rewrites `.gald3r/.identity`: `workspace_role=autonomous_child`, removes
      `member_gald3r_marker_only`, bumps `gald3r_version` to the current framework version.
    - Updates **only** the named member's `workspace_role` in `workspace_manifest.yaml`.
    - Prints a promote summary with the exact files created/updated.
-5. After apply, the g-rl-36 guard allows `@g-skl-setup`. Run `@g-skl-setup --upgrade-existing`
-   for a full file top-up, then `@g-wrkspc-validate` to confirm.
+5. After apply, the g-rl-36 guard allows `@g-setup`. Run `@g-setup --autonomy full`
+   for a full file top-up (idempotent — only fills what's missing), then `@g-wrkspc-validate`
+   to confirm.
 
 ## Underlying Script
 

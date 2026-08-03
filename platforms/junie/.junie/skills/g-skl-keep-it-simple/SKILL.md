@@ -12,6 +12,16 @@ skill_trust_level: core
 subsystem_memberships: [AGENT_ORCHESTRATION]
 ---
 
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 # g-skl-keep-it-simple — Terse Mode Toggle
 
 ## Purpose
@@ -64,11 +74,11 @@ work in terse mode for all subsequent turns in the current session.
 6. **Aim for ≤5 sentences per textual answer** unless the answer is
    primarily a code block, command, or table.
 7. **Tool calls still happen.** Terse mode affects output presentation,
-   not internal tool use. Hooks, PCAC checks, and gald3r system gates
+   not internal tool use. Hooks, WPAC checks, and gald3r system gates
    continue to fire as normal.
 8. **All gald3r safety gates still fire.** Bug-discovery gate, todo-
    completion gate, code-change-requires-task gate, member-marker
-   invariant, PCAC inbox gate, Clean Controller Gate, etc. remain in
+   invariant, WPAC inbox gate, Clean Controller Gate, etc. remain in
    force. Terse mode reduces ceremony, not safety.
 
 ## Deactivation
@@ -95,7 +105,7 @@ The personality pack rule (`silicon_valley_personality.md` /
 normally fires on every response. `g-skl-keep-it-simple` is an explicit
 user override on top of that rule. The precedence order is:
 
-1. Hard safety gates (PCAC conflict, Clean Controller Gate, secrets
+1. Hard safety gates (WPAC conflict, Clean Controller Gate, secrets
    detection) — never suppressed.
 2. `g-skl-keep-it-simple` activation — suppresses presentation rules.
 3. Personality pack — applies when (2) is not active.

@@ -1,12 +1,15 @@
 ---
+description: 'Print a read-only summary of PLATFORM_STATUS.md capability rollup counts per platform.'
+argument-hint: '[platform]'
 subsystem_memberships: [PLATFORM_INTEGRATION]
+execution_tier: orchestration
 ---
 Show the cross-platform capability status index: $ARGUMENTS
 
 ## What This Command Does
 
 Displays a concise read-only summary of `.gald3r/PLATFORM_STATUS.md` — the honest capability
-index across all 23 platforms — and the rollup counts (N healthy, M need attention, K rework,
+index across every roster platform — and the rollup counts (N healthy, M need attention, K rework,
 U unknown). Report-only; does not modify any file.
 
 ## Delegates To

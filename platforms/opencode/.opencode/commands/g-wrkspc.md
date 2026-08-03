@@ -1,5 +1,8 @@
-﻿---
+---
+description: 'Dispatch to Workspace-Control subcommands (status/validate/member-list/init/spawn/etc.) via g-skl-workspace'
+argument-hint: '<status|validate|member-list|init|member-add|member-remove|spawn|export|sync> [subcommand-args]'
 subsystem_memberships: [WORKSPACE_COORDINATION]
+execution_tier: orchestration
 ---
 Workspace-Control dispatcher: $ARGUMENTS
 
@@ -23,7 +26,7 @@ Short entry point for Workspace-Control operations. Prefer the explicit subcomma
 
 - Dry-run is the default for lifecycle operations.
 - Apply mode may update only `.gald3r/linking/workspace_manifest.yaml` unless a lifecycle command explicitly documents narrower member writes.
-- `g-wrkspc-spawn --apply` may create a new empty independent git root plus minimal `.gitignore`/`README.md`; it does not scaffold app code, install gald3r, or write PCAC topology.
+- `g-wrkspc-spawn --apply` may create a new empty independent git root plus minimal `.gitignore`/`README.md`; it does not scaffold app code, install gald3r, or write WPAC topology.
 - Never delete member repository folders, `.git/`, branches, commits, remotes, or worktrees.
 
 ## Delegates To

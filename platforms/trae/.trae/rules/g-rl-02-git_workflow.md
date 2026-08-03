@@ -35,33 +35,60 @@ Phase: {N}
 - Never commit secrets, API keys, or passwords
 - Run `git status` before committing to verify staged files
 
-## Protected Files (NEVER commit these)
+## Protected Files (secrets — NEVER commit these, in any repo)
 
-Before every `git add` or `git commit`, verify NONE of these are staged:
+Before every `git add` or `git commit`, verify NONE of the following are staged. Secrets are
+the one category that is **always** forbidden, regardless of repo type:
 
 | Pattern | Why |
 |---|---|
-| `/.agent/` | Personal IDE config (gitignored) |
-| `/.claude/` | Personal IDE config (gitignored) |
-| `/.codex/` | Personal IDE config (gitignored) |
-| `/.cursor/` | Personal IDE config (gitignored) |
-| `/.opencode/` | Personal IDE config (gitignored) |
-| `/.gald3r/` | Live project state (gitignored) |
-| `/.project_template/` | Root-level template copy (gitignored) |
-| `/temp_docs/` | Scratch files (gitignored) |
-| `/temp_scripts/` | Scratch files (gitignored) |
-| `/AGENTS.md` | Personalized per-user (gitignored) |
-| `/CLAUDE.md` | Personalized per-user (gitignored) |
-| `/GEMINI.md` | Personalized per-user (gitignored) |
-| `/GUARDRAILS.md` | Personalized per-user (gitignored) |
-| `/.env` | Secrets (gitignored) |
-| `/.mcp.json` | Machine-specific MCP config (gitignored) |
+| `.env`, `*.env.local` | Live credentials |
+| `/.mcp.json` (when it carries real keys/tokens, not just server config) | Machine-specific MCP config that can leak secrets |
+| Any file containing API keys, tokens, passwords, or private-key material | Secrets |
 
-If `git status` shows ANY of these as staged or untracked-to-be-added:
+**Enforcement mechanism**: this is a pre-commit **secret scan**, not a hand-maintained path
+list. Run `@g-git-sanity` or rely on the pre-commit sanity check below, which is backed by the
+shared secret patterns in `gald3r_git_sanity_common.py` (`sk-`, `Bearer `, `AKIA`,
+`password\s*=`, `api_key\s*=`, etc. — see `g-skl-git-commit` Pre-Commit Checklist). If a secrets
+check fires on staged content:
 1. **STOP** — do not commit
 2. Remove from staging: `git reset HEAD <file>`
-3. Verify `.gitignore` still contains the entry
-4. Warn the user that a protected file was almost committed
+3. Verify `.gitignore` still contains the entry (if the file should never be tracked at all)
+4. Warn the user that a secret was almost committed
+
+### IDE / coordination paths (`.gald3r/`, `.claude/`, `AGENTS.md`, `CLAUDE.md`, etc.) — tracked or ignored is per-repo, not a fixed list
+
+`.gald3r/`, `.claude/`, `.cursor/`, `.codex/`, `.opencode/`, `.agent/`, `AGENTS.md`, `CLAUDE.md`,
+`GEMINI.md`, `GUARDRAILS.md`, and similar IDE/coordination paths are **NOT** universally
+"never commit." Whether each one is tracked or gitignored depends on the repo's role — **defer
+to that repo's actual `.gitignore`**, never to a hardcoded list in this rule:
+
+- **Distributed / template repos** (e.g. a public template that end users install gald3r into)
+  typically gitignore these paths — they are personalized-per-user or IDE-tool-managed payload,
+  not authored source.
+- **Controller / WPAC-linked repos** (this repo, `gald3r_core_dev`, included) INTENTIONALLY
+  TRACK `.gald3r/` — the coordination data (tasks, bugs, plans, constraints, subsystem specs,
+  idea board, WPAC topology) IS the value of the repo. Committing it is correct, not a mistake.
+  See `g-rl-33`'s **`.gald3r/` Gitignore Gate**: adding `.gald3r/` to `.gitignore` in a
+  controller/WPAC repo requires an explicit warning and user confirmation — it is never done
+  silently, and it is never assumed to already be the case.
+
+Before treating a path as "protected," check what the repo actually does:
+```bash
+git check-ignore -v <path>   # non-empty output = ignored; empty output = tracked
+```
+If `git status` shows an intentionally-tracked coordination path as staged, that's expected —
+do not block the commit. If a path the repo's `.gitignore` says should be ignored shows up as
+staged, that's drift: reconcile against `.gitignore` (or ask whether the ignore rule itself is
+stale), not by refusing the commit against a fixed list.
+
+### Scratch / working directories (`temp_docs/`, `temp_scripts/`)
+
+`temp_docs/` and `temp_scripts/` are **scratch, never source** — working files that are
+gitignored by convention and must not be committed. This is the explanation the repo's own
+`.gitignore` points back to. Unlike the IDE/coordination paths above, these are *not*
+per-repo-tracked: they are transient scratch everywhere. Put durable docs under `docs/` and
+durable scripts in their proper package location instead.
 
 ## Branch Model (feature-branches-only — NO long-lived `dev`/`test`)
 
@@ -112,14 +139,39 @@ Before every commit, run or rely on the **pre-commit sanity check** defined in `
 ### Optional Automation (opt-in hook)
 
 ```powershell
-# Enable hook-based pre-commit checks
-git config core.hooksPath .cursor/hooks
+# Enable hook-based pre-commit checks. Use .githooks -- it is the only
+# directory git's core.hooksPath mechanism actually invokes end-to-end here.
+# Pointing core.hooksPath at .claude/hooks or .cursor/hooks is a NO-OP: git
+# only ever calls a file literally named `pre-commit` (no extension), and
+# neither of those directories ships one -- only the .py hook itself, which
+# git never calls directly (BUG-401).
+git config core.hooksPath .githooks
 
 # Disable
 git config --unset core.hooksPath
 ```
 
-Hook file: `.cursor/hooks/g-hk-pre-commit.py`
+Dispatcher: `.githooks/pre-commit` (T293) runs, in sequence: encoding-normalize,
+component-tag-check (g-rl-38), golden-fixture-baseline-freshness (T446), then the
+pre-commit sanity hook itself (secrets/protected-files/stub-annotation/validate-gate/
+org-policy) -- `.claude/hooks/g-hk-pre-commit.py` or `.cursor/hooks/g-hk-pre-commit.py`,
+whichever exists on disk (BUG-401 wired this last stage in; it previously never ran
+via any documented activation path).
+
+**Required step after editing this dispatcher's own hook source (T529):** the
+dispatcher above calls the LOCAL `.claude/hooks/`/`.cursor/hooks/` copy directly, never
+`src/gald3r_core/platform/pipeline/neutral_source/hooks/` -- and both `.claude/` and
+`.cursor/` are gitignored in this repo (framework-managed, not authored source), so a
+`neutral_source/` hook fix silently never protects this repo's own commits until the
+local copies are redeployed. An ad hoc manual file copy is untracked and does not
+survive a fresh worktree/clone (BUG-538/BUG-541). Run `uv run gald3r sync --apply`
+(or `uv run gald3r sync` first for a dry-run added/changed/identical/orphaned drift
+summary) immediately after any `neutral_source/` hooks (or commands/rules/agents/
+skills) edit -- this replaces the old manual-copy workaround. See `AGENTS.md`'s
+Parity Model section for the full rationale and the companion `gald3r platform
+install` verb (which additionally handles MCP + root-doc provisioning for an
+EXTERNAL project -- `gald3r sync` deliberately never touches either, since this
+repo's own `.mcp.json`/`AGENTS.md`/`CLAUDE.md` are live, not generated stubs).
 
 ## Pre-Push Gate (regular vs release)
 

@@ -1,5 +1,8 @@
-﻿---
+---
+description: 'Two-phase pipeline: reproduce and fix open bugs, then an independent reviewer agent verifies each fix'
+argument-hint: '[severity:LEVEL[,LEVEL]] [bug:BUG-N[,BUG-N]] [--dry-run] [--provider <id>[:<model>]] [--model <id>] [--implementer-model <id>] [--reviewer-model <id>]'
 subsystem_memberships: [BUG_AND_QUALITY]
+execution_tier: orchestration
 ---
 Dedicated bug-fix pipeline — reproduce → fix → regression test → adversarial review: $ARGUMENTS
 
@@ -16,6 +19,13 @@ fixes each bug in severity order; Phase 2 spawns an independent reviewer agent t
 > processes ONLY bugs — useful for dedicated bug-blitz sessions without disturbing the task queue.
 > The T1114 auto-task bridge ensures high/critical bugs already have linked fix tasks, so both
 > paths are complementary.
+
+> **Provider & model selection (T580, BUG-612 companion)**: `$ARGUMENTS` MAY carry `--provider
+> <provider>[:<model>]` / `--model <model>` (global, both phases) plus phase-specific
+> `--implementer-model` (Phase 1 fix) / `--reviewer-model` (Phase 2 verify). Resolution order and
+> host-mapping table (Cursor -> `cursor-agent` + `gpt-5.6-terra-medium` by default) are identical
+> to `g-go`/`g-go-code`/`g-go-review` — see `g-go-go.md`'s "Provider & Model Routing" section.
+> Phase 2's independence guarantee above is unaffected by provider/model choice.
 
 ---
 
@@ -62,7 +72,7 @@ When `$ARGUMENTS` provides explicit bug IDs (`bug:BUG-NNN`), use those exactly.
 ## Step 0 — Workspace Member Clean-Status Preflight (T1431)
 
 Before the WPAC gate / bug-queue build / claim / worktree creation, run the **read-only** workspace
-member clean-status preflight: scan `.gald3r/workspace/workspace_manifest.yaml`, run
+member clean-status preflight: scan `.gald3r/linking/workspace_manifest.yaml`, run
 `git -C <path> status --short` on each `autonomous_child` member, and either print
 `Workspace clean -- N members checked` (proceed) or a per-repo dirty-status table asking the user
 to commit/stash first. Never auto-commits or writes. `--skip-member-clean-check` bypasses with a
@@ -77,10 +87,10 @@ Before any bug claiming or implementation, run the re-callable inbox check if WP
 
 ```powershell
 $hook = @( ".cursor\hooks\g-hk-wpac-inbox-check.py", ".claude\hooks\g-hk-wpac-inbox-check.py", ".agent\hooks\g-hk-wpac-inbox-check.py", ".codex\hooks\g-hk-wpac-inbox-check.py", ".opencode\hooks\g-hk-wpac-inbox-check.py" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
-if ($hook) { powershell -NoProfile -ExecutionPolicy Bypass -File $hook -ProjectRoot . -BlockOnConflict }
+if ($hook) { python $hook -ProjectRoot . -BlockOnConflict }
 ```
 
-WPAC is configured only when `.gald3r/workspace/topology.md` declares at least one
+WPAC is configured only when `.gald3r/linking/link_topology.md` declares at least one
 parent/child/sibling relationship. A Workspace-Control manifest and local `INBOX.md` alone are
 not sufficient. If the check reports `INBOX CONFLICT GATE` or exits code `2`, stop and run
 `@g-wpac-read`. If WPAC is not configured, skip and report `WPAC: not configured / skipped`.
@@ -124,8 +134,10 @@ Mark the bug `[🔄]` / `status: in-progress` in both BUGS.md and the bug file. 
 
 Create or reuse a coding worktree:
 ```powershell
-gald3r worktree create -BugId {bug_id} -Role code -Owner {platform_or_agent_slug} -Json
+gald3r worktree create -BugId {bug_id} -Role code -Json
 ```
+Owner is auto-resolved (T580/BUG-612) from your routed provider — see `g-go-code.md` Step 3's
+owner-resolution note. Pass `-Owner <value>` explicitly only to override it.
 
 ### 2. Read the Bug Spec
 
@@ -235,11 +247,10 @@ Reviewer does NOT write BUGS.md or bug files — returns result payload to coord
 ### Coordinator Finalizes
 
 After reviewer completes:
-1. Batch-update `BUGS.md` (PASS → `[✅]` Resolved; FAIL → `[🟠]`/`[🔴]` back to Open)
-2. Batch-update bug files (PASS → `status: resolved`, `resolved_date`; FAIL → `status: open`)
-3. Update linked fix task (if any) via `fix_task_id` frontmatter: PASS → `[✅]`; FAIL → `[📋]`
-4. Create review-result commit with explicit path staging
-5. Write Pipeline Session Summary (see format below)
+1. **Invoke `gald3r bug resolve <id>` (PASS) or `gald3r bug update <id> --status open --note "FAIL: ..."` (FAIL) for every reviewed bug — mandatory, once per item (BUG-511).** This resyncs the bug file + `BUGS.md` in the same call — do not hand-edit either.
+2. If a linked fix task exists (`fix_task_id` frontmatter), invoke `gald3r task verify <fix_task_id> --pass` (PASS) or `gald3r task verify <fix_task_id> --fail --reason "..."` (FAIL) — same mandatory rule; do not hand-edit the task file or `TASKS.md`.
+3. Create review-result commit with explicit path staging
+4. Write Pipeline Session Summary (see format below)
 
 ---
 
@@ -302,6 +313,25 @@ Total runnable: N
 No files are written in dry-run mode.
 
 ---
+
+## Spawned-agent task/bug creation (T585 AC3)
+
+During this run, **any** task or bug a spawned agent needs to create (deferred sub-feature,
+newly discovered bug, follow-up) goes into the **hot inbox**, never a direct `tasks/open/` /
+`bugs/open/` write + index regeneration:
+
+- **Preferred** — call the engine verb (`gald3r task create …` / `gald3r bug report …`, or the
+  `gald3r_task_*` / `gald3r_bug_*` MCP tools). When the run marker
+  (`.gald3r/logs/ggo_run_state.json` `active: true`, or `GALD3R_AGENT_RUN=1`) is set, the engine
+  **auto-routes** the new item to `tasks/inbox/` / `bugs/inbox/` as an id-less, uuid-suffixed
+  draft — no id is assigned at create time.
+- **Manual fallback** (no engine) — hand-write the draft directly into `tasks/inbox/` /
+  `bugs/inbox/` (id-less, uuid-suffixed filename). Do **not** write `tasks/open/` / `bugs/open/`
+  or touch `TASKS.md` / `BUGS.md`.
+
+The hot-inbox **intake** (run at each iteration boundary — see the inbox-intake step) is the
+*single ID-assigning authority*: it assigns ids atomically, so N concurrent agents can never
+collide on the next id. This is the spawn-side complement of that intake step.
 
 ## Behavioral Rules
 

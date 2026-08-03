@@ -1,27 +1,94 @@
-# gald3r Project Rules (Warp — Agent Mode)
+# agents.md
 
-> Warp auto-discovers this ALL-CAPS rules file at the repo root and applies it to every
-> Agent / Active AI session in this project. If both WARP.md and AGENTS.md exist, WARP.md
-> takes priority. Edit the canonical copy under .gald3r_sys/platforms/.warp/ — not the
-> installed copy. See AGENTS.md for the full universal gald3r contract.
+> This file follows the agents.md format for AI agent instructions.
+> Compatible with Cursor (`.cursor/`), Claude Code (`.claude/`), Gemini (`.agent/`),
+> Codex (`.codex/`), and OpenCode (`.opencode/`).
+>
+> This block is framework-authored and refreshed by `gald3r platform install
+> --generated` (T357) — content between the marker comments wrapping this block is
+> regenerated on every install; anything added **outside** the block (above the
+> START marker or below the END marker) is local customization and is preserved
+> across re-runs.
+>
+> Run `gald3r setup` / `@g-setup` to fill in this project's mission, goals, and
+> command catalog — this generated block intentionally carries no project-specific
+> content. See the sibling `GALD3R.md` root file for how the gald3r framework
+> itself works.
 
-## Task Management
-- All work is tracked in .gald3r/TASKS.md.
-- Read the active task in .gald3r/tasks/task{id}_*.md before implementing.
-- Reference the task ID in commits: feat(T{id}): description | fix(BUG-{id}): description.
+---
 
-## Architecture
-- Read .gald3r/CONSTRAINTS.md before architectural decisions.
-- Subsystem boundaries are documented in .gald3r/SUBSYSTEMS.md.
+## Project Structure
 
-## Terminal Discipline
-- This is a Windows/PowerShell-capable project where applicable — match the host shell.
-- Run long-lived servers as background tasks; do not block the Agent session.
+```
+.gald3r/                  # Task management data (shared across all IDEs)
+├── TASKS.md             # Master task checklist
+├── BUGS.md              # Bug index
+├── PLAN.md              # Strategy and milestones
+├── PROJECT.md           # Vision, mission, goals
+├── CONSTRAINTS.md       # Architectural rules agents must follow
+├── SUBSYSTEMS.md        # Component registry
+├── tasks/               # Individual task spec files
+├── bugs/                # Individual bug files
+├── features/            # PRD files
+└── linking/             # Cross-project coordination
 
-## Bug Protocol
-- Pre-existing bugs: document in .gald3r/BUGS.md — never silently ignore.
+.cursor/                 # Cursor IDE configuration
+├── agents/              # gald3r system agents (g-agnt-*)
+├── skills/               # Skills (g-skl-*)
+├── commands/             # @g-* commands
+├── hooks/                # Automation hooks
+└── rules/                # Always-apply rules (g-rl-*)
 
-## Code Standards
-- No bare TODO comments — use TODO[TASK-{id}->TASK-{new_id}] and file a follow-up task.
-- Match the conventions already present in the file you are editing.
-- Make surgical changes; do not refactor adjacent code that is out of scope.
+.claude/                 # Claude Code (same content as .cursor/)
+.agent/                  # Gemini / Antigravity
+.codex/                  # Codex
+.opencode/               # OpenCode
+```
+
+---
+
+## Task Status Indicators
+
+| TASKS.md | YAML status | Meaning |
+|---------|-------------|---------|
+| `[ ]` | (no file yet) | Pending — not started |
+| `[📋]` | `pending` | Spec written, ready to start |
+| `[🔄]` | `in-progress` | Being worked on |
+| `[🔍]` | `awaiting-verification` | Done, needs review |
+| `[✅]` | `completed` | Done |
+| `[❌]` | `failed` | Failed or cancelled |
+
+---
+
+## Direct Edit Policy
+
+Edit these files directly without asking for permission:
+
+- `.gald3r/TASKS.md` — task checklist
+- `.gald3r/BUGS.md` — bug index
+- `.gald3r/PLAN.md` — project plan
+- `.gald3r/PROJECT.md` — project identity
+- All files in `.gald3r/tasks/`, `.gald3r/bugs/`, `.gald3r/features/`
+
+---
+
+## `.gald3r/` Folder Gate
+
+Never read or write `.gald3r/` files without following the appropriate skill
+workflow. Use `g-skl-tasks` for task operations, `g-skl-qa` for bugs, `g-skl-plan`
+for planning files.
+
+---
+
+## Documentation Placement
+
+All `.md` documentation files go in `docs/` — never in the project root.
+Exceptions: `AGENTS.md`, `README.md`, `LICENSE`, `CLAUDE.md`, `CHANGELOG.md`,
+`GALD3R.md`.
+
+---
+
+## PowerShell (Windows)
+- Use `;` as command separator (NOT `&&`)
+- Use `curl.exe` or `Invoke-WebRequest`, never bare `curl`
+- Use `uv` for Python virtual environments, never bare `pip` or `python -m venv`

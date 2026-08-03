@@ -8,7 +8,7 @@ subsystem_memberships: [VAULT_AND_RESEARCH]
 
 ## What it does
 
-Analyze any external repository and produce a structured FEATURES.md harvest report. Writes to {vault}/research/recon/{slug}/ when a shared vault is configured, else falls back to local research/harvests/{slug}/. Performs cross-project dedup via _recon_index.yaml. Agents are reporters — humans are editors. …
+Analyze any external repository and produce a structured FEATURES.md harvest report. Writes to {vault}/research/CRR_FunctionalSpecs/{slug}/ when a shared vault is configured, else falls back to local research/CRR_FunctionalSpecs/{slug}/. Performs cross-project dedup via _recon_index.yaml. Agents are reporters — humans are editors. …
 
 ## When to use
 

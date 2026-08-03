@@ -1,0 +1,20 @@
+version: 1.0.0
+title: g-code-review
+description: Activate the **g-skl-code-review** skill.
+instructions: 'Activate the **g-skl-code-review** skill.
+
+
+  Runs a code review on recent changes or specified files.
+
+  Depth auto-scales: Quick (<100 lines), Standard (100-500), Comprehensive (>500).
+
+
+  Pass: file paths, PR number, or nothing (reviews recent git changes).'
+prompt: Run the gald3r `g-code-review` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-code-review, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

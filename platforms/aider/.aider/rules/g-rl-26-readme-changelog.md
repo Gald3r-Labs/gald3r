@@ -65,3 +65,33 @@ If the completed task changes something that has a section in `README.md`:
 
 - Update docs **before** marking the task `[🔍]` (awaiting verification)
 - Docs check is part of the `g-go` and `g-go-code` post-task checklist
+
+## 3. Golden-Fixture Baseline Refresh (T446 — `neutral_source/` content changes)
+
+If the completed task edits **any** of:
+- `src/gald3r_core/platform/pipeline/neutral_source/**` (skills, hooks, commands, rules content)
+- `src/gald3r_core/platform/layout_map.yaml`
+- `.gald3r/PLATFORM_CAPABILITY_MATRIX.md`
+
+then, **before** marking the task `[🔍]`, re-run **both** refresh scripts and stage the
+regenerated JSON in the same commit:
+
+```
+.venv/Scripts/python.exe tests/fixtures/platform_golden/refresh_baseline_hashes.py
+.venv/Scripts/python.exe tests/fixtures/embedded_overlay_snapshot/refresh_baseline_hashes.py
+```
+
+Never hand-edit either `baseline_hashes.json`. This is the exact drift pattern that recurred
+THREE times (BUG-386, BUG-400, and a third live recurrence found during T446 itself,
+commit `0faea7c0`/T445) before a deterministic gate existed. T446 landed
+`scripts/check_golden_fixture_baseline_freshness.py`, wired into **both**:
+
+- `.github/workflows/ci.yml`'s `lint` job (MANDATORY — runs unconditionally on every push to
+  `main` and every PR, independent of any local git-hook opt-in)
+- `.githooks/pre-commit` Stage 3 (best-effort local feedback for anyone who has run
+  `git config core.hooksPath .githooks`)
+
+This rule is the **documentation-side companion** to that gate (agents should refresh
+proactively, not just react to the gate failing), not a substitute for it — see the
+script's own module docstring for the full mechanism-choice rationale (why a deterministic
+hash-comparison gate was chosen over a documentation-only rule or a periodic CI job alone).

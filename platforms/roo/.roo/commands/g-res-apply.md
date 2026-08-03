@@ -1,5 +1,7 @@
-﻿---
+---
+description: 'Convert approved recon-report features into gald3r goals, features, subsystems, and tasks (g-skl-res-apply)'
 subsystem_memberships: [VAULT_AND_RESEARCH]
+execution_tier: guarded_prompt
 ---
 # g-res-apply
 
@@ -18,7 +20,7 @@ Activates **g-skl-res-apply** → REVIEW, DRY-RUN, or APPLY operation.
 @g-res-apply APPLY {slug} --target {child_project}   # route to a child project (T118)
 ```
 
-- `{slug}` — the folder name under `vault/research/recon/`, e.g., `external_repo`, `gald3r_forge`
+- `{slug}` — the folder name under `vault/research/CRR_FunctionalSpecs/`, e.g., `external_repo`, `gald3r_forge`
 
 ## Operations
 
@@ -35,7 +37,7 @@ Creates all gald3r artifacts:
 2. **Feature** — One Feature file per feature category → `features/feat-NNN_{slug}_{category}.md` + FEATURES.md index
 3. **Subsystems** — Checks existing SUBSYSTEMS.md; creates new spec or merges into existing
 4. **Tasks** — Groups related features (3-8 per task) → `tasks/taskNNN_*.md` + TASKS.md rows
-5. **Intake Report** — `vault/research/recon/{slug}/INTAKE_REPORT.md` with full audit trail
+5. **Intake Report** — `vault/research/CRR_FunctionalSpecs/{slug}/INTAKE_REPORT.md` with full audit trail
 
 ## FEATURES.md Approval Status
 
@@ -87,7 +89,7 @@ Automatically detects when a proposed subsystem overlaps with an existing one:
 ```
 
 ## Input File
-`vault/research/recon/{slug}/FEATURES.md` (produced by `@g-res-deep`)
+`vault/research/CRR_FunctionalSpecs/{slug}/FEATURES.md` (produced by `@g-res-deep`)
 
 ## Clean Room Boundary
 

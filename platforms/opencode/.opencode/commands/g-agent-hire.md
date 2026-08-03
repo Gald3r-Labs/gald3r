@@ -1,5 +1,7 @@
 ---
+description: 'Hire a new gald3r agent through a 4-phase research-gated workflow: research, draft, review, hire.'
 subsystem_memberships: [AGENT_ORCHESTRATION]
+execution_tier: guarded_prompt
 ---
 # g-agent-hire — Research-gated new agent creation workflow
 
@@ -28,7 +30,7 @@ the contract before any IDE-target file is written.
 Calls `@g-skl-res-review` (or `@g-res-review`) to analyze 2-3 reference
 implementations of the requested agent role.
 
-- Pull candidates from: vault `research/recon/`, prior gald3r harvests
+- Pull candidates from: vault `research/CRR_FunctionalSpecs/`, prior gald3r harvests
   (IDEA-HARVEST-* in `IDEA_BOARD.md`), and — if `--reference` was passed
   — the user-supplied reference repo or URL.
 - Output: a `research_note` summarizing how 2-3 best-in-class
@@ -126,7 +128,8 @@ The agent file written in Phase 4 MUST include `subsystem_memberships: [GROUP]` 
 frontmatter. The REVIEW phase contract template already prompts for this. If a group is not
 confirmed during REVIEW, default to `AGENT_ORCHESTRATION` and flag for follow-up.
 After Phase 4, offer to regenerate `PRODUCT_SYSTEMS.md`:
-`pwsh .gald3r_sys/scripts/aggregate_subsystems.ps1`
+`gald3r subsystem aggregate --apply` (BUG-196; replaces the never-authored/lost
+`aggregate_subsystems.ps1`)
 
 ## Related
 

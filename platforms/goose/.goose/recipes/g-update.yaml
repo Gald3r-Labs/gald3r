@@ -1,0 +1,142 @@
+version: 1.0.0
+title: g-update
+description: '@g-update — gald3r Framework Update Command'
+instructions: "# @g-update — gald3r Framework Update Command\n\nCheck the installed\
+  \ gald3r version and apply framework updates.\n\n## Flags\n\n| Flag | Description\
+  \ |\n|------|-------------|\n| `--check` | Display current vs latest version (no\
+  \ changes made) |\n| `--apply` | Show step-by-step update instructions for your\
+  \ install type |\n| `--changelog` | Display CHANGELOG.md entries newer than current\
+  \ installed version |\n| `--dry-run` | With `--apply`: print all planned project-side\
+  \ changes (VERSION, release backfill, inherited constraints) without writing |\n\
+  \n---\n\n## Usage\n\n### `@g-update --check`\n\n1. Read `.gald3r/.identity` → find\
+  \ `gald3r_version` value (key=value format)\n2. Attempt to fetch latest version\
+  \ from remote (3-second timeout, non-blocking):\n   - Default feed: `https://api.github.com/repos/gald3r/gald3r/releases/latest`\
+  \ (or configured `version_feed_url` in `.gald3r/config/AGENT_CONFIG.md`)\n   - Local\
+  \ override: `.gald3r/config/version_feed.json` if present → use `latest_version`\
+  \ field\n3. Compare installed vs latest:\n   - If current == latest: `✅ gald3r is\
+  \ up to date (v{current})`\n   - If current < latest: `\U0001F4A1 gald3r update\
+  \ available: v{current} → v{latest} — run @g-update --apply`\n   - If fetch failed\
+  \ (network unavailable): silently skip with `ℹ️ Version check skipped (offline)`\n\
+  4. Respect `disable_version_check: true` in `.gald3r/config/AGENT_CONFIG.md` — skip\
+  \ silently (air-gapped environments)\n\n### `@g-update --apply`\n\n1. Run `--check`\
+  \ first to confirm update is available\n2. Detect install type from `.gald3r/.identity`:\n\
+  \   - `install_type: template_repo` → update path: `git -C {template_repo_path}\
+  \ pull origin main`, then re-run parity sync\n   - `install_type: gald3r_install`\
+  \ → update path: re-run `gald3r_install` MCP tool (preserves `.gald3r/` task data)\n\
+  \   - `install_type: manual` → show manual update steps: copy updated files from\
+  \ template repo\n3. Display the appropriate update instructions with confirmation\
+  \ prompt before any changes\n4. **Schema backfill (T1280)** — after the version\
+  \ update, ensure newer `.identity`\n   fields exist for backward compatibility.\
+  \ If `.gald3r/.identity` (or the\n   `.gald3r/.project_type` dotfile, depending\
+  \ on install idiom) has no\n   `project_type`, add it with the safe default `project_type=software_development`\n\
+  \   (existing installs keep current behavior — GitHub/code workflows stay active).\n\
+  \   An unknown value read later logs a warning and is treated as `freeform`.\n5.\
+  \ **Version reconciliation (T1437 / BUG-102)** — after the framework files are synced,\n\
+  \   write the new framework version back into `.gald3r/.identity` so the install\
+  \ no longer\n   reports a stale `gald3r_version`. Read the authoritative version\
+  \ from the source the\n   update came from (the template repo's `project_template/.gald3r/.identity`\
+  \ `gald3r_version=`,\n   or the latest `## [x.y.z]` CHANGELOG header when no template\
+  \ source is available), then\n   key=value-replace `gald3r_version=` in the consumer's\
+  \ `.gald3r/.identity` (append it if the\n   key is absent). This mirrors `platform_parity_sync.ps1\
+  \ -SyncGaldSys -Sync`, which performs\n   the same reconciliation for the maintained\
+  \ template/controller repos. Show the delta\n   (`v{old} → v{new}`) before writing;\
+  \ make no change when the versions already match.\n\n6. **VERSION file (T1438 /\
+  \ BUG-103)** — `g-skl-ship` reads a `VERSION` file at the project root.\n   Check\
+  \ for `VERSION`; **when absent**, create it from the latest `## [X.Y.Z]` header\
+  \ in\n   `CHANGELOG.md` (fallback: `0.1.0` when CHANGELOG has no versioned header).\
+  \ **Never overwrite**\n   an existing `VERSION` — it is the user's product version,\
+  \ not the framework version.\n   ```powershell\n   $verFile = Join-Path $projectRoot\
+  \ \"VERSION\"\n   if (-not (Test-Path $verFile)) {\n       $cl = Join-Path $projectRoot\
+  \ \"CHANGELOG.md\"\n       $v = \"0.1.0\"\n       if (Test-Path $cl) {\n       \
+  \    $m = (Get-Content $cl | Select-String -Pattern '^\\#\\#\\s*\\[(\\d+\\.\\d+\\\
+  .\\d+)\\]' | Select-Object -First 1)\n           if ($m) { $v = $m.Matches[0].Groups[1].Value\
+  \ }\n       }\n       Set-Content $verFile $v -NoNewline -Encoding utf8\n   }\n\
+  \   ```\n\n7. **Release file backfill (T1438 / BUG-104, C-023)** — run the release\
+  \ backfill so every\n   `## [X.Y.Z]` CHANGELOG entry has a matching `.gald3r/releases/`\
+  \ file. This silences the\n   recurring session-start `N CHANGELOG version(s) missing\
+  \ release file` warning.\n   ```powershell\n   $backfill = Join-Path $projectRoot\
+  \ \"gald3r ship\"\n   if (Test-Path $backfill) {\n       & uv run python $backfill\
+  \ -ProjectRoot $projectRoot -Apply\n   }\n   ```\n   (Equivalent to the `g-skl-release`\
+  \ SYNC/BACKFILL operation. With `--dry-run`, omit `-Apply`.)\n\n8. **Inherited constraints\
+  \ (T1438 / BUG-105, Gap C)** — merge framework `inheritable` constraints\n   into\
+  \ the consumer's `.gald3r/CONSTRAINTS.md` so `@g-constraint-check` and session start\
+  \ can find\n   them. Read `.gald3r_sys/constraints/framework_inheritable_constraints.md`;\
+  \ for each\n   `### C-{ID}` block whose `**Scope**:` is `inheritable`, **when the\
+  \ consumer's CONSTRAINTS.md\n   has no `C-{ID}` heading**, append the full block\
+  \ to `## Constraint Definitions`, add a row to\n   the `## Constraint Index` table,\
+  \ and append `**Inherited from**: gald3r-framework (propagated\n   {today})`. **When\
+  \ the constraint already exists locally, skip it** (never overwrite a\n   project-local\
+  \ customization). Delegate the actual `.gald3r/CONSTRAINTS.md` write to\n   `g-skl-constraints`\
+  \ (the `.gald3r/` folder gate, g-rl-33).\n\n### Dry-run\n\n`@g-update --apply --dry-run`\
+  \ performs steps 1-5 read-only, and for steps 6-8 **prints the\nplanned changes\
+  \ without writing**: which VERSION would be created (and with what value), which\n\
+  release files would be backfilled (run `gald3r ship` without `-Apply`), and which\n\
+  inheritable constraints would be merged into `CONSTRAINTS.md`.\n\n### `@g-update\
+  \ --changelog`\n\n1. Read `CHANGELOG.md` at project root\n2. Read `gald3r_version`\
+  \ from `.gald3r/.identity`\n3. Filter CHANGELOG.md sections: display only `## [x.y.z]`\
+  \ entries where version > installed version\n4. If current is latest, show: `\U0001F4CB\
+  \ No new changelog entries — you're on the latest version`\n\n---\n\n## Structural\
+  \ Upgrade — Native CLI Equivalent (T303/T304/T430/T473/T475)\n\n`@g-update --apply`\
+  \ migrates **data/config** (steps 4-8 above). T430 originally planned a\ncomplementary\
+  \ **structural** upgrade — diffing two `.gald3r/` release snapshots and applying\n\
+  ADD/MERGE/DEPRECATE migrations with a backup/rollback wrapper — delegated to a canonical\
+  \ engine\nop `gald3r upgrade`. That op was never carried into gald3r_core's compiled\
+  \ CLI: `gald3r upgrade`\nis not a valid subcommand (see `gald3r --help`). The shipped\
+  \ equivalent is **`gald3r\nschema-migrate`** (per-file frontmatter/schema migration;\
+  \ same shell-out contract as g-medic).\nT304 repointed this section's wording to\
+  \ match the built CLI.\n\n```powershell\n# version-check: real, native gald3r_core\
+  \ verb (T303) -- queries world_tree's version-surface\n# route (JWT-gated; run `gald3r\
+  \ login` first for a real comparison). Offline-safe: degrades\n# honestly to \"\
+  offline\" / \"auth_required\" / \"not yet available\" rather than fabricating a\n\
+  # version. No global `--root` flag exists on this CLI -- `--root` is a per-verb\
+  \ flag.\ngald3r version-check                                          # current\
+  \ vs latest + update-available\ngald3r version-check --root <proj>             \
+  \               # resolve installed version from <proj>/.gald3r/.identity\ngald3r\
+  \ version-check --base-url http://host:8000               # or GALD3R_WORLD_TREE_URL\
+  \ env\n# dry-run (the DEFAULT): reports .gald3r/ files needing schema migration,\
+  \ zero writes\ngald3r schema-migrate --root <proj>\n# apply: writes migrated .gald3r/\
+  \ files to disk\ngald3r schema-migrate --root <proj> --apply\n# also restores accidentally-deleted\
+  \ single-file .gald3r/ artifacts from the embedded canonical\n# snapshot before\
+  \ migrating\ngald3r schema-migrate --root <proj> --restore-missing --apply\ngald3r\
+  \ schema-migrate --root <proj> --json ...                # machine-readable result\n\
+  ```\n\n**No backup/rollback wrapper (T304 correction).** `gald3r schema-migrate\
+  \ --apply` does **not**\nwrite a timestamped backup zip and does **not** auto-rollback\
+  \ on failure — that BACKUP/ROLLBACK\nbehavior, and the `--from-dir`/`--to-dir` snapshot-diff\
+  \ ADD/MERGE/DEPRECATE mechanism described in\nan earlier revision of this doc, do\
+  \ not exist in the shipped verb. The agent (T473) and\ntemplate-installed projects\
+  \ (T475) invoke the **same** `gald3r schema-migrate` command; there is\nno fork.\
+  \ **T422:** this is the minimal version-check + schema-migrate wrapper — it does\
+  \ **not**\nduplicate the deferred T422 consumer-upgrade subsystem (managed-manifest\
+  \ + conflict-resolver);\nT422 consumes/extends this wrapper when it lands.\n\nPer-file\
+  \ migration statuses: `to-migrate` / `migrated` (frontmatter/`schema_version`/\n\
+  `gald3r_rel_version` behind the registry target → fields added/renamed per the schema\
+  \ registry) /\n`skipped-current` (already at target version) / `skipped-newer` (file\
+  \ version ahead of target →\nleft untouched) / `skipped-no-frontmatter` (no YAML\
+  \ frontmatter to migrate). With\n`--restore-missing`, restore statuses are `restored`\
+  \ / `to-restore` (file absent on disk, present\nin the embedded canonical snapshot\
+  \ → copied back) / `restore-unavailable` (absent from both).\n\n- **Dry-run is the\
+  \ default** (omit `--apply`): reports planned per-file migration/restore actions,\n\
+  \  **zero file writes**.\n- **`--apply`**: writes the migrated/restored files to\
+  \ disk.\n- A structural snapshot-to-snapshot (ADD/MERGE/DEPRECATE) diff engine remains\
+  \ an unimplemented\n  follow-up idea, not a current guarantee.\n\n## Version Feed\
+  \ Format\n\n**Remote** (GitHub Releases API):\n```json\n{ \"tag_name\": \"v1.3.0\"\
+  , \"published_at\": \"2026-05-01T...\" }\n```\n\n**Local override** (`.gald3r/config/version_feed.json`):\n\
+  ```json\n{\n  \"latest_version\": \"1.3.0\",\n  \"release_date\": \"2026-05-01\"\
+  ,\n  \"release_notes_url\": \"https://github.com/gald3r/gald3r/releases/tag/v2.1.2\"\
+  \n}\n```\n\n---\n\n## Non-Blocking Behavior\n\nThe version check is intentionally\
+  \ lightweight:\n- PowerShell: `Invoke-WebRequest -TimeoutSec 3 -ErrorAction SilentlyContinue`\n\
+  - If the feed is unreachable, update check silently skips — **no error, no delay**\n\
+  - Air-gapped: set `disable_version_check: true` in `.gald3r/config/AGENT_CONFIG.md`\n\
+  \n---\n\n## Session-Start Integration\n\nThis command is called automatically during\
+  \ the `g-rl-25` session-start protocol (Step 1.5 — Version Check). If the installed\
+  \ version is outdated, the session start surfaces:\n\n```\n\U0001F4A1 gald3r update\
+  \ available (v{current} → v{latest}) — run @g-update\n```\n\nThe check is non-blocking\
+  \ and skips silently if the network is unavailable or `disable_version_check: true`."
+prompt: Run the gald3r `g-update` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-update, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

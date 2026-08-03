@@ -1,5 +1,8 @@
 ---
+description: 'Scaffold a new project rule file in your chosen platform folder or repo location'
+argument-hint: '<slug>'
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
+execution_tier: orchestration
 ---
 # g-rule-new - Scaffold a new rule in YOUR project
 

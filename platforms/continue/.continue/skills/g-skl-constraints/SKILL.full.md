@@ -118,7 +118,7 @@ ACTIVE CONSTRAINTS (12):
   C-003 [path-via-identity] (inheritable): Resolve vault_location from .identity before writes
   ...
 Full detail: .gald3r/CONSTRAINTS.md
-Shareable constraints: C-001, C-010 (offer to peers on @g-pcac-sync)
+Shareable constraints: C-001, C-010 (offer to peers on @g-wpac-sync)
 Inheritable constraints: C-003, C-007 (auto-offered when spawning children)
 ```
 
@@ -179,7 +179,7 @@ For constraints propagated from a parent/peer project, add:
 **Scope**: inheritable
 **Inherited from**: {parent-slug} (propagated {YYYY-MM-DD})
 ```
-Constraints with `**Inherited from**:` are **read-only** locally. To change them, coordinate via `@g-pcac-sync` with the originating project.
+Constraints with `**Inherited from**:` are **read-only** locally. To change them, coordinate via `@g-wpac-sync` with the originating project.
 
 ---
 
@@ -188,14 +188,14 @@ Constraints with `**Inherited from**:` are **read-only** locally. To change them
 | Scope | Meaning | Propagation |
 |-------|---------|-------------|
 | `local-only` | Applies only to this project (default) | Never propagated |
-| `inheritable` | Parent → children on spawn (opt-in) | Offered at `@g-pcac-spawn` time |
-| `shareable` | Any linked project can opt in | Offered via `@g-pcac-sync` |
+| `inheritable` | Parent → children on spawn (opt-in) | Offered at `@g-wpac-spawn` time |
+| `shareable` | Any linked project can opt in | Offered via `@g-wpac-sync` |
 | `ecosystem-wide` | All topology members should follow | Auto-offered to all linked projects |
 
 **Workflow for propagating constraints:**
-- **At spawn**: `g-skl-pcac-spawn` lists parent's `inheritable` + `ecosystem-wide` constraints and asks "Propagate N constraints to child?"
-- **At link**: `g-skl-pcac-adopt` / `g-skl-pcac-claim` offers to sync `ecosystem-wide` constraints bidirectionally
-- **On update**: when a source constraint changes, owner should run `@g-pcac-sync` to notify peers with copies
+- **At spawn**: `g-skl-wpac-spawn` lists parent's `inheritable` + `ecosystem-wide` constraints and asks "Propagate N constraints to child?"
+- **At link**: `g-skl-wpac-adopt` / `g-skl-wpac-claim` offers to sync `ecosystem-wide` constraints bidirectionally
+- **On update**: when a source constraint changes, owner should run `@g-wpac-sync` to notify peers with copies
 
 **Note**: Scope defaults to `local-only` if the `**Scope**:` field is absent from a constraint definition (backward compatible).
 

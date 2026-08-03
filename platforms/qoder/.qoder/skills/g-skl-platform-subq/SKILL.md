@@ -13,7 +13,7 @@ docs_url_secondary:
   - https://playground.subq.ai/
 last_doc_scan: 2026-06-02
 capability_status:
-  hooks: "❌ none — SubQ Code is a plugin; no lifecycle hooks. Wire g-hk-*.ps1 on the HOST (Claude Code/Codex/Cursor) or via git core.hooksPath"
+  hooks: "❌ none — SubQ Code is a plugin; no lifecycle hooks. Wire g-hk-*.py on the HOST (Claude Code/Codex/Cursor) or via git core.hooksPath"
   rules: "❌ none — no .mdc/rules/memory mechanism; persistent instructions live in the host's AGENTS.md/CLAUDE.md"
   skills: "❌ none — no SKILL.md / Agent-Skills discovery; gald3r skills load via the host, not SubQ"
   commands: "❌ none — no slash/custom-command system; commands come from the host tool"
@@ -22,6 +22,16 @@ capability_status:
 token_budget: low
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
 
 # g-skl-platform-subq — SubQ (Subquadratic) / "SubQ Code"
 
@@ -89,7 +99,7 @@ Test-Path .claude/settings.json   # host hooks + MCP (SubQ Code contributes neit
 
 - **Do not treat SubQ Code as an agent with a config folder.** It is a **plugin** — no `.subq/`, no
   `SUBQ.md`, no native commands/rules/agents/skills/hooks/MCP.
-- **Do not wire `g-hk-*.ps1` to SubQ.** It has no hook system; wire hooks on the **host** (e.g.
+- **Do not wire `g-hk-*.py` to SubQ.** It has no hook system; wire hooks on the **host** (e.g.
   `.claude/settings.json`) or via git `core.hooksPath`.
 - **The SubQ API is OpenAI-compatible HTTP, NOT MCP.** Do not record MCP support for SubQ.
 - **Persistent instructions live in the host's `AGENTS.md`/`CLAUDE.md`**, not in a SubQ file.
@@ -98,7 +108,7 @@ Test-Path .claude/settings.json   # host hooks + MCP (SubQ Code contributes neit
 
 | Feature | Status | Notes |
 |---|---|---|
-| Hooks (`g-hk-*.ps1`) | ❌ | No lifecycle hooks; wire on the host (Claude Code `.claude/settings.json`) or git `core.hooksPath` |
+| Hooks (`g-hk-*.py`) | ❌ | No lifecycle hooks; wire on the host (Claude Code `.claude/settings.json`) or git `core.hooksPath` |
 | Skills (`g-skl-*/SKILL.md`) | ❌ | No SKILL.md / Agent-Skills discovery; skills load via the host |
 | Agents (`g-agnt-*.md`) | ❌ | SubQ Code is a layer invoked by an existing agent; not a multi-agent framework |
 | Commands (`@g-*`) | ❌ | No slash/custom-command system; commands come from the host |

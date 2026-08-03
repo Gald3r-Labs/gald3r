@@ -1,0 +1,25 @@
+version: 1.0.0
+title: g-compress-memory
+description: g-compress-memory
+instructions: "# g-compress-memory\n\nCompress the non-gald3r sections of memory files\
+  \ (`AGENTS.md`/`CLAUDE.md`/`*memory*.md`) to cut\ntoken overhead, preserving gald3r-managed\
+  \ ranges. Activates **g-skl-compress-memory**.\n\n## Usage\n```\n@g-compress-memory\
+  \                 # SCAN (dry-run) AGENTS.md + CLAUDE.md\n@g-compress-memory AGENTS.md\
+  \       # scan a specific file\n@g-compress-memory AGENTS.md --apply   # compress\
+  \ + apply (shows diff, asks confirmation first)\n```\n\n## What it does\n1. **SCAN**\
+  \ (default, no writes): runs `gald3r compress-memory` to report protected vs\n \
+  \  compressible token budgets and the ≥30% target.\n2. **COMPRESS**: the agent rewrites\
+  \ only the compressible region (terse facts, drop redundant\n   examples, dedup)\
+  \ — never the gald3r SECTION range, code blocks, or URLs.\n3. **APPLY**: writes\
+  \ the new file only after showing a diff and getting explicit confirmation;\n  \
+  \ the helper refuses unless the protected gald3r range is byte-identical.\n\nIn\
+  \ the gald3r **source** repo the whole memory file is gald3r-managed, so SCAN reports\
+  \ `skip`.\n\nHelper: `gald3r compress-memory`"
+prompt: Run the gald3r `g-compress-memory` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-compress-memory, e.g. quoted text or --flag
+    values, exactly as you would type them after the command name.

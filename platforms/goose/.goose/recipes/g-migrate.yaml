@@ -1,0 +1,76 @@
+version: 1.0.0
+title: g-migrate
+description: 'Migrate skill/API interface callers: $ARGUMENTS'
+instructions: "Migrate skill/API interface callers: $ARGUMENTS\n\n## Command: g-migrate\n\
+  \nScans the entire project for callers of a skill or API interface and proposes\
+  \ or applies\nupdates to match a new interface definition. Closes the \"skill upgrade\
+  \ breaks callers\"\nproblem. Pattern from Claude's `/migrate` operation.\n\n## Usage\n\
+  \n```\n@g-migrate <skill-name> --from \"<old-interface>\" --to \"<new-interface>\"\
+  \n@g-migrate <skill-name> --from \"<old-interface>\" --to \"<new-interface>\" --apply\n\
+  @g-migrate --list-skills\n```\n\n## Arguments\n\n| Flag | Description |\n|------|-------------|\n\
+  | `<skill-name>` | Name of the skill/command being migrated (e.g. `g-skl-tasks`)\
+  \ |\n| `--from \"<old>\"` | Old interface string, function name, or invocation pattern\
+  \ to find |\n| `--to \"<new>\"` | New interface string to replace it with |\n| `--apply`\
+  \ | Write changes (default: dry-run only) |\n| `--list-skills` | List all skill\
+  \ names found in .cursor/skills/ and .claude/skills/ |\n| `--scope <path>` | Limit\
+  \ scan to a specific directory (default: entire project) |\n| `--report-only` |\
+  \ Generate docs/ migration report without changing files |\n\n## Protocol\n\n###\
+  \ 1. Parse arguments from `$ARGUMENTS`\n\nExtract: `skill_name`, `from_interface`,\
+  \ `to_interface`, flags (`--apply`, `--list-skills`, etc.)\n\nIf `--list-skills`\
+  \ is provided:\n- List all directories under `.cursor/skills/` and `.claude/skills/`\n\
+  - Show skill name + description from frontmatter\n- Exit\n\n### 2. Validate\n\n\
+  - Confirm `<skill-name>` exists in `.cursor/skills/<skill-name>/` or `.claude/skills/<skill-name>/`\n\
+  - Confirm `--from` value is non-empty\n- Confirm `--to` value is non-empty\n- If\
+  \ validation fails, print usage and exit with a clear error\n\n### 3. Scan for callers\n\
+  \nSearch these paths for the `--from` pattern:\n\n```\n.cursor/commands/      .claude/commands/\n\
+  .cursor/skills/        .claude/skills/\n.agent/commands/       .agent/skills/\n\
+  .codex/commands/       .codex/skills/\n.opencode/commands/    .opencode/skills/\n\
+  .copilot/commands/\nsrc/                   scripts/\n*.md (root level)      AGENTS.md\
+  \  CLAUDE.md\n```\n\nUse ripgrep-style search (or built-in file scan) for exact\
+  \ string and common invocation patterns:\n- `@<skill-name>`, `/<skill-name>`, `g-<skill-name>`\
+  \ invocations\n- References like `` `<old-interface>` ``, `\"<old-interface>\"`,\
+  \ `{<old-interface>}`\n- Imports or require statements\n\n**Build a match list**:\
+  \ `[{ file, line, before, after }]`\n\n### 4. Dry-run output (default)\n\n```markdown\n\
+  ## g-migrate Dry-Run: <skill-name>\n\nMigration: \"<old-interface>\" → \"<new-interface>\"\
+  \nCallers found: N files, M occurrences\n\n### Proposed Changes\n\n#### <file-path>\n\
+  \  Line 42:  `<old-interface>` → `<new-interface>`\n  Line 87:  `@g-<old-interface>`\
+  \ → `@g-<new-interface>`\n\n#### <file-path>\n  Line 12:  `<old-interface>` → `<new-interface>`\n\
+  \n---\nRun `@g-migrate <skill-name> --from \"<old>\" --to \"<new>\" --apply` to\
+  \ apply.\n```\n\nIf `--report-only` is set, also write this report to `docs/<YYYYMMDD_HHMMSS>_Cursor_MIGRATE_<skill-name>.md`.\n\
+  \n### 5. Apply mode (`--apply`)\n\nFor each matched file and occurrence:\n1. Read\
+  \ the file\n2. Replace the `--from` pattern with `--to` (exact string replacement,\
+  \ case-sensitive)\n3. Write the file back\n4. Log the change\n\nAfter all replacements:\n\
+  - Write migration report to `docs/<YYYYMMDD_HHMMSS>_Cursor_MIGRATE_<skill-name>.md`\n\
+  - Show summary: \"Applied N replacements across M files\"\n\n### 6. Migration report\
+  \ format\n\n```markdown\n# Migration Report: <skill-name>\n\n**Date**: YYYY-MM-DD\
+  \ HH:MM UTC  \n**From**: `<old-interface>`  \n**To**: `<new-interface>`  \n**Status**:\
+  \ Applied | Dry-run\n\n## Summary\n\n- Files changed: N\n- Occurrences replaced:\
+  \ M\n\n## Changes by File\n\n### <file-path>\n| Line | Before | After |\n|------|--------|-------|\n\
+  | 42 | `<before>` | `<after>` |\n\n### <file-path>\n...\n```\n\n### 7. Post-migrate\
+  \ checklist\n\nAfter applying, surface:\n\n```\n✅ Migration applied.\n\nPost-migration\
+  \ checklist:\n- [ ] Review changed files for semantic correctness (the string was\
+  \ replaced, intent may need review)\n- [ ] Run lint/typecheck: e.g. `npx tsc --noEmit`\
+  \ for TypeScript projects\n- [ ] Commit: @g-git-commit (type: refactor, reference\
+  \ Task #{task_id})\n- [ ] Update CHANGELOG.md if user-facing skill interface changed\n\
+  ```\n\n## Edge Cases\n\n| Scenario | Behavior |\n|----------|----------|\n| `--from`\
+  \ pattern not found anywhere | Report \"0 callers found — nothing to migrate\" |\n\
+  | Same file has multiple matches | Replace all occurrences in one pass |\n| Binary\
+  \ files | Skip silently |\n| `node_modules/`, `.git/`, `.venv/` | Always skip |\n\
+  | Regex special chars in `--from` | Treat as literal string (no regex) |\n\n## Examples\n\
+  \n```\n# Rename a deprecated skill command alias\n@g-migrate g-skl-tasks --from\
+  \ \"g-task-new\" --to \"g-task-add\"\n\n# Dry-run first, then apply\n@g-migrate\
+  \ g-skl-bugs --from \"g-bug-report\" --to \"g-bug-add\"\n@g-migrate g-skl-bugs --from\
+  \ \"g-bug-report\" --to \"g-bug-add\" --apply\n\n# Migrate within a specific directory\
+  \ only\n@g-migrate g-skl-wpac-order --from \"g-broadcast\" --to \"g-wpac-order\"\
+  \ --scope .cursor/commands/\n\n# List all skills available for migration\n@g-migrate\
+  \ --list-skills\n```\n\n## Parity\n\nThis command must exist in all 5 IDE platform\
+  \ command directories:\n- `.cursor/commands/g-migrate.md`\n- `.claude/commands/g-migrate.md`\n\
+  - `.agent/commands/g-migrate.md`\n- `.codex/commands/g-migrate.md`\n- `.opencode/commands/g-migrate.md`"
+prompt: Run the gald3r `g-migrate` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-migrate, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

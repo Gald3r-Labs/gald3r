@@ -1,0 +1,21 @@
+version: 1.0.0
+title: g-task-update
+description: '> **Deprecated**: Use `@g-task-upd` instead. This alias is kept for
+  backward compatibility.'
+instructions: '> **Deprecated**: Use `@g-task-upd` instead. This alias is kept for
+  backward compatibility.
+
+
+  Update task status. Activates **g-skl-tasks** → UPDATE STATUS operation.
+
+
+  Provide: task ID and new status. The skill handles file update, TASKS.md sync, and
+  subsystem Activity Log update.'
+prompt: Run the gald3r `g-task-update` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-task-update, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

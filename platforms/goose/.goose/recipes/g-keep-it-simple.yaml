@@ -1,0 +1,34 @@
+version: 1.0.0
+title: g-keep-it-simple
+description: 'Toggle terse mode on or off: $ARGUMENTS'
+instructions: "Toggle terse mode on or off: $ARGUMENTS\n\nActivates the **g-skl-keep-it-simple**\
+  \ skill, which suppresses the active\npersonality pack, markdown decoration, and\
+  \ end-of-turn footer for the\nremainder of the current session. Use for rapid Q&A,\
+  \ live debugging, or\ntoken-budget-sensitive batch work.\n\n## Usage\n\n```text\n\
+  @g-keep-it-simple              # turn terse mode ON\n@g-keep-it-simple off     \
+  \     # turn terse mode OFF\n@g-keep-it-simple status       # show current terse-mode\
+  \ state\n/g-keep-it-simple              # alias for @-form\n```\n\n`$ARGUMENTS`\
+  \ is one of `on` (default when empty), `off`, `status`.\n\n## On activation\n\n\
+  The agent acknowledges with a single line — for example:\n`Terse mode on.` — and\
+  \ then proceeds in terse mode (no persona, no\nstructure, no footer) until deactivation.\n\
+  \n## On deactivation\n\nThe agent acknowledges with a single line — for example:\n\
+  `Terse mode off.` — and resumes normal verbose behavior.\n\n## Scope\n\n- **Session-scoped**:\
+  \ terse mode does not persist to\n  `.gald3r/.identity`, `AGENT_CONFIG.md`, vault\
+  \ memory, or any other\n  durable surface. A new session starts in normal verbose\
+  \ mode.\n- **Per-conversation**: in multi-window setups, terse mode is per\n  conversation,\
+  \ not global.\n- **Tool calls unaffected**: terse mode changes output presentation\
+  \ only.\n  Tool calls, hooks, WPAC checks, and gald3r system gates execute\n  unchanged.\n\
+  \n## Safety\n\nAll gald3r safety gates continue to fire in terse mode:\n\n- Bug-discovery\
+  \ gate (`g-rl-35`)\n- Todo-completion gate (`g-rl-34`)\n- Code-change-requires-task\
+  \ gate (`g-rl-33`)\n- Member-marker invariant (`g-rl-36`)\n- WPAC inbox gate, Clean\
+  \ Controller Gate, secrets detection\n\nTerse mode reduces ceremony, not safety.\n\
+  \n## See also\n\n- Skill: `g-skl-keep-it-simple` (`.claude/skills/g-skl-keep-it-simple/SKILL.md`)\n\
+  - Related: `@g-pers-pick`, `@g-pers-list`\n\n## Source\n\nTask 1052 (2026-05-13)."
+prompt: Run the gald3r `g-keep-it-simple` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-keep-it-simple, e.g. quoted text or --flag
+    values, exactly as you would type them after the command name.

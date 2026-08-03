@@ -1,5 +1,7 @@
-﻿---
+---
+description: 'Update a PRD field (status, authorizer, framework, risk) via g-skl-prds UPDATE'
 subsystem_memberships: [RELEASE_AND_VERSIONING]
+execution_tier: guarded_prompt
 ---
 Update a PRD field. Activates **g-skl-prds** → UPDATE operation.
 

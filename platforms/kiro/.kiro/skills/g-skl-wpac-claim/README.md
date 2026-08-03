@@ -8,7 +8,7 @@ subsystem_memberships: [WORKSPACE_COORDINATION]
 
 ## What it does
 
-Register another project as the parent of the current project. Creates or updates workspace/topology.md on both sides when the parent is locally accessible.
+Register another project as the parent of the current project. Creates or updates linking/link_topology.md on both sides when the parent is locally accessible.
 
 ## When to use
 

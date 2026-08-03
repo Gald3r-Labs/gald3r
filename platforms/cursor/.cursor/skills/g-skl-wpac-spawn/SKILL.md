@@ -10,6 +10,16 @@ token_budget: medium
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
 
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 > **Multi-agent framework (T1094):** Topology registration + Delegation — creates & seeds a child project.
 
 # g-skl-wpac-spawn
@@ -31,6 +41,41 @@ specifications, or ideas). This skill orchestrates the full lifecycle:
 3. Seed the new project with passed context (description, features, code, etc.)
 4. Run gald3r-setup subsystem discovery in the new project
 5. Register WPAC topology link in both projects
+
+---
+
+## Transport layer (WPAC-v2 — T1608)
+
+Spawning is inherently LOCAL (folder creation, install, seeding) — all steps run as
+written. The online part is the topology registration (step 5): after the local
+topology link is written, when both projects carry a registered `project_id` UUID,
+register the edge in the world_tree linking registry (T1625):
+
+```
+gald3r workspace outbox send --verb link \
+    --project-uuid <subject_project_id> \
+    --payload '{"target_project_id": "<target_project_id>", "relation": "<parent|sibling>"}'
+```
+
+(Subject/target/relation follow the spawned relationship — for `--child`, the NEW
+project is the subject and this project the `parent` target; for `--sibling`, either
+is subject with `relation: "sibling"`; mirror of `g-skl-wpac-claim`/`-adopt`.)
+
+Branch on the verdict in code (g-rl-38): `ok` → registry edge recorded, and (T255)
+`gald3r workspace outbox send --verb link` auto-refreshes the **D7 linking mirror**
+(`.gald3r/linking/link_topology.md` / `link_registry.json`) itself, immediately, by
+chaining a `gald3r workspace pull` after the edge is accepted — no separate manual
+pull needed for this edge; `offline`/`error` → local (WPAC-v1) file topology is
+authoritative, queued entry reconciled by `gald3r workspace outbox flush` on
+reconnect; `auth_required` / `upgrade_required` → print the shim's hint/upgrade line
+and continue file-only. A freshly spawned project usually has no server registration
+yet — file-only is the expected first state; the linking-mirror skill (`g-skl-linking`,
+T1610) reconciles it as soon as `link` is later sent successfully (or on any manual
+`gald3r workspace pull`). Verb surface (name + arguments) unchanged. `wpac_transport`'s
+`link` verb (server edge writer) and `linking_mirror` (D7 linking-mirror writer, reused
+automatically above) own disjoint state and are not duplicates of each other (T255).
+**T261**: "linking mirror" always means this D7 surface; the legacy WPAC-v1 file
+topology this skill writes by hand (Steps 8-9 below) is never called "a mirror".
 
 ---
 
@@ -64,7 +109,9 @@ Before doing anything, validate:
 
 ```
 □ Current project has .gald3r/.identity (gald3r is installed here)
-□ Current project has .gald3r/workspace/topology.md (PCAC is initialized)
+□ Current project has .gald3r/linking/link_topology.md (WPAC is initialized) —
+  the real, documented location (BUG-224); NOT .gald3r/workspace/topology.md,
+  which does not exist anywhere in the real template or in any reading code
 □ new_project_name does not already exist in the ecosystem root
 □ If --features: the specified path exists and contains at least one .md file
 □ If --code: the specified path exists
@@ -75,7 +122,7 @@ Before doing anything, validate:
 
 ### Workspace-Control Member-Repo Guard
 
-`g-wpac-spawn` creates a brand-new standalone gald3r project (with full control plane and WPAC topology link) at `<ecosystem_root>/<new_project_name>`. PCAC spawn is **not** the Workspace-Control member path — Workspace-Control members hold a slim marker-only `.gald3r/` (`.identity` + `PROJECT.md` only), while PCAC spawn intentionally seeds the full control plane.
+`g-wpac-spawn` creates a brand-new standalone gald3r project (with full control plane and WPAC topology link) at `<ecosystem_root>/<new_project_name>`. WPAC spawn is **not** the Workspace-Control member path — Workspace-Control members hold a slim marker-only `.gald3r/` (`.identity` + `PROJECT.md` only), while WPAC spawn intentionally seeds the full control plane.
 
 If the destination falls inside (or matches) a Workspace-Control controlled_member or migration_source registered in any ancestor `workspace_manifest.yaml`, this would violate the marker-only invariant documented in `g-rl-36` (BUG-021 / Task 213).
 
@@ -87,10 +134,10 @@ gald3r workspace member guard --target-path $newProjectPath
 ```
 
 - exit `0` — proceed (target is not a workspace member).
-- exit `1` — **stop with `BLOCK pcac_spawn_member_repo_gald3r_guard_block`**. The target is a Workspace-Control member; PCAC spawn would seed the full control plane and violate the marker-only invariant. Direct the user to either:
+- exit `1` — **stop with `BLOCK wpac_spawn_member_repo_gald3r_guard_block`**. The target is a Workspace-Control member; WPAC spawn would seed the full control plane and violate the marker-only invariant. Direct the user to either:
   1. Spawn under a non-member parent path, OR
   2. Use `@g-wrkspc-spawn` for new empty workspace members (which uses `gald3r workspace member bootstrap` to create only `.identity` + `PROJECT.md`).
-- exit `2` — stop with `BLOCK pcac_spawn_member_repo_gald3r_guard_error`. Resolve the manifest before retrying.
+- exit `2` — stop with `BLOCK wpac_spawn_member_repo_gald3r_guard_error`. Resolve the manifest before retrying.
 
 Installed projects ship the helper at `gald3r workspace member guard`.
 
@@ -116,9 +163,9 @@ This spawn will create a new project. Pick its role:
 Default [1] autonomous_child. Choose [1/2]:
 ```
 
-- The **default recommended answer is `autonomous_child`** — treat empty/Enter as `autonomous_child`. A `--child`/`--sibling`/`--parent` PCAC spawn is an `autonomous_child` by design and receives the full framework via the T1452 installer in Step 3.
-- If the user picks **`controlled_member`**, stop and direct them to `@g-wrkspc-spawn` (Workspace-Control SPAWN), which creates a marker-only member instead of a full PCAC project.
-- For **non-interactive / unattended** runs, do not prompt: proceed as `autonomous_child` (the documented PCAC-spawn default) and note the auto-selection in the final report.
+- The **default recommended answer is `autonomous_child`** — treat empty/Enter as `autonomous_child`. A `--child`/`--sibling`/`--parent` WPAC spawn is an `autonomous_child` by design and receives the full framework via the T1452 installer in Step 3.
+- If the user picks **`controlled_member`**, stop and direct them to `@g-wrkspc-spawn` (Workspace-Control SPAWN), which creates a marker-only member instead of a full WPAC project.
+- For **non-interactive / unattended** runs, do not prompt: proceed as `autonomous_child` (the documented WPAC-spawn default) and note the auto-selection in the final report.
 
 ---
 
@@ -149,18 +196,36 @@ Store: `$install_style`, `$template_tier` (overridden by `--template` if provide
 
 ### Step 2 — Create new project folder structure
 
+**Do NOT hand-list `.gald3r/` subdirectories one-by-one — that is exactly what
+caused BUG-224** (a hand-built subset silently omitted `config/`, `muninn/`, `prds/`,
+`themes/`, `vault/`, `specifications_collection/`, and most of the top-level files,
+leaving a spawn that looked scaffolded but was missing most of the real control
+plane). Copy the **entire** canonical `.gald3r/` tree from the reference template
+instead — it is the single source of truth for "everything that's supposed to be in
+there":
+
 ```powershell
 New-Item -ItemType Directory -Path "<ecosystem_root>\<new_project_name>"
-New-Item -ItemType Directory -Path "<ecosystem_root>\<new_project_name>\.gald3r"
-New-Item -ItemType Directory -Path "<ecosystem_root>\<new_project_name>\.gald3r\tasks"
-New-Item -ItemType Directory -Path "<ecosystem_root>\<new_project_name>\.gald3r\features"
-New-Item -ItemType Directory -Path "<ecosystem_root>\<new_project_name>\.gald3r\bugs"
-New-Item -ItemType Directory -Path "<ecosystem_root>\<new_project_name>\.gald3r\subsystems"
-New-Item -ItemType Directory -Path "<ecosystem_root>\<new_project_name>\.gald3r\reports"
-New-Item -ItemType Directory -Path "<ecosystem_root>\<new_project_name>\.gald3r\logs"
-New-Item -ItemType Directory -Path "<ecosystem_root>\<new_project_name>\.gald3r\linking"
+Copy-Item -Path "<ECOSYSTEM_ROOT>\gald3r_templates_workspace\gald3r\project_template\.gald3r" `
+          -Destination "<ecosystem_root>\<new_project_name>\.gald3r" -Recurse -Force
 New-Item -ItemType Directory -Path "<ecosystem_root>\<new_project_name>\docs"
 ```
+
+If the reference template path above isn't present on this machine, fall back to
+copying from the current (spawning) project's own already-verified `.gald3r/` tree
+(`<current_project>\.gald3r`) instead of hand-listing directories — same principle:
+copy the whole tree, then let Steps 4-9 below fill in real values over the
+placeholders. Either way, verify after copying that all of these top-level entries
+exist (this is the full canonical shape — cross-check with `ls -Force .gald3r/` if in
+doubt, don't assume): `bugs/`, `config/`, `features/`, `linking/`, `muninn/`, `prds/`,
+`reports/`, `specifications_collection/`, `subsystems/`, `tasks/`, `themes/`, `vault/`,
+`.gitignore`, `.identity`, `BUGS.md`, `COMBINED_READINESS.md`, `CONSTRAINTS.md`,
+`DECISIONS.md`, `FEATURES.md`, `IDEA_BOARD.md`, `learned-facts.md`, `PLAN.md`,
+`PLATFORM_CAPABILITY_MATRIX.md`, `PRDS.md`, `PRODUCT_SYSTEMS.md`, `PROJECT.md`,
+`RELEASES.md`, `SUBSYSTEMS.md`, `TASKS.md`, `TEST_PLANS.md`, `vocab.md`.
+
+Regenerate a fresh `.identity` afterward (Step 4 below) — do not keep the template's
+copy verbatim, it has no real `project_id`/`user_id`.
 
 Create git repo:
 ```powershell
@@ -172,8 +237,8 @@ git init
 
 **PREFERRED — run the full installer (T1452).** Do NOT hand-build the project's gald3r layout
 file-by-file. A `--child`/`--sibling` spawn is an `autonomous_child` (g-rl-36) and MUST receive
-the **complete** framework: `.claude/`, `.cursor/` (skills, agents, commands, rules, hooks),
-`.gald3r_sys/`, and the root docs (`CLAUDE.md`, `AGENTS.md`, `WORKFLOW.md`, `GUARDRAILS.md`,
+the **complete** framework: `.claude/`, `.cursor/` (skills, agents, commands, rules, hooks)
+and the root docs (`CLAUDE.md`, `AGENTS.md`, `WORKFLOW.md`, `GUARDRAILS.md`,
 `GALD3R-PROMPT.md`, `GALD3R-MIGRATION.md`, `scripts/`). Hand-writing only `.gald3r/` leaves the
 child without skills/agents/rules and is the defect T1452 fixes.
 
@@ -182,21 +247,28 @@ Run (or instruct the user to run) the installer against the new project path:
 ```powershell
 # $newProjectPath = <ecosystem_root>\<new_project_name>
 # Use the same platforms the parent project uses (read from the parent's installed IDE dirs).
-& "<<template_adv>_root>\setup_gald3r_project.ps1" -TargetPath $newProjectPath -Platforms cursor,claude
+gald3r platform install cursor --into $newProjectPath --generated
+gald3r platform install claude --into $newProjectPath --generated
 ```
 
-- `setup_gald3r_project.ps1` lives at the root of any `<template_adv>` install
-  (`<template_adv_root>\setup_gald3r_project.ps1`) and deploys the full payload from `project_template/`.
-- If the parent project itself was installed from an adv template, the same `setup_gald3r_project.ps1`
-  is already present at the parent's project root — reuse it.
+- `gald3r platform install <platform> --into <dir> --generated` is a self-contained `gald3r`
+  engine CLI verb (T177) — it reads the neutral component set embedded in the engine binary and
+  writes that platform's overlay straight into `--into`, no `<template_adv>` checkout required.
+- Ensure the `gald3r` engine binary is installed first (`g-install-agent`, or verify with
+  `gald3r --version`); run the install verb once per platform the parent project uses.
 - Prefer the `gald3r_install` MCP tool when available (see Edge Cases); otherwise use the installer above.
 - After the installer completes, continue with the `.gald3r/.identity` and topology steps below.
-- **Verify the install (T1452 AC)** — before reporting success confirm the framework deployed:
+- **Verify the install (T1452 AC)** — before reporting success confirm the IDE overlay deployed:
   ```powershell
-  @(".claude", ".cursor", ".gald3r_sys", "CLAUDE.md", "AGENTS.md") |
+  @(".claude", ".cursor") |
     ForEach-Object { Test-Path (Join-Path $newProjectPath $_) }
   ```
-  If any are missing, re-run the installer (or fall back to the manual copy below) before continuing.
+  If either is missing, re-run the installer (or fall back to the manual copy below) before continuing.
+  NOTE: `gald3r platform install` writes the IDE overlay (`.claude/`, `.cursor/` + their
+  `commands/`, `rules/`, `skills/`, `agents/`, `hooks/` subdirs) AND that platform's root docs
+  (a subset of `CLAUDE.md`/`AGENTS.md`/`GALD3R.md`, per-platform filtering, T357/BUG-341/T408).
+  `.gald3r_sys/` has been retired from the system entirely (D016/D017/T335/T274) — it is not part
+  of the deploy contract and no verb ever writes it; that is intentional, not a gap (BUG-189).
 
 The manual copy fallback below is **only** for environments where the installer and the MCP tool are
 both unavailable.
@@ -210,7 +282,7 @@ both unavailable.
 **If style = "copy"** (default safe path):
   - Read the current project `.gald3r/.identity` → locate `<ECOSYSTEM_ROOT>/<template_slim>` or `<ECOSYSTEM_ROOT>/<template_full>` path
   - Copy `.cursor/rules/` from the appropriate template tier
-  - Copy `.claude/skills/` from the current project `.claude/skills/` (all PCAC and core skills)
+  - Copy `.claude/skills/` from the current project `.claude/skills/` (all WPAC and core skills)
   - Copy `AGENTS.md`, `CLAUDE.md` from the appropriate template or the current project root
   - Copy `.gitignore` from the appropriate template (contains gald3r-standard ignore section with section markers)
   - Copy `opencode.json` from the appropriate template (enables OpenCode IDE rule discovery)
@@ -307,7 +379,19 @@ Follow `g-skl-setup` Step 7 (Subsystem Discovery) scoped to the new project's co
 
 ### Step 8 — Initialize WPAC linking in new project (ADR-011 unified spawn)
 
-Create `.gald3r/workspace/topology.md` in the new project:
+**Canonical location is `.gald3r/linking/`, NOT `.gald3r/workspace/`** (BUG-224 —
+this step previously pointed at a `workspace/` path that does not exist anywhere in
+the real template or in any reading code; the correct, actually-referenced-elsewhere
+location is `.gald3r/linking/`, matching `linking/README.md`'s documented schema and
+what `gald3r_core_dev`'s own `.gald3r/linking/` already uses).
+
+The full canonical `.gald3r/` shape (see Step 2 note) already ships an unfilled
+`linking/link_topology.md`, `linking/INBOX.md`, `linking/capabilities.md`,
+`linking/_peers/.gitkeep`, `linking/workspace_manifest.yaml`, `linking/sent_orders/`
+from the template copy — this step fills in the real values.
+
+Edit `.gald3r/linking/link_topology.md` in the new project (replace the placeholder
+frontmatter, keep the file — do not create a second file):
 
 ```yaml
 ---
@@ -317,7 +401,7 @@ project_type: "<development | templates | website | business-plan | content>"
 project_path: "<ecosystem_root>\<new_project_name>"
 role: "<sibling | child | parent>"
 description: "<--description value>"
-parent: {}         # populated below if --child
+parent: null       # populated below if --child
 children: []       # populated below if --parent
 siblings: []       # populated below if --sibling
 last_updated: "<YYYY-MM-DD>"
@@ -331,7 +415,7 @@ Set relationships:
 
 **Register in controller `workspace_manifest.yaml` (merged from g-wrkspc-spawn, ADR-011)**:
 
-If the current project (or any ancestor) has a `workspace_manifest.yaml` in `.gald3r/workspace/`:
+If the current project (or any ancestor) has a `workspace_manifest.yaml` in `.gald3r/linking/`:
 1. Add a new entry under `repositories:` for the new project
 2. Set `project_type:` per `--type` parameter
 3. Set `wpac_role: child | sibling` per `--child | --sibling` flag
@@ -342,23 +426,17 @@ If the current project (or any ancestor) has a `workspace_manifest.yaml` in `.ga
 
 This replaces the need to call `@g-wrkspc-member-add` separately after spawn.
 
-Create `.gald3r/workspace/inbox.md`:
+Edit `.gald3r/linking/INBOX.md` (already shipped by the template copy — append, do
+not overwrite the section headers) — add under `## [SYNC]`:
 ```markdown
-# INBOX — <new_project_name>
-
-> Cross-project coordination inbox. Maintained by WPAC skills.
-> Format: [OPEN] | [ACTIONED] | [CLOSED]
-
----
-
-## [INFO] Project spawned from <current_project_name> — <YYYY-MM-DD>
-**Source**: <current_project_name>
-**Relationship**: <sibling | child | parent>
-**Seeded with**: <description | features: N files | code: N folders>
-**Next step**: Review .gald3r/PROJECT.md, curate features, and run @g-tasks to plan first sprint.
+- [x] [INFO] <YYYY-MM-DD> — Project spawned from <current_project_name> as a
+  <sibling | child | parent>. Seeded with: <description | features: N files | code: N folders>.
+  Next step: review .gald3r/PROJECT.md, curate features, run @g-tasks to plan first sprint.
+  → resolved <YYYY-MM-DD>
 ```
 
-Create `.gald3r/workspace/capabilities.md` using the template at `<ECOSYSTEM_ROOT>/<template_full>/.gald3r/workspace/capabilities.md`:
+Fill in `.gald3r/linking/capabilities.md` (already shipped by the template copy —
+edit in place, do not create a new file):
 - Replace `{project_slug}` and `{project_name}` with the actual new project name
 - Replace `{YYYY-MM-DD}` with today's date
 - If `--child` and explicit responsibilities were delegated at spawn time (via `--delegate-responsibility` flag or `$ARGUMENTS` description): add those delegated responsibilities to the `## Responsibilities` table with `status: planned`
@@ -366,7 +444,7 @@ Create `.gald3r/workspace/capabilities.md` using the template at `<ECOSYSTEM_ROO
 
 ### Step 9 — Update current project's topology
 
-Update `<current_project>/.gald3r/workspace/topology.md`:
+Update `<current_project>/.gald3r/linking/link_topology.md`:
 
 - `--sibling`: add new project to `siblings[]`
 - `--child`: add new project to `children[]`
@@ -374,17 +452,83 @@ Update `<current_project>/.gald3r/workspace/topology.md`:
 
 Update `last_updated` to today.
 
-Write `<current_project>/.gald3r/workspace/peers/<new_project_name>.md`:
+Write `<current_project>/.gald3r/linking/_peers/<new_project_name>.md`:
 ```markdown
-# Peer: <new_project_name>
-relationship: <sibling | child | parent>
-project_path: <ecosystem_root>\<new_project_name>
-project_id: <new UUID>
-spawned_from_here: true
-spawned_date: <YYYY-MM-DD>
+---
+project_id: "<new UUID>"
+project_name: "<new_project_name>"
+project_path: "<ecosystem_root>\<new_project_name>"
+role: "<sibling | child | parent>"
+description: "<--description value>"
+parent: null
+children: []
+siblings: []
+last_updated: "<YYYY-MM-DD>"
+---
+
+# Peer Copy: <new_project_name>
+
+Local advisory copy of <new_project_name>'s `linking/link_topology.md`. Refresh with
+`@g-wpac-sync`.
 ```
 
+Add the mirrored `[SYNC]` entry to `<current_project>/.gald3r/linking/INBOX.md` as well
+(same format as the new project's INBOX entry above, from this project's perspective).
+
+### Step 9.5 — Completion Gate (mandatory, BUG-223)
+
+**Do not run Step 10 until every check below passes.** BUG-223 was filed after a spawn
+run committed at Step 10 having only ever executed Steps 0-3 (folder + minimal
+`.gald3r/` scaffold + IDE overlay) — the commit message made an incomplete child look
+finished. This gate exists so that never happens silently again.
+
+**Run the deterministic check (T360) — do not hand-verify the checklist alone.** The
+checklist below is exactly what `gald3r workspace member verify-spawn` checks
+programmatically; running it replaces trusting your own read of the folder tree with
+a real pass/fail:
+
+```powershell
+gald3r workspace member verify-spawn --target "<new_project_path>" --source "<current_project_path>"
+```
+
+Exit code `0` means every check passed — proceed to Step 10. A non-zero exit prints
+every missing item by name (add `--json` for machine-readable output); fix each one
+and re-run before proceeding. `--source` is optional and enables the Step 9 reciprocal
+check against the current project's own topology files; omit it only if the current
+project's path is unavailable to the verb (e.g. a different filesystem). The manual
+checklist below documents exactly what the verb verifies, for the rare case the CLI
+itself is unavailable.
+
+Verify, in the new project (`<new_project>/.gald3r/` unless noted):
+
+```
+□ PROJECT.md contains the real mission/description (NOT the generic scaffold
+  placeholder "_(fill in the project mission)_") — Step 4
+□ PLAN.md, FEATURES.md, SUBSYSTEMS.md, IDEA_BOARD.md, CONSTRAINTS.md all exist — Step 4
+□ linking/link_topology.md exists and correctly declares parent/children/siblings per
+  the requested relationship (NOT the unfilled template placeholder) — Step 8
+□ linking/INBOX.md and linking/capabilities.md are filled in (not left as template
+  placeholders) — Step 8
+□ <current_project>/.gald3r/linking/link_topology.md was updated to add the new
+  project (siblings[]/children[]/parent:) — Step 9
+□ <current_project>/.gald3r/linking/_peers/<new_project_name>.md was written — Step 9
+```
+
+If ANY item is unchecked:
+- Do **not** proceed to Step 10.
+- Go back and run the missing step(s) now — do not skip ahead because the folder
+  structure "looks done."
+- If you cannot complete a step in this session (context limit, tool failure, user
+  interrupt), STOP and report exactly which steps are done vs. missing. Do NOT commit
+  a partial scaffold with the Step 10 message below — that message asserts the spawn
+  is complete. If a commit is needed to save partial progress, use
+  `chore(gald3r): partial scaffold — spawn incomplete, see checklist` instead, and
+  leave a note in the new project's `docs/` (or session summary) listing exactly which
+  of the checks above are still open.
+
 ### Step 10 — Initial git commit in new project
+
+Only reachable once every Step 9.5 checkbox is checked.
 
 ```powershell
 cd "<new_project>/"
@@ -421,7 +565,7 @@ If code was transferred and source delete confirmed:
   Features     : N files transferred (originals: kept | deleted)
   Code         : N folders transferred (originals: kept | deleted)
   Topology     : linked as <sibling | child | parent> of <current_project_name>
-  Framework    : full install verified (.claude/, .cursor/, .gald3r_sys/, CLAUDE.md present)
+  Framework    : IDE overlay verified (.claude/, .cursor/ present; platform install also writes that platform's root docs, T357; .gald3r_sys/ permanently retired from the deploy contract, not produced by design)
   Git          : initial commit created
 
 Next steps:
@@ -440,7 +584,7 @@ Next steps:
 |-----------|----------|
 | Folder already exists at target path | Stop: "Path already exists: <path>. Use a different name or delete the existing folder." |
 | No gald3r in current project | Stop: "No .gald3r/.identity found. Run @g-setup first." |
-| No PCAC in current project | Create `.gald3r/workspace/` in current project; initialize topology; then proceed |
+| No WPAC in current project | Ensure `.gald3r/linking/` exists in the current project (copy from the canonical template per Step 2 if missing) and initialize `link_topology.md`; then proceed. **Not** `.gald3r/workspace/` (BUG-224 — that path does not exist anywhere in the real template or in any reading code). |
 | --features path doesn't exist | Stop: "Features path not found: <path>" |
 | --features path is empty | Warn: "No .md files found in <path>. Proceeding without feature transfer." |
 | gald3r_install MCP available | Prefer calling `gald3r_install(project_path=..., use_v2=True)` in Step 3 over manual copy |

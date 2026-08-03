@@ -1,0 +1,28 @@
+version: 1.0.0
+title: g-command-new
+description: g-command-new - Scaffold a new command in YOUR project
+instructions: "# g-command-new - Scaffold a new command in YOUR project\n\nCreates\
+  \ a new command for your own project. You choose where it lives - your AI platform\
+  \ folder\n(e.g. `.cursor/commands/`, `.claude/commands/`) or somewhere in your repo's\
+  \ contents. Never writes\nto `.gald3r_sys/`.\n\n## Usage\n\n```\n@g-command-new\
+  \ <verb-noun>\n@g-command-new \"deploy-staging\"\n```\n\n- `<verb-noun>` - kebab-case\
+  \ command name (verb before noun).\n\n## Steps\n\n1. Ask **where** to create it:\n\
+  \   - **(a) Platform folder** - e.g. `.cursor/commands/<verb-noun>.md`, `.claude/commands/<verb-noun>.md`.\n\
+  \   - **(b) Repo contents** - a path you specify inside your project.\n2. Collect\
+  \ a one-line description and the steps the command should perform. Confirm whether\
+  \ the\n   command takes arguments.\n3. Write the command file from the template\
+  \ at the chosen location. The YAML frontmatter MUST\n   include (T441):\n   - `description:`\
+  \ - imperative mood, specific to this command (no generic collision-prone\n    \
+  \ wording per g-rl-42), <=110 characters.\n   - `argument-hint:` - present whenever\
+  \ the command takes arguments; a short pattern showing the\n     accepted forms\
+  \ (e.g. `'<name>'`, `'<description> | status | clear'`). Omit only when the\n  \
+  \   command takes no arguments at all.\n4. Offer a CHANGELOG entry if your project\
+  \ keeps one."
+prompt: Run the gald3r `g-command-new` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-command-new, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

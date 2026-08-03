@@ -1,9 +1,19 @@
-﻿---
+---
 name: g-skl-wpac-ask
 description: Child project requests parent action — writes parent INBOX.md and marks local task as blocked with cross-project metadata.
 token_budget: low
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
 
 > **Multi-agent framework (T1094):** Direct communication — child requests action from its parent.
 # g-skl-wpac-ask
@@ -11,9 +21,30 @@ subsystem_memberships: [WORKSPACE_COORDINATION]
 ## When to Use
 `@g-wpac-ask` command. When this project needs a parent project to DO something before work here can proceed.
 
+## Transport layer (WPAC-v2 — T1608)
+
+**Step 0-T — transport verdict (code decides, never the model — g-rl-38).** Before the
+file steps below, build the ask payload (the live `world_tree` `AskRequest` contract:
+`question` = the full request incl. why/what-it-unblocks; optional `project_id`,
+`context_budget`) and run the shared transport (T1609 shim underneath):
+
+```
+gald3r workspace outbox send --verb ask --payload-file <payload.json>
+```
+
+| Verdict | Action |
+|---|---|
+| `ok` | Delivered via `POST /api/v1/ask` — the server answers from the target's project state (replacing the INBOX request drop for answerable asks). Record the answer + citations in the sent_orders ledger (step 5) with `transport: world_tree`. If the ask still requires HUMAN parent action (not just an answer), ALSO perform the INBOX write (step 4) so the parent actions it. |
+| `offline` / `error` | Perform ALL file steps below exactly as today. The message was write-aheaded to `.gald3r/linking/outbox/` — `gald3r workspace outbox flush` reconciles on reconnect. |
+| `auth_required` | File steps below + tell the user to run `gald3r login`. Entry parked (not retried). |
+| `upgrade_required` | File steps below + print the shim's upgrade line (file transport stays free). Entry parked (not retried). |
+
+Everything below this section is the **OFFLINE / FILE FALLBACK transport** — the verb
+surface (name + arguments) is unchanged.
+
 ## Steps
 
-1. **Read `.gald3r/workspace/topology.md`** — get parent info
+1. **Read `.gald3r/linking/link_topology.md`** — get parent info
    - If no parent declared → "No parent in topology. Declare a parent in link_topology.md first."
 
 2. **Select target parent** (if multiple parents):
@@ -25,7 +56,7 @@ subsystem_memberships: [WORKSPACE_COORDINATION]
    - **Why?** (context — what local work does this unblock?)
    - **Local task being unblocked?** (optional — task ID of the local work that depends on this)
 
-4. **Write to `parent/.gald3r/workspace/inbox.md`** (if path accessible):
+4. **Write to `parent/.gald3r/linking/INBOX.md`** (if path accessible):
    ```markdown
    ## [OPEN] REQ-XXX — from: [this project_id] — YYYY-MM-DD
    **Type:** request
@@ -36,7 +67,7 @@ subsystem_memberships: [WORKSPACE_COORDINATION]
    **Status:** open
    ```
 
-5. **Create outbound order ledger record (T167)** at `.gald3r/workspace/sent_orders/order_{YYYYMMDD-HHMMSS}_{parent_project_id}_ask_{slug}.md`:
+5. **Create outbound order ledger record (T167)** at `.gald3r/linking/sent_orders/order_{YYYYMMDD-HHMMSS}_{parent_project_id}_ask_{slug}.md`:
    ```yaml
    ---
    order_id: "ord-{uuid-short}"
@@ -70,7 +101,7 @@ subsystem_memberships: [WORKSPACE_COORDINATION]
    - **Do NOT create a separate `[Waiting]` tracker task** (T167). Outbound state lives exclusively on the sent_orders ledger.
 
 6. **If parent path not accessible**:
-   - Save request details to a local staging file: `.gald3r/workspace/pending_requests/req_[parent].md`
+   - Save request details to a local staging file: `.gald3r/linking/pending_requests/req_[parent].md`
    - Still create the sent_orders ledger record with `status: blocked` (target inaccessible)
    - Warn: "Parent path not accessible. Request staged locally. Deliver manually or retry when parent path is accessible."
 
@@ -78,8 +109,8 @@ subsystem_memberships: [WORKSPACE_COORDINATION]
    ```
    Request sent:
    - Target parent: [parent_id]
-   - INBOX entry: parent/.gald3r/workspace/inbox.md (REQ-XXX) ✅
-   - Outbound ledger: .gald3r/workspace/sent_orders/order_{...}.md (type: ask, status: sent) ✅
+   - INBOX entry: parent/.gald3r/linking/INBOX.md (REQ-XXX) ✅
+   - Outbound ledger: .gald3r/linking/sent_orders/order_{...}.md (type: ask, status: sent) ✅
    - Local depends: {task IDs given cross_project_ref linkage}
 
    Outbound state is tracked via the sent_orders ledger — no local "[Waiting]" tracker task is created.

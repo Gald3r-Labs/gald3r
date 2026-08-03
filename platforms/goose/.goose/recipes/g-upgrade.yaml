@@ -1,0 +1,74 @@
+version: 1.0.0
+title: g-upgrade
+description: "\uFEFF---"
+instructions: "\uFEFF---\ndescription: Check for gald3r updates and upgrade if available\n\
+  subsystem_memberships: [PROJECT_IDENTITY_SETUP]\nexecution_tier: orchestration\n\
+  ---\n\n## @g-upgrade — gald3r Update Check & Upgrade\n\nCheck for a newer version\
+  \ of gald3r and optionally upgrade.\n\n### Usage\n\n```\n@g-upgrade            \
+  \  → check and offer to upgrade (interactive)\n@g-upgrade --skip       → dismiss\
+  \ current available version; store in .gald3r/.update_skips\n@g-upgrade --force\
+  \      → upgrade immediately without confirmation prompt\n```\n\n### Steps\n\n1.\
+  \ Call MCP tool `gald3r_check_update` with `project_path` = current project root\
+  \ (the directory containing `.gald3r/`)\n2. **If `update_available: false`**: report\
+  \ `✅ gald3r is up to date (current: {currentVersion})` and stop.\n3. **If `update_available:\
+  \ true`**:\n   - Show: `\U0001F514 gald3r {latestVersion} is available (you have\
+  \ {currentVersion})`\n   - Show first 3 lines of `release_notes` from the response\
+  \ (if present)\n   - Show `release_url` from the response (if present)\n   - If\
+  \ `--force` flag provided: skip confirmation and proceed directly to upgrade\n \
+  \  - Otherwise ask user: `Upgrade now? (yes / no / skip-this-version)`\n     - **yes**:\
+  \ call `gald3r_install` MCP tool with `mode=upgrade`, `project_path=<cwd>`, `dry_run=False`\n\
+  \       - On success: `✅ gald3r upgraded to {latestVersion} — .gald3r/ data preserved`\n\
+  \       - On failure: `❌ Upgrade failed: {error} — run @g-upgrade again or upgrade\
+  \ manually`\n     - **no**: `Upgrade skipped. Run @g-upgrade any time to upgrade\
+  \ later.`\n     - **skip-this-version** (or `--skip` flag): append `{latestVersion}`\
+  \ to `.gald3r/.update_skips` (newline-delimited). `\U0001F515 Version {latestVersion}\
+  \ will not be shown again. Run @g-upgrade --force to override.`\n4. **If `gald3r_check_update`\
+  \ fails** (network unavailable, MCP unreachable): report `⚠️ Update check unavailable\
+  \ — working offline. Run @g-upgrade again when connected.`\n\n### Version Skip File\n\
+  \n`.gald3r/.update_skips` — newline-delimited list of version tags the user has\
+  \ dismissed.\n\nExample contents:\n```\nv1.2.0\nv1.2.1\n```\n\nThe session-start\
+  \ version check skips the notification if `latestVersion` appears in this file.\n\
+  This file is gitignored (host-local user preference).\n\n### Native CLI equivalent\
+  \ (offline / no-MCP path — T303/T473/T475)\n\nWhen the world_tree MCP is not reachable,\
+  \ the same version check runs **fully offline** via\ngald3r_core's own native `gald3r`\
+  \ CLI (T303 absorbed `version-check` from the legacy vendored\nengine into gald3r_core's\
+  \ compiled binary — one shared core, no separate engine process, no fork):\n\n```\n\
+  gald3r version-check            # query world_tree's version-surface route (JWT-gated\
+  \ -- run\n                                 # `gald3r login` first for a real comparison);\
+  \ degrades HONESTLY\n                                 # to \"offline\" (unreachable),\
+  \ \"auth_required\" (no/stale session\n                                 # token),\
+  \ or \"not yet available\" (route absent on this deployment)\n                 \
+  \                # -- never fabricates a version, mirrors the `gald3r connect`\n\
+  \                                 # honesty-gate convention\ngald3r schema-migrate\
+  \            # dry-run (default): reports .gald3r/ files needing schema migration\n\
+  gald3r schema-migrate --apply    # writes migrated .gald3r/ files to disk\ngald3r\
+  \ schema-migrate --restore-missing --apply  # also restores accidentally-deleted\
+  \ single-file\n                                                  # .gald3r/ artifacts\
+  \ from the embedded canonical snapshot\n```\n\n`gald3r version-check` is a real,\
+  \ native gald3r_core verb (T303, resolving the `version-check` gap\nthe T292 verb-sweep\
+  \ flagged) — see `server_bridge.version_check`'s module docstring for the honesty-\n\
+  gate audit: a live probe against the deployed world_tree confirmed the version-surface\
+  \ route IS\nregistered and JWT-gated (401, distinct from sibling unmapped paths\
+  \ which 404). The legacy engine's\nmigration verb was `gald3r upgrade`; the current\
+  \ shipped equivalent is `gald3r schema-migrate`\n(T304 repointed this doc's wording\
+  \ to match the built CLI). `gald3r schema-migrate` is dry-run by\ndefault; pass\
+  \ `--apply` to write. It does **not** write a timestamped backup zip or auto-rollback\n\
+  on failure — that BACKUP/ROLLBACK behavior described in an earlier revision of this\
+  \ doc does not\nexist in the shipped verb; a backup-zip wrapper remains an unimplemented\
+  \ follow-up idea, not a\ncurrent guarantee.\n**T422:** this is the minimal version-check\
+  \ + schema-migrate wrapper; it does not duplicate the\ndeferred T422 consumer-upgrade\
+  \ subsystem (managed-manifest + conflict-resolver), which\nconsumes/extends it when\
+  \ it lands.\n\n### Notes\n\n- Upgrade uses `gald3r_install mode=upgrade` (MCP) or\
+  \ `gald3r schema-migrate --apply` (CLI); both preserve all `.gald3r/` user data\
+  \ (tasks/bugs/PLAN/etc. are on an absolute denylist)\n- After upgrade, any cached\
+  \ skill/rule content in the current session should be treated as potentially stale\
+  \ — re-read skills before relying on them\n- The `--force` flag is useful in CI\
+  \ or non-interactive contexts"
+prompt: Run the gald3r `g-upgrade` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-upgrade, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

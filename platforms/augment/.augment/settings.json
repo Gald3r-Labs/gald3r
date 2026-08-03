@@ -1,15 +1,11 @@
 {
-  "_doc": {
-    "t510_canonical_core": "T510/T1601: Augment (Auggie CLI) reads lifecycle hooks from the `hooks` object in `.augment/settings.json` (Claude-Code-style: per-event array of { matcher, hooks:[{type:command,command,timeout}] }). IMPORTANT: Augment's `command` MUST be a path to a script with a supported extension (.ps1/.cmd/.bat/.sh) -- a bare `python x.py` is NOT accepted. So each native event points at a thin `.cmd` shim `g-hk-augment-<event>.cmd` that forwards the inherited STDIN payload to the canonical entrypoint `python .augment/hooks/g-hk-on-<event>.py`, which calls `g_hk_core.dispatch(\"<event>\")`. The shared core `.augment/hooks/g_hk_core.py` is byte-identical across every platform overlay and runs the per-event CONCERN_CHAIN (concern hooks self-gate on payload). Native->canonical map (g_hk_core.PLATFORM_EVENT_MAP['augment']): SessionStart->session-start, SessionEnd->session-end, PreToolUse->tool-start, PostToolUse->tool-end, Stop->stop. matcher is optional for PreToolUse/PostToolUse (defaults to .*); not used for session/stop events. timeout is in milliseconds. Schema verified against https://docs.augmentcode.com/cli/hooks .",
-    "cmd_note": "T1601 (PS1-KILL epic T667): shims are Windows batch (.cmd), not PowerShell -- a bare `python x.py` command is rejected by Augment's hook runner (schema-verified extension allowlist: .ps1/.cmd/.bat/.sh), so .cmd was chosen over .ps1 to retire the last PowerShell dependency here (no pwsh/ExecutionPolicy needed). Stdin is inherited by the child process automatically, matching the prior .ps1 shims' explicit stdin pipe. POSIX-only installs may still need parallel .sh shims (follow-up, unchanged from the prior .ps1-era note)."
-  },
   "hooks": {
     "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": ".augment/hooks/g-hk-augment-session-start.cmd"
+            "command": "python .augment/hooks/g-hk-on-session-start.py"
           }
         ]
       }
@@ -19,31 +15,31 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".augment/hooks/g-hk-augment-session-end.cmd"
+            "command": "python .augment/hooks/g-hk-on-session-end.py"
           }
         ]
       }
     ],
     "PreToolUse": [
       {
-        "matcher": ".*",
         "hooks": [
           {
             "type": "command",
-            "command": ".augment/hooks/g-hk-augment-tool-start.cmd"
+            "command": "python .augment/hooks/g-hk-on-tool-start.py"
           }
-        ]
+        ],
+        "matcher": ".*"
       }
     ],
     "PostToolUse": [
       {
-        "matcher": ".*",
         "hooks": [
           {
             "type": "command",
-            "command": ".augment/hooks/g-hk-augment-tool-end.cmd"
+            "command": "python .augment/hooks/g-hk-on-tool-end.py"
           }
-        ]
+        ],
+        "matcher": ".*"
       }
     ],
     "Stop": [
@@ -51,7 +47,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".augment/hooks/g-hk-augment-stop.cmd"
+            "command": "python .augment/hooks/g-hk-on-stop.py"
           }
         ]
       }

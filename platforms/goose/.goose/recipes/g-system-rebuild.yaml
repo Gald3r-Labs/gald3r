@@ -1,0 +1,34 @@
+version: 1.0.0
+title: g-system-rebuild
+description: '@g-system-rebuild'
+instructions: "# @g-system-rebuild\n\nRegenerate `.gald3r/PRODUCT_SYSTEMS.md` by scanning\
+  \ all repos in the workspace for distributed\n`subsystem_memberships:` tags (in\
+  \ SKILL.md files) and `parent_system:` tags (in subsystem specs).\nActivates **g-skl-subsystems**.\n\
+  \n## What This Does\n\n1. Reads the authoritative L1 group list from `PRODUCT_SYSTEMS.md`\
+  \ frontmatter (`defined_groups:`)\n2. Scans every `SKILL.md` file for `subsystem_memberships:`\
+  \ — maps each skill to its L1 group(s)\n3. Scans every `.gald3r/subsystems/*.md`\
+  \ for `parent_system:` — maps each subsystem to its group\n4. Detects: ungrouped\
+  \ files, unknown group names (typos), empty groups\n5. Writes a new `PRODUCT_SYSTEMS.md`\
+  \ preserving `defined_groups:` in frontmatter (so T1458\n   enforcement can read\
+  \ the group list without opening the full file)\n\n## When to Use\n\n- After adding\
+  \ any new subsystem or skill\n- After the T1457 tagging pass\n- When SUBSYSTEMS.md\
+  \ count exceeds 20 and sprawl is suspected\n- When `@g-subsystem-audit` reports\
+  \ drift\n\n## Steps\n\n1. Run dry-run first to check for unknown group warnings:\n\
+  \   ```bash\n   gald3r subsystem aggregate --root .\n   ```\n2. If no unknown groups\
+  \ → apply:\n   ```bash\n   gald3r subsystem aggregate --root . --apply\n   ```\n\
+  3. Report: \"PRODUCT_SYSTEMS.md regenerated — N groups populated, M ungrouped.\"\
+  \n4. If unknown group warnings: stop and ask user to correct the tags before applying\
+  \ (or pass\n   `--force` to write anyway once the reference is confirmed intentional).\n\
+  \n## Related\n\n- `@g-subsystem-audit` — detailed audit of tagging compliance (T1458)\n\
+  - `gald3r subsystem aggregate` — the real implementation of this regeneration (BUG-196;\
+  \ replaces\n  the never-authored/lost `aggregate_subsystems.ps1`, T1459)\n- `add_subsystem_tags.ps1`\
+  \ — bulk tagger for initial pass (T1457)\n- `PRODUCT_SYSTEMS.md` — the output (read\
+  \ by `@g-subsystem-audit` and `g-skl-subsystems` CREATE)"
+prompt: Run the gald3r `g-system-rebuild` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-system-rebuild, e.g. quoted text or --flag
+    values, exactly as you would type them after the command name.

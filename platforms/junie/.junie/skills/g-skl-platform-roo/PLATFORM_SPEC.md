@@ -138,7 +138,7 @@ gald3r generates/merges `AGENTS.md` via the setup + parity pipeline.
   **model-invoked tools, NOT deterministic event hooks**. Lifecycle/prompt-based hooks and a
   `.roo/hooks/` JSON design exist only as community ENHANCEMENT requests (GitHub issues #11504,
   #12025; discussion #6147) and were **never shipped or documented before shutdown**.
-- gald3r's PowerShell hooks (`g-hk-*.ps1`) **cannot be auto-fired** by Roo. They must run manually,
+- gald3r's `g-hk-*.py` hooks **cannot be auto-fired** by Roo. They must run manually,
   via VS Code tasks, or via git hooks (`core.hooksPath`) for the commit/push subset. This is the
   largest gap vs. the Cursor reference.
 - Source: https://docs.roocode.com/features/experimental/custom-tools
@@ -186,13 +186,13 @@ gald3r generates/merges `AGENTS.md` via the setup + parity pipeline.
 
 Roo reaches **near-full parity** with the Cursor reference (`g-skl-platform-cursor`): native
 **commands, rules, agents (modes), skills, and MCP**. The single hard gap is **hooks** — no native
-lifecycle events, so gald3r `g-hk-*.ps1` must run via git `core.hooksPath` / VS Code tasks. The
+lifecycle events, so gald3r `g-hk-*.py` must run via git `core.hooksPath` / VS Code tasks. The
 Orchestrator/boomerang mode is the nearest analog to deterministic pipelines but is model-driven, not
 a hook system.
 
 **gald3r mapping is strong**: `AGENTS.md` (canonical), `.roo/rules/` (g-rl-*), `.roo/skills/`
 (g-skl-*/SKILL.md, auto-relevance honored), `.roo/commands/` (g-* slash commands), `.roomodes`
-(g-agnt-* personas as custom modes), `.roo/mcp.json`. **Only the PowerShell lifecycle hooks have no
+(g-agnt-* personas as custom modes), `.roo/mcp.json`. **Only the lifecycle hooks (`g-hk-*.py`) have no
 auto-fire host.** The dominant caveat remains that the platform is **discontinued (2026-05-15)** — any
 investment targets a frozen tool.
 
@@ -208,7 +208,7 @@ investment targets a frozen tool.
   tools) + **Orchestrator/boomerang** task spawning and the `run_slash_command` tool — model-driven,
   not deterministic lifecycle events. A `.roo/hooks/` design exists only as unshipped community
   proposals (GitHub #11504, #12025, discussion #6147).
-- **gald3r hook files**: `g-hk-*.ps1` do **not** auto-fire — run manually, via VS Code tasks, or via
+- **gald3r hook files**: `g-hk-*.py` do **not** auto-fire — run manually, via VS Code tasks, or via
   git hooks (`core.hooksPath`) for the commit/push subset.
 
 ## Atypical Handling

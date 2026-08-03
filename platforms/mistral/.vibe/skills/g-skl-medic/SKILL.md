@@ -21,6 +21,16 @@ token_budget: high
 subsystem_memberships: [PROJECT_IDENTITY_SETUP, AGENT_ORCHESTRATION]
 ---
 
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 # g-medic
 
 **Replaces**: `g-medic` (deprecated — delegates to `g-medic`)
@@ -37,7 +47,7 @@ subsystem_memberships: [PROJECT_IDENTITY_SETUP, AGENT_ORCHESTRATION]
 @g-medic                      # L1 triage only (safe default, always applies)
 @g-medic --level 2            # L1 + L2 (report generated; --apply to execute fixes)
 @g-medic --level 3            # L1 + L2 + L3 (requires --apply to write fixes)
-@g-medic --level 4            # L1 + L2 + L3 + L4 (Workspace-Control plus optional PCAC)
+@g-medic --level 4            # L1 + L2 + L3 + L4 (Workspace-Control plus optional WPAC)
 @g-medic --ecosystem          # alias for --level 4
 @g-medic --dry-run            # any level: report only, no writes
 @g-medic --level 2 --apply   # apply L2 fixes after generating report
@@ -107,11 +117,11 @@ Direct invocation: `gald3r medic heal`.
 
 ---
 
-## PCAC Inbox Health Gate
+## WPAC Inbox Health Gate
 
-Before mode detection, determine whether the project is a PCAC participant. PCAC is active only when `.gald3r/linking/link_topology.md` declares at least one parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares PCAC project linking relationships. A Workspace-Control manifest and local `INBOX.md` alone do not make a project part of a PCAC group.
+Before mode detection, determine whether the project is a WPAC participant. WPAC is active only when `.gald3r/linking/link_topology.md` declares at least one parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares WPAC project linking relationships. A Workspace-Control manifest and local `INBOX.md` alone do not make a project part of a WPAC group.
 
-Only when PCAC is active, call `g-hk-pcac-inbox-check.ps1` without `-BlockOnConflict` when present and capture the result. L1 triage must continue even when `INBOX CONFLICT GATE` is reported so health scoring can surface the conflict. Open PCAC conflicts block L2-L4 planning/apply work, task claiming, implementation, and verification after L1 completes; require `@g-pcac-read` before continuing. Non-conflict requests, broadcasts, and syncs remain advisory and should be surfaced in output. If PCAC is not active, skip the hook and report `PCAC: not configured / skipped`.
+Only when WPAC is active, call `g-hk-wpac-inbox-check.py` without `-BlockOnConflict` when present and capture the result. L1 triage must continue even when `INBOX CONFLICT GATE` is reported so health scoring can surface the conflict. Open WPAC conflicts block L2-L4 planning/apply work, task claiming, implementation, and verification after L1 completes; require `@g-wpac-read` before continuing. Non-conflict requests, broadcasts, and syncs remain advisory and should be surfaced in output. If WPAC is not active, skip the hook and report `WPAC: not configured / skipped`.
 
 ## Mode Detection (Run Before Any Level)
 
@@ -170,51 +180,53 @@ In `--dry-run`, report missing folders as `would_create` and do not create them.
 
 ### L1-B: Root File Audit
 
-Check each required root file. When a file is missing, **restore the pristine canonical
-copy from `.gald3r_sys/template_verification/.gald3r/` first** (T1442); fall back to an empty
-in-skill template only when the canonical file is unavailable.
+Check each required root file. When a file is missing, **restore it via the engine's
+`gald3r schema-migrate --restore-missing` op first** (T1442; embedded-first, works today); fall
+back to an empty in-skill template only when the engine restore cannot produce the file.
 
 #### Restore-from-canonical (T1442 — preferred heal path)
 
-The framework ships a pristine `.gald3r/` template instance at
-`.gald3r_sys/template_verification/.gald3r/` on every install. When a required `.gald3r/` file
-or folder is missing, g-medic L1 **restores it from that canonical source** instead of reporting
-error-only or writing a bare stub. This guarantees the restored file carries the correct
-T1439 versioned frontmatter (`schema_version` / `gald3r_rel_version`) for the installed release.
-**Never reconstruct a missing index (BUGS.md / TASKS.md) from memory** — only the canonical
-template or the empty in-skill stub are valid sources.
+The engine ships a pristine `.gald3r/` reference set embedded directly in the `gald3r` binary.
+When a required `.gald3r/` file or folder is missing, g-medic L1 **restores it via the engine's
+embedded-first restore op** instead of reporting error-only or writing a bare stub. This
+guarantees the restored file carries the correct T1439 versioned frontmatter (`schema_version` /
+`gald3r_rel_version`) for the installed release. **Never reconstruct a missing index (BUGS.md /
+TASKS.md) from memory** — only the engine restore or the empty in-skill stub are valid sources.
+
+> **T280 note**: the on-disk `.gald3r_sys/template_verification/.gald3r/` unpacked reference tree
+> this section used to read directly no longer ships with installed projects (135 loose files
+> stripped). The engine's own embedded copy is unaffected — `--restore-missing` reads it
+> regardless — so there is no manual-copy tier anymore; the engine restore IS the default heal.
 
 Restore order for any missing required file:
 
-1. **Canonical copy** — if `.gald3r_sys/template_verification/.gald3r/<relpath>` exists, copy it
-   to `.gald3r/<relpath>` (creating parent folders as needed). This is the default heal.
-2. **Engine shell-out (optional)** — for a batch restore of all missing single-file artifacts,
-   shell out to the canonical engine rather than re-implementing the copy:
+1. **Engine restore (Tier 1 — works today)** — shell out to the canonical engine rather than
+   hand-copying anything:
    ```
    gald3r schema-migrate --root <proj> --restore-missing --apply
    ```
-   (`--restore-missing` without `--apply` reports what it would restore — use for `--dry-run`.)
-   The engine resolves the same `template_verification/.gald3r/` canonical source.
-3. **Empty in-skill template** — only when the canonical file is absent from
-   `template_verification/.gald3r/` (e.g. a corrupt or partial install). Fall back to the
-   per-file stub in the table below.
+   (`--restore-missing` without `--apply` is a dry-run — reports what it would restore; use that
+   form for `@g-medic --dry-run`.) The engine resolves its own embedded canonical `.gald3r/`
+   snapshot first, falling back automatically through further embedded/on-disk tiers (see
+   `resolve_restore_missing_source` in the engine source) — confirm the exact flag spelling with
+   `gald3r schema-migrate --help` if the CLI surface ever changes.
+2. **Empty in-skill template (last resort)** — only when the engine restore cannot produce the
+   file (e.g. a stripped engine build with no embedded reference set for that path, or a file
+   outside the schema registry's restorable patterns). Fall back to the per-file stub below.
 
-Resolve the canonical path script-adjacent (`.gald3r_sys/template_verification/.gald3r/`) or
-project-local (`<proj>/.gald3r_sys/template_verification/.gald3r/`). Never hardcode a dev-machine path.
-
-| File | If Missing (canonical absent) | Health Check |
+| File | If Missing (engine restore unavailable) | Health Check |
 |---|---|---|
-| `TASKS.md` | Restore from template_verification, else empty template | Task Sync (L1-D) |
-| `BUGS.md` | Restore from template_verification, else empty template | Bug Sync (L1-D) |
-| `PLAN.md` | Restore from template_verification, else empty template | Has `## Current Focus`? |
-| `FEATURES.md` | Restore from template_verification, else empty template | Has `## PRD Index` table? |
-| `PROJECT.md` | Restore from template_verification, else empty template | Goals Check (L1-D) |
-| `CONSTRAINTS.md` | Restore from template_verification, else header-only stub | Has `## Architectural Constraints`? |
-| `SUBSYSTEMS.md` | Restore from template_verification, else empty template | Subsystem Sync (L1-D) |
-| `IDEA_BOARD.md` | Restore from template_verification, else empty template | Has `## Active Ideas`? |
+| `TASKS.md` | Empty template | Task Sync (L1-D) |
+| `BUGS.md` | Empty template | Bug Sync (L1-D) |
+| `PLAN.md` | Empty template | Has `## Current Focus`? |
+| `FEATURES.md` | Empty template | Has `## PRD Index` table? |
+| `PROJECT.md` | Empty template | Goals Check (L1-D) |
+| `CONSTRAINTS.md` | Header-only stub | Has `## Architectural Constraints`? |
+| `SUBSYSTEMS.md` | Empty template | Subsystem Sync (L1-D) |
+| `IDEA_BOARD.md` | Empty template | Has `## Active Ideas`? |
 
-In `--dry-run`, report missing files as `would_restore` (from template_verification) or
-`would_create` (canonical absent) and do not write them.
+In `--dry-run`, report missing files as `would_restore` (engine restore available) or
+`would_create` (engine restore unavailable, falling to empty template) and do not write them.
 
 ### L1-C: .identity Integrity
 
@@ -279,6 +291,15 @@ Write new `gald3r_version` to `.gald3r/.identity`. Append to `.gald3r/reports/UP
   - All fresh → `Platform docs: ✅ all N platforms fresh`
   - Any stale → `Platform docs: ⚠️ M of N platforms overdue — run @g-platform-scan`
   Pure read of one file; never writes. If `PLATFORM_STATUS.md` does not exist, skip the check silently (no warning).
+- **Platform Roster Parity** (T516): if `PLATFORM_REGISTRY.yaml` exists (single source of truth for the platform roster), run `.claude/skills/g-skl-medic/scripts/check_roster_parity.py` (a `.cursor/` twin exists for parity). It asserts that the four rosters agree — **overlays == registry == specs == STATUS rows** — and fails **loudly** on HARD drift:
+  - an overlay dir with no registry entry (or a registry `overlay_dir` with no overlay)
+  - a non-`redundant` registry platform with NO `PLATFORM_SPEC.md` in any skill tree
+  - a `PLATFORM_STATUS.md` row that is neither a registry platform nor a registered `alias_of`
+  Documented drift (a registry platform with no STATUS row yet; a registered alias like `vibe -> mistral` that has a STATUS row) is a **soft** warning, not a failure. Report format:
+  - No drift → `Platform roster: ✅ overlays == registry == specs == STATUS (N platforms)`
+  - Hard drift → `Platform roster: 🚨 HARD DRIFT — <count> mismatch(es), see check_roster_parity.py` (HARD drift is a critical L1 finding — surface every error line; exit 2 from the script)
+  - Soft drift only → `Platform roster: ⚠️ N platforms, M documented soft-drift item(s)`
+  Pure read; never writes. Run with `--json` for CI/agent consumption. Skip silently if `PLATFORM_REGISTRY.yaml` is absent (registry not installed).
 - **Health Score**:
   ```
   base  = (completed / total_non_cancelled_non_paused) × 100
@@ -286,7 +307,7 @@ Write new `gald3r_version` to `.gald3r/.identity`. Append to `.gald3r/reports/UP
   -3    per [🔍] > 4h
   -10   per task with failure_history > 2
   -15   per subsystem with no tasks ever
-  -20   per open PCAC `INBOX.md` CONFLICT item (L1 continues, L2-L4 blocked until `@g-pcac-read`)
+  -20   per open WPAC `INBOX.md` CONFLICT item (L1 continues, L2-L4 blocked until `@g-wpac-read`)
   -3    per active MCP server over 10 (see L1-K)
   -1    per MCP server flagged [ELEVATED] by Agent Shield (see L1-K)
   -10   if ANY platform overdue for doc re-crawl (T1520) — capped at -10 regardless of count
@@ -676,36 +697,41 @@ With `--apply`:
   <!-- BUG[MEDIC-L3]: Interface mismatch — A outputs {format}; B expects {format} -->
   ```
 
-### L3-G: Structural Release Upgrade (T430 — engine op)
+### L3-G: Structural Release Upgrade (T430 — historical design; corrected T341)
 
-In **UPGRADE mode** (`.identity` `gald3r_version` < current framework version), L3 can apply
-the **structural** diff between two `.gald3r/` release snapshots — complementing the L1-L
-per-file schema migration. This is delegated to the canonical engine op `gald3r upgrade`
-(shell-out only; never re-implement the diff/merge logic):
+In **UPGRADE mode** (`.identity` `gald3r_version` < current framework version), T430 originally
+planned a **structural** diff between two `.gald3r/` release snapshots — ADD/MERGE/DEPRECATE
+per-file classification with a backup/rollback wrapper — delegated to a canonical engine op
+`gald3r upgrade`. That op was never carried into gald3r_core's compiled CLI: `gald3r upgrade` is
+not a valid subcommand (see `gald3r --help`), and the legacy engine source path this section used
+to cite no longer exists in this repo.
+
+The shipped equivalent L3 can shell out to today is **`gald3r schema-migrate`**, the same
+per-file schema/frontmatter migration L1-L already uses, run with `--restore-missing` added so it
+also restores accidentally-deleted single-file `.gald3r/` artifacts from the embedded canonical
+snapshot before migrating:
 
 ```
 # dry-run plan (zero writes) — part of the L3 report
-gald3r --root <proj> upgrade --from-dir <from_snapshot/.gald3r> --to-dir <to_snapshot/.gald3r> --json
-# with --apply (L3 requires explicit --apply): execute + write .gald3r/logs/upgrade_*.log
-gald3r --root <proj> upgrade --from-dir <from/.gald3r> --to-dir <to/.gald3r> --apply
+gald3r schema-migrate --root <proj> --restore-missing --json
+# with --apply (L3 requires explicit --apply): execute + write migrated files to disk
+gald3r schema-migrate --root <proj> --restore-missing --apply
 ```
 
-Per-file classification: **[ADD]** (new in target) / **[MERGE]** (frontmatter/schema changed —
-user data preserved, new template keys added, `schema_version`/`gald3r_rel_version` bumped) /
-**[DEPRECATE]** (removed in target — archived with `_deprecated_YYYYMMDD`). The engine enforces
-an **ABSOLUTE user-data denylist** (`tasks/**`, `bugs/**`, `PLAN.md`, `IDEA_BOARD.md`, `BUGS.md`,
-`TASKS.md`) that is **never** touched, and the operation is **idempotent** (a second `--apply`
-reports zero changes).
+This is **not** the ADD/MERGE/DEPRECATE snapshot-to-snapshot diff T430 originally envisioned —
+there is no `--from-dir`/`--to-dir` pair, no cross-snapshot file classification, and no
+backup-zip/rollback wrapper in the shipped verb. Per-file migration statuses are `to-migrate` /
+`migrated` / `skipped-current` / `skipped-newer` / `skipped-no-frontmatter`; restore statuses (with
+`--restore-missing`) are `restored` / `to-restore` / `restore-unavailable`. A true structural
+snapshot-diff upgrade remains an unimplemented follow-up idea (T422's deferred consumer-upgrade
+subsystem), not a current guarantee.
 
 > **Safety**: L3-G runs only in UPGRADE mode and only with `--apply` (consistent with the L3
-> "explicit --apply required" rule). In `--dry-run` it reports the planned ADD/MERGE/DEPRECATE
-> actions without writing. The engine writes a migration log under `.gald3r/logs/` on apply.
-> **Snapshot prerequisite**: the framework currently ships only the single current canonical
-> snapshot (`.gald3r_sys/template_verification/.gald3r/`); versioned `vN/` snapshots are a
-> tracked prerequisite (T430 finding) — until then, `--from-dir`/`--to-dir` are supplied explicitly.
+> "explicit --apply required" rule). In dry-run it reports the planned per-file migration/restore
+> actions without writing.
 
-Engine source: `.gald3r_sys/engine/src/gald3r/systems/upgrade.py` (op: `Gald3r.upgrade`,
-CLI: `gald3r upgrade`). Tests: `.gald3r_sys/engine/tests/test_upgrade.py`.
+Engine source: `src/gald3r_core/project/schema_migrate/engine.py` (CLI: `gald3r schema-migrate`,
+`src/gald3r_core/cli/commands/schema_migrate_cmd.py`).
 
 ### L3 Output
 
@@ -713,20 +739,20 @@ Write `MEDIC_REPORT_L3.md` to `.gald3r/reports/` with full findings + remediatio
 
 ---
 
-## Level 4 — Ecosystem (Workspace + Optional PCAC)
+## Level 4 — Ecosystem (Workspace + Optional WPAC)
 
-*Requires `--level 4` or `--ecosystem` flag. Workspace-Control checks run whenever `.gald3r/linking/workspace_manifest.yaml` exists. PCAC-only checks run only when active PCAC topology exists.*
-*Blast radius: controller plus manifest-declared workspace members for read-only diagnostics; PCAC-linked projects only when PCAC is active.*
-*If Workspace-Control is active and PCAC is inactive, do not skip L4. Print "PCAC: not active; PCAC topology/inbox checks skipped. Workspace-Control: active; L4 workspace checks ran using workspace_manifest.yaml."*
+*Requires `--level 4` or `--ecosystem` flag. Workspace-Control checks run whenever `.gald3r/linking/workspace_manifest.yaml` exists. WPAC-only checks run only when active WPAC topology exists.*
+*Blast radius: controller plus manifest-declared workspace members for read-only diagnostics; WPAC-linked projects only when WPAC is active.*
+*If Workspace-Control is active and WPAC is inactive, do not skip L4. Print "WPAC: not active; WPAC topology/inbox checks skipped. Workspace-Control: active; L4 workspace checks ran using workspace_manifest.yaml."*
 
 ### L4-0: Mode Split (Mandatory)
 
 Before running L4, classify both coordination systems independently:
 
 - **Workspace-Control active**: `.gald3r/linking/workspace_manifest.yaml` exists and parses. Run L4-W checks.
-- **PCAC active**: `.gald3r/linking/link_topology.md` exists and declares at least one non-empty parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares active PCAC relationships. Run L4-P checks.
-- **Neither active**: report that L4 has no workspace or PCAC coordination surface.
-- **Do not conflate them**: a missing PCAC topology must never suppress Workspace-Control L4 checks.
+- **WPAC active**: `.gald3r/linking/link_topology.md` exists and declares at least one non-empty parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares active WPAC relationships. Run L4-P checks.
+- **Neither active**: report that L4 has no workspace or WPAC coordination surface.
+- **Do not conflate them**: a missing WPAC topology must never suppress Workspace-Control L4 checks.
 
 ### L4-W: Workspace-Control Checks
 
@@ -736,11 +762,11 @@ When Workspace-Control is active:
 - Validate manifest syntax, repository IDs, roles, lifecycle statuses, local paths, write policies, and routing policy fields.
 - Check each existing manifest member's git root, branch, upstream, dirty status, and member `.gald3r/` marker-only compliance.
 - Surface missing planned members separately from broken existing members.
-- Report Workspace-Control health separately from PCAC health.
+- Report Workspace-Control health separately from WPAC health.
 
-### L4-P: PCAC Checks (Only When PCAC Is Active)
+### L4-P: WPAC Checks (Only When WPAC Is Active)
 
-Run the following only when PCAC is active:
+Run the following only when WPAC is active:
 
 ### L4-P1: Peer Capability Readiness
 
@@ -757,7 +783,7 @@ Run the following only when PCAC is active:
 ### L4-P3: Cross-Project Feature Contract Validation
 
 - Find features with `cross_project_ref:` slug
-- For each: check peer's version of the same feature (via PCAC INFO or snapshot)
+- For each: check peer's version of the same feature (via WPAC INFO or snapshot)
 - Spec contradictions → flag: "Feature contract mismatch: {slug} — {this_project} spec vs {peer_slug} spec differ"
 
 ### L4-P4: Stale Peer Snapshots
@@ -768,12 +794,12 @@ Run the following only when PCAC is active:
 
 - Tasks with `cross_project_ref` blocked on peer completion for > 14 days → surface for human escalation
 
-### L4-P6: Suggested PCAC Actions
+### L4-P6: Suggested WPAC Actions
 
-For each finding, generate a suggested PCAC coordination message (does NOT send without explicit per-message human approval):
+For each finding, generate a suggested WPAC coordination message (does NOT send without explicit per-message human approval):
 ```
 Suggested: [SYNC] to example_app — request capability status update for "vector-search"
-  → Run: @g-pcac-notify example_app "Requesting capability status update for vector-search"
+  → Run: @g-wpac-notify example_app "Requesting capability status update for vector-search"
   Approve? [y/n]
 ```
 
@@ -798,7 +824,7 @@ Each level is a superset of the previous:
 | L1 | Triage | Files / folders | No (auto) |
 | L2 | Diagnosis | `.gald3r/` data | Yes (for fixes) |
 | L3 | Surgery | Subsystems + contracts | Yes (required) |
-| L4 | Ecosystem | Workspace members + optional PCAC linked projects | Yes for fixes; per-message approval for PCAC sends |
+| L4 | Ecosystem | Workspace members + optional WPAC linked projects | Yes for fixes; per-message approval for WPAC sends |
 
 ---
 
@@ -867,4 +893,4 @@ See `PARITY_EXCLUDES.md` in this skill's folder for files intentionally excluded
 - `g-skl-tasks` — owns TASKS.md and tasks/
 - `g-skl-subsystems` — owns SUBSYSTEMS.md and subsystems/
 - `g-skl-constraints` — owns CONSTRAINTS.md
-- `g-pcac-status` — PCAC topology view (required for L4)
+- `g-wpac-status` — WPAC topology view (required for L4)

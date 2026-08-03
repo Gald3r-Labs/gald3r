@@ -1,0 +1,38 @@
+version: 1.0.0
+title: g-feat-promote
+description: Promote a specced feature to committed — triggers interactive task creation.
+  Activates **g-skl-features** → PROMOTE operation.
+instructions: 'Promote a specced feature to committed — triggers interactive task
+  creation. Activates **g-skl-features** → PROMOTE operation.
+
+
+  ```
+
+  /g-feat-promote feat-NNN
+
+  ```
+
+
+  **Flow**:
+
+  1. Reads `## Draft Tasks` from the feature staging doc as starting suggestions
+
+  2. Interactively asks: "Create task for: ''{{description}}''? [y/n/edit]"
+
+  3. Creates confirmed tasks via g-skl-tasks (each gets a TASK-NNN ID)
+
+  4. Updates feature status: `specced → committed`
+
+  5. Links tasks back to feature via `features: [feat-NNN]`
+
+
+  **Prerequisite**: Feature must be `status: specced`. Use `/g-feat-spec feat-NNN`
+  first to add ACs and draft tasks.'
+prompt: Run the gald3r `g-feat-promote` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-feat-promote, e.g. quoted text or --flag
+    values, exactly as you would type them after the command name.

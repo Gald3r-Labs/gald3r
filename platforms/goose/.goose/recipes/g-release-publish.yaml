@@ -1,0 +1,29 @@
+version: 1.0.0
+title: g-release-publish
+description: Publish `ROADMAP.md`. Activates **g-skl-release** → PUBLISH operation.
+instructions: 'Publish `ROADMAP.md`. Activates **g-skl-release** → PUBLISH operation.
+
+
+  ```
+
+  @g-release-publish
+
+  ```
+
+
+  Scans `.gald3r/releases/` for all `planned`, `in_progress`, and `released` files,
+  sorts them by `target_date`, and writes `ROADMAP.md` at the project root as a two-section
+  table (Upcoming + Released).
+
+
+  When Task 052-5 ships, this delegates to the full tier×window grid generator with
+  `roadmap_visibility` filtering (public / teaser / secret). Until then, entries are
+  included regardless of visibility.'
+prompt: Run the gald3r `g-release-publish` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-release-publish, e.g. quoted text or --flag
+    values, exactly as you would type them after the command name.

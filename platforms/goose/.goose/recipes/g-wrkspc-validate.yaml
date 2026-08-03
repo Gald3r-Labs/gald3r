@@ -1,0 +1,54 @@
+version: 1.0.0
+title: g-wrkspc-validate
+description: 'Validate Workspace-Control manifest and routing metadata: $ARGUMENTS'
+instructions: 'Validate Workspace-Control manifest and routing metadata: $ARGUMENTS
+
+
+  ## What This Command Does
+
+
+  Short alias for Workspace-Control validation. Delegates to `g-skl-workspace` operation
+  `VALIDATE`.
+
+
+  ## Workflow
+
+
+  1. Activate `g-skl-workspace`.
+
+  2. Run operation `VALIDATE`.
+
+  3. Parse `.gald3r/linking/workspace_manifest.yaml` with structured YAML parsing.
+
+  4. Check required top-level keys, repository entries, controlled member IDs, touch
+  policy values, independent git roots, and routing metadata.
+
+  5. Return `Workspace validation: PASS` only when there are no blocking findings.
+
+
+  ## Usage Examples
+
+
+  ```
+
+  @g-wrkspc-validate
+
+  /g-wrkspc-validate
+
+  @g-wrkspc-validate .gald3r/tasks/task203_short_workspace_control_commands.md
+
+  ```
+
+
+  ## Compatibility Alias
+
+
+  `@g-workspace-validate` remains supported.'
+prompt: Run the gald3r `g-wrkspc-validate` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-wrkspc-validate, e.g. quoted text or --flag
+    values, exactly as you would type them after the command name.

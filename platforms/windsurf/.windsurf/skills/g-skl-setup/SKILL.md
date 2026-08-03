@@ -4,6 +4,17 @@ description: Initialize gald3r in a project — folder structure and template fi
 token_budget: medium
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 # gald3r-setup
 
 ## When to Use
@@ -202,10 +213,28 @@ The template (`assets/gitattributes-lfs.template`) covers: `.psd .ai .fbx .obj
 
 3b. **Skill trust-level warning (C-032 — non-blocking)**: when the install bundles or copies any skills (template skill packs, adv-tier skill_packs), apply the same provenance check as `g-skill-pack-add` step 3b — surface a non-blocking warning for any skill whose `skill_trust_level:` is `community` or unset (trust level, source, `allowed-tools:` reminder, inspect-before-first-invocation). Slim setup ships only `core` skills, so this normally produces no warning; it fires when a non-core pack is added during or after setup. Canonical wording: `skl-skill-create/SKILL.md` → `### skill_trust_level:` declaration.
 
-4. **Generate .identity**:
+4. **Generate .identity** — the engine reads `.identity` as `key=value`, so a **bare UUID is invalid**. Writing a lone UUID makes `gald3r doctor` warn `identity ... has no project_id` and makes `gald3r db backfill` skip the identity document entirely. Write `project_id=<uuid>` (NOT a bare UUID); `project_name` is added in 4a and `project_type`/`publish_history_mode` in 4b/4c:
    ```bash
-   python -c "import uuid; print(uuid.uuid4())" > .gald3r/.identity
+   # bash / git-bash — note the 'project_id=' key prefix, not a bare UUID
+   python -c "import uuid; print('project_id=' + str(uuid.uuid4()))" > .gald3r/.identity
    ```
+   ```powershell
+   # Windows / PowerShell — BOM-less UTF-8 required (BUG-417): on Windows
+   # PowerShell 5.1, Set-Content writes a UTF-8 BOM, corrupting the first key
+   # to '\ufeffproject_id' so the engine reports "no project_id".
+   [IO.File]::WriteAllText("$PWD/.gald3r/.identity", "project_id=$([guid]::NewGuid())`n", (New-Object System.Text.UTF8Encoding $false))
+   ```
+
+4a. **Set project_name** (required key — `gald3r db backfill` skips an unnamed identity and `doctor` reports `(unnamed)`):
+   ```bash
+   # bash / git-bash
+   printf 'project_name=%s\n' "<project name>" >> .gald3r/.identity
+   ```
+   ```powershell
+   # Windows / PowerShell — append BOM-less (BUG-417), matching step 4
+   [IO.File]::AppendAllText("$PWD/.gald3r/.identity", "project_name=<project name>`n", (New-Object System.Text.UTF8Encoding $false))
+   ```
+   The finished `.identity` is four `key=value` lines: `project_id=`, `project_name=`, `project_type=` (4b), `publish_history_mode=` (4c) — verify with `gald3r doctor` → identity `[OK] (<project name>)`.
 
 4b. **Set project_type** (T1280):
    Ask the user "What kind of project is this?" with numbered choices, then write
@@ -232,8 +261,9 @@ The template (`assets/gitattributes-lfs.template`) covers: `.psd .ai .fbx .obj
 4c. **Public-publish history mode** (T423 — explicit, OFF-by-default safety toggle):
    Ask only when the project may graduate/publish to a public repo (i.e. `graduation_tier`
    is `dual`/`triple`, or the user asks for a public sibling). Otherwise skip silently and
-   leave the safe default in place. This is **also asked on `@g-setup --upgrade-existing`**
-   so existing projects can opt in deliberately.
+   leave the safe default in place. This is **also asked on `@g-setup --autonomy full`**
+   (the idempotent top-up path for an already-scaffolded project) so existing projects can
+   opt in deliberately.
    ```
    Public publish: how should git history be handled when you publish to a public repo?
      1. carry  (default) — keep full git history. Non-destructive, safe.
@@ -263,7 +293,7 @@ The template (`assets/gitattributes-lfs.template`) covers: `.psd .ai .fbx .obj
    ├── CONSTRAINTS.md ✅         ← non-negotiable constraints
    ├── BUGS.md ✅                ← bug index (root)
    ├── SUBSYSTEMS.md ✅
-   ├── IDEA_BOARD.md ✅
+   ├── tracking/IDEA_BOARD.md ✅  ← engine-canonical location: `gald3r idea add` writes here. Do NOT hand-author `.gald3r/IDEA_BOARD.md` at the root — the engine reads `tracking/`, so a root copy becomes an invisible duplicate.
    ├── FEATURES.md ✅                ← PRD index
    ├── learned-facts.md ✅       ← agent-captured learning (updated via /g-learn)
    ├── features/ ✅                  ← individual PRD files
@@ -354,7 +384,12 @@ The template (`assets/gitattributes-lfs.template`) covers: `.psd .ai .fbx .obj
    - Review `.gald3r/PROJECT.md` and confirm mission and goals
    - Review SUBSYSTEMS.md and adjust detected components
    - Review subsystem spec files in `.gald3r/subsystems/` for accuracy
-   - Create first task with @g-tasks (CREATE) (sequential task IDs)
+   - Create tasks with @g-tasks (CREATE) / `gald3r task add` (sequential task IDs) — **never hand-name task files.** The engine and the g-skl-tasks fallback discover tasks via the glob `tasks/**/task*.md` and require `task{id:03d}_{slug}.md` filenames with a numeric `id:` + `uuid:`. Hand-authored `T001_*.md`-style names do NOT match the glob and are **silently invisible** to `gald3r task list` / `validate` — an entire hand-built backlog vanishes. Always author through the engine so ids, uuids, and filenames are assigned correctly.
+   - **Post-setup engine sync (canonical ordering)** — when the `gald3r` engine binary is present, run these after authoring the backlog so the DB-backed verbs work and `validate` passes. First-time users otherwise hit "No tasks found" from `task ready`/`task next` (those are DB-backed) and a stale `TASKS.md`:
+     1. `gald3r task regenerate-index --apply`  ← dry-run by default; `--apply` actually writes `TASKS.md`
+     2. `gald3r db backfill`  ← populates `.gald3r/gald3r.db`; `task ready`/`task next` return nothing until this runs
+     3. `gald3r validate`  ← expect PASS
+     4. `gald3r doctor`  ← expect identity `[OK] (<project name>)`
    - Draft or refine `.gald3r/PLAN.md` and Feature under `features/` as needed
    - Declare cross-project relationships in **Project Linking** (`@g-project (Project Linking section)`) when ready
    - **Optional**: Install domain-specific skill packs from `skill_packs/` directory — run `.\skill_packs\{pack}\install.py` for infrastructure, ai-ml-dev, startup-tools, and other packs
@@ -381,23 +416,23 @@ If a runtime (Python / Node.js) is missing, skip that indexer — the graph simp
 
 ---
 
-## Relationship to the root installer (`setup_gald3r_project.ps1`)
+## Relationship to the platform installer (`gald3r platform install`)
 
 gald3r has **two distinct setup entry points** with non-overlapping responsibilities. They are not alternatives that ask the same questions twice:
 
 | Entry point | Owns | Does NOT do |
 |-------------|------|-------------|
-| **`setup_gald3r_project.ps1`** (root installer, run from a shell) | **Platform selection** (`-Platforms`, the interactive platform picker, `-Platform all`), copying the `.gald3r_sys/` payload + per-platform IDE dirs into the target, section-marker merge of `AGENTS.md`/`CLAUDE.md`/`.gitignore`, JSON key-merge of platform config, and v1/v2/v3 version detection on upgrade | Author project mission/goals or scaffold the `.gald3r/` control plane content |
+| **`gald3r platform install <platform> --into <dir> --generated`** (engine CLI verb, run from a shell, one platform per invocation) | **Platform selection** (an explicit `PLATFORM` argument per run — `cursor`, `claude`, `codex`, …), writing that platform's IDE dirs straight from the neutral component set embedded in the `gald3r` engine binary (self-contained, T177 — no external template checkout needed), refusing to overwrite pre-existing files unless `--force` (BUG-187). Also merges the root instruction files (`AGENTS.md`/`CLAUDE.md`/`GALD3R.md`, `root_docs.ROOT_DOC_FILES`) via a marker-comment merge that never clobbers local customization living outside the marker block (T357) — the self-contained embedded path only; `.gitignore` remains outside its scope | Author project mission/goals or scaffold the `.gald3r/` control plane content |
 | **`@g-setup`** (this skill, run in-session) | The `.gald3r/` control-plane scaffold — folder layout, `PROJECT.md`/`PLAN.md`/`CONSTRAINTS.md`/`SUBSYSTEMS.md`, identity files, subsystem detection, codebase-graph init offer | **Platform selection** — it does **not** re-prompt for or deploy IDE platform dirs |
 
-**Design decision (T1209 AC6 / T1275):** `@g-setup` **delegates** platform selection to the root installer; it does **not** re-prompt in-session. The platform picker (`-Platforms` / interactive prompt in `setup_gald3r_project.ps1`) is the single source of truth for *which* IDE surfaces (`.cursor/`, `.claude/`, `.codex/`, …) get deployed. Re-implementing a second platform prompt inside `@g-setup` would duplicate that logic and risk drift.
+**Design decision (T1209 AC6 / T1275):** `@g-setup` **delegates** platform selection to `gald3r platform install`; it does **not** re-prompt in-session. The platform CLI verb (an explicit `PLATFORM` id per `--into <dir> --generated` invocation) is the single source of truth for *which* IDE surfaces (`.cursor/`, `.claude/`, `.codex/`, …) get deployed. Re-implementing a second platform prompt inside `@g-setup` would duplicate that logic and risk drift.
 
 **Recommended order for a brand-new project:**
 
-1. Run `setup_gald3r_project.ps1 -TargetPath <dir>` (it prompts for platforms if `-Platforms` is omitted) — this lays down `.gald3r_sys/` + the chosen IDE platform dirs and merges the marker-managed root files.
+1. Run `gald3r platform install <platform> --into <dir> --generated` once per IDE surface you want (e.g. `cursor`, then `claude`) — this writes the chosen platform's IDE dirs straight from the engine's embedded neutral component set and merges the marker-managed root files (`AGENTS.md`/`CLAUDE.md`/`GALD3R.md`, T357) without clobbering local customization on re-run.
 2. Then run `@g-setup` in-session to scaffold and personalize the `.gald3r/` control plane (mission, goals, subsystems, first task).
 
-If a user invokes `@g-setup` on a project that has no IDE platform dirs yet, point them at `setup_gald3r_project.ps1` for platform deployment rather than prompting for platforms here.
+If a user invokes `@g-setup` on a project that has no IDE platform dirs yet, point them at `gald3r platform install <platform> --into <dir> --generated` for platform deployment rather than prompting for platforms here.
 
 ---
 
@@ -410,10 +445,12 @@ readable source (IP leak-stop, T1645). `.gald3r_sys/engine/` in this install con
 a stub README; the zero-IP resolver `.gald3r_sys/scripts/gald3r_bin.py` finds the engine
 (`GALD3R_BIN` env var → `gald3r` on PATH → bundled `.gald3r_sys/bin/` → dev source).
 
-- **Install / verify** (one-time): run the `g-install-agent` command (`/g-install-agent`
-  in Claude Code, `@g-install-agent` in Cursor) — it downloads the signed, SHA-256-verified
-  `gald3r` binary from the public Gald3r-Labs/gald3r_agent releases into the gald3r home
-  `bin/` (T1615). Verify with `gald3r --version`.
+- **Install / verify** (one-time): run the `g-install-update` command (`/g-install-update`
+  in Claude Code, `@g-install-update` in Cursor) — it downloads the latest signed,
+  SHA-256-verified `gald3r` binary from the public Gald3r-Labs/gald3r_core releases into the
+  gald3r home `bin/` (T302/BUG-587). Verify with `gald3r --version`. (`g-install-agent` is a
+  deprecated alias for the same verb — the separate "Agent CLI binary" product it used to
+  install is retired.)
 - Slimmed skills then call: `gald3r <verb>` (or MCP `gald3r_*`).
 - If no engine binary is installed, every slimmed skill still works via its
   **`SKILL.full.md`** fallback — nothing points outside the install.

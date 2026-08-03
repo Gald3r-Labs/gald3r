@@ -118,13 +118,13 @@ imports.
 ## 6. Hooks System — ✅ NATIVE
 
 - **Lifecycle hooks** configured in `.qwen/settings.json` under a `"hooks"` object keyed by event,
-  each with a `"matcher"` regex and a list of hooks of type **`command`** (shell/bash/**PowerShell**
-  via stdin/stdout JSON) or **`http`** (POST). **14 events**: `PreToolUse`, `PostToolUse`,
+  each with a `"matcher"` regex and a list of hooks of type **`command`** (any shell command, incl.
+  bash/PowerShell, via stdin/stdout JSON) or **`http`** (POST). **14 events**: `PreToolUse`, `PostToolUse`,
   `PostToolUseFailure`, `UserPromptSubmit`, `SessionStart`, `SessionEnd`, `Stop`, `StopFailure`,
   `SubagentStart`, `SubagentStop`, `PreCompact`, `PostCompact`, `Notification`, `PermissionRequest`.
-  Supports timeouts and env vars. Because `command` hooks can invoke PowerShell, gald3r `g-hk-*.ps1`
-  hooks wire **natively** (SessionStart context injection, PreToolUse `.gald3r/` guards, pre-commit
-  gates, etc.).
+  Supports timeouts and env vars. Because `command` hooks accept any executable, gald3r `g-hk-*.py`
+  hooks wire **natively** via `python <path>` (post-T1584 Python port; no PowerShell involved;
+  SessionStart context injection, PreToolUse `.gald3r/` guards, pre-commit gates, etc.).
 - Source: https://qwenlm.github.io/qwen-code-docs/en/users/features/hooks/
 
 ## 7. Rules / Memory — ✅ NATIVE
@@ -189,8 +189,9 @@ commands/agents/skills trees and a `.qwen/settings.json` carrying hooks + MCP.
   PermissionRequest (14 events)
 - **Event payload format**: JSON via stdin/stdout; hook types `command` (shell/bash/PowerShell) or
   `http` (POST); per-event `matcher` regex, timeouts, env vars
-- **Command extensions**: any shell, including **PowerShell** — so gald3r `g-hk-*.ps1` wire natively
-- **gald3r hook files**: `g-hk-*.ps1` fire via the events above (SessionStart injection, PreToolUse
+- **Command extensions**: any shell, including **PowerShell** — so gald3r `g-hk-*.py` wire natively
+  via `python <path>` (post-T1584 Python port; no PowerShell involved)
+- **gald3r hook files**: `g-hk-*.py` fire via the events above (SessionStart injection, PreToolUse
   `.gald3r/` guards, pre-commit/pre-push gates)
 
 ## Atypical Handling
@@ -208,7 +209,7 @@ commands/agents/skills trees and a `.qwen/settings.json` carrying hooks + MCP.
 
 - Ship a `QWEN.md` overlay that `@AGENTS.md`-imports the gald3r instruction set; install commands,
   subagents, and `SKILL.md` skills under `.qwen/`.
-- Hooks fire natively (PowerShell supported); no need to degrade session-start/pre-commit to manual.
+- Hooks fire natively (`python <path>`, post-T1584 Python port; no PowerShell involved); no need to degrade session-start/pre-commit to manual.
 - Because Qwen tracks Gemini CLI, re-check upstream additions on the next
   `@g-platform-scan-docs qwen` (crawl_max_age_days: 14).
 
@@ -222,7 +223,7 @@ commands/agents/skills trees and a `.qwen/settings.json` carrying hooks + MCP.
 
 Legend: ✅ verified working · ⚠️ partial / Cursor-generic · ❌ not supported · ❓ untested.
 
-- **Hooks ✅** — native 14-event hooks in `.qwen/settings.json` (`command`/`http`; PowerShell supported).
+- **Hooks ✅** — native 14-event hooks in `.qwen/settings.json` (`command` runs gald3r `g-hk-*.py` via `python <path>`/`http`).
 - **Rules ✅** — hierarchical `QWEN.md` context/memory with `@file.md` imports (`/memory` commands).
 - **Skills ✅** — Agent Skills (`SKILL.md`) in `.qwen/skills/`, model-invoked; GA 2026-02-09.
 - **Commands ✅** — native slash commands (Markdown+YAML; TOML back-compat) in `.qwen/commands/`.
@@ -239,7 +240,7 @@ Legend: ✅ verified working · ⚠️ partial / Cursor-generic · ❌ not suppo
 | Rules / memory | /core/memport/ — `QWEN.md` context (default; `context.fileName`-configurable) hierarchically loaded + `@file.md` imports; `/memory show`/`refresh` |
 | Agents | /users/features/sub-agents/ — markdown+YAML subagents in `.qwen/agents/` (highest precedence); `/agents` + create wizard; `approvalMode`/`tools` |
 | Skills | /users/features/skills/ — `SKILL.md` Agent Skills in `.qwen/skills/`, model-invoked; GA (flag removed) 2026-02-09 v0.9.x (debut v0.6.0) |
-| Hooks | /users/features/hooks/ — `.qwen/settings.json` `"hooks"`; 14 events; `command` (PowerShell ok) / `http`; matcher, timeouts, env |
+| Hooks | /users/features/hooks/ — `.qwen/settings.json` `"hooks"`; 14 events; `command` (any shell, gald3r runs `python <path>`) / `http`; matcher, timeouts, env |
 | MCP | /users/features/mcp/ — `mcpServers` (command/url/httpUrl; OAuth on SSE+HTTP); `qwen mcp add`; `/mcp` |
 | Instruction file | /users/configuration/settings/ — default `QWEN.md` (NOT `AGENTS.md`); `AGENTS.md` only via `context.fileName` (built-in default = open issue #2006) |
 | Lineage | Open-source fork of Gemini CLI for Qwen3-Coder; config/command/memory/MCP mirror Gemini CLI; hooks+subagents+skills mirror Claude Code |

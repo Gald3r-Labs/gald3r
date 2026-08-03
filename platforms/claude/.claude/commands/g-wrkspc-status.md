@@ -1,5 +1,8 @@
-﻿---
+---
+description: 'Show Workspace-Control manifest status (owner, members, lifecycle, git state) via g-skl-workspace STATUS'
+argument-hint: '[none]'
 subsystem_memberships: [WORKSPACE_COORDINATION]
+execution_tier: orchestration
 ---
 Show Workspace-Control status: $ARGUMENTS
 

@@ -149,9 +149,16 @@ policy paths per OS). It loads at the start of **every** session as persistent c
 - **PreToolUse can block a tool call.** Covers session start, pre/post tool, pre-commit-style gating
   (via `PostToolUse`/`Stop`), and file-watch (`FileChanged`). `InstructionsLoaded` logs which
   instruction files loaded.
-- **gald3r wiring**: `g-hk-*.ps1` invoked via `{ "type": "command", "command": "powershell.exe -File
-  .claude/hooks/g-hk-...ps1" }` under the matching PascalCase event in `settings.json`. SessionStart
+- **gald3r wiring**: `g-hk-*.py` invoked via `{ "type": "command", "command": "python <path>" }`
+  (post-T1584 Python port; no PowerShell involved) under the matching PascalCase event in `settings.json`. SessionStart
   context injection, `PreToolUse` `.gald3r/` guards, and `Stop`/`PostToolUse` gates all wire natively.
+  **On Windows the command MUST be `pythonw <path>`, not `python <path>`** (BUG-495): `python.exe`
+  is a console-subsystem binary, so every hook fire pops a visible, focus-stealing console window —
+  a busy session fires the Stop chain (12 hooks) per turn plus 3-4 PreToolUse/PostToolUse hooks per
+  tool call, which rendered the desktop unusable. `pythonw.exe` never allocates a console; hook
+  stdout/stderr still reach Claude Code through the spawn pipes. On macOS/Linux keep `python`
+  (`pythonw` does not exist on stock Linux; POSIX has no console-window concept). Child spawns
+  inside hooks are covered separately by `_hook_common.py`'s win32 `CREATE_NO_WINDOW` Popen patch.
   **Migrate any legacy lowercase `hooks.json` entries (`sessionStart`/`stop`/`beforeShellExecution`)
   to PascalCase events in `settings.json`** — `beforeShellExecution` is a Cursor-era name with no
   Claude Code equivalent (use `PreToolUse` with a `Bash` matcher instead).
@@ -235,8 +242,8 @@ shimming, and Plugins + Agent SDK + Routines + Channels extend well beyond the C
 - **Event payload format**: JSON; three-level nesting (event → matcher → `hooks[]`), entries shaped
   `{ "type": "command", "command": "..." }` (also `http` / LLM-prompt hook types)
 - **Blocking**: `PreToolUse` can block a tool call
-- **gald3r hook files**: `g-hk-*.ps1` wire natively under the matching PascalCase event via
-  `powershell.exe -File .claude/hooks/g-hk-*.ps1` (migrate legacy lowercase `hooks.json` entries here)
+- **gald3r hook files**: `g-hk-*.py` wire natively under the matching PascalCase event via
+  `python <path>` (post-T1584 Python port; no PowerShell involved; migrate legacy lowercase `hooks.json` entries here)
 
 ## Atypical Handling
 

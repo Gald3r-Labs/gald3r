@@ -1,9 +1,11 @@
-﻿---
+---
+description: 'Review recon reports and triage unadopted features for approve/reject/defer (g-skl-res-review)'
 subsystem_memberships: [VAULT_AND_RESEARCH]
+execution_tier: guarded_prompt
 ---
 # g-res-review
 
-Review existing recon reports in `vault/research/recon/` and triage features for adoption.
+Review existing recon reports in `vault/research/CRR_FunctionalSpecs/` and triage features for adoption.
 
 Activates **g-skl-res-review** → REVIEW operation.
 
@@ -19,7 +21,7 @@ Activates **g-skl-res-review** → REVIEW operation.
 
 ## What it does
 
-1. Scans `vault/research/recon/` for `04_FEATURES.md` files
+1. Scans `vault/research/CRR_FunctionalSpecs/` for `04_FEATURES.md` files
 2. Presents unadopted features for user triage:
    - `[✅]` approve → mark for `@g-res-apply`
    - `[❌]` reject → flag as dismissed
@@ -30,7 +32,7 @@ Activates **g-skl-res-review** → REVIEW operation.
 ## Zero-change-without-approval guarantee
 
 `@g-res-review` **never modifies `.gald3r/`** — it only updates approval status markers in the
-`vault/research/recon/{slug}/04_FEATURES.md` review columns.
+`vault/research/CRR_FunctionalSpecs/{slug}/04_FEATURES.md` review columns.
 
 ## Clean Room Boundary
 

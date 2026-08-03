@@ -1,0 +1,189 @@
+version: 1.0.0
+title: g-go-bugs
+description: 'Dedicated bug-fix pipeline — reproduce → fix → regression test → adversarial
+  review: $ARGUMENTS'
+instructions: "Dedicated bug-fix pipeline — reproduce → fix → regression test → adversarial\
+  \ review: $ARGUMENTS\n\n## Mode: BUG-FIX PIPELINE\n\n`g-go-bugs` is a **two-phase\
+  \ pipeline** specialized for fixing open bugs. Phase 1 reproduces and\nfixes each\
+  \ bug in severity order; Phase 2 spawns an independent reviewer agent to verify\
+  \ the fix.\n\n> **Independence guarantee**: The Phase 2 reviewer is a fresh Task\
+  \ subagent. It has **no access**\n> to Phase 1's conversation history, implementation\
+  \ decisions, or working context. It verifies\n> the fix cold from the committed\
+  \ checkpoint.\n\n> **Difference from `@g-go`**: `g-go` processes both tasks and\
+  \ bugs, bugs-first. `g-go-bugs`\n> processes ONLY bugs — useful for dedicated bug-blitz\
+  \ sessions without disturbing the task queue.\n> The T1114 auto-task bridge ensures\
+  \ high/critical bugs already have linked fix tasks, so both\n> paths are complementary.\n\
+  \n> **Provider & model selection (T580, BUG-612 companion)**: `$ARGUMENTS` MAY carry\
+  \ `--provider\n> <provider>[:<model>]` / `--model <model>` (global, both phases)\
+  \ plus phase-specific\n> `--implementer-model` (Phase 1 fix) / `--reviewer-model`\
+  \ (Phase 2 verify). Resolution order and\n> host-mapping table (Cursor -> `cursor-agent`\
+  \ + `gpt-5.6-terra-medium` by default) are identical\n> to `g-go`/`g-go-code`/`g-go-review`\
+  \ — see `g-go-go.md`'s \"Provider & Model Routing\" section.\n> Phase 2's independence\
+  \ guarantee above is unaffected by provider/model choice.\n\n---\n\n### ⛔ NO-PROMPT\
+  \ RULE — READ AND ENFORCE BEFORE DOING ANYTHING ELSE\n\n**The coordinator MUST NEVER\
+  \ ask the user to confirm a plan, select a scope, choose between\noptions, or approve\
+  \ a proposal.** This command is designed for fire-and-forget operation. The\nuser\
+  \ typed it and is not watching this session.\n\nThe **only** valid reasons to stop\
+  \ are the documented **hard-gate failures** (WPAC conflict\nexit-code `2`, dirty\
+  \ orchestration root outside the staging allowlist, `[\U0001F6A8]` bugs, or all\
+  \ bugs\ndeferred). Everything else is resolved silently by the auto-plan rules.\n\
+  \n---\n\n## Invocation\n\n```\n@g-go-bugs                          # fix all open\
+  \ bugs, critical→high→medium→low\n@g-go-bugs severity:critical,high   # only critical\
+  \ + high\n@g-go-bugs severity:medium,low      # only medium + low\n@g-go-bugs bug:BUG-042\
+  \              # specific bug\n@g-go-bugs bug:BUG-042,BUG-043      # specific bugs\
+  \ (comma-separated)\n@g-go-bugs --dry-run                # report what would be\
+  \ fixed, no changes\n```\n\n---\n\n## Auto-Plan Algorithm (no explicit bug IDs in\
+  \ `$ARGUMENTS`)\n\nWhen `$ARGUMENTS` is empty or contains only severity filters:\n\
+  \n1. Read `.gald3r/BUGS.md` for all bugs with `status: Open` (indicators `[\U0001F534\
+  ]` `[\U0001F7E0]` `[\U0001F7E1]` `[⚪]`)\n2. Apply severity filter if given (e.g.\
+  \ `severity:critical,high` → only `[\U0001F534]` `[\U0001F7E0]`)\n3. Skip `[\U0001F6A8\
+  ]` bugs (requires-user-attention) — log in Skipped section, never auto-retry\n4.\
+  \ Skip bugs where `verifier_claim_expires_at` has not expired (non-expired `[\U0001F575\
+  ️]` claims)\n5. Order: Critical → High → Medium → Low (within same severity, lower\
+  \ BUG-NNN first)\n6. Zero runnable bugs → output `[g-go-bugs] No runnable bugs.\
+  \ Nothing to fix.` and exit cleanly\n\nWhen `$ARGUMENTS` provides explicit bug IDs\
+  \ (`bug:BUG-NNN`), use those exactly.\n\n---\n\n## Step 0 — Workspace Member Clean-Status\
+  \ Preflight (T1431)\n\nBefore the WPAC gate / bug-queue build / claim / worktree\
+  \ creation, run the **read-only** workspace\nmember clean-status preflight: scan\
+  \ `.gald3r/linking/workspace_manifest.yaml`, run\n`git -C <path> status --short`\
+  \ on each `autonomous_child` member, and either print\n`Workspace clean -- N members\
+  \ checked` (proceed) or a per-repo dirty-status table asking the user\nto commit/stash\
+  \ first. Never auto-commits or writes. `--skip-member-clean-check` bypasses with\
+  \ a\nprinted warning. Additive to the Housekeeping Commit Gate. **Full authoritative\
+  \ algorithm: see\n`g-go.md` Step 0.**\n\n---\n\n## WPAC inbox Gate (Only When WPAC\
+  \ is configured)\n\nBefore any bug claiming or implementation, run the re-callable\
+  \ inbox check if WPAC is configured:\n\n```powershell\n$hook = @( \".cursor\\hooks\\\
+  g-hk-wpac-inbox-check.py\", \".claude\\hooks\\g-hk-wpac-inbox-check.py\", \".agent\\\
+  hooks\\g-hk-wpac-inbox-check.py\", \".codex\\hooks\\g-hk-wpac-inbox-check.py\",\
+  \ \".opencode\\hooks\\g-hk-wpac-inbox-check.py\" ) | Where-Object { Test-Path $_\
+  \ } | Select-Object -First 1\nif ($hook) { python $hook -ProjectRoot . -BlockOnConflict\
+  \ }\n```\n\nWPAC is configured only when `.gald3r/linking/link_topology.md` declares\
+  \ at least one\nparent/child/sibling relationship. A Workspace-Control manifest\
+  \ and local `INBOX.md` alone are\nnot sufficient. If the check reports `INBOX CONFLICT\
+  \ GATE` or exits code `2`, stop and run\n`@g-wpac-read`. If WPAC is not configured,\
+  \ skip and report `WPAC: not configured / skipped`.\n\n---\n\n## Gald3r Housekeeping\
+  \ Commit Gate (T531)\n\nAfter the WPAC gate passes and before the Clean Controller\
+  \ Gate:\n\n```powershell\ngald3r housekeep -Mode preflight -Apply -Json\n```\n\n\
+  - `clean` → continue\n- `safe-gald3r-housekeeping` → helper auto-commits safe `.gald3r/`\
+  \ paths, continue\n- `unsafe-gald3r` / `mixed-dirty` / `conflict` / `drift-detected`\
+  \ → HARD STOP with exact paths\n\nRe-run with `-Mode post-write -Apply` after each\
+  \ coordinator-owned shared `.gald3r` write.\n\n---\n\n## Clean Controller Gate\n\
+  \nRun `git status --short` at the orchestration git root. If anything is listed\
+  \ outside this\nrun's explicit staging allowlist, STOP. Do not claim bugs or create\
+  \ worktrees until unrelated\nchanges are committed or stashed.\n\n---\n\n## Phase\
+  \ 1: Bug-Fix Implementation\n\nFor each target bug in order (critical → high → medium\
+  \ → low):\n\n### 1. Claim the Bug\n\nMark the bug `[\U0001F504]` / `status: in-progress`\
+  \ in both BUGS.md and the bug file. Append:\n```\n| YYYY-MM-DD | open | in-progress\
+  \ | Claimed for fix — g-go-bugs Phase 1 |\n```\n\nCreate or reuse a coding worktree:\n\
+  ```powershell\ngald3r worktree create -BugId {bug_id} -Role code -Json\n```\nOwner\
+  \ is auto-resolved (T580/BUG-612) from your routed provider — see `g-go-code.md`\
+  \ Step 3's\nowner-resolution note. Pass `-Owner <value>` explicitly only to override\
+  \ it.\n\n### 2. Read the Bug Spec\n\nRead `.gald3r/bugs/open/bugNNN_{slug}.md` (use\
+  \ discovery pattern `Get-ChildItem .gald3r/bugs -Recurse -Filter \"bug*.md\"`).\
+  \ Note:\n- Reproduction steps\n- Expected vs actual behavior\n- Linked fix task\
+  \ (if `fix_task_id:` populated by T1114 auto-bridge)\n- Subsystems affected\n\n\
+  ### 3. Reproduce\n\nRun the failing test or manually verify the symptom exists at\
+  \ current HEAD.\n\n- **Reproduced** → proceed to Fix\n- **Cannot reproduce at HEAD**\
+  \ → skip with note; mark `[⚪]` / `status: cannot-reproduce`; append Status History:\
+  \ `| YYYY-MM-DD | in-progress | open | Cannot reproduce at HEAD — skipped |`; do\
+  \ NOT attempt fix\n\n### 4. Fix\n\nImplement the minimal fix. No scope creep beyond\
+  \ resolving the described symptom.\n\nApply workspace routing check: run `g-skl-workspace`\
+  \ ENFORCE_SCOPE before editing files.\n\n**AC gate** — before proceeding:\n- Does\
+  \ the fix resolve the described symptom? → proceed\n- Unresolved → return to Fix\n\
+  - **Bug-discovery check**: pre-existing bugs found during fix → BUG entry + comment\
+  \ (g-rl-35)\n- **Constraint check**: any CONSTRAINTS.md violation blocks `[\U0001F50D\
+  ]`\n\n### 5. Regression Test\n\nAdd or update a test that would have caught this\
+  \ bug. Acceptable forms:\n- A new test case in an existing test file\n- A new test\
+  \ file if no suitable one exists\n- A documented manual test script if automated\
+  \ testing is not applicable to this subsystem\n\nThe regression test MUST fail before\
+  \ the fix and pass after it.\n\n### 6. Mark Awaiting Review\n\nIn both BUGS.md and\
+  \ the bug file:\n- Change indicator to `[\U0001F50D]` / `status: awaiting-fix-review`\n\
+  - Append Status History: `| YYYY-MM-DD | in-progress | awaiting-fix-review | Fix\
+  \ implemented + regression test added |`\n\nCreate a checkpoint commit:\n```\nfix({subsystem}):\
+  \ BUG-{id} — {brief description}\n\nBug: BUG-{id}\nRoot cause: {one line}\nRegression\
+  \ test: {test file/name}\n```\n\n---\n\n## Phase 1 Completion\n\nAfter all target\
+  \ bugs processed:\n\n```\n[g-go-bugs] Phase 1 complete\n  Fixed → [\U0001F50D]:\
+  \ BUG-{ids}\n  Checkpoint → {branch}@{commit_sha}\n  Skipped/Blocked: {list with\
+  \ reasons}\n```\n\nIf zero bugs reached `[\U0001F50D]` → skip Phase 2:\n```\n[g-go-bugs]\
+  \ Phase 1 completed 0 bugs — Phase 2 skipped.\n```\n\n---\n\n## Phase 2: Adversarial\
+  \ Review (independent agent)\n\n> **Only runs if Phase 1 marked at least 1 bug `[\U0001F50D\
+  ]`.**\n\nThe Phase 2 reviewer is a fresh Task subagent with no Phase 1 context.\
+  \ It verifies the fix\nagainst the checkpoint commit independently.\n\n### Spawn\n\
+  \n```\n[g-go-bugs] Spawning Phase 2 reviewer for: Bug {bug IDs}\n[g-go-bugs] Reviewer\
+  \ is a fresh agent — no Phase 1 context. Adversarial independence: ✓\n```\n\nSpawn\
+  \ a Task subagent with:\n- The bug IDs being reviewed\n- Coordinator-managed override:\
+  \ \"Return PASS/FAIL payloads and Status History rows only. Do not write BUGS.md\
+  \ or bug files; the coordinator owns all writes.\"\n- No Phase 1 context\n\n###\
+  \ Reviewer Protocol\n\nThe reviewer, for each `[\U0001F50D]` bug:\n\n1. **Claims**\
+  \ bug as `[\U0001F575️]` / `verification-in-progress` before inspection\n2. **Creates\
+  \ review worktree** from the Phase 1 checkpoint (T170 `review` worktree)\n3. **Verifies**:\n\
+  \   - Re-runs the reproduction steps → confirms fix resolves the symptom\n   - Runs\
+  \ regression test → must pass\n   - Runs full test suite (if available) → no new\
+  \ failures introduced\n4. **PASS** → returns PASS payload + verification note\n\
+  5. **FAIL** → returns FAIL payload + Status History row; triggers stuck-loop check\
+  \ (≥3 FAILs → `[\U0001F6A8]`)\n\nReviewer does NOT write BUGS.md or bug files —\
+  \ returns result payload to coordinator.\n\n### Coordinator Finalizes\n\nAfter reviewer\
+  \ completes:\n1. **Invoke `gald3r bug resolve <id>` (PASS) or `gald3r bug update\
+  \ <id> --status open --note \"FAIL: ...\"` (FAIL) for every reviewed bug — mandatory,\
+  \ once per item (BUG-511).** This resyncs the bug file + `BUGS.md` in the same call\
+  \ — do not hand-edit either.\n2. If a linked fix task exists (`fix_task_id` frontmatter),\
+  \ invoke `gald3r task verify <fix_task_id> --pass` (PASS) or `gald3r task verify\
+  \ <fix_task_id> --fail --reason \"...\"` (FAIL) — same mandatory rule; do not hand-edit\
+  \ the task file or `TASKS.md`.\n3. Create review-result commit with explicit path\
+  \ staging\n4. Write Pipeline Session Summary (see format below)\n\n---\n\n## Follow-Up\
+  \ Task Filing Gate (MANDATORY — before Pipeline Session Summary)\n\nBefore writing\
+  \ the summary, handle all follow-up items surfaced during the run:\n\n1. Identify\
+  \ ALL follow-up items (deferred sub-features, gaps, adjacent bugs found)\n2. For\
+  \ each, call `g-skl-tasks CREATE TASK` — capture the returned `task_id`\n3. Reference\
+  \ actual task IDs in the summary — NEVER slug-only names\n\n---\n\n## Pipeline Session\
+  \ Summary\n\n```markdown\n## g-go-bugs Session Summary\n\nRun: g-go-bugs {args}\n\
+  Bugs attempted: N\n\n- ✅ BUG-{id}: {title} — fixed + verified (regression test:\
+  \ {test name})\n- ❌ BUG-{id}: {title} — fix failed: {reason}\n- ⏸️ BUG-{id}: {title}\
+  \ — could not reproduce at HEAD, skipped\n- ⏭️ BUG-{id}: {title} — skipped: {reason}\n\
+  \n### Follow-Up Tasks Filed\n- T{id}: {title} — {reason surfaced}\n(or: None)\n\n\
+  ### Final State\n- ✅ Resolved: {N}\n- \U0001F4CB Failed (back to open): {M}\n- ⏸️\
+  \ Skipped: {K}\n- Total commits this run: {C}\n```\n\n---\n\n## --dry-run Mode\n\
+  \nWhen `--dry-run` is passed, the coordinator reports what WOULD be fixed without\
+  \ making any changes:\n\n```markdown\n## g-go-bugs Dry Run\n\nTarget bugs (in fix\
+  \ order):\n1. [\U0001F534] BUG-{id}: {title} (critical) — linked fix task: T{id}\
+  \ / no fix task yet\n2. [\U0001F7E0] BUG-{id}: {title} (high) — linked fix task:\
+  \ T{id}\n3. [\U0001F7E1] BUG-{id}: {title} (medium) — no fix task\n...\n\nSkipped:\n\
+  - [\U0001F6A8] BUG-{id}: {title} — requires user attention\n- [\U0001F575️] BUG-{id}:\
+  \ {title} — verifier claim active until {expiry}\n\nTotal runnable: N\n```\n\nNo\
+  \ files are written in dry-run mode.\n\n---\n\n## Spawned-agent task/bug creation\
+  \ (T585 AC3)\n\nDuring this run, **any** task or bug a spawned agent needs to create\
+  \ (deferred sub-feature,\nnewly discovered bug, follow-up) goes into the **hot inbox**,\
+  \ never a direct `tasks/open/` /\n`bugs/open/` write + index regeneration:\n\n-\
+  \ **Preferred** — call the engine verb (`gald3r task create …` / `gald3r bug report\
+  \ …`, or the\n  `gald3r_task_*` / `gald3r_bug_*` MCP tools). When the run marker\n\
+  \  (`.gald3r/logs/ggo_run_state.json` `active: true`, or `GALD3R_AGENT_RUN=1`) is\
+  \ set, the engine\n  **auto-routes** the new item to `tasks/inbox/` / `bugs/inbox/`\
+  \ as an id-less, uuid-suffixed\n  draft — no id is assigned at create time.\n- **Manual\
+  \ fallback** (no engine) — hand-write the draft directly into `tasks/inbox/` /\n\
+  \  `bugs/inbox/` (id-less, uuid-suffixed filename). Do **not** write `tasks/open/`\
+  \ / `bugs/open/`\n  or touch `TASKS.md` / `BUGS.md`.\n\nThe hot-inbox **intake**\
+  \ (run at each iteration boundary — see the inbox-intake step) is the\n*single ID-assigning\
+  \ authority*: it assigns ids atomically, so N concurrent agents can never\ncollide\
+  \ on the next id. This is the spawn-side complement of that intake step.\n\n## Behavioral\
+  \ Rules\n\n| Rule | Why |\n|------|-----|\n| Cannot-reproduce → skip, not fail |\
+  \ Flaky reproduction wastes cycles — log and move on |\n| Regression test REQUIRED\
+  \ per fix | Prevents recurrence; closes the test-coverage gap |\n| Phase 1 never\
+  \ marks `[✅]` — only `[\U0001F50D]` | Phase 2 reviewer owns `[✅]` |\n| Phase 2 reviewer\
+  \ has NO Phase 1 context | Adversarial independence guarantee |\n| `[\U0001F6A8\
+  ]` bugs are NEVER auto-retried | Human-only resolution (T047) |\n| Coordinator batch-writes\
+  \ BUGS.md after Phase 2 | Prevents concurrent line-edit conflicts |\n| Fix task\
+  \ updated on PASS/FAIL (via `fix_task_id`) | T1114 auto-bridge loop closure |\n\
+  | NEVER ask questions mid-run | Fire-and-forget design |\n\n---\n\n## Examples\n\
+  \n```\n@g-go-bugs                          # fix all open bugs\n@g-go-bugs severity:critical,high\
+  \   # blitz critical + high only\n@g-go-bugs bug:BUG-042              # fix one\
+  \ specific bug\n@g-go-bugs --dry-run                # preview fix queue\n```\n\n\
+  **For parallel execution** (faster on large bug queues):\n```\n@g-go-bugs-swarm\n\
+  @g-go-bugs-swarm severity:critical\n```\n\nLet's fix some bugs."
+prompt: Run the gald3r `g-go-bugs` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-go-bugs, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

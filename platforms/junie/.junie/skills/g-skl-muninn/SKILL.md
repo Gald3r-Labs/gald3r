@@ -15,6 +15,16 @@ token_budget: medium
 subsystem_memberships: [MEMORY_AND_KNOWLEDGE]
 ---
 
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 # g-skl-muninn — Codebase Knowledge Graph via gald3r_muninn
 
 ## Why This Skill Exists
@@ -120,9 +130,9 @@ or a direct MCP call):
 | 11-25 | HIGH | Flag before claiming; get explicit confirmation |
 | 26+ | CRITICAL | Must split task or get explicit scope authorization |
 
-## PowerShell Wrapper
+## Python Wrapper
 
-`.claude/skills/g-skl-muninn/scripts/graph_impact.py` is the PowerShell entry point used by Step b0 and
+`.claude/skills/g-skl-muninn/scripts/graph_impact.py` is the Python entry point used by Step b0 and
 the post-commit hook. It:
 
 1. Loads `docker/gald3r/tools/plugins/muninn/plugin.py` in-process via Python
@@ -132,7 +142,7 @@ the post-commit hook. It:
 3. Falls back to ripgrep-based import scanning when neither is reachable
    (falls back to ripgrep import scanning when muninn is unavailable).
 
-```powershell
+```bash
 python scripts/graph_impact.py -File "docker/gald3r/tools/plugins/search.py"
 python scripts/graph_impact.py -File "src/lib/agentActivity/index.ts" -Json
 python scripts/graph_impact.py -File "..." -Backend mcp

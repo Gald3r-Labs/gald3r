@@ -1,0 +1,98 @@
+version: 1.0.0
+title: g-goal
+description: 'Set, view, or clear a persistent session goal that locks the agent on
+  target across iterations: $ARGUMENTS'
+instructions: "Set, view, or clear a persistent session goal that locks the agent\
+  \ on target across iterations: $ARGUMENTS\n\n## Usage\n- `@g-goal <description>`\
+  \ — set active goal (creates/overwrites `.gald3r/config/ACTIVE_GOAL.md`)\n- `@g-goal\
+  \ status` — show current active goal, turn count, and progress\n- `@g-goal clear`\
+  \ — remove `.gald3r/config/ACTIVE_GOAL.md`\n- `@g-goal --from-task T{id}` — derive\
+  \ goal from a task's title and link the task ID\n\n## What it does\n\n`@g-goal`\
+  \ writes a session-persistent goal to `.gald3r/config/ACTIVE_GOAL.md` (YAML frontmatter).\
+  \ Once set:\n\n- `g-go`, `g-go-code`, and `g-go-go` read the goal at session start\
+  \ and inject it as `CURRENT GOAL: <description>` into working context.\n- After\
+  \ every AC-gate iteration, the implementing agent self-checks: \"Does this action\
+  \ advance the goal?\" — drift triggers a re-anchor pass.\n- The goal survives context\
+  \ compression and session restarts (file-backed persistence).\n- A `turn_budget`\
+  \ (default 50) tracks consumed turns; when exhausted, the loop surfaces a budget\
+  \ notice and pauses for user direction.\n\nThis locks the agent on target: the goal\
+  \ is re-checked each turn, drift is self-corrected, and the loop exits gracefully\
+  \ when the turn budget is exhausted.\n\n## Sub-operations\n\n### Set (`@g-goal <description>`\
+  \ or `@g-goal --from-task T{id}`)\n\n1. Parse `<description>` (the literal text\
+  \ passed after `@g-goal`) OR resolve from `--from-task T{id}`:\n   - Read `.gald3r/tasks/task{id}_*.md`\
+  \ (look in both active `tasks/` and `archive/tasks/`)\n   - Use the task's `title:`\
+  \ field as the description\n   - Set `linked_task: T{id}` in the goal frontmatter\n\
+  2. **Inventory-shaped condition check (BUG-645 Fix Direction #1).** Before writing\
+  \ the\n   file, scan `<description>` for an INVENTORY shape — a literal count of\
+  \ items\n   (\"I have N tasks that are not complete\", \"finish the 40 open bugs\"\
+  , \"clear all N\n   items\") rather than an OUTCOME. An inventory-shaped condition\
+  \ becomes\n   **permanently unsatisfiable** the moment real work starts: completing\
+  \ items moves\n   the count further from N, never toward it. If detected:\n   -\
+  \ Propose an outcome-shaped rewrite to the user before writing the file, e.g.\n\
+  \     `\"complete the ~40 open tasks\"` → `\"backlog drained: zero runnable non-gated\n\
+  \     tasks remain\"`.\n   - Only proceed with the literal inventory wording if\
+  \ the user explicitly confirms\n     they want it as-is — never silently auto-rewrite.\n\
+  3. Get current UTC timestamp (`yyyy-MM-ddTHH:mm:ssZ`).\n4. Write `.gald3r/config/ACTIVE_GOAL.md`:\n\
+  \   ```yaml\n   ---\n   id: goal-YYYYMMDDTHHMMSSZ\n   description: \"<the goal text>\"\
+  \n   linked_task: T{id}    # or null when free-form\n   set_at: <ISO 8601 UTC timestamp>\n\
+  \   turn_budget: 50\n   turns_consumed: 0\n   set_by: <session identifier or \"\
+  user\">\n   condition_discharged: false\n   reinvoke_count: 0\n   zero_remaining_work_streak:\
+  \ 0\n   last_remaining_work_count: \"\"\n   stagnant_checks: 0\n   ---\n\n   # Active\
+  \ Goal\n\n   <the goal text>\n\n   ## Notes (optional)\n   Free-form notes the agent\
+  \ may append while working under this goal.\n   ```\n5. Confirm to user: `\U0001F3AF\
+  \ Goal set: \"<description>\" (turn budget: 50)`.\n\n### Status (`@g-goal status`)\n\
+  \n1. Read `.gald3r/config/ACTIVE_GOAL.md` if present.\n2. Display:\n   ```\n   \U0001F3AF\
+  \ Active goal: <description>\n   Linked task: T{id} (or \"none\")\n   Set at:  \
+  \    <set_at>\n   Turn budget: <turns_consumed> / <turn_budget>\n   ```\n3. If missing:\
+  \ `No active goal — set one with @g-goal <description>`.\n\n### Clear (`@g-goal\
+  \ clear`)\n\n1. Delete `.gald3r/config/ACTIVE_GOAL.md` if it exists.\n2. Confirm:\
+  \ `\U0001F3AF Goal cleared.`\n\n## Goal-Locked Loop Integration\n\nWhen `.gald3r/config/ACTIVE_GOAL.md`\
+  \ exists, every `@g-go`, `@g-go-code`, and `@g-go-go` invocation:\n\n1. **Session-start\
+  \ injection** — read the goal file and prepend to working context:\n   `CURRENT\
+  \ GOAL: <description> (turn <turns_consumed>/<turn_budget>, task T{id})`\n2. **AC-gate\
+  \ goal alignment** — after each `g-go-code` AC-gate iteration, the implementing\
+  \ agent self-checks: \"Did this action advance `<description>`?\" If not, re-anchor\
+  \ on the goal before continuing.\n3. **Turn accounting** — increment `turns_consumed`\
+  \ on every major loop iteration; if `turns_consumed >= turn_budget`, surface a `\U0001F3AF\
+  \ Goal turn budget exhausted` notice and pause for user direction.\n4. **Drift correction**\
+  \ — when the agent detects that the work in flight has drifted off-goal (subjective\
+  \ check based on the goal text), restate the goal before the next action.\n\n##\
+  \ Quit Conditions (BUG-645 — mechanically enforced, not prose-only)\n\nItems 1–4\
+  \ above are agent self-discipline; they are backed by a **mechanical\nStop-hook\
+  \ enforcement layer**, `g-hk-goal-stop-detect` (fires on the `stop` event,\nmirroring\
+  \ `g-hk-ggo-stop-detect`'s proven `authorized_hard_stop` +\n`min(budget, ceiling)`\
+  \ pattern from the g-go-go autopilot loop), so a session can\nnever livelock re-blocking\
+  \ Stop with identical feedback the way the BUG-645 incident\ndid (~70 minutes, ~25\
+  \ identical no-op turns after the goal's work was already done):\n\n- **Terminal-state\
+  \ clause** — set `condition_discharged: true` in\n  `.gald3r/config/ACTIVE_GOAL.md`'s\
+  \ frontmatter the moment you determine the goal is\n  genuinely satisfied OR has\
+  \ become permanently unsatisfiable (mirrors\n  `authorized_hard_stop` semantics\
+  \ — a documented, sanctioned terminal state, never\n  silence). The hook also auto-detects\
+  \ this: when the project's open task/bug queue\n  reads empty across 2 consecutive\
+  \ stop checks, it sets this flag itself and allows\n  the stop.\n- **Re-invoke ceiling**\
+  \ — the hook caps re-blocks at\n  `min(turn_budget - turns_consumed, 5)`; once reached,\
+  \ it allows the stop and\n  surfaces a notification instead of looping further.\n\
+  - **Escalation over repetition** — if the remaining-work count has not moved across\n\
+  \  3 consecutive stop checks (the actual BUG-645 signature: identical feedback,\
+  \ zero\n  forward progress), the hook allows the stop and notifies rather than waiting\
+  \ for\n  the numeric ceiling.\n\nNone of this weakens genuine goal enforcement —\
+  \ a satisfiable, still-in-progress\ngoal continues to re-block exactly as items\
+  \ 1–4 describe. See\n`hooks/g-hk-goal-stop-detect.md` for the full state machine.\n\
+  \n## Auto-set via `g-go-code --with-goal T{id}`\n\nWhen `g-go-code` is invoked with\
+  \ `--with-goal T{id}`, behavior is equivalent to `@g-goal --from-task T{id}` followed\
+  \ by `g-go-code tasks {id}` — the goal is set first, then the implementation begins\
+  \ under that goal lock.\n\nThe same flag works with `@g-go --with-goal T{id}` and\
+  \ `@g-go-go --with-goal T{id}`.\n\n## Related\n\n- Spec: `.gald3r/tasks/task965_g_go_persistent_goal_ralph_loop.md`\n\
+  - Pattern: persistent session goal with turn-budget exit\n- Integrates with: `g-go`,\
+  \ `g-go-code`, `g-go-go`\n- Config file: `.gald3r/config/ACTIVE_GOAL.md`\n- Quit-condition\
+  \ enforcement: `hooks/g-hk-goal-stop-detect.py` (BUG-645) — terminal-state\n  clause\
+  \ + re-invoke ceiling, mirroring `hooks/g-hk-ggo-stop-detect.py`'s proven pattern.\n\
+  \nLet's go."
+prompt: Run the gald3r `g-goal` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-goal, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

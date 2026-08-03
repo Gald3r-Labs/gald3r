@@ -5,17 +5,63 @@ token_budget: medium
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
 
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 > **Multi-agent framework (T1094):** Inbound handler — actions all inbound frameworks (delegation/broadcast/negotiation/conflict).
 # g-skl-wpac-read
 
 ## When to Use
 `@g-wpac-read` command. Session start when INBOX items exist. After receiving a cross-project task. After `g-hk-wpac-inbox-check.py` reports items.
 
+## Transport layer (WPAC-v2 — T1608)
+
+**Step 0-T — online board pull (code decides, never the model — g-rl-38).** Before
+reading the file inbox, pull the server-side coordination surface (T1609 shim
+underneath):
+
+```
+gald3r workspace outbox pull --json
+```
+
+- `"online": true` → the JSON carries the delegation board (`GET
+  /api/v1/tasks/delegation` — tasks delegated to this principal via intake, the
+  connected-path replacement for BROADCAST file-drops) and the recent org coordination
+  events (`GET /api/v1/events`). Merge these into the review in step 2: delegated tasks
+  are shown alongside file BROADCASTS (create the local task from the board entry when
+  missing, same WPAC-priority floor T166); events are shown alongside INFO items.
+  Online, delivery is push-based (inbox auto-wake, world_tree T494) — this pull is the
+  catch-up read, not a poll loop.
+- `"online": false` → file inbox only, exactly as today.
+- Then run `gald3r workspace outbox flush` to
+  reconcile any queued outbound messages in `.gald3r/linking/outbox/` (write-ahead
+  entries from verbs that ran offline). Report the flush counts in step 10.
+
+The file inbox below is ALWAYS processed — server items are additive, and the verb
+surface (name + arguments) is unchanged.
+
+## Inbox layout (T428)
+
+The inbox is a lightweight **index** at `.gald3r/linking/INBOX.md` (marked `<!-- WPAC-INDEX-V1 -->`) backed by one file per message under `.gald3r/linking/messages/msg_{id}_{type}_{source}.md`. Each message file has YAML frontmatter (`id`, `type`, `source_project`, `subject`, `status`, `created_at`, `actioned_at`) plus the full body. Resolved messages are archived to `.gald3r/linking/messages/archive/` via `@g-wpac-archive-inbox`.
+
+- **Read the index** for the row list (Status, ID, Type, Source, Subject, Age, File).
+- **Open the linked message file** for full body when actioning an item.
+- **Ack/update** = set the message file's `status:`/`actioned_at:` frontmatter AND flip the index row's status cell `[OPEN]` -> `[DONE]` in place.
+- **Backward-compat (`--legacy`)**: if `INBOX.md` is still the legacy flat-body format (no `WPAC-INDEX-V1` marker), run `@g-wpac-archive-inbox` (which auto-migrates first) or `gald3r workspace inbox migrate` to convert it, then proceed. If `messages/` is absent, the inbox-check hook creates it silently.
+
 ## Steps
 
-1. **Read `.gald3r/workspace/inbox.md`**
+1. **Read `.gald3r/linking/INBOX.md`** (the index)
    - If empty or not exists → "INBOX clear — no cross-project items pending"
-   - Categorize items: CONFLICT | request | broadcast | peer_sync | info
+   - If still legacy flat-body format → migrate first (see Inbox layout above), then re-read
+   - Categorize rows by Type: CONFLICT | request | broadcast | peer_sync | info
 
 2. **Display grouped by urgency**:
    ```
@@ -33,15 +79,15 @@ subsystem_memberships: [WORKSPACE_COORDINATION]
    - Show both conflicting instructions side by side
    - Show which subsystem is affected
    - Prompt human: "How to resolve? Options: Follow A / Follow B / Follow both / Ignore both / Custom"
-   - Record resolution in INBOX.md: `**Resolution:** [human's answer]` + `**Resolved by:** [date]`
-   - Change status from `[CONFLICT]` to `[DONE]`
+   - Record resolution in the message file body: `**Resolution:** [human's answer]` + `**Resolved by:** [date]`, and set its frontmatter `status: done` + `actioned_at`
+   - Change the index row status cell from `[CONFLICT]` to `[DONE]`
    - If task was created for conflicted subsystem: update it with the resolution
 
 4. **Handle REQUESTS** (child needs parent to act):
    - Show: who is asking, what they need, which task is blocking them
    - Offer: `Action (create task here) / Defer (keep open) / Reject (close with note)`
    - If actioned: create task in `.gald3r/tasks/` with reference to child's blocking task
-     - **PCAC-priority floor (T166)**: tasks spawned from PCAC items default to `priority: high`. If the source INBOX item is `[CONFLICT]` or carries an explicit urgency flag (e.g., `urgent: true`), default to `priority: critical`. Pass `wpac_source: { type: order|ask|broadcast|sync|conflict, source_project: <name>, inbox_ref: <id> }` to `g-skl-tasks` CREATE TASK so the audit trail is preserved in the task frontmatter and TASKS.md gets the `[WPAC]` tag prefix. Critical (CONFLICT-derived) tasks must also force `requires_verification: true` — never skip verification on cross-project work. Humans MAY downgrade priority manually after creation; agents MUST NOT auto-downgrade.
+     - **WPAC-priority floor (T166)**: tasks spawned from WPAC items default to `priority: high`. If the source INBOX item is `[CONFLICT]` or carries an explicit urgency flag (e.g., `urgent: true`), default to `priority: critical`. Pass `wpac_source: { type: order|ask|broadcast|sync|conflict, source_project: <name>, inbox_ref: <id> }` to `g-skl-tasks` CREATE TASK so the audit trail is preserved in the task frontmatter and TASKS.md gets the `[WPAC]` tag prefix. Critical (CONFLICT-derived) tasks must also force `requires_verification: true` — never skip verification on cross-project work. Humans MAY downgrade priority manually after creation; agents MUST NOT auto-downgrade.
    - If accessible: write `parent_action_status: completed` to child's task file
    - Mark INBOX entry `[DONE]`
 
@@ -53,7 +99,7 @@ subsystem_memberships: [WORKSPACE_COORDINATION]
    - If `broadcast_completion` received:
      - Offer to mark the parent's tracker task `[✅]`
      - **Resolve the outbound order ledger record** (Layer 3 of cross-project dependency tracking):
-       1. Search `.gald3r/workspace/sent_orders/order_*.md` for a record where `sent_to:` matches the sending child project AND (`remote_task_id:` matches the child's source task id from the completion ping, OR `remote_task_title:` matches the original broadcast title — exact string match preferred, fuzzy match as fallback)
+       1. Search `.gald3r/linking/sent_orders/order_*.md` for a record where `sent_to:` matches the sending child project AND (`remote_task_id:` matches the child's source task id from the completion ping, OR `remote_task_title:` matches the original broadcast title — exact string match preferred, fuzzy match as fallback)
        2. If a matching record is found:
           - Update its frontmatter: `status: completed`, `last_sync: YYYY-MM-DD`
           - Append Sync History row: `| YYYY-MM-DD | completed | Completion ping received from {child_project_id} |`
@@ -70,7 +116,7 @@ subsystem_memberships: [WORKSPACE_COORDINATION]
 6. **Handle PEER SYNCS** (sibling contract changed):
    - Show: which sibling, which contract, what changed
    - Confirm task exists (created when peer_sync arrived)
-   - Open the peer copy for review: `.gald3r/workspace/peers/{sibling_name}.md`
+   - Open the peer copy for review: `.gald3r/linking/_peers/{sibling_name}.md`
    - After human updates the contract: mark task complete, update INBOX to `[DONE]`
    - If sibling path accessible: write completion notice to sibling's INBOX.md
 
@@ -81,17 +127,17 @@ subsystem_memberships: [WORKSPACE_COORDINATION]
      📡 Peer capability update from {sender}:
         {capability_name}: {old_status} → {new_status}
         Reason: {reason}
-        Peer snapshot written to: .gald3r/workspace/peers/{sender}_capabilities.md
+        Peer snapshot written to: .gald3r/linking/_peers/{sender}_capabilities.md
      ```
    - No task to create, no approval needed
    - Ask: "Acknowledge and mark done? [y/n]" (default: yes)
-   - On acknowledgment: change `[OPEN]` to `[DONE]` in INBOX.md
+   - On acknowledgment: set the message file `status: done` + `actioned_at`, and flip the index row `[OPEN]` -> `[DONE]` (INFO/SYNC are also auto-actioned this way by the inbox-check hook)
    - Staging: after INBOX processing, report any pending staged info entries:
      "⚠️ N staged INFO notification(s) in pending_requests/ for [project] — not yet delivered"
    - Also check `pending_orders/` and surface count: "⚠️ N broadcast(s) staged in pending_orders/ for [project] — not yet accessible"
 
 8. **Show peer capabilities summary** (after INBOX processing):
-   - Read all files matching `.gald3r/workspace/peers/*_capabilities.md`
+   - Read all files matching `.gald3r/linking/_peers/*_capabilities.md`
    - If any exist, display a compact table:
      ```
      Peer Capabilities (last received snapshots):
@@ -103,7 +149,7 @@ subsystem_memberships: [WORKSPACE_COORDINATION]
      ```
    - If no peer snapshots exist: skip silently
 
-9. **Update INBOX.md** — change reviewed items to `[DONE]`, add resolution notes
+9. **Update the index + message files** — set each reviewed message file's `status: done` + `actioned_at`, add resolution notes to its body, and flip the matching index row to `[DONE]`. When the active index carries more than 50 `[DONE]` rows, run `@g-wpac-archive-inbox` to keep it lean.
 
 10. **Report**:
    ```

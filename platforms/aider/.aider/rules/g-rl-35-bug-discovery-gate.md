@@ -7,6 +7,12 @@ subsystem_memberships: [BUG_AND_QUALITY]
 
 # Bug-Discovery Gate (Zero-Ignore Policy)
 
+> **Deterministic enforcement (T520):** the bug *file* contract this rule depends on —
+> valid `status`/`severity`/`kind`, canonical status tokens, and correct `bugs/<status>/`
+> placement — is now ENFORCED by `gald3r validate` (run as a fail-closed pre-commit hook on
+> staged `.gald3r/bugs/**`). This rule advises *when* to log a bug; the gate guarantees the
+> bug file you write is well-formed. Run `gald3r validate --fix` to normalize fixable issues.
+
 When you encounter a bug during any coding or review session, the correct response depends on when the bug was introduced:
 
 | Scenario | Correct Response |
@@ -118,6 +124,68 @@ Do NOT report as pre-existing bugs:
 - Intentional placeholder values (test fixtures, examples with clearly fake data)
 - Linter warnings already tracked as tech debt in BUGS.md
 - Cosmetic issues (formatting, whitespace, naming) **unless** they cause incorrect behavior
+
+---
+
+## Numeric Severity Scale (1-10) & Focus-Mode Triage (T-triage)
+
+Alongside the coarse `severity` enum, score every bug (by **damage if left
+unfixed**) and every task (by **value if done**) on this 1-10 scale. The scale is
+canonical in `coordination/autopilot/severity_scale.py` (`SEVERITY_RUBRIC`); the
+enum still validates, and a record with no numeric score derives one from its
+enum (`resolve_score`), so nothing needs migrating.
+
+| Score | Meaning (anchor) |
+|------:|------------------|
+| 1 | Typo in a message or docs; pure cosmetic |
+| 2 | Cosmetic-but-visible (formatting, naming, whitespace) |
+| 3 | Minor doc/UX inaccuracy, stale comment, non-behavioral nit |
+| 4 | Small correctness nit in a non-critical path; low-value test gap |
+| **5** | **Token/compute inefficiency or measurable waste; recoverable UX friction** |
+| 6 | Wrong output in an edge case; real bug, small blast radius |
+| 7 | Broken feature, silent data staleness, incorrect results users rely on |
+| 8 | Crash on a common path; security-relevant weakness; auth/permission gap |
+| 9 | Data corruption, auth bypass, privilege escalation, irreversible state loss |
+| **10** | **Runaway/infinite token burn; data or hardware destruction; IP/API-key/secret leak** |
+
+Bugs score on the DAMAGE table above. **Tasks score on VALUE-if-done** — a
+high-value feature is NOT "data destruction", so score it on this parallel table,
+never the damage one (else focus mode skips your most important product work):
+
+| Score | Task value |
+|------:|------------|
+| 1 | Busywork; internal nitpick, no user/product value |
+| 3 | Minor internal polish or convenience |
+| 5 | Useful improvement; pays for itself, not urgent |
+| **6** | **Public-facing docs: announce features, explain usage, user docs** |
+| 7 | Important feature users will notice and value |
+| 8 | Major user-facing capability / a differentiator rivals lack |
+| 9 | Critical path to a release or demo; blocks other high-value work |
+| **10** | **Unblocks the core product / the acquisition demo — the moat** |
+
+**Record the score** in a bug's `severity` numeric field / a task's
+`priority_score` field when filing at/above the active floor.
+
+**Highest-severity-first.** When choosing what to work, rank by score descending;
+never pick a score-3 nit while a score-8 defect is runnable.
+
+**Focus mode — two independent floors.** Bugs and tasks are floored separately
+because they need opposite defaults:
+
+- **`--min-severity N` (BUGS, damage).** Default **5** — skips the 1-4 nitpick band
+  AND **must not manufacture new sub-floor bugs** (note a sub-floor observation in
+  one line and move on rather than filing it). This is the sanctioned exception to
+  the zero-tolerance logging in this rule / g-rl-33, for the focused run only. Bug
+  generation was the infinite self-audit churn, so bugs are floored by default.
+  `--min-severity 1` restores full zero-tolerance logging.
+- **`--min-value N` (TASKS, value).** Default **0 — work EVERY task.** Tasks are
+  deliberate value work that should converge to done, so they are NOT filtered by
+  default. Pass `--min-value 7` for best-tasks-and-up.
+
+A floor is a **hard stop, not a slider** — it never lowers itself, so a focused run
+will not burn the backlog to nothing over time; sub-floor items sit untouched until
+the operator deliberately lowers the floor. Grade-inflation on either axis is caught
+at the Phase-2 review gate, which validates the assigned score as part of the AC check.
 
 ---
 

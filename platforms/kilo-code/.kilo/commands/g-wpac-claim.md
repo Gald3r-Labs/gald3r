@@ -1,5 +1,8 @@
 ---
+description: 'Claim a target project as this project''s WPAC parent, updating link_topology.md on both sides.'
+argument-hint: '<parent-project-path> [--one-way]'
 subsystem_memberships: [WORKSPACE_COORDINATION]
+execution_tier: orchestration
 ---
 Register a parent project for this project: $ARGUMENTS
 
@@ -34,7 +37,7 @@ Delegates to `g-skl-wpac-claim`.
 ## What Happens
 
 1. Reads `.gald3r/.identity` from both this project and the target parent
-2. Creates `.gald3r/workspace/` in this project if missing
+2. Creates `.gald3r/linking/` in this project if missing
 3. Sets the parent in this project's `link_topology.md`
 4. Adds this project to `children[]` in the parent's `link_topology.md` (unless `--one-way`)
 5. Writes `peers/` snapshots in both projects

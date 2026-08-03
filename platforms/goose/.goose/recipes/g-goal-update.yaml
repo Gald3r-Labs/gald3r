@@ -1,0 +1,20 @@
+version: 1.0.0
+title: g-goal-update
+description: Update project goals. Activates **g-project** → UPDATE PROJECT.MD (Goals
+  section).
+instructions: 'Update project goals. Activates **g-project** → UPDATE PROJECT.MD (Goals
+  section).
+
+
+  Activate the **g-project** skill, UPDATE PROJECT.MD operation — Goals section.
+
+
+  Provide new goal, goal change, or direction shift to document.'
+prompt: Run the gald3r `g-goal-update` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-goal-update, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

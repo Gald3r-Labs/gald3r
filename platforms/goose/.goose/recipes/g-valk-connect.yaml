@@ -1,0 +1,32 @@
+version: 1.0.0
+title: g-valk-connect
+description: 'Point this repo''s Valkyrie connector at the real gald3r_world_tree
+  API: $ARGUMENTS'
+instructions: "Point this repo's Valkyrie connector at the real gald3r_world_tree\
+  \ API: $ARGUMENTS\n\n## What This Command Does\n\nSets or verifies this project's\
+  \ world_tree base URL and login token so Valkyrie (`gald3r valk`)\ncoordinates against\
+  \ the real API instead of silently falling through to the `DEFAULT_BASE_URL`\nlocalhost\
+  \ fallback (BUG-238). Uses `g-skl-valk`.\n\n## Workflow\n\n### 1. Determine Target\
+  \ API\nAsk (if not provided): which world_tree base URL should this repo use? Default\
+  \ recommendation:\nthe deployed API host already used by sibling repos in this ecosystem\
+  \ (check\n`GALD3R_WORLD_TREE_URL` in a known-good repo's environment if unsure —\
+  \ never guess a localhost\naddress).\n\n### 2. Choose Persistence Mechanism\n- **Env\
+  \ var** (session/CI-scoped, not persisted to disk):\n  ```bash\n  export GALD3R_WORLD_TREE_URL=https://api.gald3r.ai\n\
+  \  ```\n- **`gald3r login`** (persists to OS keyring / 0600 token file — never git):\n\
+  \  ```bash\n  gald3r login --base-url https://api.gald3r.ai --token <bearer-token>\n\
+  \  ```\n  `--token` defaults to `$GALD3R_WORLD_TREE_TOKEN` if omitted.\n\n### 3.\
+  \ Verify\nRun `gald3r valk status` and `gald3r workspace token-status` to confirm\
+  \ the new base URL and\ntoken are active (see `@g-valk-status`).\n\n### 4. Optionally\
+  \ Start the Resident Connector\n```bash\ngald3r valk start --detach   # spawns the\
+  \ resident poll loop; gald3r valk stop to end it\n```\n\n### 5. Report\nConfirm\
+  \ the resolved base URL tier, whether a token is stored, and whether the resident\n\
+  connector was started.\n\n## Usage Examples\n\n```\n@g-valk-connect https://api.gald3r.ai\n\
+  ```\n\n## Delegates To\n`g-skl-valk`"
+prompt: Run the gald3r `g-valk-connect` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-valk-connect, e.g. quoted text or --flag
+    values, exactly as you would type them after the command name.

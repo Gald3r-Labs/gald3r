@@ -1,0 +1,52 @@
+version: 1.0.0
+title: g-wpac-promote
+description: 'Promote a controlled_member repository to a fully self-managed autonomous_child:
+  $ARGUMENTS'
+instructions: "Promote a controlled_member repository to a fully self-managed autonomous_child:\
+  \ $ARGUMENTS\n\n## What This Command Does\n\nMigrates an existing Workspace-Control\
+  \ `controlled_member` (or `migration_source`) repository\ninto a fully-equipped\
+  \ `autonomous_child`. This is the formal off-ramp for the g-rl-36 marker-only\n\
+  guard (BUG-097): a `controlled_member` is intentionally restricted to a marker-only\
+  \ `.gald3r/`\n(`.identity` + `PROJECT.md`) and `@g-skl-setup` is blocked there.\
+  \ PROMOTE lifts that guard by\nflipping `workspace_role`, backfilling the standard\
+  \ framework files that postdate the original\nmember creation, and updating the\
+  \ workspace manifest.\n\nDelegates to `g-skl-workspace` PROMOTE operation.\n\n##\
+  \ Usage\n\n```\n@g-wpac-promote <member-id> --dry-run\n@g-wpac-promote <member-id>\
+  \ --apply\n```\n\n**Arguments:**\n- `member-id` — the manifest `repository.id` of\
+  \ the member to promote (or pass `--member-path`)\n\n**Options:**\n- `--dry-run`\
+  \ — preview the plan; write nothing (default)\n- `--apply` — perform the promotion\n\
+  - `--member-path <path>` — absolute member path (when not resolving by manifest\
+  \ id)\n- `--controller-path <path>` — absolute controller path (defaults to manifest\
+  \ discovery)\n- `--gald3r-version <ver>` — override the framework version written\
+  \ to `.identity`\n\n## Examples\n\n```\n# Preview what promoting example_agent would\
+  \ do\n@g-wpac-promote example_agent --dry-run\n\n# Promote it for real\n@g-wpac-promote\
+  \ example_agent --apply\n```\n\n## What Happens\n\n1. Resolves the member path,\
+  \ manifest entry, and `.gald3r/.identity`.\n2. Classifies the current role via the\
+  \ g-rl-36 guard helper.\n   - Already `autonomous_child` -> informational no-op.\n\
+  \   - Not `controlled_member`/`migration_source` -> blocked.\n3. **Dry-run**: prints\
+  \ the plan (files to scaffold, `.identity` edits, manifest change); writes nothing.\n\
+  4. **Apply**:\n   - Creates only the **missing** standard files: `RELEASES.md`,\
+  \ `releases/`, `vocab.md`,\n     `linking/link_topology.md`, `linking/INBOX.md`,\
+  \ `FEATURES.md`, `BUGS.md`, `PLAN.md`\n     (existing files are preserved, never\
+  \ overwritten).\n   - Rewrites `.gald3r/.identity`: `workspace_role=autonomous_child`,\
+  \ removes\n     `member_gald3r_marker_only`, bumps `gald3r_version` to the current\
+  \ framework version.\n   - Updates **only** the named member's `workspace_role`\
+  \ in `workspace_manifest.yaml`.\n   - Prints a promote summary with the exact files\
+  \ created/updated.\n5. After apply, the g-rl-36 guard allows `@g-setup`. Run `@g-setup\
+  \ --autonomy full`\n   for a full file top-up (idempotent — only fills what's missing),\
+  \ then `@g-wrkspc-validate`\n   to confirm.\n\n## Underlying Script\n\n```\ngald3r\
+  \ workspace member promote --member-path <path> [--apply]\n```\n\n## Companion Commands\n\
+  \n| Command | When to Use |\n|---------|-------------|\n| `@g-wpac-promote` | Upgrade\
+  \ a `controlled_member` to `autonomous_child` |\n| `@g-wrkspc-spawn` | Create a\
+  \ brand-new empty member |\n| `@g-wrkspc-adopt` | Import an existing populated gald3r\
+  \ project's history |\n| `@g-wrkspc-member-add` | Register an existing/planned member\
+  \ (registry-only) |\n| `@g-wrkspc-validate` | Verify manifest + roles after promotion\
+  \ |\n\n## Delegates To\n`g-skl-workspace`"
+prompt: Run the gald3r `g-wpac-promote` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-wpac-promote, e.g. quoted text or --flag
+    values, exactly as you would type them after the command name.

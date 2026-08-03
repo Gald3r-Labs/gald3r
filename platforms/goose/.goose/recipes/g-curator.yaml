@@ -1,0 +1,37 @@
+version: 1.0.0
+title: g-curator
+description: /g-curator
+instructions: "# /g-curator\n\nActivate the **g-skl-curator** skill — autonomous skill\
+  \ library audit.\n\nThe Curator grades every `SKILL.md` across all five gald3r IDE\
+  \ platform skill\ndirectories against a five-dimension rubric (recency, clarity,\
+  \ scope overlap, token\nefficiency, invocation rate), identifies overlap, proposes\
+  \ consolidations and archive\ncandidates, and writes a structured audit log. It\
+  \ is safe to run unattended — file IO\nonly, no Shell, no web fetch.\n\n## Modes\n\
+  \n- `@g-curator` (default GRADE) — grade all skills against the rubric, write audit\
+  \ log\n  to `.gald3r/reports/skill_curator_YYYYMMDD.md`\n- `@g-curator --status`\
+  \ — summary table of the most recent run (read-only; does not\n  re-grade)\n- `@g-curator\
+  \ --consolidate` — focus on merge proposals (overlap detection)\n- `@g-curator --prune-candidates`\
+  \ — focus on archive proposals (low-scoring skills)\n- `@g-curator --rank` — ranked\
+  \ skills list only (most → least valuable)\n\n## Output\n\nA daily audit log at\
+  \ `.gald3r/reports/skill_curator_YYYYMMDD.md` containing:\n\n1. Ranked skill list\
+  \ (most → least valuable)\n2. Proposed merges (overlap ≥ 70% on both topics and\
+  \ content)\n3. Archive candidates (composite score < 8, not protected)\n4. Prune\
+  \ candidates (subset: archive candidates with zero invocations in 90 days)\n5. Drift\
+  \ findings (cross-platform copy divergence)\n6. Protected skills (informational)\n\
+  7. Run metadata\n\n## Output discipline\n\nThe Curator **NEVER deletes**. It only\
+  \ proposes via `archive_candidate` and\n`merge_candidate` tags. Humans approve final\
+  \ action.\n\nSkills listed in `.gald3r/config/CURATOR_PROTECTED_SKILLS.md` are graded\
+  \ but never\nproposed for archive or merge.\n\n## Scheduled use\n\nThe Curator is\
+  \ designed to run unattended on a 7-day cadence via the gald3r Tauri\ndesktop scheduler.\
+  \ See the `HEARTBEAT.md` / `WAKEUP_QUEUE.md` integration contract in\nthe `g-skl-curator`\
+  \ SKILL.md for field shapes.\n\n## Trigger phrases\n\n`@g-curator` | `curate skills`\
+  \ | `audit skill library` | `grade skills` | `skill rubric`\n| `consolidate skills`\
+  \ | `prune skills`"
+prompt: Run the gald3r `g-curator` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-curator, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

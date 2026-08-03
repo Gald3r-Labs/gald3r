@@ -33,7 +33,7 @@ import re
 import subprocess
 import sys
 import tempfile
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -192,9 +192,21 @@ def write_vault_note(
     duration_min = round(duration_sec / 60, 1)
     source_url = metadata.get("webpage_url", metadata.get("original_url", ""))
 
-    today = datetime.today().strftime("%Y-%m-%d")
+    # BUG-260 resolved: datetime.today() (local time) replaced with UTC to stay
+    # consistent with append_log's timezone-aware UTC timestamps (BUG-222 fix).
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     slug = slugify(title)
-    filename = f"{today}_{slug}.md"
+    # Task 186 fix: filename used to be `{date}_{slug}.md` with no video-id
+    # disambiguator -- two different videos ingested on the same day with a
+    # similar/truncated title (slug is capped at 60 chars) would silently
+    # overwrite each other on disk while both still produced a distinct,
+    # "successful" log.md entry (evidence: research/videos/2026-04-17_
+    # rick-astley-... has two separate ingest log entries -- 12:00 and 12:10
+    # UTC on the same day -- but only one file, now gone entirely, ever
+    # existed on disk). Appending the yt-dlp video id makes the filename
+    # collision-safe (ids are unique per video).
+    video_id = metadata.get("id", "") or ""
+    filename = f"{today}_{slug}_{video_id}.md" if video_id else f"{today}_{slug}.md"
 
     out_dir = Path(vault_path) / "research" / "videos"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -239,13 +251,58 @@ source_notes: "Transcript captured {today}. No visual analysis."
 {transcript}
 """
 
-    out_path.write_text(note, encoding="utf-8")
+    _atomic_write_text(out_path, note)
     return str(out_path)
+
+
+def _atomic_write_text(path: Path, content: str) -> None:
+    """Write `content` to `path` atomically (Task 186 fix, part 2).
+
+    Writes to a same-directory temp file, flushes + fsyncs, then
+    ``os.replace()``s it onto the final name. A half-written note (process
+    killed mid-write, disk full mid-flush, antivirus/sync lock) can therefore
+    never be visible at `path` -- either the write fully lands, or `path` is
+    left untouched -- so :func:`verify_note_landed`'s later existence/size
+    check can be trusted instead of racing a partial write.
+    """
+    fd, tmp_name = tempfile.mkstemp(dir=str(path.parent), prefix=f".{path.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(content)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_name, path)
+    except BaseException:
+        try:
+            os.unlink(tmp_name)
+        except OSError:
+            pass
+        raise
+
+
+def verify_note_landed(out_path: str, min_bytes: int = 1) -> bool:
+    """Task 186 regression gate: confirm the note file an ingest claims to
+    have written actually exists on disk (and is non-empty) before the
+    caller is allowed to log that ingest as successful.
+
+    This is the check that was missing entirely before T186 -- ``main()``
+    used to call :func:`append_log` unconditionally right after
+    :func:`write_vault_note` returned a path string, with no verification
+    that anything real was ever written there. That gap is the diagnosed
+    drop point behind the videos-ingest-lag bug: a log.md entry could exist
+    with no corresponding file on disk.
+    """
+    p = Path(out_path)
+    try:
+        return p.is_file() and p.stat().st_size >= min_bytes
+    except OSError:
+        return False
 
 
 def append_log(vault_path: str, out_path: str):
     log_path = Path(vault_path) / "log.md"
-    timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    # BUG-222 resolved: datetime.utcnow() replaced with timezone-aware datetime.now(timezone.utc)
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     rel = os.path.relpath(out_path, vault_path)
     entry = f"\n## {timestamp} | ingest | {rel}\n"
     with open(log_path, "a", encoding="utf-8") as f:
@@ -295,6 +352,14 @@ def main():
         summary=summary,
         key_points=key_points,
     )
+
+    # Task 186 fix: never log an ingest as successful without first proving
+    # the note actually landed on disk. Previously `append_log` ran
+    # unconditionally right after `write_vault_note` returned -- this is the
+    # diagnosed drop point for the videos-ingest-lag bug.
+    if not verify_note_landed(out_path):
+        print(f"INGEST_FAILED: note did not land on disk: {out_path}", file=sys.stderr)
+        sys.exit(1)
 
     append_log(args.vault_path, out_path)
 

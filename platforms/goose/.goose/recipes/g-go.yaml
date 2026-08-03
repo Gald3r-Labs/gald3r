@@ -1,0 +1,1364 @@
+version: 1.0.0
+title: g-go
+description: 'Pipeline orchestrator — implement then auto-review: $ARGUMENTS'
+instructions: "Pipeline orchestrator — implement then auto-review: $ARGUMENTS\n\n\
+  ## Mode: PIPELINE (Implement → Auto-Review)\n\n`g-go` is a **two-phase pipeline**.\
+  \ Phase 1 implements tasks; Phase 2 automatically spawns an\nindependent reviewer\
+  \ agent on the completed work. You get adversarial QA without manually\nalternating\
+  \ between sessions.\n\n> **Multi-agent frameworks used (T1094):** `g-go` combines\
+  \ **delegation** (Phase 1 spawns\n> implementation work / swarm buckets), **creator–verifier**\
+  \ (Phase 2's fresh independent\n> reviewer), and **broadcast** (status/constraints\
+  \ surfaced to sub-agents). `--swarm` adds\n> **negotiation** (coordinator-owned\
+  \ reconciliation over shared `.gald3r/` state). See the\n> 5-framework taxonomy\
+  \ table in `@g-go-swarm`.\n\n> **Independence guarantee**: The Phase 2 reviewer\
+  \ is a fresh Task subagent. It receives only\n> the task IDs and the `g-go-review`\
+  \ protocol — it has **no access** to Phase 1's conversation\n> history, reasoning,\
+  \ or implementation decisions. It reads the artifacts on disk cold.\n\n---\n\n##\
+  \ \U0001F6A6 Coordinator: Routing-Only Mandate\n\n> **The coordinator never implements.\
+  \ It only routes, observes, and reconciles.**\n>\n> If the coordinator finds itself\
+  \ about to write production code or do file edits for a task,\n> it **MUST STOP**\
+  \ and delegate to `g-go-code` instead. This is the **pure routing orchestrator**\n\
+  > pattern — the coordinator is traffic control, not implementation. (OpenSwarm F-002,\
+  \ Anthropic\n> multi-agent coordination 2026-05-07.)\n\n**Routing decision record**\
+  \ — for each subtask the coordinator logs to the task's Status History:\n\n```\n\
+  ROUTE: {task_id} → {specialist} ({mode}) — {reason}\n```\n\n**Mode choices:**\n\
+  - **`SendMessage`** (parallel) — independent subtask, no cross-bucket deps; fire-and-forget.\
+  \ Maps to `--swarm` parallel buckets.\n- **`Handoff`** (sequential) — full-context\
+  \ transfer required from a prior result; wait for upstream output. Maps to the sequential\
+  \ `g-go-code → g-go-review` pipeline.\n\n**Coordinator-owned writes** — all shared\
+  \ `.gald3r/` write operations (TASKS.md, task files, BUGS.md,\nCHANGELOG.md, generated\
+  \ prompts, parity output) are **coordinator-owned steps** performed after\nspecialist\
+  \ results are collected. They are never delegated to bucket agents or specialist\
+  \ executors.\n\n### Routing Flowchart\n\n```mermaid\ngraph TD\n    C[Coordinator]\
+  \ --> |routes task spec| IA[Implementer Agent]\n    C --> |routes task spec| RA[Reviewer\
+  \ Agent]\n    IA --> |returns patch bundle| C\n    RA --> |returns verdict| C\n\
+  \    C --> |coordinator-owned write| G[.gald3r/ shared state]\n    style C fill:#f9f,stroke:#333\n\
+  \    style G fill:#bbf,stroke:#333\n```\n\n---\n\n### ⛔ NO-PROMPT RULE — READ AND\
+  \ ENFORCE BEFORE DOING ANYTHING ELSE\n\n**The coordinator MUST NEVER ask the user\
+  \ to confirm a plan, select a scope, choose between options, or approve a proposal.**\
+  \ This command is designed for fire-and-forget operation across multi-window workflows\
+  \ and scheduled automation. The user has already expressed intent by typing the\
+  \ command; they are not watching this session.\n\nThe **only** valid reasons to\
+  \ stop mid-run are the explicitly documented **hard-gate failures** listed below\
+  \ (WPAC conflict exit-code `2`, dirty orchestration root outside this run's staging\
+  \ allowlist, manifest / `workspace_repos` resolution error on multi-repo work).\
+  \ Any ambiguity that is NOT one of those hard gates is **resolved silently by the\
+  \ auto-plan rules below** and the run proceeds without comment.\n\nAsking \"Go?\"\
+  \ or \"Confirm?\" or \"Which tasks?\" or \"Conservative or expanded?\" is a **violation\
+  \ of this rule**. If you find yourself composing a confirmation question, apply\
+  \ the auto-plan instead and start working.\n\n#### Auto-Plan Algorithm (no explicit\
+  \ task IDs in `$ARGUMENTS`)\n\nWhen `$ARGUMENTS` is empty or contains no task/bug\
+  \ IDs, the coordinator selects the work queue **immediately and silently** using\
+  \ these ordered rules:\n\n1. **Scope filter** — determined by flags AND `.gald3r/config/AGENT_CONFIG.md`\
+  \ `g_go_default_scope` (T532 + controller-default extension):\n\n   **Step 1a —\
+  \ Resolve effective scope** (evaluated in priority order, highest wins):\n   | Priority\
+  \ | Condition | Effective scope |\n   |---|---|---|\n   | 1 | `--local` flag present\
+  \ | **local-only**: current repo tasks only |\n   | 2 | `--workspace <id>` or `--workspace\
+  \ <id1,id2>` | **narrow**: only the named manifest member(s) |\n   | 3 | `--workspace`\
+  \ (flag, no value) | **all members**: full workspace scan |\n   | 4 | *(no flag)*\
+  \ + AGENT_CONFIG `g_go_default_scope: workspace_all` | **all members** (controller-repo\
+  \ default) |\n   | 5 | *(no flag)* + AGENT_CONFIG `g_go_default_scope: local_only`\
+  \ or absent | **local-only** (member-repo default) |\n\n   **Step 1b — Apply the\
+  \ resolved scope:**\n   - **local-only** — include only items that are **this-repo-scoped**:\
+  \ the task's `workspace_repos` field is absent, empty, or contains only the current\
+  \ repo's own manifest ID. Items whose `workspace_repos` lists other member repos\
+  \ are **deferred** (logged as `Deferred — member-repo scope` in the session summary;\
+  \ no prompt to the user).\n   - **workspace scope (all or filtered)** — include\
+  \ items routed to any manifest-declared workspace repository that (a) is in the\
+  \ resolved member set, (b) has `repository.local_path` existing on disk, (c) has\
+  \ `lifecycle_status` permitting work, and (d) has `allowed_write_policy` compatible\
+  \ with the task's `workspace_touch_policy`. Items routing to repos that are missing/planned/unavailable,\
+  \ write-disallowed, or unauthorized are **deferred** with explicit per-repo reasons.\
+  \ The orchestration controller and every selected member repo each get their own\
+  \ per-root clean check, worktree context, and blocker reporting; no per-repo blocker\
+  \ silently affects unrelated repos.\n\n   > **Controller repos** (those with `g_go_default_scope:\
+  \ workspace_all` in AGENT_CONFIG.md) default to workspace-wide scope because they\
+  \ have no code of their own. Use `--local` to explicitly restrict to controller-only\
+  \ tasks, or `--workspace <repo_id>` to narrow to a specific member.\n2. **Phase\
+  \ 1 queue** — all `[\U0001F4CB]` / `[ ]` / stale-`[\U0001F4DD]` items that pass\
+  \ the scope filter, ordered Critical → High → Medium → Low. Apply the auto-downgrade\
+  \ rule: if exactly one implementation item passes the filter, downgrade to single-agent\
+  \ `g-go-code` and continue — do not stop.\n3. **Phase 2 queue** — all `[\U0001F50D\
+  ]` items that pass the scope filter and are reachable from the Phase 1 checkpoint.\n\
+  4. **Zero runnable items** — output `[PIPELINE] No runnable items after scope filter.\
+  \ Deferred: {list with reasons}. Nothing to commit.` and exit cleanly. **Do not\
+  \ ask what to do.**\n\nWhen `$ARGUMENTS` provides explicit task/bug IDs, use those\
+  \ IDs exactly — skip scope filtering. The user's explicit selection is the plan.\
+  \ The `--workspace` flag still affects per-repo clean-check and authorization behavior\
+  \ even with explicit IDs: every repo touched by the explicit task list is gated\
+  \ per-root.\n\n---\n\n## Prompt Template Variables (T1175)\n\nWhen the `g-go` coordinator\
+  \ dispatches a task to an implementer subagent (`g-go-code`) or to a reviewer subagent\
+  \ (`g-go-review`), the dispatch prompt is **templated**: the coordinator substitutes\
+  \ a fixed set of template variables at runtime before the subagent receives the\
+  \ prompt. This eliminates the \"hand-edit the prompt per task\" anti-pattern and\
+  \ gives a stable, audit-able dispatch surface.\n\nSupported template variables (resolved\
+  \ at coordinator dispatch time, never inside the bucket agent):\n\n| Variable |\
+  \ Resolved from | Example resolution |\n|----------|---------------|-------------------|\n\
+  | `{{TASK_ID}}` | Numeric ID of the queued task (no `T` prefix) | `1175` |\n| `{{TASK_TITLE}}`\
+  \ | `title:` field of the task YAML frontmatter | `the external runner g-go pipeline\
+  \ patterns` |\n| `{{SKILL_PATH}}` | Absolute path to the active gald3r skill folder\
+  \ for the dispatch role | `.claude/skills/g-skl-tasks` |\n| `{{BRANCH_NAME}}` |\
+  \ Worktree branch from `gald3r worktree create -Json` output | `gald3r/1175/code/<gald3r_source>/autopilot-iter9`\
+  \ |\n| `{{TASK_FILE}}` | Path to the active task file under `.gald3r/tasks/**` |\
+  \ `.gald3r/tasks/open/task1175_external_runner_g_go_pipeline_patterns.md` |\n| `{{WORKTREE_PATH}}`\
+  \ | Absolute worktree path from the helper JSON | `<ECOSYSTEM_ROOT>/.gald3r-worktrees/<gald3r_source>/1175-code-autopilot-iter9`\
+  \ |\n| `{{MODE}}` | Resolved model tier (`fast` | `standard` | task `preferred_model:`\
+  \ override) | `standard` |\n| `{{COORDINATOR_AGENT}}` | Slug of the coordinator\
+  \ agent for audit trail | `autopilot-iter9` |\n\n**Resolution rules:**\n\n1. All\
+  \ `{{VAR}}` tokens are resolved by simple string substitution **before** the prompt\
+  \ is sent to the subagent. The subagent receives a fully-materialized prompt — it\
+  \ never sees an unresolved `{{...}}` token.\n2. If a referenced variable cannot\
+  \ be resolved (e.g. `{{TASK_TITLE}}` for a task with no `title:` field), the coordinator\
+  \ logs the failure as `PROMPTARG_FAIL: {{VAR}} unresolved for T{id}` and **defers**\
+  \ the item rather than dispatching with a malformed prompt.\n3. Custom dispatch\
+  \ prompts may extend the template set, but the eight variables above are **guaranteed**\
+  \ present in every dispatch and must never be re-purposed for other meanings.\n\
+  4. Template variable substitution is a coordinator-only operation — bucket agents\
+  \ and reviewer subagents must NOT receive raw template strings to render themselves.\n\
+  \n**Why this matters**: a structured templating surface lets the coordinator log\
+  \ exactly which payload each subagent received (audit), lets dispatch prompts evolve\
+  \ without rewriting every bucket call-site, and lets future provider adapters (see\
+  \ \"Provider-Agnostic Adapter Pattern\" below) translate `{{VAR}}` into provider-specific\
+  \ argument shapes (OpenAI tool args, Anthropic content blocks, etc.) at a single\
+  \ chokepoint.\n\n## Swarm Lifecycle Hooks (T1175)\n\n`g-go --swarm` (and `g-go-code\
+  \ --swarm` / `g-go-review --swarm`) supports **optional** PowerShell lifecycle hook\
+  \ scripts that fire at bucket transition points. Hooks are advisory observation/notification\
+  \ surfaces — they MUST NOT mutate task state, write to shared `.gald3r/` ledgers,\
+  \ or affect coordinator routing decisions. They are intended for logging, metrics,\
+  \ external notifications (Slack/Rally/PagerDuty), and developer-machine status displays.\n\
+  \n### Hook contract\n\nThe coordinator looks for the following optional PowerShell\
+  \ scripts in the active IDE hooks folder (first match wins across `.claude/hooks/`,\
+  \ `.cursor/hooks/`, `.agent/hooks/`, `.codex/hooks/`, `.copilot/hooks/`, `.opencode/hooks/`):\n\
+  \n| Hook script | Fires when | Coordinator-passed arguments |\n|-------------|-----------|-----------------------------|\n\
+  | `g-hk-on-bucket-start.ps1` | Immediately after a bucket worktree is created and\
+  \ just before the bucket agent is spawned | `-BucketId <int> -TaskIds <int[]> -WorktreePath\
+  \ <string> -Branch <string> -Mode <string>` |\n| `g-hk-on-bucket-complete.ps1` |\
+  \ After a bucket agent returns its handoff payload (PASS, partial, or with Blockers)\
+  \ and before coordinator reconciliation begins on that bucket | `-BucketId <int>\
+  \ -TaskIds <int[]> -PassCount <int> -BlockedCount <int> -DurationSeconds <int> -Verdict\
+  \ <string>` |\n| `g-hk-on-bucket-error.ps1` | When a bucket agent fails to return\
+  \ a parseable payload, times out, or returns an error verdict | `-BucketId <int>\
+  \ -TaskIds <int[]> -ErrorType <string> -ErrorMessage <string>` |\n\n### Coordinator\
+  \ invocation pattern\n\n```powershell\n# Pseudo-code the coordinator follows for\
+  \ each hook\n$hook = @(\n  \".cursor\\hooks\\g-hk-on-bucket-start.ps1\",\n  \".claude\\\
+  hooks\\g-hk-on-bucket-start.ps1\",\n  \".agent\\hooks\\g-hk-on-bucket-start.ps1\"\
+  ,\n  \".codex\\hooks\\g-hk-on-bucket-start.ps1\",\n  \".copilot\\hooks\\g-hk-on-bucket-start.ps1\"\
+  ,\n  \".opencode\\hooks\\g-hk-on-bucket-start.ps1\"\n) | Where-Object { Test-Path\
+  \ $_ } | Select-Object -First 1\nif ($hook) {\n  powershell -NoProfile -ExecutionPolicy\
+  \ Bypass -File $hook `\n    -BucketId 1 -TaskIds @(7,9) -WorktreePath \"...\" -Branch\
+  \ \"...\" -Mode \"fast\"\n}\n```\n\n### Hook rules\n\n- **Optional**: missing hook\
+  \ scripts are NOT an error. The coordinator continues silently when no hook is present.\n\
+  - **Read-only side effects**: hooks must NOT touch `.gald3r/TASKS.md`, `.gald3r/BUGS.md`,\
+  \ task/bug files, `CHANGELOG.md`, parity output, or git state. They may write to\
+  \ `.gald3r/logs/`, external systems, or stdout for the coordinator session log.\n\
+  - **Non-blocking**: hooks run with a 30-second timeout (override via `GALD3R_HOOK_TIMEOUT_SECONDS`).\
+  \ If a hook exceeds the timeout or exits non-zero, the coordinator logs `HOOK_FAIL:\
+  \ <script> exit=<n>` to the session summary and continues — a failed hook never\
+  \ blocks bucket progression.\n- **Idempotent**: hooks may be invoked more than once\
+  \ per bucket if the coordinator retries (e.g. on transient parse failures). Hook\
+  \ scripts must tolerate replay without producing duplicate side effects on external\
+  \ systems.\n- **Documented contract**: the hook script's parameter block MUST match\
+  \ the argument table above; coordinators will pass arguments by name (`-BucketId`,\
+  \ `-TaskIds`, etc.) and ignore additional declared parameters.\n\n### Contract definition\
+  \ only — no example scripts shipped\n\nThis command defines the contract. Concrete\
+  \ hook scripts (e.g. \"post bucket-complete to Slack\", \"write a metric to Datadog\"\
+  , \"ping Rally with `Rally-Comment`\") are NOT shipped in the gald3r template —\
+  \ operators write them per environment. Place hook scripts in the appropriate `<ide>/hooks/`\
+  \ folder using the names above; the coordinator discovers them automatically on\
+  \ the next swarm run.\n\n## Provider-Agnostic Adapter Pattern (T1175)\n\n`g-go`\
+  \ does not own model selection — by design. The gald3r framework is a **prompt orchestrator**:\
+  \ it routes work, partitions buckets, gates safety, and writes shared state, but\
+  \ the actual LLM call is delegated to the host IDE harness (Claude Code, Cursor,\
+  \ Codex, Gemini, OpenCode, Copilot). The provider-agnostic abstraction in gald3r\
+  \ is the `--mode` flag combined with the per-task `preferred_model:` field — see\
+  \ \"Model-Tier Selection\" below.\n\n**The adapter surface, in concrete terms:**\n\
+  \n| Layer | Owner | What it does |\n|-------|-------|--------------|\n| Tier selection\
+  \ (`fast` / `standard` / `cheap`) | `g-go` / `g-go-code` flag | Provider-agnostic\
+  \ intent: \"this task wants a cheap model\" or \"this task needs a reasoning model\"\
+  . Recorded in Status History as `mode=<tier>`. |\n| Per-task override (`preferred_model:`)\
+  \ | Task YAML | Provider-agnostic intent: \"this specific task needs Opus\" or \"\
+  this specific task is fine on Haiku\", overrides session mode. |\n| Tier → concrete\
+  \ model resolution | Host IDE harness | The IDE maps `fast` → `claude-haiku-4-5`\
+  \ (Claude Code), `fast` → `gpt-4o-mini` or `haiku` (Cursor), etc. See the Mode Mapping\
+  \ table in \"Model-Tier Selection\" below for current resolutions per IDE. |\n|\
+  \ API call | Host IDE harness | gald3r never opens an HTTPS connection to a model\
+  \ provider. The IDE owns auth, rate limits, retries, and streaming. |\n\n**Why this\
+  \ matters for adoption**: a future IDE adding gald3r support (e.g. a new local-LLM\
+  \ CLI) does not require any gald3r changes. The new IDE adds its own `--mode` →\
+  \ `model-name` mapping; gald3r continues to emit `mode=<tier>` and `preferred_model:`\
+  \ annotations unchanged. The the external runner adapter pattern is satisfied because\
+  \ the abstraction lives at the tier-of-intent level, not the model-name level.\n\
+  \n**Limit**: this is a tier-of-intent abstraction, not a runtime model swap. gald3r\
+  \ cannot fail over from one provider to another mid-task if the IDE-configured model\
+  \ is rate-limited. That is properly an IDE-layer concern. Operators who need cross-provider\
+  \ failover should configure it in the IDE (e.g. Cursor's model-fallback settings)\
+  \ — gald3r will inherit it.\n\n## Iteration and Timeout Limits (T1175)\n\n`g-go`\
+  \ accepts dual stop-conditions in `$ARGUMENTS` that bound the **pipeline** run (both\
+  \ phases combined). **Whichever limit hits first stops new work cleanly**; in-flight\
+  \ items finish, status writes batch, the review-result commit lands, and the pipeline\
+  \ summary is written.\n\n| Flag | Default | Override env var | Behavior |\n|------|---------|------------------|----------|\n\
+  | `--max-iterations N` | `5` | `GALD3R_MAX_ITERATIONS` | Maximum number of items\
+  \ the pipeline will process this session (Phase 1 implementation count). Once N\
+  \ items reach `[\U0001F50D]` or Blocked, Phase 1 stops claiming and Phase 2 reviews\
+  \ only those N items. |\n| `--timeout-minutes M` | `30` | `GALD3R_TIMEOUT_MINUTES`\
+  \ | Wall-clock budget from pipeline start. When elapsed minutes ≥ M and the current\
+  \ item finishes, Phase 1 stops claiming. If Phase 2 has not yet spawned when the\
+  \ timer expires, it still spawns once on the already-checkpointed items (the user\
+  \ has earned a review pass for the work that completed). |\n\n**Enforcement rules:**\n\
+  \n- Limits are checked between items, never preemptively. An in-flight item is never\
+  \ interrupted mid-edit.\n- `--max-iterations` counts Phase 1 attempts (PASS + BLOCKED\
+  \ items). It does not separately bound Phase 2 — once Phase 1 stops, Phase 2 reviews\
+  \ whatever made it to `[\U0001F50D]`.\n- `--timeout-minutes` is wall-clock from\
+  \ pipeline start (NOT from each phase start). A pipeline at minute 28 will not start\
+  \ a new Phase 1 item even if Phase 1 has been the only active phase.\n- In `--swarm`\
+  \ mode, limits apply to the coordinator's scheduling: `--max-iterations` caps total\
+  \ items partitioned across all buckets; `--timeout-minutes` is a coordinator-level\
+  \ wall-clock fence.\n- Either limit hitting MUST be logged in the Pipeline Session\
+  \ Summary as `Stop reason: queue exhausted | max-iterations (N of N) | timeout-minutes\
+  \ (M elapsed) | hard-gate blocker`.\n- Explicit `$ARGUMENTS` flags override env\
+  \ vars; env vars override defaults.\n\n**Why dual limits**: see the matching section\
+  \ in `g-go-code.md` — iteration alone is brittle for tasks of mixed size; wall-clock\
+  \ alone is brittle when many small items finish cleanly. Together they bound both\
+  \ work and time.\n\n## Completion Signal Convention (T1122)\n\nA coordinator or\
+  \ parent orchestrator may need to recognize that a `g-go` /\n`g-go-code` / `g-go-review`\
+  \ iteration is finished without polling task files\nor waiting for the agent process\
+  \ to exit. To support this, gald3r defines a\nsingle inline completion signal that\
+  \ agents emit in their stdout / response\ntext when they consider their work for\
+  \ the current iteration done.\n\n### Default signal\n\n```\n<gald3r-status>COMPLETE</gald3r-status>\n\
+  ```\n\nThis is the canonical default. Parent orchestrators (`g-go --swarm` coordinator,\n\
+  external `example_agent` daemon, CI runners) scanning agent output SHOULD look\n\
+  for this exact tag pair.\n\n### Recognition rules\n\n1. **Case-insensitive on both\
+  \ the tag name and the value** — `<gald3r-status>COMPLETE</gald3r-status>`,\n  \
+  \ `<GALD3R-STATUS>complete</GALD3R-STATUS>`, and `<Gald3r-Status>Complete</Gald3r-Status>`\n\
+  \   all match.\n2. **Whitespace tolerant around the value** — `<gald3r-status> \
+  \ COMPLETE  </gald3r-status>`\n   matches. Whitespace inside the tag name itself\
+  \ does NOT match (the tag is\n   a literal token, not XML-with-attributes).\n3.\
+  \ **First match wins** — if an iteration emits the signal multiple times\n   (e.g.,\
+  \ from quoted documentation in a result summary), the first occurrence\n   stops\
+  \ the loop. Agents SHOULD only emit the signal once, at the very end of\n   their\
+  \ final response.\n4. **Quoted / fenced occurrences are still matches** — the scanner\
+  \ does NOT\n   try to distinguish between a real signal and an example inside a\
+  \ code\n   fence. Agents documenting this convention MUST therefore zero-width-break\n\
+  \   the tag in examples (e.g., `<gald3r-status>` becomes `<gald3r​-status>`\n  \
+  \ or `<g-status>` in prose) or place documentation examples outside the\n   iteration's\
+  \ primary output channel.\n5. **Other emitted values besides `COMPLETE` are advisory**\
+  \ — `BLOCKED`,\n   `NEEDS_INPUT`, `FAILED` are reserved for future use. The current\
+  \ scanner\n   only short-circuits on `COMPLETE`; the rest log as evaluator notes.\n\
+  \n### Agent emission contract\n\nWhen an agent acting under `g-go`, `g-go-code`,\
+  \ or `g-go-review` has finished\nits iteration's work AND has performed coordinator-owned\
+  \ shared writes\n(TASKS.md, BUGS.md, review-result commits, etc.), it SHOULD emit\
+  \ the\ncompletion signal as the **final** non-whitespace line of its response, like\n\
+  so:\n\n```\n... last paragraph of work summary ...\n\n<gald3r-status>COMPLETE</gald3r-status>\n\
+  ```\n\nAgents MUST NOT emit `COMPLETE` while there is still pending work in the\n\
+  current iteration's task or while a hard-gate blocker is unresolved.\n\n### `--completion-signal\
+  \ <tag>` override flag (future orchestrator)\n\nA future external orchestrator may\
+  \ want to use a different signal tag (for\nexample, when integrating with external-runner-style\
+  \ `<promise>COMPLETE</promise>`\npipelines or when one shell wraps multiple gald3r\
+  \ runs in a parent loop that\nneeds distinct signals per child). The flag is reserved\
+  \ as:\n\n```\n--completion-signal <tag-name>\n```\n\nDefault: `gald3r-status:COMPLETE`.\
+  \ When supplied, the orchestrator scans for\n`<{tag-name}>COMPLETE</{tag-name}>`\
+  \ instead. Agents reading this flag MUST\nemit the supplied tag instead of the default.\
+  \ The current gald3r implementation\ndocuments the convention only — no PowerShell\
+  \ orchestrator currently parses\nthis flag, since the \"iteration loop\" of `g-go`\
+  \ is the agent itself rather\nthan a wrapping process. The flag becomes load-bearing\
+  \ once `example_agent`\nor a external runner takes over the loop role.\n\n### Why\
+  \ a tag, not a file\n\nFile-based status polling (writing `.gald3r/iteration_status.json`\
+  \ and having\nthe parent watch it) is heavier than necessary for in-shell loops,\
+  \ requires\nfile-locking on Windows, and races with cleanup. An inline stdout tag\
+  \ is\ntrivially testable (`grep -i '<gald3r-status>COMPLETE</gald3r-status>'`),\n\
+  needs no filesystem coordination, and survives stdout/stderr redirection\nwithout\
+  \ changing the parent's contract.\n\n\n## Dynamic Context Expansion in Prompts (T1119)\n\
+  \n`g-go` prompt files (and the dispatch prompts generated by the coordinator\nfor\
+  \ `g-go-code` and `g-go-review`) support an inline shell-expansion\nexpression:\
+  \ any occurrence of an opening `!\\`` (bang-backtick) and a\nmatching closing `\\\
+  `` on the same line is treated as a shell command\nwhose stdout is substituted in\
+  \ place before the agent sees the prompt.\n\nThis lets a prompt declare its live\
+  \ context (current TASKS.md head,\nrecent commits, open PRs, currently-claimed worktrees)\
+  \ without the\ncoordinator having to know in advance which context the implementer\n\
+  will need.\n\n### Syntax\n\n```\nCurrent task queue:\n!`Get-Content .gald3r/TASKS.md\
+  \ -TotalCount 100`\n\nRecent commits:\n!`git log --oneline -10`\n\nOpen PRs (GitHub):\n\
+  !`gh pr list --limit 5 --state open`\n```\n\nEach `!\\`...\\`` expression is replaced\
+  \ by the captured stdout of the\ncommand run with the project root as the working\
+  \ directory.\n\n### Expansion rules\n\n1. **Parallel execution** — every `!\\`...\\\
+  `` in a prompt file runs in\n   parallel (PowerShell `Start-Job` / `ForEach-Object\
+  \ -Parallel` on PS\n   7+, or `Wait-Job` aggregation on PS 5.1). The orchestrator\
+  \ does not\n   serialize expansions and does not depend on declaration order. A\n\
+  \   prompt that requires a specific ordering between two expressions\n   must compose\
+  \ them into a single command (`cmd1; cmd2 | ...`) rather\n   than relying on left-to-right\
+  \ ordering of the inline tags.\n2. **Fast-fail on non-zero exit** — if any expression\
+  \ exits with a\n   non-zero exit code, the entire prompt expansion fails fast with\n\
+  \   the error line `Context expansion failed: !\\`{command}\\` exited\n   {exit_code}`\
+  \ and the run is aborted before the agent is invoked.\n   This is intentional: a\
+  \ context expansion that errors usually means\n   the agent's understanding of the\
+  \ world is now broken.\n3. **Escaped backticks pass through literal** — `!!\\`literal\\\
+  `` (double\n   bang) is the explicit escape: it produces the literal text\n   `!\\\
+  `literal\\`` in the expanded prompt without executing anything.\n   Use this when\
+  \ documenting the convention itself or when prose\n   genuinely needs the bang-backtick\
+  \ token.\n4. **No nested expansion** — the stdout of an expansion is substituted\n\
+  \   verbatim; if it contains a literal `!\\`...\\``, that nested token is\n   NOT\
+  \ re-expanded. Prompts that need recursive expansion must\n   construct the second-level\
+  \ expansion in their own command rather\n   than embedding it for re-evaluation.\n\
+  5. **Run as project root** — all expressions run with the project root\n   (the\
+  \ directory containing `.gald3r/.identity`) as cwd, with the\n   user's normal shell\
+  \ environment. Commands that need a different cwd\n   must `cd`-prefix themselves\
+  \ explicitly.\n6. **Truncation contract** — expansions are NOT truncated by the\n\
+  \   expander itself. If a command emits 10 MB of output, the agent\n   receives\
+  \ 10 MB of context. Prompts SHOULD pipe heavy expansions\n   through `Select-Object\
+  \ -First N` or `head -N` to keep the prompt\n   shaped to the agent's context window.\n\
+  7. **Stderr is not substituted** — only stdout is captured. Stderr\n   passes through\
+  \ to the orchestrator's own stderr and is logged but\n   not interpolated into the\
+  \ prompt.\n\n### `g-go` invocation\n\nPrompt files containing `!\\`...\\`` expressions\
+  \ are processed by the\ncoordinator's pre-agent dispatch step before the prompt\
+  \ is handed to\nthe implementer or reviewer subagent. The orchestrator caches expanded\n\
+  prompts per iteration so re-invocations within the same iteration do\nnot re-execute\
+  \ the commands.\n\nThe current gald3r implementation documents the convention only\
+  \ — the\nexpander itself becomes load-bearing when an external runner takes over\
+  \ the prompt\ndispatch role. Today, when `g-go` IS the agent, the agent SHOULD\n\
+  interpret `!\\`...\\`` expressions itself by running the command via the\nshell\
+  \ tool and substituting the output into its own working context.\n\n\n## Structured\
+  \ Review Verdict (T1120)\n\nThe `g-go-review` reviewer subagent emits its PASS/FAIL\
+  \ verdict inside\na single XML tag that the coordinator can parse deterministically.\n\
+  This replaces fragile string matching on free-form markdown (\"did the\nreviewer\
+  \ say PASS or FAIL?\") with a typed, schema-validated extraction.\n\n### Verdict\
+  \ schema\n\nThe reviewer emits exactly one of these tags as the final structured\n\
+  output of its response:\n\n```xml\n<gald3r-verdict>\n{\n  \"status\": \"PASS\",\n\
+  \  \"criteria\": [\n    {\"id\": \"AC1\", \"result\": \"pass\", \"note\": \"verified\
+  \ by file inspection\"},\n    {\"id\": \"AC2\", \"result\": \"pass\", \"note\":\
+  \ \"test output captured\"}\n  ],\n  \"evidence\": \"Re-ran the AC verification\
+  \ commands in a clean checkout; outputs match the implementer's claim.\",\n  \"\
+  reviewer_notes\": \"Optional free-form notes for the coordinator log.\"\n}\n</gald3r-verdict>\n\
+  ```\n\n`status` is one of `PASS`, `FAIL`, or `PASS_WITH_NOTES`. The `criteria`\n\
+  array enumerates each acceptance criterion the reviewer evaluated, with\nper-criterion\
+  \ `result` (`pass`, `fail`, `unsure`) and a short `note`.\n`evidence` is a single\
+  \ string describing how the reviewer verified the\nwork. `reviewer_notes` is optional\
+  \ free-form text the coordinator may\nsurface in its session summary.\n\n### Recognition\
+  \ rules\n\n1. **Exactly one verdict tag per review** — if the reviewer's output\n\
+  \   contains multiple `<gald3r-verdict>` blocks, the orchestrator uses\n   the LAST\
+  \ one (so a reviewer who self-corrects mid-response can\n   overwrite an earlier\
+  \ draft verdict by emitting a new one at the\n   end).\n2. **JSON body, no XML attributes**\
+  \ — the tag carries a JSON object\n   in its body; XML attributes on the tag are\
+  \ ignored.\n3. **Validation is mandatory** — the orchestrator validates the parsed\n\
+  \   JSON against the schema (`status` enum, `criteria` array, required\n   string\
+  \ fields). Malformed JSON or a missing required field surfaces\n   as `Verdict schema\
+  \ invalid: {error}` and the review FAILS the\n   coordinator's structured-extraction\
+  \ gate (the underlying task is\n   left at `[\U0001F50D]` for re-review, not auto-failed).\n\
+  4. **Backwards-compatible fallback** — if NO `<gald3r-verdict>` tag is\n   present,\
+  \ the orchestrator falls back to legacy text-pattern\n   detection: it scans the\
+  \ reviewer's output for \"PASS\" / \"FAIL\" /\n   \"PASS_WITH_NOTES\" headings as\
+  \ before. The fallback is documented\n   as deprecated and will be removed in a\
+  \ future release once all\n   reviewer prompts are updated.\n\n### Reviewer emission\
+  \ contract\n\nWhen the `g-go-review` reviewer agent finishes evaluating a task or\n\
+  bucket, it emits the verdict tag as the FINAL structured block of its\nresponse,\
+  \ after the human-readable summary. Example:\n\n```text\n... narrative summary of\
+  \ the review ...\n\n<gald3r-verdict>\n{\n  \"status\": \"FAIL\",\n  \"criteria\"\
+  : [\n    {\"id\": \"AC1\", \"result\": \"pass\",  \"note\": \"files exist, content\
+  \ matches\"},\n    {\"id\": \"AC2\", \"result\": \"fail\",  \"note\": \"no test\
+  \ was added for the regression\"},\n    {\"id\": \"AC3\", \"result\": \"unsure\"\
+  , \"note\": \"spec is ambiguous about whether the helper is required\"}\n  ],\n\
+  \  \"evidence\": \"Ran fast suite (1970 tests) -- 1 regression on test_voxelize_back_compat.\
+  \ Test added in implementer commit covers only the happy path.\",\n  \"reviewer_notes\"\
+  : \"Recommend splitting AC2 into AC2a (happy-path test, done) and AC2b (regression\
+  \ test for the back-compat invariant, missing).\"\n}\n</gald3r-verdict>\n\n<gald3r-status>COMPLETE</gald3r-status>\n\
+  ```\n\n(Note: the completion signal and the verdict tag are both emitted at the\n\
+  end of the response. The verdict tag carries the review outcome; the\ncompletion\
+  \ signal tells a parent orchestrator that the reviewer is done\nemitting output.\
+  \ They are independent and serve different purposes.)\n\n### Coordinator extraction\n\
+  \nThe coordinator's structured-output extraction reads the LAST\n`<gald3r-verdict>...</gald3r-verdict>`\
+  \ block from the reviewer's\nresponse, parses the JSON, validates the schema, and\
+  \ writes the\nresulting verdict to the Status History of the reviewed task or bug\n\
+  in the form:\n\n```\n| TIMESTAMP | [\U0001F50D] | [✅] | reviewer-id | PASS — {evidence\
+  \ summary} |\n```\n\n(or `[\U0001F50D] -> [\U0001F4CB]` for FAIL, with the FAIL\
+  \ marker and the evidence\nsummary.)\n\n\n\n\n\n## Named Workflow Templates (T1121)\n\
+  \ngald3r ships five named workflow templates that map almost perfectly to\na clear,\
+  \ named taxonomy. Naming the patterns makes their\nintent discoverable and lets\
+  \ users pick the right one with a single\nflag instead of memorizing flag combinations.\n\
+  \n### Template catalog\n\n| Template name | gald3r equivalent | One-line use case\
+  \ |\n|---|---|---|\n| `blank` | `g-go --single` (no loop, single iteration) | One-shot\
+  \ task; do it once and stop |\n| `simple-loop` | bare `g-go` (default — iterate\
+  \ until done) | Implement one task to `[✅]`, iterating as needed |\n| `sequential-reviewer`\
+  \ | `g-go` with `--review` (implement + review each task) | Pair each implementation\
+  \ with an immediate independent review |\n| `parallel-planner` | `g-go --swarm`\
+  \ (plan, then branch per task) | Fan out independent tasks across parallel buckets\
+  \ |\n| `parallel-planner-with-review` | `g-go --swarm --review` | Parallel fan-out\
+  \ with per-bucket independent review |\n\nThe mapping is intentionally a thin alias:\
+  \ every template is a\ndocumented composition of existing flags, NOT new orchestration\
+  \ logic.\nThis keeps the underlying behavior auditable in terms of the flag\ncontract\
+  \ while making the pattern discoverable.\n\n\n### Template definitions\n\n#### `blank`\
+  \ — single-shot, no loop\n\n| Aspect | Value |\n|---|---|\n| Phases | 1 (implement\
+  \ only) |\n| Agent role(s) | Solo implementer |\n| Branch strategy | Worktree off\
+  \ current branch; no auto-rebase |\n| Review behavior | None (no Phase 2) |\n| Ideal\
+  \ use case | \"Just do this one thing once\" — quick fixes, one-line edits, anything\
+  \ that does not need iteration or review |\n\nEquivalent invocation:\n\n```text\n\
+  @g-go --single tasks <task-id>\n```\n\n#### `simple-loop` — iterate until done\n\
+  \n| Aspect | Value |\n|---|---|\n| Phases | 1 (implementer iterates until `[✅]`\
+  \ or hard-gate) |\n| Agent role(s) | Solo implementer with `g-go-code` semantics\
+  \ |\n| Branch strategy | Worktree off current branch; coordinator-owned checkpoint\
+  \ commit at end of each iteration |\n| Review behavior | None during the loop; a\
+  \ separate `g-go-review` run can be invoked later |\n| Ideal use case | Single-task\
+  \ focus session; the implementer is trusted to self-verify |\n\nEquivalent invocation:\n\
+  \n```text\n@g-go tasks <task-id>\n```\n\n(Bare `g-go` is `simple-loop` by default.)\n\
+  \n#### `sequential-reviewer` — implement, then review, per task\n\n| Aspect | Value\
+  \ |\n|---|---|\n| Phases | 2 (Phase 1 implement → Phase 2 fresh-reviewer subagent)\
+  \ |\n| Agent role(s) | Implementer (`g-go-code`) + fresh independent Reviewer (`g-go-review`)\
+  \ |\n| Branch strategy | Implementer worktree → checkpoint commit → reviewer worktree\
+  \ from that branch/SHA |\n| Review behavior | Mandatory; reviewer reads code-on-disk\
+  \ cold, never sees implementer's reasoning history |\n| Ideal use case | Default\
+  \ \"do it right\" mode for any task that ships user-facing behavior |\n\nEquivalent\
+  \ invocation:\n\n```text\n@g-go tasks <task-id>            # bare g-go is now also\
+  \ the two-phase default\n@g-go --review tasks <task-id>   # explicit form\n```\n\
+  \n(The two-phase pipeline is the bare-`g-go` default per the existing\n`## Mode:\
+  \ PIPELINE` section above; the `--review` flag is the explicit\nspelling.)\n\n####\
+  \ `parallel-planner` — fan out, no review\n\n| Aspect | Value |\n|---|---|\n| Phases\
+  \ | 1 (coordinator partitions; buckets implement in parallel) |\n| Agent role(s)\
+  \ | Coordinator + N parallel implementer buckets |\n| Branch strategy | One worktree\
+  \ per bucket off the coordinator's checkpoint; bucket branches are FF-merged at\
+  \ the end of Phase 1 |\n| Review behavior | None |\n| Ideal use case | Many small\
+  \ independent tasks where the implementer is trusted; max throughput |\n\nEquivalent\
+  \ invocation:\n\n```text\n@g-go --swarm tasks <id1> <id2> <id3> ...\n```\n\n####\
+  \ `parallel-planner-with-review` — fan out, then review\n\n| Aspect | Value |\n\
+  |---|---|\n| Phases | 2 (parallel implement → parallel review) |\n| Agent role(s)\
+  \ | Coordinator + N implementer buckets + N reviewer buckets |\n| Branch strategy\
+  \ | Implementer worktrees per task → checkpoint per task → reviewer worktree per\
+  \ task from that branch/SHA |\n| Review behavior | Mandatory and parallel; each\
+  \ reviewer is independent of every implementer's reasoning |\n| Ideal use case |\
+  \ Default for any swarm run that ships user-facing behavior; matches `sequential-reviewer`'s\
+  \ correctness bar at swarm scale |\n\nEquivalent invocation:\n\n```text\n@g-go --swarm\
+  \ --review tasks <id1> <id2> <id3> ...\n```\n\n### `--template <name>` flag\n\n\
+  The `--template <name>` flag is an alias for one of the five names\nabove. It composes\
+  \ with `--workspace`, `--mode`, and any task / bug ID\nfilter. Examples:\n\n```text\n\
+  @g-go --template blank tasks T1234              # one-shot, no loop\n@g-go --template\
+  \ simple-loop tasks T1234        # iterate until done\n@g-go --template sequential-reviewer\
+  \ tasks T1234 # default two-phase\n@g-go --template parallel-planner tasks T1234\
+  \ T1235 T1236\n@g-go --template parallel-planner-with-review tasks T1234 T1235 T1236\n\
+  @g-go --template parallel-planner-with-review --workspace tasks T1234\n```\n\nWhen\
+  \ `--template` is supplied, ANY conflicting flag combination\nexplicitly errors\
+  \ with `Template conflict: --template <X> implies <Y>;\nremove the conflicting flag`.\
+  \ When `--template` is omitted, gald3r\ninfers the template from the explicit flag\
+  \ combination (bare `g-go` =\n`sequential-reviewer`; `g-go --swarm --review` = `parallel-planner-with-review`).\n\
+  \n### `--template list` discovery\n\n```text\n@g-go --template list\n```\n\nOutputs\
+  \ the five template names with one-line descriptions, mapping\nto gald3r's existing\
+  \ flag spelling. This is the canonical\ndiscovery surface — it always reflects what\
+  \ is actually implemented.\n\n### Mapping table for existing commands\n\n| Existing\
+  \ command form | Inferred template |\n|---|---|\n| `@g-go --single tasks T<id>`\
+  \ | `blank` |\n| `@g-go tasks T<id>` (single-task) | `simple-loop` when only one\
+  \ item, else `sequential-reviewer` |\n| `@g-go --review tasks T<id>` | `sequential-reviewer`\
+  \ |\n| `@g-go --swarm tasks <ids>` | `parallel-planner` |\n| `@g-go --swarm --review\
+  \ tasks <ids>` | `parallel-planner-with-review` |\n| `@g-go-code tasks T<id>` |\
+  \ (lower-level — Phase 1 only of `simple-loop`) |\n| `@g-go-review tasks T<id>`\
+  \ | (lower-level — Phase 2 only of `sequential-reviewer`) |\n\n`g-go-code` and `g-go-review`\
+  \ are not templates themselves; they are\nthe per-phase building blocks. The template\
+  \ names describe *workflows*,\nnot individual commands.\n\n### Why named templates\n\
+  \n- **Discoverability** — `@g-go --template list` is the canonical entry\n  point\
+  \ for users who do not yet know which flag combination they want.\n- **Documentation\
+  \ consistency** — Skills, READMEs, and CHANGELOG entries\n  can now refer to \"\
+  the `parallel-planner-with-review` template\"\n  unambiguously instead of \"g-go\
+  \ --swarm --review (which is also\n  sometimes called swarm-with-review)\".\n- **Future\
+  \ external runner alignment** — when `example_agent` or a\n  external runner takes\
+  \ over orchestration, the\n  template names become the stable user-facing surface;\
+  \ the flag\n  compositions become implementation detail of the runner.\n\n\n## Session\
+  \ Capture & Cross-Sandbox Resume (T1124)\n\nWhen a `g-go` iteration runs inside\
+  \ an agent worktree/sandbox, the full Claude Code\nconversation transcript (the\
+  \ session JSONL) can be captured to the host so a later\niteration — or a fresh\
+  \ agent in a different sandbox — resumes the *literal* thread with\n`claude --resume`.\
+  \ This is distinct from `memory_capture_session` (semantic summaries\nfor search);\
+  \ JSONL capture preserves the conversation itself.\n\n### Capture helper\n\n`gald3r\
+  \ worktree session` ships beside `gald3r worktree` in each IDE skill folder\n(`.claude/skills/g-skl-git-commit/scripts/`,\
+  \ `.cursor/...`, `.claude/...`).\n\n```powershell\n# After an iteration completes\
+  \ in a worktree, capture its session JSONL to the host\ngald3r worktree session\
+  \ -Action Capture -Apply `\n    -WorktreePath {{WORKTREE_PATH}} -TaskId {{TASK_ID}}\
+  \ -Json\n```\n\nWhat it does:\n\n1. Locates the worktree's session JSONL under the\
+  \ Claude projects dir\n   (`$env:CLAUDE_CONFIG_DIR\\projects` or `~/.claude/projects`),\
+  \ using Claude's\n   path-folder encoding (every non-alphanumeric char in the cwd\
+  \ → `-`).\n2. Copies it to `~/.gald3r-sessions/<project_id>/<task_id>/<session_id>.jsonl`\n\
+  \   (root overridable via `$env:GALD3R_SESSIONS_ROOT`).\n3. Rewrites embedded worktree\
+  \ paths (`cwd` and file references, both JSON-escaped\n   `\\\\` and raw forms)\
+  \ to the host repo path so resume references real host files.\n4. Upserts metadata\
+  \ to `~/.gald3r-sessions/<project_id>/sessions.json`.\n\nWithout `-Apply` the helper\
+  \ is a dry-run (`-Action Report`). `-Action List` enumerates\ncaptured sessions;\
+  \ `-Action Resolve -SessionId <id>` prints the JSONL path and the\n`claude --resume`\
+  \ command.\n\n### `--resume-session <session_id>` flag\n\n`g-go --resume-session\
+  \ <session_id>` starts the next iteration by reusing a previously\ncaptured session\
+  \ context instead of a cold start:\n\n1. The coordinator runs `gald3r worktree session\
+  \ -Action Resolve -SessionId <id> -Json`\n   to obtain the host JSONL path and resume\
+  \ command.\n2. The spawned agent is launched with `claude --resume <session_id>`\
+  \ (host cwd), so it\n   inherits the full prior conversation thread.\n3. If the\
+  \ session id is unknown (no metadata record and no JSONL on disk), the coordinator\n\
+  \   logs `RESUME_MISS: <session_id>` to the session summary and falls back to a\
+  \ normal cold\n   iteration — a missing capture never blocks the pipeline.\n\nCapture\
+  \ is **best-effort and non-blocking**: if no session JSONL is found (e.g. the runner\n\
+  stores transcripts elsewhere), the helper reports `no-session-found` and the pipeline\n\
+  continues unaffected.\n\n\n## Shared Sandbox Phase Handoff (`--shared-sandbox`)\
+  \ — T1118\n\nBy **default**, `g-go` uses **separate-context handoff**: Phase 1 implements\
+  \ in a `code`\nworktree, reconciles the diff into the primary checkout, creates\
+  \ a code-complete checkpoint\ncommit, and Phase 2 spawns a fresh reviewer that creates\
+  \ its **own** `review` worktree from\nthat checkpoint commit. This is the proven\
+  \ default and is unchanged — see Phase 1 Completion\nand Phase 2 below.\n\n`--shared-sandbox`\
+  \ is an **opt-in** flag that keeps the **same `code` worktree alive across\nPhase\
+  \ 1 and Phase 2** instead of spinning up a separate reviewer worktree. This mirrors\n\
+  a persistent multi-run sandbox: the sandbox is created once, dependencies\nare installed\
+  \ once, commits accumulate on a single branch, and a second `run()` (the review\n\
+  pass) sees the same filesystem/git state without re-cloning.\n\n### Lifecycle contract\n\
+  \n| Stage | Default (separate-context) | `--shared-sandbox` |\n|-------|----------------------------|--------------------|\n\
+  | Phase 1 worktree | `code` worktree off current branch | same — `code` worktree\
+  \ off current branch |\n| End of Phase 1 | reconcile diff to primary checkout →\
+  \ checkpoint commit on primary | checkpoint commit **on the `code` worktree branch**;\
+  \ no reconcile to primary yet |\n| Between phases | `code` worktree may be cleaned\
+  \ up | coordinator runs `-Action Keep` to protect the worktree across the boundary\
+  \ |\n| Phase 2 review source | fresh `review` worktree created from checkpoint commit\
+  \ | **reuse the same `code` worktree path/branch, read-only** |\n| Phase 2 verdict\
+  \ | review-result commit on primary | review-result commit on primary after coordinator\
+  \ reconciles the (now reviewed) `code` branch |\n| Post-PASS | member auto-merge\
+  \ from `code` branch | member auto-merge from the same `code` branch |\n\nThe independence\
+  \ guarantee is **preserved**: the Phase 2 reviewer is still a fresh Task\nsubagent\
+  \ with no Phase 1 conversation history. It reads the code on disk cold. Sharing\
+  \ the\n**worktree filesystem** is not sharing the **reasoning context** — the reviewer\
+  \ only inherits\nthe installed dependencies and accumulated commits, never the implementer's\
+  \ decisions.\n\n### Handoff artifacts (coordinator → reviewer)\n\nUnder `--shared-sandbox`,\
+  \ the coordinator passes the shared worktree as the review source\ninstead of a\
+  \ separate-worktree base. These three fields are the handoff contract:\n\n```\n\
+  shared_sandbox       = true\nimplementation_branch = {code worktree branch from\
+  \ Phase 1 -Action Create JSON}\nshared_worktree_path  = {worktree_path from Phase\
+  \ 1 -Action Create JSON}\nimplementation_sha    = {checkpoint commit SHA on that\
+  \ branch}\n```\n\nThe reviewer receives these in its initial prompt and, per `g-go-review`\
+  \ Step 2b, **reuses the\nnamed worktree read-only** (sets `review_isolation_mode:\
+  \ shared-worktree`) rather than calling\n`-Action Create -Role review`.\n\n### Keep\
+  \ / cleanup protection\n\nTo stop the normal cleanup pass from reclaiming the shared\
+  \ worktree between phases, the\ncoordinator stamps it with a keep window immediately\
+  \ after the Phase 1 checkpoint commit:\n\n```powershell\ngald3r worktree keep -TaskId\
+  \ {id} -Role code -Owner {owner} -KeepHours 2 -Json\n```\n\n`-Action Keep` writes\
+  \ `phase_handoff: true` and a future `keep_until` (ISO-8601) onto the\nworktree's\
+  \ `.gald3r-worktree.json` marker (additive — all existing fields preserved).\n`-Action\
+  \ Cleanup` skips any worktree whose `keep_until` is still in the future, so the\
+  \ shared\nsandbox survives the Phase 1→2 boundary. Once the keep window elapses\
+  \ (default 2h), or after\nPhase 2 reconciliation removes the worktree explicitly\
+  \ via `-Action Remove` / member\nauto-merge, the worktree is reclaimable again.\
+  \ `Keep` is idempotent and may be re-stamped to\nextend the window for long review\
+  \ passes.\n\n### Flag semantics\n\n- **Default (no flag)**: current separate-context\
+  \ behavior — backwards compatible, unchanged.\n- **`--shared-sandbox`**: opt-in\
+  \ single-worktree lifecycle described above. Composes with\n  `--swarm` (each bucket's\
+  \ `code` worktree is its own shared sandbox for that bucket's\n  reviewer), `--mode`,\
+  \ `--workspace`, and explicit task/bug filters.\n- All existing safety gates (Review\
+  \ Checkpoint Gate, Review Result Commit Gate, Clean\n  Controller Gate, Pre-Reconciliation\
+  \ Clean Gate, member touch-set gates) apply unchanged. The\n  only change is **which\
+  \ worktree the reviewer inspects** and **when the primary-checkout\n  reconcile\
+  \ happens** (after review rather than before).\n\n> **Integration test contract\
+  \ (AC5)**: a full `g-go --shared-sandbox tasks T<id>` run must\n> demonstrate that\
+  \ Phase 2 sees Phase 1's commits without re-cloning — i.e. the reviewer's\n> `review_isolation_mode`\
+  \ is `shared-worktree`, its inspected path equals\n> `shared_worktree_path`, and\
+  \ `git log` on that worktree shows the Phase 1 checkpoint commit\n> with no intervening\
+  \ `git worktree add`/clone for the review role. The keep-window protection\n> is\
+  \ unit-verifiable via `gald3r worktree keep` followed by `-Action Cleanup\n> -StaleHours\
+  \ 0`, which must leave the kept worktree intact.\n\n## Model-Tier Selection (`--mode\
+  \ fast|standard|cheap`)\n\n`g-go` accepts an optional `--mode` flag in `$ARGUMENTS`\
+  \ that selects model-tier policy for\nthe pipeline. The flag composes with `--swarm`,\
+  \ `--workspace`, and any task/bug filter.\n\n### Mode mapping table\n\n| `--mode`\
+  \ | Tier | Claude model | Cursor model | Use when |\n|----------|------|--------------|--------------|----------|\n\
+  | `fast` (alias `cheap`) | haiku-class | `claude-haiku-4-5` | `gpt-4o-mini` / `haiku`\
+  \ | Simple task batches, cost-sensitive runs, bucket agents on parallel-safe work\
+  \ |\n| `standard` (default) | sonnet-class | `claude-sonnet-4-6` | `sonnet-4` |\
+  \ Most pipelines, coordinator role, anything requiring real reasoning |\n| (no flag)\
+  \ | inherit | session default (host-aware, T580: Cursor -> `gpt-5.6-terra-medium`\
+  \ by default; see g-go-go.md's \"Provider & Model Routing\" for the full host-mapping\
+  \ table) | session default | Fall through to the IDE-configured / host-mapped default\
+  \ model |\n\n`cheap` is a strict alias for `fast` (same tier, same model mapping).\n\
+  \n### Explicit `--provider`/`--model` override (T580, BUG-612 companion)\n\nAbove\
+  \ the tier system: `$ARGUMENTS` MAY also carry an explicit `--provider <provider>[:<model>]`\n\
+  and/or `--model <model>` (global, every role) plus role-specific `--coordinator-provider`/\n\
+  `--coordinator-model`, `--implementer-provider`/`--implementer-model`,\n`--reviewer-provider`/`--reviewer-model`.\
+  \ When present, these OUTRANK `--mode` and task\n`preferred_model:` for that role\
+  \ — full resolution order: **role-specific override > global\noverride > invoking\
+  \ host/parent-model mapping (Cursor -> `cursor-agent` + `gpt-5.6-terra-medium`\n\
+  by default; Claude Code -> `claude`, unchanged) > task `preferred_model:`/`--mode`\
+  \ policy >\nsession/IDE default**. This is the SAME precedence `gald3r autopilot\
+  \ loop` implements in code\n(`agent_role_routing.resolve_agent_target`) — a `g-go\
+  \ --swarm` coordinator dispatching bucket/\nreviewer agents applies it the same\
+  \ way, whether running under Claude Code (Task-tool `model:`\nparameter) or a host\
+  \ CLI that accepts `--model` directly. Known providers: `claude`,\n`cursor-agent`;\
+  \ an unrecognized provider is refused before claims/worktrees are touched, same\n\
+  as the CLI's fail-fast contract.\n\n### Coordinator vs bucket inheritance (AC4)\n\
+  \n`g-go` (and `g-go --swarm`) treats `--mode` differently for the coordinator role\
+  \ and bucket\nagents:\n\n- **Coordinator** — always defaults to `standard` regardless\
+  \ of the session `--mode` flag.\n  Coordinators route work, plan partitions, perform\
+  \ reconciliation, and write shared\n  `.gald3r/` state — these operations require\
+  \ Sonnet-class reasoning. The only way to force\n  the coordinator onto a lower\
+  \ tier is to pass `--mode fast` AND set the env override\n  `GALD3R_ALLOW_FAST_COORDINATOR=1`\
+  \ (intended for experimental/automated regression suites,\n  not production pipelines).\n\
+  - **Bucket agents (Phase 1 implementers)** — inherit the session `--mode` flag.\
+  \ When the\n  session is launched as `@g-go --swarm --mode fast`, every bucket implementer\
+  \ runs in\n  `fast` mode (haiku-class). When the session is `@g-go --swarm --mode\
+  \ standard` or\n  `@g-go --swarm` with no flag, buckets run `standard`.\n- **Phase\
+  \ 2 reviewer** — defaults to `standard` for adversarial review. Override only with\n\
+  \  explicit `--mode fast` on the session AND a per-task `preferred_model:` declaring\
+  \ the\n  reviewer tier; otherwise the reviewer agent always runs `standard` to protect\
+  \ the\n  independence guarantee.\n- **Task YAML `preferred_model:` overrides** —\
+  \ when a queued task sets `preferred_model:`\n  (`haiku` | `sonnet` | `opus` | `fast`\
+  \ | `standard`) in its frontmatter, that overrides the\n  bucket inheritance for\
+  \ that specific task. Use this to keep one complex task on Opus while\n  the rest\
+  \ of the swarm runs on Haiku, or vice versa.\n\n### Status History mode logging\
+  \ (AC5)\n\nWhen Phase 1 claims a task and moves it to `[\U0001F504]` / `in-progress`,\
+  \ the claim's Status History\nrow MUST include `mode=<tier>` in the `Message` column\
+  \ (see `g-go-code` for the full row\ntemplate). The coordinator records its own\
+  \ routing mode and each bucket agent records its\ninherited mode independently.\
+  \ This applies to both single-agent `g-go` and swarm\ncoordination.\n\n### Budget-aware\
+  \ skill preference (T1172 / T1259)\n\n`g-go --swarm` coordinators (and single-agent\
+  \ `g-go` when context is constrained) SHOULD\nread the `token_budget:` frontmatter\
+  \ field on each candidate skill before dispatch and\nprefer lower-band skills when\
+  \ available context budget is tight. This is **advisory, not\nenforcing** — the\
+  \ coordinator may still pick a `high` or `very_high` skill if it is\ngenuinely the\
+  \ right tool, but it MUST note the budget tradeoff in its dispatch log.\n\n| Band\
+  \ | Approximate context cost | Coordinator preference |\n|------|--------------------------|------------------------|\n\
+  | `low` | < 5K tokens | Prefer when context > 50% used; safe default |\n| `medium`\
+  \ | 5K – 20K tokens | Default working band; use freely under normal load |\n| `high`\
+  \ | 20K – 50K tokens | Reserve for pipelines that genuinely need the depth; note\
+  \ the cost |\n| `very_high` | > 50K tokens | Only when the task explicitly requires\
+  \ deep ingest or cross-session work |\n| unset | unknown | Treat as `medium`; flag\
+  \ the gap via `@g-doctor` (see g-doctor §6) |\n\n**When `token_budget:` is unset**:\
+  \ the coordinator MUST NOT abort dispatch — fall back\nto `medium` and log the unset\
+  \ state. `g-doctor` surfaces the gap as a low-severity\nquality finding (T1259 AC).\n\
+  \n**Composite/orchestrator skills** (`g-go`, `g-mission`, etc.) inherit the maximum\
+  \ band of\ntheir internal invokees. When delegating to a composite skill, budget\
+  \ against its declared\nband, not its individual invokees.\n\n**See also**: the\
+  \ authoring guide at `.gald3r_sys/skill_packs/user-skills/skl-skill-create/SKILL.md`\n\
+  §\"`token_budget:` declaration (T1172)\" for full band definitions, example skills,\
+  \ and\nauthoring guidance.\n\n---\n\n### Step 0 — Workspace Member Clean-Status\
+  \ Preflight (T1431, AUTHORITATIVE definition)\n\n**Runs first — before the WPAC\
+  \ inbox gate, task selection, claim, or any worktree creation.**\nThis is the canonical\
+  \ Step 0 spec; the other `g-go*` commands reference it. Purpose: surface dirty\n\
+  `autonomous_child` member repos **early** so the user resolves them up front, instead\
+  \ of hitting\nthe existing Clean Controller Gate / member touch-set block mid-pipeline\
+  \ (post-claim).\n\n**Behavior (read-only — no commits, no writes, no stashes):**\n\
+  \n1. If `.gald3r/linking/workspace_manifest.yaml` is absent, OR no `autonomous_child`\
+  \ members are\n   declared → skip Step 0 silently and proceed to the WPAC gate.\n\
+  2. For each manifest member with `workspace_role: autonomous_child` whose `repository.local_path`\n\
+  \   exists on disk (skip missing paths whose `lifecycle_status` is a planned/bootstrap\
+  \ gap — note\n   them), run `git -C <path> status --short`.\n   - `controlled_member`\
+  \ repos are marker-only with no active development → skip (or list as\n     informational\
+  \ only); never block on them.\n3. **Clean path** — all checked members clean → print\
+  \ `Workspace clean -- N members checked` and\n   proceed to Step 1 (WPAC gate).\n\
+  4. **Dirty path** — any member has modified/untracked files → print a compact per-repo\
+  \ status\n   table and ask the user to commit/stash before continuing. Do **NOT**\
+  \ auto-commit, do **NOT**\n   fail silently:\n\n   ```\n   ⚠️  Workspace members\
+  \ have uncommitted changes:\n   | repo id            | path                    \
+  \      | modified | untracked |\n   |--------------------|-------------------------------|----------|-----------|\n\
+  \   | example_desktop      | <ECOSYSTEM_ROOT>/...throne | 3        | 1         |\n\
+  \   Commit or stash these before continuing, or pass --skip-member-clean-check.\n\
+  \   ```\n\n5. **`--skip-member-clean-check`** flag → bypass Step 0 with a printed\
+  \ warning and proceed\n   directly to Step 1.\n\n**Additive, not a replacement:**\
+  \ the Gald3r Housekeeping Commit Gate (controller `.gald3r/`\ncoordination files)\
+  \ continues to auto-commit safe controller paths exactly as before. Step 0 only\n\
+  *reports* member status; it never mutates anything. Target: completes in < 2 s for\
+  \ a 5-10 member\necosystem. Uses the same manifest resolution as the v1 member touch-set\
+  \ gate.\n\n---\n\n### WPAC inbox Gate (Only When WPAC is configured)\n\nBefore task\
+  \ claiming, implementation, verification, planning, or swarm partitioning, first\
+  \ determine whether this project is a WPAC participant. WPAC is configured only\
+  \ when `.gald3r/linking/link_topology.md` declares at least one parent/child/sibling\
+  \ relationship, or `.gald3r/PROJECT.md` explicitly declares WPAC project linking\
+  \ relationships. A Workspace-Control manifest and local `INBOX.md` alone do not\
+  \ make the project a WPAC group member.\n\nIf WPAC is configured, run the re-callable\
+  \ inbox check when the hook exists:\n\n```powershell\n$hook = @( \".cursor\\hooks\\\
+  g-hk-wpac-inbox-check.py\", \".claude\\hooks\\g-hk-wpac-inbox-check.py\", \".agent\\\
+  hooks\\g-hk-wpac-inbox-check.py\", \".codex\\hooks\\g-hk-wpac-inbox-check.py\",\
+  \ \".opencode\\hooks\\g-hk-wpac-inbox-check.py\" ) | Where-Object { Test-Path $_\
+  \ } | Select-Object -First 1\nif ($hook) { python $hook -ProjectRoot . -BlockOnConflict\
+  \ }\n```\n\nInstalled templates may call the equivalent hook from the active IDE\
+  \ folder. If the check reports `INBOX CONFLICT GATE` or exits with code `2`, stop\
+  \ immediately and run `@g-wpac-read`; do not claim tasks, create worktrees, spawn\
+  \ reviewers, or continue planning until conflicts are resolved. Non-conflict requests,\
+  \ broadcasts, and syncs are advisory and should be surfaced in the session summary.\
+  \ If WPAC is not configured, skip this gate and report `WPAC: not configured / skipped`.\n\
+  \n\n### Gald3r Housekeeping Commit Gate (T531)\n\n<!-- T531-HOUSEKEEPING-GATE -->\n\
+  After the WPAC gate is skipped or passes and **before** the Clean Controller Gate\
+  \ hard-blocks the run, run the safety classifier helper at the orchestration root:\n\
+  \n```powershell\ngald3r housekeep -Mode preflight -Apply -TaskId <id-when-known>\
+  \ -Json\n```\n\nBehavior:\n\n- **`clean`** -> continue.\n- **`safe-gald3r-housekeeping`**\
+  \ -> the helper stages **only** allowlisted controller `.gald3r/` paths via explicit\
+  \ `git add -- <paths>` (never `git add .`), re-checks for drift, and creates a focused\
+  \ `chore(gald3r): preflight gald3r housekeeping` commit. The run continues automatically.\n\
+  - **`unsafe-gald3r` / `mixed-dirty` / `conflict` / `drift-detected` / unknown `.gald3r`\
+  \ paths / member-repo `config-fault`** -> the helper exits non-zero, the existing\
+  \ Clean Controller Gate hard-block applies, and the run STOPs with the exact unsafe\
+  \ paths listed.\n\nThe helper allowlist covers the safe controller `.gald3r/` coordination\
+  \ surfaces (TASKS.md, BUGS.md, FEATURES.md, PRDS.md, SUBSYSTEMS.md, IDEA_BOARD.md,\
+  \ learned-facts.md, tasks/, bugs/, features/, prds/, subsystems/, reports/, logs/wpac_auto_actions.log,\
+  \ linking/sent_orders/, linking/INBOX.md). The deny list covers `.identity`, `.user_id`,\
+  \ `.project_id`, `.vault_location`, `vault/`, `config/`, `.gald3r-worktree.json`,\
+  \ secret-named files, and unknown `.gald3r/` paths. Member-repo targets (marker-only\
+  \ `.gald3r/`) are refused -- this gate is **controller-only**.\n\nRe-run the helper\
+  \ in `-Mode post-write -Apply` immediately after coordinator-owned shared `.gald3r`\
+  \ writes (task/bug status writes, review-result writes, sent_orders ledger updates,\
+  \ safe report/log outputs) and before the next major phase so the shared-state dirty\
+  \ window stays short. In `--swarm` flows only the coordinator runs the helper; bucket\
+  \ agents remain handoff producers.\n### Clean Controller Gate (before claims, worktrees,\
+  \ reconciliation)\n\nAfter the WPAC gate is skipped or passes:\n\n1. At the **orchestration\
+  \ git root** (the repo from which you run this command — normally the Workspace-Control\
+  \ owner, e.g. `<gald3r_source>`): run `git status --short`. If anything is listed\
+  \ **outside** this run's explicit coordinator staging allowlist for the active task\
+  \ and bug IDs, **STOP** here. Do not claim tasks or bugs, create or reuse T170 worktrees,\
+  \ partition swarms, or write coordinator-owned updates to `.gald3r/TASKS.md`, `.gald3r/BUGS.md`,\
+  \ other shared `.gald3r` coordination files, `CHANGELOG.md`, generated Copilot prompts,\
+  \ or parity output until unrelated changes are committed, stashed, or moved to a\
+  \ prior focused commit. Preserve any bucket handoff artifacts already produced and\
+  \ list the paths that blocked progress.\n\n2. **`gald3r worktree create -AllowDirty`**:\
+  \ do not use this switch for `g-go`, `g-go-code`, `g-go-review`, or any `--swarm`\
+  \ variant **except** when every dirty path is owned exclusively by the active task/bug\
+  \ scope and a `## Status History` row documents that override. Otherwise clean the\
+  \ checkout first. The same **per-root** `-AllowDirty` discipline applies to every\
+  \ repository included in the touch set below when multi-repo work is in scope.\n\
+  \n3. **Member touch-set (v1 — `workspace_repos`)** — The orchestration root is **always**\
+  \ gated. When the active task or bug declares **`workspace_repos:`** with manifest\
+  \ `repository.id` entries, extend the gate to each **other** resolved member root\
+  \ (blast radius follows declared cross-repo scope). Read `.gald3r/linking/workspace_manifest.yaml`\
+  \ when present; map each listed ID (deduplicated) to `repositories[?].local_path`.\
+  \ For each existing path, run `git -C \"<path>\" rev-parse --show-toplevel` then\
+  \ `git status --short` at that root. Apply the same **explicit coordinator staging\
+  \ allowlist** per root. Skip IDs whose paths are missing while `lifecycle_status`\
+  \ is a planned/bootstrap gap (report only; do not expand the touch set). If the\
+  \ manifest is missing while `workspace_repos` is non-empty, or an ID is unknown\
+  \ under `repositories:`, **STOP** multi-repo coordinator work until manifest or\
+  \ frontmatter is repaired (controller-only queue items whose `workspace_repos` lists\
+  \ only the owner id may proceed once that id resolves).\n\n4. **Touch-set expansion\
+  \ (v2 — optional signals)** — Union extra repository roots into the same per-root\
+  \ checks (still **not** a blanket scan of every manifest member):\n   - **`extended_touch_repos:`**\
+  \ — optional task/bug YAML list of additional manifest `repository.id` values beyond\
+  \ `workspace_repos`.\n   - **`touch_repos:` (swarm handoffs)** — In `--swarm` runs,\
+  \ when bucket work edits roots not already covered by `workspace_repos` + `extended_touch_repos:`,\
+  \ bucket summaries and the coordinator reconciliation block MUST list those ids\
+  \ under `touch_repos:` so the union is gated before shared writes.\n   - **Subsystem\
+  \ `locations:` absolutes** — When the active item declares **`subsystems:`**, read\
+  \ each `.gald3r/subsystems/{name}.md` frontmatter **`locations:`** (all nested strings).\
+  \ For values matching a host **absolute** path (`^[A-Za-z]:[/\\\\]` on Windows,\
+  \ or POSIX `/` rooted at `/` elsewhere), if the path exists, resolve `git -C <dir>\
+  \ rev-parse --show-toplevel` (use the file's parent directory when the path is a\
+  \ file). Each distinct root **other than** the orchestration root joins the touch\
+  \ set. Relative paths do not expand the set.\n\n### Pre-Reconciliation Clean Gate\
+  \ (before coordinator shared writes)\n\nAlso re-run the **Gald3r Housekeeping Commit\
+  \ Gate** with `-Mode post-write -Apply` against the orchestration root immediately\
+  \ after each coordinator-owned shared `.gald3r` write so safe controller coordination\
+  \ state lands in a focused `chore(gald3r): commit g-go coordination state` commit\
+  \ before the next major phase begins.\n\n\nImmediately before the coordinator merges\
+  \ bucket results into the primary checkout, updates shared `.gald3r` indexes or\
+  \ task/bug files as coordinator-owned writes, touches `CHANGELOG.md`, or creates\
+  \ checkpoint / review-result commits: **re-run** `git status --short` on the **orchestration\
+  \ root and every other repository root in the computed touch set** (steps 1 + 3\
+  \ + 4). For `--swarm` runs, if unrelated dirty paths appear in **any** of those\
+  \ roots during parallel bucket work, **fail closed** — do not apply those shared\
+  \ writes; keep patches, artifacts, and evidence; report **per-root** blockers using\
+  \ the same blocker family as checkpoint and review-result commits.\n\n## Session-Start:\
+  \ Load Active Goal (Goal-Locked Loop)\n\n> Fires immediately after safety gates\
+  \ pass, before Phase 1 work begins. If no active goal is set, this section is a\
+  \ no-op.\n\nIf `.gald3r/config/ACTIVE_GOAL.md` exists:\n\n1. Read the file. Parse\
+  \ its YAML frontmatter (`description`, `linked_task`, `set_at`, `turn_budget`, `turns_consumed`).\n\
+  2. Inject into working context as the prefix:\n   ```\n   CURRENT GOAL: <description>\
+  \ (turn <turns_consumed>/<turn_budget>, task T{id})\n   ```\n3. Increment `turns_consumed`\
+  \ by 1 and write the updated value back to `ACTIVE_GOAL.md`.\n4. If `turns_consumed\
+  \ >= turn_budget`:\n   - Surface `\U0001F3AF Goal turn budget exhausted — pausing\
+  \ for user direction.`\n   - Stop the run cleanly. The user must extend the budget\
+  \ (`@g-goal <description>` to reset) or clear the goal (`@g-goal clear`).\n\nIf\
+  \ `--with-goal T{id}` was passed in `$ARGUMENTS`:\n\n1. Treat as if `@g-goal --from-task\
+  \ T{id}` were just run: read `.gald3r/tasks/task{id}_*.md` (active or archive),\
+  \ set `ACTIVE_GOAL.md` from the task title, then proceed.\n2. Set `linked_task:\
+  \ T{id}` and the description from the task `title:` field. Default `turn_budget:\
+  \ 50`.\n\nIf no `ACTIVE_GOAL.md` exists and no `--with-goal` flag is present, proceed\
+  \ without a goal lock (normal operation).\n\n**Goal-aligned AC gate** (Phase 1 implementation\
+  \ only): after each AC-gate iteration in Phase 1, the implementing agent (or per-bucket\
+  \ implementer) self-checks: \"Did this action advance `<description>`?\" If not,\
+  \ re-anchor on the goal in the next reasoning step. This is a soft drift-correction\
+  \ — not a hard block.\n\nSee `g-goal` command (parity across all 6 IDE platforms)\
+  \ for the full goal-locked loop specification.\n\n---\n\n## Phase 1: Implementation\n\
+  \nPhase 1 runs the full `g-go-code` protocol. Every completed item is marked `[\U0001F50D\
+  ]`.\nDuring Phase 1, the implementation-only boundary still applies: run smoke/unit\
+  \ readiness checks only, and do not invoke full adversarial review. Only Phase 2\
+  \ may spawn the independent reviewer.\n\n### Step 0a — Shell Router (T1144, before\
+  \ any tool call)\n\nBefore issuing any shell, hook, or git command in this run,\
+  \ **probe once** and lock the shell route for the session. This complements the\
+  \ always-apply rule `g-rl-00-always` §6 (\"Shell Context — OS + Shell Probe\") and\
+  \ prevents the bash-vs-PowerShell token-waste loop documented in BUG-031 / T1144.\n\
+  \n**Probe (one signal, not a diagnostic loop):**\n\n| Signal | Route |\n|---|---|\n\
+  | `$env:OS` contains `Windows`, or `$IsWindows -eq $true`, or harness reports `Shell:\
+  \ PowerShell` | **PowerShell route** — use a `PowerShell` / `Shell` tool when available\
+  \ |\n| `uname -s` returns `Linux` / `Darwin`, `$BASH_VERSION` is set, or harness\
+  \ reports `Shell: Bash` | **bash/zsh route** — use the `Bash` tool |\n\n**Lock and\
+  \ route every subsequent invocation through the chosen interpreter.** Do not mix\
+  \ syntaxes inside a single tool call — the tool, not the snippet, picks the parser.\
+  \ If the harness exposes both `Bash` and `PowerShell` tools on Windows, prefer the\
+  \ PowerShell tool for PowerShell snippets.\n\nConcrete syntax differences to keep\
+  \ in mind (mirrors `g-rl-00-always` §6):\n\n- Arrays: `@(...)` (PS) vs `(...)` /\
+  \ `arr=(a b c)` (bash)\n- Statement separators: `;` sequential (PS, both); `&&`\
+  \ short-circuit (bash always, PS 7+)\n- Env vars: `$env:VAR` (PS) vs `$VAR` / `${VAR}`\
+  \ (bash)\n- Paths: `\\` (PS, `/` also accepted on Windows) vs `/` (bash)\n- File-exists\
+  \ test: `Test-Path $p` (PS) vs `[ -f \"$p\" ]` (bash)\n- Pipeline filters: `Where-Object\
+  \ { ... }` (PS) vs `grep` / `awk` / `xargs` (bash)\n\n**Regression canonical (BUG-031\
+  \ family)** — the WPAC inbox hook lookup snippet that triggered T1144:\n\n```powershell\n\
+  $hook = @( \".cursor\\hooks\\g-hk-wpac-inbox-check.py\", \".claude\\hooks\\g-hk-wpac-inbox-check.py\"\
+  \ ) | Where-Object { Test-Path $_ } | Select-Object -First 1\n```\n\nThis snippet\
+  \ is PowerShell-only — invoking it via `Bash(...)` produces `syntax error near unexpected\
+  \ token '('` (exit 2). That error is a **tool-routing failure**, NOT a real WPAC\
+  \ conflict or hook-missing state. Re-route through PowerShell and the call succeeds;\
+  \ do not enter an error-driven retry loop.\n\nThe same router applies to **Phase\
+  \ 2 (review)** below — the reviewer subagent must inherit the route and not re-probe.\n\
+  \n---\n\n### Step 0b — CLI Invocation Rule: `uv run gald3r` (BUG-591, before any\
+  \ `gald3r` command)\n\nEvery `gald3r <verb>` invocation made by ANY agent in this\
+  \ pipeline — coordinator, implementer,\nreviewer, or swarm bucket agent — MUST be\
+  \ run as **`uv run gald3r <verb>`**, never bare\n`gald3r <verb>`, whenever the working\
+  \ directory is a dev checkout of `gald3r_core` (this repo, a\nworktree of it, or\
+  \ a Workspace-Control member that is itself such a checkout). This is the\ncanonical\
+  \ text; `g-go-code`, `g-go-review`, the `*-swarm` variants, and `g-go-go` all reference\
+  \ it\nrather than repeating it. It covers every `gald3r` call elsewhere in this\
+  \ document and every\ncommand it dispatches to — `gald3r worktree create`, `gald3r\
+  \ housekeep`, `gald3r project-type\nresolve`, `gald3r search`, `gald3r task`/`gald3r\
+  \ bug` verbs, `gald3r validate`, etc.\n\n**Why (BUG-591):** a stale, globally-installed\
+  \ `gald3r` binary can silently shadow this checkout's\nown dev source on `PATH`.\
+  \ Confirmed live damage from exactly this shadowing: `gald3r decision\nlist` returning\
+  \ \"invalid choice\" against a build missing whole verb groups; `gald3r db backfill`\n\
+  silently ingesting far fewer records than the dev checkout; and — most seriously\
+  \ — a\nworktree-isolated agent's own `gald3r bug update`/`gald3r task update` call\
+  \ resolving PAST its own\n`.gald3r/` and writing into the MAIN checkout's `.gald3r/BUGS.md`\
+  \ instead, defeating the entire\npurpose of worktree isolation (T170). None of these\
+  \ failures raise an error — they just quietly\nproduce wrong results. `uv run gald3r\
+  \ <verb>` always resolves and runs the checkout's own source,\nregardless of what\
+  \ else is on `PATH`.\n\n**Machine-actionable staleness check (BUG-591 AC2, hard-fail\
+  \ primitive already shipped in\n`core/install/build_fingerprint.py`):** a coordinator\
+  \ MAY run this once, as a belt-and-suspenders\npreflight before task claiming /\
+  \ worktree creation / swarm partitioning (in addition to, not\ninstead of, the `uv\
+  \ run gald3r` mandate above):\n\n```bash\nuv run python -m gald3r_core.core.install.build_fingerprint\
+  \ .\n```\n\nExit `0` = no drift (either the running binary matches this checkout,\
+  \ or there is no local\n`neutral_source/` tree to compare against — e.g. a downstream\
+  \ consumer project, which never\ntriggers this check at all). Exit `2` = real drift\
+  \ detected, with a JSON payload on stdout naming\nboth fingerprints/commits and\
+  \ both paths. Treat exit `2` as a hard stop of the same severity as a\nWPAC conflict\
+  \ or a dirty Clean Controller Gate: do not proceed with task claiming, worktree\n\
+  creation, or swarm partitioning until the mismatch is resolved (BUG-591 AC1 tracks\
+  \ the actual\nrebuild — `gald3r install self` / `packaging/maintainer/install_self.py`).\
+  \ This check is safe to\ntreat as a hard fail precisely because it can ONLY fire\
+  \ when cwd is inside a `gald3r_core`\ncheckout carrying its own `neutral_source/`\
+  \ tree (`_find_checkout_root`) — an ordinary end user's\ninstalled-gald3r project\
+  \ never has that tree, so this can never false-positive-block a normal user\nrunning\
+  \ an older-but-otherwise-fine binary. Plain `gald3r --version` already prints a\
+  \ best-effort,\nnon-fatal version of this same detector to stderr on every invocation\
+  \ (BUG-433/BUG-455/BUG-510);\nthat path intentionally stays a swallow-everything\
+  \ warning (it rides along on `--version` for ANY\nproject, not just this checkout)\
+  \ and is not itself made stricter by this rule — the strict,\nhard-fail path above\
+  \ is the dedicated tool for a deliberate coordinator preflight instead.\n\nSee `g-rl-09-python_venv.md`\
+  \ (\"`gald3r` CLI Invocations\" section) for the same mandate outside the\n`g-go*`\
+  \ pipeline.\n\n---\n\n### 1. Load Context (Before Touching Anything)\n\nRead in\
+  \ this order:\n- `.gald3r/PROJECT.md` — mission, goals, ecosystem context\n- `.gald3r/PLAN.md`\
+  \ — current milestones\n- `.gald3r/BUGS.md` — open bugs (**read before TASKS** —\
+  \ bugs run first)\n- `.gald3r/TASKS.md` — master task list\n- `.gald3r/CONSTRAINTS.md`\
+  \ — guardrails (if exists)\n- `.gald3r/DECISIONS.md` — past decisions (if exists,\
+  \ read-only)\n- **Active workflow profile (T1239)** — load once via `gald3r project-type\
+  \ resolve` (active\n  skill folder; see g-skl-tasks \"Reading the active profile\"\
+  ). The resulting\n  `task_statuses[]` (each with `id`, `symbol`, `skip_in_pipeline`)\
+  \ is the\n  pipeline's source of truth for which statuses are claimable vs. skipped\
+  \ and for\n  status-DAG transition order — **not** the hardcoded `[\U0001F4CB]/[\U0001F504\
+  ]/[\U0001F50D]/[✅]`\n  strings (AC1). When `.gald3r/config/workflow_profiles/` is\
+  \ absent (pre-T1238\n  installs), use the built-in `software_dev` lifecycle so behavior\
+  \ is unchanged.\n- `git log --oneline -10` — recent changes\n\n> **Codebase search\
+  \ (g-rl-43 / BUG-519)**: for any codebase content search, prefer\n> `gald3r search\
+  \ <pattern> [--path DIR]`; it is **mandatory**, not just preferred, whenever\n>\
+  \ a search must see inside `.gald3r/` or `.gald3r_sys/` — the harness/ripgrep `Grep`\
+  \ tool is\n> gitignore-aware and silently misses gitignored trees like `.gald3r_sys/`\
+  \ on broad searches.\n\n### 2. Build the Work Queue\n\n> **Profile-driven queue\
+  \ (T1239 AC1):** the \"claimable\" vs. \"skip\" decisions\n> below are derived from\
+  \ the active profile's `task_statuses[]` `skip_in_pipeline`\n> flag, and status\
+  \ transitions (`[\U0001F4CB]→[\U0001F504]→[\U0001F50D]→[✅]` for `software_dev`)\
+  \ follow\n> the profile's `task_statuses[]` declaration order. The symbols shown\
+  \ in this\n> section are the `software_dev` defaults; a non-code profile substitutes\
+  \ its own\n> (e.g. `content_creation`: claim `[\U0001F4A1] concept`/`[✍️] scripting`,\
+  \ skip\n> `[✅] published`). g-go-code and g-go-review inherit this same loaded profile.\n\
+  \n**Bugs first (Tier 1), then tasks (Tier 2).**\n\n**Tier 1 — Open bugs:**\n- From\
+  \ `BUGS.md` + `bugs/` files; Critical → High → Medium → Low\n- Skip bugs with external\
+  \ blockers\n- **Skip `[\U0001F6A8]` bugs** — log in Skipped section\n\n**Tier 2\
+  \ — Pending tasks:**\n- Status `[ ]` (pending), `[\U0001F4CB]` (ready), or stale\
+  \ `[\U0001F4DD]` (speccing claim expired)\n- **Skip non-expired `[\U0001F4DD]` speccing\
+  \ claims** — log owner/expiry as \"Speccing-In-Progress\"\n- For stale `[\U0001F4DD\
+  ]` claims, append a Status History takeover row naming the prior `spec_owner` before\
+  \ proceeding\n- **NOT** `[\U0001F6A8]` — skip entirely\n- **Skip `[⏸️]` (paused)\
+  \ tasks** — stored in `tasks/paused/`; must be manually unpaused before g-go picks\
+  \ them up\n- **Skip `[\U0001F6AB]` (cancelled) tasks** — stored in `tasks/cancelled/`;\
+  \ terminal state, never eligible for implementation\n- No unmet dependencies, with\
+  \ the rolling-pipeline exception: checkpointed `[\U0001F50D]` dependencies count\
+  \ as implementation-satisfied unless the downstream task declares `requires_verified_dependencies:\
+  \ true`; not `ai_safe: false`\n- Priority: Critical → High → Medium → Low\n\nSupported\
+  \ `$ARGUMENTS` filters:\n- Task IDs: `@g-go tasks 7, 9`\n- Bug IDs: `@g-go bugs\
+  \ BUG-003`\n- Subsystem: `@g-go subsystem vault-hooks-automation`\n- `@g-go bugs-only`\
+  \ / `@g-go tasks-only`\n\n### 2a. Resolve Phase 1 Speccing Claims Before Worktrees\n\
+  \nBefore Phase 1 worktree allocation, resolve task-spec claims in the primary checkout:\n\
+  - For a bare `[ ]` task with no complete task file, run `g-skl-tasks` `CLAIM-FOR-SPEC`\
+  \ -> `WRITE-SPEC` -> `PROMOTE-SPEC` first.\n- Skip non-expired `[\U0001F4DD]` claims\
+  \ before allocating a coding worktree.\n- For expired `[\U0001F4DD]` claims, append\
+  \ a Status History takeover row naming the prior `spec_owner`, then finish/promote\
+  \ the spec before worktree creation.\n- Only `[\U0001F4CB]` tasks or stale claims\
+  \ successfully promoted to `[\U0001F4CB]` proceed to Phase 1 coding worktree creation.\n\
+  \n### 2b. Harvested Task Pre-Flight Check (T810)\n\n**Applies to any task with `harvested_from:`\
+  \ in its YAML frontmatter.** Runs after speccing claims are resolved, before Phase\
+  \ 1 worktrees are created. Tasks without the field pass silently.\n\nFor each queued\
+  \ task that has `harvested_from:` set:\n\n1. **Read subsystem spec** — Find the\
+  \ task's `subsystems:` list. For each subsystem, read `.gald3r/subsystems/{name}.md`.\
+  \ Extract the `locations:` paths and read the key files there. Produce a 3-5 line\
+  \ bullet summary of what is currently implemented.\n\n2. **Scan pending queue**\
+  \ — Search `TASKS.md` for other tasks in status `[\U0001F4CB]` or `[\U0001F504]`\
+  \ that reference the same subsystem(s) in their frontmatter. List: task ID, title,\
+  \ status.\n\n3. **Display context panel:**\n   ```\n   ⚠️ HARVESTED TASK PRE-FLIGHT\n\
+  \   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n   Task:    T{id} — {title}\n   Source:\
+  \  {harvested_from} (analyzed {harvest_date})\n   Type:    {harvest_type}\n\n  \
+  \ Subsystem: {subsystem_name}\n   Existing implementation:\n     • {bullet 1}\n\
+  \     • {bullet 2}\n\n   Other pending tasks for same subsystem:\n     T{n}: \"\
+  {title}\" [{status}]\n   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n   ```\n\n4.\
+  \ **Decision gate by `harvest_type`:**\n   - `harvest_type: additive` — Display\
+  \ panel, then **proceed automatically.**\n   - `harvest_type: replacement` without\
+  \ `harvest_approved: true` — **BLOCK.** Do not proceed to Phase 1. Ask: \"This task\
+  \ would replace existing functionality. Confirm to proceed, or `skip` to defer.\"\
+  \ Log in Skipped section as \"Awaiting harvest comparison confirmation.\"\n   -\
+  \ `harvest_type: replacement` with `harvest_approved: true` — Display panel as context,\
+  \ then proceed.\n   - No `harvested_from:` field — Pass silently. (Legacy tasks.)\n\
+  \n> **`--override-harvest-check` flag** — treats all replacement harvested tasks\
+  \ as approved. Use for batch runs after explicit human review of the harvest intake\
+  \ report.\n\n### 3. Pre-Create Phase 1 Coding Worktrees\n\nAfter speccing claims\
+  \ are resolved, Phase 1 uses the same isolation contract as `g-go-code`:\n\n```powershell\n\
+  gald3r worktree create -TaskId {id} -Role code -Json\n```\n\nInstalled templates\
+  \ may call the helper from `gald3r worktree` when no root `scripts/` copy exists.\n\
+  \nRules:\n- **Owner (T580/BUG-612)**: omit `-Owner` — it auto-resolves from your\
+  \ routed provider (Cursor host mapping, explicit `--provider`/role override, ...)\
+  \ before falling back to the pre-T580 `USERNAME`/`USER`/`agent` default. See `g-go-code.md`\
+  \ Step 3's owner-resolution note for the full mechanism; pass `-Owner <value>` only\
+  \ to override it explicitly.\n- Create/reuse all queued item worktrees before implementation\
+  \ edits or primary-checkout status writes.\n- Map helper JSON to claim metadata:\
+  \ `worktree_path` → `worktree_path`, `worktree_branch` → `worktree_branch`, `created_at`\
+  \ → `worktree_created_at`, and `owner` → `worktree_owner`.\n- Run Phase 1 implementation\
+  \ inside the worktree root.\n- Keep the primary checkout for queue coordination,\
+  \ final batched status writes, and Phase 2 reviewer handoff.\n- If the helper refuses\
+  \ because the active checkout is dirty, skip the item unless the task explicitly\
+  \ owns direct-root work and an override is documented.\n- Leave failed worktrees\
+  \ intact for inspection; do not delete them during the same pipeline run.\n\n###\
+  \ 4. Implement Each Item\n\nFor each item:\n\n**a)** Read the task/bug file — understand\
+  \ objective and acceptance criteria\n**b)** If the item is a bare `[ ]` task with\
+  \ no complete spec, run `g-skl-tasks` `CLAIM-FOR-SPEC` → `WRITE-SPEC` → `PROMOTE-SPEC`\
+  \ first; skip non-expired `[\U0001F4DD]` claims. Then create/reuse the coding worktree\
+  \ and implement the solution inside that worktree\n**b2) AC gate** — before moving\
+  \ on, walk every `- [ ]` acceptance criterion:\n  - Is this criterion satisfied\
+  \ in actual files? → proceed\n  - Unmet → return to **(b)**\n  - Cannot meet this\
+  \ session → log as Blocker, skip task entirely (no partial `[\U0001F50D]`)\n  -\
+  \ **Stub/TODO scan**: bare `# TODO`, `pass`, `raise NotImplementedError` → annotate\
+  \ `TODO[TASK-X→TASK-Y]` + create follow-up task (see `g-rl-34`)\n  - **Bug-discovery\
+  \ check**: pre-existing bugs → BUG entry + `BUG[BUG-{id}]` comment; current-task\
+  \ bugs → fix inline (see `g-rl-35`)\n  - **Constraint check**: any `\U0001F6AB VIOLATION`\
+  \ blocks `[\U0001F50D]`\n  - **Workspace boundary check**: run `g-skl-workspace`\
+  \ ENFORCE_SCOPE before editing and before `[\U0001F50D]`; omitted metadata is current-repo-only,\
+  \ unknown manifest repo IDs block, and member repo writes require explicit `workspace_repos`,\
+  \ compatible `workspace_touch_policy`, authorization text, reviewed member git status,\
+  \ and manifest write permission.\n**b3) Queue Status History** — collect the row\
+  \ that will be appended before marking `[\U0001F50D]`:\n  ```\n  | YYYY-MM-DD |\
+  \ pending | awaiting-verification | Implementation complete; {1-line summary} |\n\
+  \  ```\n**c)** Validate — lint, test, check files exist\n**d)** Record decisions\
+  \ → append to `.gald3r/DECISIONS.md`\n**e)** Update subsystem Activity Log for each\
+  \ subsystem in `subsystems:` field\n**f)** Queue `[\U0001F50D]` (NOT `[✅]`) status\
+  \ for the final Phase 1 batch write; add task ID to `phase1_results`\n**g)** Move\
+  \ to next item\n\n### 5. Phase 1 Completion\n\nAfter all items are processed, reconcile\
+  \ successful worktree diffs into the primary checkout, batch-write task/bug status,\
+  \ then create a code-complete checkpoint commit before reviewer handoff. For each\
+  \ successful worktree, stage only intended files in that worktree with `git add\
+  \ -A -- {paths}`, export `git diff --binary --cached HEAD`, and apply it to the\
+  \ primary checkout with `git apply --3way --index` so new files are included. Never\
+  \ use `git add .` in swarm worktrees. If the patch does not apply cleanly, preserve\
+  \ the worktree and list the item as skipped.\n\n**`--shared-sandbox` variation (T1118)**:\
+  \ when the session is run with `--shared-sandbox`, do **NOT** reconcile the diff\
+  \ into the primary checkout at end of Phase 1. Instead, create the code-complete\
+  \ checkpoint commit **on the `code` worktree branch itself**, then stamp the worktree\
+  \ with a keep window so the cleanup pass cannot reclaim it before Phase 2:\n\n```powershell\n\
+  gald3r worktree keep -TaskId {id} -Role code -Owner {owner} -KeepHours 2 -Json\n\
+  ```\n\nRecord `shared_sandbox: true`, `shared_worktree_path`, and `implementation_branch`\
+  \ in each `[\U0001F50D]` task's metadata so Phase 2 reuses the same worktree read-only.\
+  \ The primary-checkout reconcile is deferred until after Phase 2 review passes (see\
+  \ the \"Shared Sandbox Phase Handoff\" section above).\n\n```\n[PIPELINE] Phase\
+  \ 1 complete\n  Implemented → [\U0001F50D]: {phase1_results IDs}\n  Checkpoint →\
+  \ {branch}@{commit_sha}\n  Blocked/Skipped: {list with reasons}\n```\n\n**5b. Optional\
+  \ GitHub PR-Open Hook (T1291)** — after the checkpoint commit, run the triple-gated\
+  \ PR-open hook from `g-go-code` section 7b-pr for each task that reached `[\U0001F50D\
+  ]` this session. The gate checks `project_type=software_development`, `github_integration:\
+  \ enabled`, and `github_pr_hooks: enabled` in AGENT_CONFIG.md. Failure does not\
+  \ roll back task state or block Phase 2.\n\nIf `phase1_results` is empty → skip\
+  \ Phase 2:\n```\n[PIPELINE] Phase 1 completed 0 items — Phase 2 skipped. Nothing\
+  \ to review.\n```\n\n---\n\n## Phase 2: Auto-Spawn Independent Reviewer\n\n> **Only\
+  \ runs if Phase 1 marked at least 1 item `[\U0001F50D]`.**\n\nPhase 2 is a parallel\
+  \ review lane, not a default global pause. In swarm mode, the coordinator should\
+  \ launch review from the checkpoint and then continue Phase 1 rolling implementation\
+  \ waves for newly runnable items whose dependencies are checkpointed at `[\U0001F50D\
+  ]`. Only block the implementation lane for tasks that declare `requires_verified_dependencies:\
+  \ true`, a review failure that invalidates a downstream checkpoint dependency, a\
+  \ WPAC conflict, Workspace-Control preflight denial, or a repository state that\
+  \ prevents a safe checkpoint.\n\n### Spawn\n\nPrint the handoff notice:\n```\n[PIPELINE]\
+  \ Spawning Phase 2 reviewer for: Task {task IDs} / Bug {bug IDs}\n[PIPELINE] Reviewer\
+  \ is a fresh agent — no Phase 1 context. Adversarial independence: ✓\n```\n\n**Before\
+  \ spawning**, collect branch context from the Phase 1 checkpoint and task files\
+  \ (BUG-095 fix, T1375):\n```\nimplementation_branch = read implementation_branch\
+  \ from [\U0001F50D] task files (should all match the checkpoint branch)\nimplementation_sha\
+  \    = checkpoint commit SHA from Phase 1 completion block above\n```\n\nSpawn a\
+  \ Task subagent with:\n- The full `g-go-review` prompt\n- Filter: `tasks {phase1_task_result_ids}\
+  \ bugs {phase1_bug_result_ids}` (omit either clause when empty)\n- Coordinator-managed\
+  \ override: \"Return PASS/FAIL payloads and Status History rows only. Do not write\
+  \ task/bug files, `TASKS.md`, or `BUGS.md`; the `g-go` coordinator owns final writes.\"\
+  \n- **Branch handoff context** (append to the reviewer's initial prompt — enables\
+  \ Branch Pre-Flight Step 0):\n  ```\n  Review context (from Phase 1 coordinator):\n\
+  \    Implementation branch: {implementation_branch}\n    Implementation checkpoint\
+  \ SHA: {implementation_sha}\n  The reviewer should use Branch Pre-Flight (Step 0\
+  \ of g-go-review) to confirm it is on branch {implementation_branch} before scanning\
+  \ the review queue.\n  ```\n- **Shared-sandbox handoff context (T1118)** — when\
+  \ the session ran with `--shared-sandbox`, also append the shared worktree path\
+  \ so the reviewer reuses it read-only instead of creating a new `review` worktree:\n\
+  \  ```\n  Shared sandbox (from Phase 1 coordinator):\n    shared_sandbox: true\n\
+  \    shared_worktree_path: {shared_worktree_path}\n  Per g-go-review Step 2b, reuse\
+  \ this worktree read-only (review_isolation_mode: shared-worktree). Do NOT create\
+  \ a separate review worktree — the Phase 1 commits and installed dependencies are\
+  \ already present on {implementation_branch} at {shared_worktree_path}.\n  ```\n\
+  \  Omit this block entirely when `--shared-sandbox` was not passed (separate-context\
+  \ default).\n- No other context from Phase 1\n\n### Reviewer Protocol\n\nThe spawned\
+  \ agent runs the standard `g-go-review` protocol:\n- Claims each Phase 2 item as\
+  \ `[\U0001F575️]` / `verification-in-progress` before inspection\n- Establishes\
+  \ review isolation before inspection:\n  - T170 `review` worktree from the Phase\
+  \ 1 checkpoint commit by default\n  - Snapshot mode only when the candidate changes\
+  \ are explicitly left uncommitted or cannot be made branch-addressable\n- Verifies\
+  \ the selected review source contains the candidate changes; if the candidate diff\
+  \ is dirty or not reachable from the chosen source branch, uses snapshot mode instead\
+  \ of a stale `HEAD` worktree\n- Skips non-expired verifier claims and may only take\
+  \ over expired claims with Status History logging\n- Reads each task/bug spec and\
+  \ checks ACs or fix criteria against actual files\n- PASS → returns PASS payload\
+  \ + verification note\n- FAIL → returns FAIL payload + Status History row; stuck-loop\
+  \ check (≥3 FAILs → `[\U0001F6A8]`)\n- **Does NOT write task/bug files, TASKS.md,\
+  \ or BUGS.md** — returns result payload to coordinator\n\n### Coordinator Collects\
+  \ and Finalises\n\nAfter reviewer completes:\n1. **Invoke `gald3r task verify <id>\
+  \ --pass` (PASS) or `gald3r task verify <id> --fail --reason \"...\"` (FAIL) for\
+  \ every reviewed task — mandatory, once per item (BUG-511; see `g-go-review.md`'s\
+  \ Verification Verb Gate).** This performs the status transition and resyncs the\
+  \ task file + `TASKS.md` in the same call — do not hand-edit either.\n2. **Invoke\
+  \ `gald3r bug resolve <id>` (PASS) or `gald3r bug update <id> --status open --note\
+  \ \"FAIL: ...\"` (FAIL) for every reviewed bug — mandatory, once per item.** This\
+  \ resyncs the bug file + `BUGS.md` in the same call — do not hand-edit either.\n\
+  3. Create the review-result commit after the verify-verb writes complete (steps\
+  \ 1-2), using explicit path staging only\n4. Write Pipeline Session Summary (see\
+  \ format below), including the review-result commit SHA or the explicit non-commit\
+  \ blocker\n\nThe coordinator commits the review result by default for PASS, FAIL,\
+  \ and mixed verdicts. Allowed reasons not to commit are limited to unresolved conflicts,\
+  \ failed commit hooks, staged or untracked unrelated changes, detected secrets,\
+  \ dirty generated outputs not owned by review, missing user permission for destructive\
+  \ or out-of-scope changes, or repository state that prevents a safe commit.\n\n\
+  **4b. Optional GitHub PR-Close Hook (T1292)** — after the review-result commit,\
+  \ run the triple-gated PR-close hook from `g-go-review` section \"Optional GitHub\
+  \ PR-Close Hook\" for each reviewed item. The gate checks `project_type=software_development`,\
+  \ `github_integration: enabled`, and `github_pr_hooks: enabled`. PASS items are\
+  \ squash-merged; FAIL items get a failure comment. A hook failure never rolls back\
+  \ the recorded verdict.\n\n### 5. Member Repo Auto-Merge (Post-PASS)\n\n> **Flags**\
+  \ (pass in `$ARGUMENTS` or inherit from `@g-go-go`):\n> - `--no-auto-merge` — skip\
+  \ auto-merge and use old `[MERGE-BLOCKED]` behavior for all items\n> - `--target-branch\
+  \ <name>` — override merge target (default: `main`; feature-branches-only model,\
+  \ see `g-rl-02`)\n\nAfter the review-result commit, for every PASS item whose code\
+  \ worktree targets a **member repository** (any `workspace_repos` value that resolves\
+  \ to a repo other than the controller itself), perform the auto-merge step. Default\
+  \ target branch is `main` (feature-branches-only model — NO long-lived `dev` branch;\
+  \ see `g-rl-02-git_workflow`).\n\n**Step 1 — Target branch existence check:**\n\n\
+  ```powershell\n# Determine target branch (default: main; override with --target-branch\
+  \ <name>)\n$targetBranch = if ($args -contains \"--target-branch\") { $args[$args.IndexOf(\"\
+  --target-branch\") + 1] } else { \"main\" }\n\n# Check if target branch exists in\
+  \ member repo\n$branchExists = git -C <member_path> branch --list $targetBranch\n\
+  if (-not $branchExists) {\n    $branchExists = git -C <member_path> branch -r --list\
+  \ \"origin/$targetBranch\"\n}\n```\n\n**Step 2 — Attempt auto-merge (when `--no-auto-merge`\
+  \ is NOT set AND target branch exists):**\n\n```powershell\ngald3r worktree merge\
+  \ -RepoPath <member_path> -TaskId {id} -Owner {owner} -TargetBranch $targetBranch\
+  \ -Apply -Json\n```\n\nThe helper:\n1. Checks out `$targetBranch` in the member\
+  \ repo\n2. Attempts `git merge --ff-only <code_branch>` into `$targetBranch`\n3.\
+  \ If FF fails (intervening commits), falls back to `git merge --no-ff -m \"merge(T{id}):\
+  \ merge verified implementation into $targetBranch\"`\n4. On success: removes the\
+  \ code worktree + branch, removes the review worktree + branch, removes worktree\
+  \ folders, and runs `git worktree prune`\n5. Returns a structured JSON result: `action`\
+  \ = `merged` | `merge-blocked` | `merge-skipped-dirty` | `skipped`\n\n**Success**:\
+  \ log `[AUTO-MERGED→{targetBranch}] T{id}: ff` (or `no-ff`) in the Pipeline Session\
+  \ Summary.\n\n**Merge blocked (fallback)**: if merge fails (conflict, unrelated\
+  \ history, or `--no-auto-merge` was passed), preserve the branch and log `[MERGE-BLOCKED]\
+  \ T{id}: <reason>` in the Pipeline Session Summary as a human action item. Do not\
+  \ fail the overall run.\n\n**Target branch missing (fallback)**: if the target branch\
+  \ does not exist in the member repo (neither local nor remote), log `[MERGE-BLOCKED]\
+  \ T{id}: target branch '{targetBranch}' not found — create it first` and preserve\
+  \ the branch. This is the expected fallback for newly bootstrapped member repos\
+  \ whose `main` branch has not yet been created.\n\n**Member dirty**: if the member\
+  \ repo has uncommitted changes unrelated to this task at merge time, log `[MERGE-SKIPPED-DIRTY]\
+  \ T{id}: member dirty` and preserve the branch. Do not attempt the merge.\n\n**FAIL\
+  \ items**: do NOT run auto-merge for items that received a FAIL verdict — the code\
+  \ branch must be preserved for re-implementation.\n\nRun auto-merge per PASS item\
+  \ sequentially in dependency order (lowest task ID first) so that each merge advances\
+  \ member `$targetBranch` cleanly for the next FF candidate.\n\nWhen Phase 2 review\
+  \ and later Phase 1 rolling waves overlap, the coordinator serializes shared writes\
+  \ by checkpoint generation:\n\n1. A review-result write may update only the items\
+  \ reviewed from its named checkpoint and any direct downstream checkpoint consumers\
+  \ it must requeue after FAIL.\n2. A rolling implementation wave may write only its\
+  \ own newly implemented items to `[\U0001F50D]` and must preserve review-result\
+  \ status changes already committed for earlier checkpoints.\n3. If review and implementation\
+  \ finish at the same time, apply the review-result commit first, recompute the queue,\
+  \ then reconcile the implementation wave against the updated primary checkout.\n\
+  4. Never allow two coordinators to write `.gald3r/TASKS.md`, `.gald3r/BUGS.md`,\
+  \ task/bug files, changelog/docs, generated prompts, or final commits concurrently.\n\
+  \nIf review FAILs an item that later rolling-wave work consumed, requeue the failed\
+  \ item and mark each dependent consumer as pending rework unless its implementation\
+  \ can be trivially proven independent of the failed behavior. Do not roll back unrelated\
+  \ completed or in-progress waves.\n\n---\n\n## Follow-Up Task Filing Gate (MANDATORY\
+  \ — runs before Pipeline Session Summary)\n\nBefore writing the Pipeline Session\
+  \ Summary, the coordinator MUST handle all follow-up items surfaced during the run.\
+  \ **Named-but-not-filed follow-ups are a policy violation** — they silently disappear\
+  \ and require manual rescue later.\n\n1. **Identify ALL follow-up items** surfaced\
+  \ during implementation or review:\n   - Reviewer notes flagging deferred sub-features,\
+  \ gaps, or \"non-blocking\" items\n   - Items the implementer found out-of-scope\
+  \ but necessary\n   - Stub/TODO items that got `TODO[TASK-X→TASK-Y]` annotations\
+  \ (each Y must be a real file)\n   - Anything described as \"can be done later\"\
+  , \"for tracking\", or \"named for follow-up\"\n\n2. **For each follow-up item,\
+  \ call `g-skl-tasks CREATE TASK`** to create an actual task file with:\n   - A proper\
+  \ `title:` describing the work\n   - `type: feature | bug_fix | refactor` as appropriate\n\
+  \   - `priority: low` (default; raise only when urgency is clear)\n   - An `## Objective`\
+  \ section describing what the follow-up must accomplish\n   - `dependencies: [T{originating_task_id}]`\
+  \ linking it to the task that surfaced it\n   - Capture the returned `task_id` (e.g.\
+  \ `T1110`) — this is the ONLY valid identifier\n\n3. **Reference actual task IDs**\
+  \ (e.g. `T1110`) in the Pipeline Session Summary — NEVER a slug like `T1043-followup-template-gitignore`.\
+  \ A slug without a real task file is a policy violation equivalent to data loss.\n\
+  \n4. **If task creation fails** for any reason: log it as a `BLOCKER` in the Pipeline\
+  \ Session Summary — do NOT silently name-only the follow-up.\n\n> | Rationalization\
+  \ | Reality |\n> |---|---|\n> | \"It's non-blocking, I'll name it for tracking\"\
+  \ | Named-only = lost forever. Create the task file or it doesn't exist. |\n> |\
+  \ \"The user can create it later\" | The user has moved on. The pipeline IS the\
+  \ filing point. |\n> | \"I'm not sure it's needed\" | Create with `priority: low`.\
+  \ User can archive it. Costs 30 seconds. |\n> | \"It's just a minor follow-up\"\
+  \ | Minor items get lost too. T1110–T1113 were rescued manually because of this.\
+  \ |\n\n---\n\n## Pipeline Session Summary\n\n```markdown\n## Pipeline Session Summary\n\
+  \n### Phase 1: Implementation\n- Items attempted: {N}\n- Completed → [\U0001F50D\
+  ]: Task 7, Task 9, Bug BUG-003\n- Blocked/Skipped: Task 10 — {reason}\n\n### Phase\
+  \ 2: Adversarial Review (independent agent)\n- Reviewer: 1 fresh Task subagent\n\
+  - Reviewer had NO Phase 1 context ✓\n\n| Task | Result | Notes |\n|------|--------|-------|\n\
+  | Task 7 | [✅] PASS | all ACs met |\n| Task 9 | [✅] PASS | all ACs met |\n| BUG-003\
+  \ | [\U0001F4CB] FAIL | AC-2 not met — {reason} |\n\n### Member Repo Auto-Merges\n\
+  - {member_repo}: T{id} [AUTO-MERGED→main] (ff)\n- {member_repo}: T{id} [AUTO-MERGED→main]\
+  \ (no-ff)\n- Blocked (fallback): T{id} — {reason}\n\n### Follow-Up Tasks Filed\n\
+  - T{id}: {title} — {reason surfaced}\n- T{id}: {title} — {reason surfaced}\n(none\
+  \ surfaced this run — or list all filed task IDs with titles)\n\n### Final Status\n\
+  - ✅ Completed (verified): 2\n- \U0001F4CB Failed (back to pending): 1\n- Blocked\
+  \ (not attempted): 1\n\n### Re-implement failed tasks\n@g-go tasks {failed_ids}\n\
+  \n### Push offer (this section only — never between phases or between tasks)\n{N}\
+  \ commits are ready on {branch}. Review changes and push when satisfied:\n  git\
+  \ log origin/{branch}..HEAD --oneline\n  git push origin {branch}\nWant me to push\
+  \ now?\n```\n\n**Push offer rules for `g-go`:**\n- The push offer appears **once**\
+  \ — in this final status block only\n- Do NOT offer push between Phase 1 and Phase\
+  \ 2 (pipeline still running)\n- Do NOT offer push after each task commit (loop still\
+  \ running)\n- Do NOT offer push at swarm rolling-wave checkpoints (more waves may\
+  \ follow)\n- If the user replies \"yes\" / \"go ahead\" / \"push it\": push immediately\n\
+  \n---\n\n\n### WPAC inbox Heartbeats (Swarm / Long Runs)\n\nFor swarm mode or any\
+  \ run lasting more than 30 minutes, the coordinator reruns the WPAC inbox check\
+  \ every 30 minutes and once more before the final summary. If a conflict appears\
+  \ mid-run, pause new claims/spawns/reconciliation, preserve worktrees and partial\
+  \ outputs, and require `@g-wpac-read` before continuing.\n\n## Swarm Mode (`--swarm`)\n\
+  \nWhen `$ARGUMENTS` includes `--swarm`, both phases run in swarm mode.\n\nSwarm\
+  \ mode is a rolling pipeline by default. Phase 1 emits checkpoint commits; Phase\
+  \ 2 reviews those checkpoints from fresh `review-swarm` worktrees; Phase 1 then\
+  \ continues with the next runnable wave instead of waiting for every review verdict.\
+  \ `[\U0001F50D]` dependencies count as implementation-satisfied for downstream coding\
+  \ unless the downstream task has `requires_verified_dependencies: true`.\n\n###\
+  \ Phase 1 Swarm (g-go-code swarm protocol)\n\nBefore partitioning, evaluate Phase\
+  \ 1 swarm eligibility after Workspace-Control preflight. If exactly one runnable\
+  \ item remains and preflight passes, automatically downgrade Phase 1 to the standard\
+  \ single-agent `g-go-code` path and continue the pipeline without asking for confirmation.\
+  \ If preflight fails because a workspace member is unknown, not a git root, or not\
+  \ authorized for the task/bug routing metadata, stop with that blocker; invalid\
+  \ workspace routing is not a swarm/single-agent choice.\n\n**Smart Agent Count:**\n\
+  \n| Queue size | Agents |\n|-----------|--------|\n| 1 | 1 (no swarm — fallback)\
+  \ |\n| 2–4 | 2 |\n| 5–9 | `ceil(count / 3)` (2–3) |\n| 10–14 | 4 |\n| 15+ | 5 (hard\
+  \ cap) |\n\n**Conflict-safe partition** (subsystem-boundary):\n```\n1. For each\
+  \ pair (A, B): CONFLICT if shared subsystem OR A depends_on B OR B depends_on A\n\
+  2. Greedy assign: item → first bucket with no conflict (open new bucket up to agent_count\
+  \ limit)\n3. Tasks touching TASKS.md/BUGS.md directly → single bucket\n```\n\nBefore\
+  \ spawning implementer agents, skip non-expired `[\U0001F4DD]` speccing claims,\
+  \ log stale `[\U0001F4DD]` takeovers with prior `spec_owner`, then create or reuse\
+  \ one coding worktree per bucket with role `code-swarm` and `-Json`. Pass each bucket's\
+  \ `worktree_path` and `worktree_branch` to its implementer. Implementers run from\
+  \ their assigned worktree and MUST return patch bundles or explicit diffs, generated\
+  \ artifacts, test evidence, changed-file inventories, and proposed Status History\
+  \ rows. Implementers MUST NOT directly write shared `.gald3r/TASKS.md` / `.gald3r/BUGS.md`,\
+  \ task/bug status files, `CHANGELOG.md`, generated Copilot prompts, parity outputs,\
+  \ or commits. They also MUST NOT run `git add .`; explicit path staging only, excluding\
+  \ `.gald3r-worktree.json`, ownership metadata, terminal transcripts, local logs,\
+  \ and other non-deliverables.\n\nThe coordinator reconciles bucket outputs one at\
+  \ a time by staging only intended bucket files in the bucket worktree with `git\
+  \ add -A -- {paths}`, exporting `git diff --binary --cached HEAD`, and applying\
+  \ it to the primary checkout with `git apply --3way --index`. Before applying, the\
+  \ coordinator detects overlapping shared-file edits and defers shared surfaces to\
+  \ one final coordinator write. Failed worktrees are preserved for inspection, then\
+  \ the coordinator batch-writes final task/bug status, changelog/docs updates, generated\
+  \ prompt changes, and parity sync output once. The coordinator then creates one\
+  \ code-complete checkpoint commit and passes its branch/SHA to Phase 2 as the default\
+  \ review source. Collect `phase1_results` = union of all reconciled `[\U0001F50D\
+  ]` items.\n\n### Phase 2 Swarm (g-go-review swarm protocol)\n\nPartition mixed `phase1_results`\
+  \ (tasks and bugs) round-robin across M reviewer agents (same count formula).\n\
+  Coordinator claims each review bucket as `[\U0001F575️]` before spawning reviewers,\
+  \ skips non-expired verifier claims, and establishes one review isolation source\
+  \ per bucket (`review-swarm` worktree or snapshot mode).\nEach reviewer produces\
+  \ a result payload only: PASS/FAIL, evidence, proposed Status History rows, and\
+  \ any fix-forward patch if explicitly authorized. Reviewers do not write `TASKS.md`,\
+  \ `BUGS.md`, task/bug files, changelog/docs, generated prompts, parity output, or\
+  \ commits.\nCoordinator performs one final shared-write pass for `TASKS.md`, `BUGS.md`,\
+  \ task/bug files, changelog/docs updates, generated prompts, parity sync output,\
+  \ final staging, and the review-result commit. The coordinator commits PASS, FAIL,\
+  \ and mixed review verdicts by default after status writes, unless a narrow non-commit\
+  \ blocker applies.\n\n### Bucket Cancellation Contract (T1123)\n\nThe coordinator\
+  \ can abort in-flight bucket agents cleanly — required when a bucket\ntimes out\
+  \ (`--timeout-minutes`), runs rogue, or the WPAC conflict gate fires mid-run.\n\n\
+  - When a bucket agent is launched in its worktree, the coordinator records the agent's\n\
+  \  PID via `gald3r worktree run ... -AgentCommand <agent>` (non-blocking;\n  the\
+  \ PID is persisted to that worktree's `.gald3r-worktree.json`).\n- **On timeout\
+  \ or conflict-gate abort**, the coordinator calls\n  `gald3r worktree cancel-all\
+  \ -TaskId <id> -Reason <why>` to terminate **all**\n  active bucket agents owned\
+  \ by that task. A single bucket can be killed with\n  `-Action Cancel -TaskId <id>\
+  \ -Role <role> -Owner <owner>`.\n- Termination is **graceful first** (window-close\
+  \ / SIGTERM), then a **forced tree-kill**\n  after `-GraceSeconds` (default 5).\n\
+  - **Dirty worktrees are PRESERVED** on cancellation — the coordinator never runs\n\
+  \  `-Action Remove` as part of the cancellation flow, so bucket state is kept for\
+  \ forensics.\n- Every cancellation appends a row to `.gald3r/logs/worktree_cancellations.log`\n\
+  \  (`{timestamp} | {task_id} | {worktree_path} | {reason} ({outcome})`).\n- Cancellation\
+  \ only stops the subprocess; the coordinator still performs its normal\n  reconciliation/clean-gate\
+  \ handling on any partial bucket output.\n\n### Swarm Pipeline Summary\n\n```markdown\n\
+  ## Swarm Pipeline Session Summary\n\n### Phase 1: Swarm Implementation\n- Implementers:\
+  \ N\n- Partition: subsystem-boundary\n- Checkpoint: {branch}@{commit_sha}\n| Bucket\
+  \ | Tasks | [\U0001F50D] | Blocked |\n|--------|-------|------|---------|\n| 1 |\
+  \ 7, 9 | 2 | 0 |\n| 2 | 10, 11 | 1 | 1 |\n\n### Phase 2: Swarm Review (N fresh agents\
+  \ — no Phase 1 context)\n- Reviewers: M\n- Partition: round-robin by priority\n\
+  | Reviewer | Tasks | PASS | FAIL |\n|----------|-------|------|------|\n| R-1 |\
+  \ 7, 10 | 2 | 0 |\n| R-2 | 9 | 0 | 1 |\n\n### Member Repo Auto-Merges\n- {member_repo}:\
+  \ T{id} [AUTO-MERGED→main] (ff)\n- {member_repo}: T{id} [AUTO-MERGED→main] (no-ff)\n\
+  - Blocked (fallback): T{id} — {reason}\n\n### Follow-Up Tasks Filed\n- T{id}: {title}\
+  \ — {reason surfaced}\n(none surfaced this run — or list all filed task IDs with\
+  \ titles)\n\n### Final Status\n- ✅ Completed (verified): {N}\n- \U0001F4CB Failed\
+  \ (back to pending): {M}\n- Blocked: {K}\n```\n\n---\n\n## Workspace Mode (`--workspace`)\n\
+  \n`--workspace` is the **explicit, opt-in** mode that expands queue selection across\
+  \ manifest-declared workspace repositories. It composes with `--swarm`, with task-ID\
+  \ filters, and with bug filters. Bare `/g-go` is unchanged — it remains current-controller-scoped\
+  \ by default. **Bare `/g-go` MUST NEVER scan member repos automatically.** All existing\
+  \ safety gates remain in force.\n\n### When to use\n\n- `/g-go --workspace` — workspace-aware\
+  \ pipeline; runs the full Phase 1 → Phase 2 flow, but selects from items routed\
+  \ across manifest-declared workspace repos.\n- `/g-go --swarm --workspace` — workspace-aware\
+  \ swarm; partitions work across buckets respecting per-repo conflict-safety and\
+  \ per-repo touch-set gating.\n- Bare `/g-go` and `/g-go --swarm` — unchanged. Member-repo\
+  \ items are deferred with `Deferred — member-repo scope` in the summary.\n\n###\
+  \ Workspace queue selection\n\nWhen `--workspace` is present, the coordinator:\n\
+  \n1. Reads `.gald3r/linking/workspace_manifest.yaml` (the canonical Workspace-Control\
+  \ registry).\n2. Resolves the repository set: orchestration controller (`<gald3r_source>`)\
+  \ plus every entry under `repositories:` whose `local_path` exists on disk and whose\
+  \ `lifecycle_status` permits work (e.g. excluding `planned`/`bootstrap_gap`/`frozen`\
+  \ archives).\n3. Filters the queue: each runnable task or bug is included only if\
+  \ every entry in its `workspace_repos:` resolves to a manifest member that is (a)\
+  \ locally available, (b) write-permitted by `allowed_write_policy.write_allowed`,\
+  \ and (c) compatible with the task's `workspace_touch_policy`.\n4. Honors all standard\
+  \ ordering rules: Critical → High → Medium → Low, dependencies (with the rolling-pipeline\
+  \ `[\U0001F50D]` checkpoint exception unless `requires_verified_dependencies: true`),\
+  \ `[\U0001F6A8]` skips, stale claim takeovers, WPAC-derived priority floor, and\
+  \ `ai_safe: false` exclusions.\n5. Logs per-deferral reasons in the session summary.\
+  \ Reasons include: `member-repo path missing`, `lifecycle_status forbids work`,\
+  \ `write_allowed: false`, `unknown repository.id in workspace_repos`, `workspace_touch_policy\
+  \ mismatch`, and `manifest missing or unparseable`.\n\n### Per-repo clean and touch-set\
+  \ gates\n\nThe Clean Controller Gate, Pre-Reconciliation Clean Gate, and Gald3r\
+  \ Housekeeping Commit Gate (T531) apply **per-root** to every repository in the\
+  \ computed touch set:\n\n- The orchestration controller is **always** in the touch\
+  \ set.\n- v1: every manifest member listed in any selected task's `workspace_repos:`\
+  \ joins the touch set.\n- v2: optional `extended_touch_repos:`, swarm-handoff `touch_repos:`,\
+  \ and absolute paths from subsystem `locations:` may union additional roots into\
+  \ the touch set (per `g-rl-33`).\n- Each member root is checked independently with\
+  \ `git -C \"<path>\" status --short`. Unrelated dirty paths in any per-repo touch\
+  \ set block coordinator-owned writes to that repo only — they do not block unrelated\
+  \ clean repos unless the selected coordinator action requires all selected repos\
+  \ (e.g. a single-task multi-repo reconciliation).\n- The **marker-only `.gald3r/`\
+  \ invariant** for `controlled_member` and `migration_source` repositories remains\
+  \ absolute. `--workspace` does NOT relax it. Attempted writes to member `.gald3r/`\
+  \ paths outside the marker allowlist (`.identity`, `PROJECT.md`) MUST be blocked\
+  \ by `g-rl-36` / the guard helper before the edit lands.\n\n### Member-scoped task\
+  \ authorization\n\nA selected task is permitted to edit a member repository only\
+  \ when ALL of the following are true:\n\n1. The member's manifest `repository.id`\
+  \ appears in the task's `workspace_repos:` list.\n2. The task's `workspace_touch_policy`\
+  \ is in the manifest entry's `allowed_write_policy.allowed_touch_policies`.\n3.\
+  \ The manifest entry's `allowed_write_policy.write_allowed` is `true`.\n4. Every\
+  \ dependency, blocker, WPAC inbox, and `[\U0001F6A8]` check passes for that member\
+  \ root.\n5. Per-repo clean check passes (or `-AllowDirty` is documented per-root\
+  \ in the task's `## Status History`).\n6. No member `.gald3r/` control-plane path\
+  \ is targeted (marker-only invariant).\n\nIf any check fails, the task is deferred\
+  \ (workspace mode never silently degrades authorization).\n\n### Workspace swarm\
+  \ coordination\n\nUnder `/g-go --swarm --workspace`:\n\n- Bucket planning includes\
+  \ per-repo conflict-safety: items targeting different members can run in parallel;\
+  \ items sharing a member root must serialize on that root's coordinator-owned writes.\n\
+  - Bucket worktrees follow `g-rl-02` (branch `gald3r/{task_id}/{role}/{repo_slug}/{owner}-{suffix}`);\
+  \ the `repo_slug` is the manifest `repository.id`.\n- Bucket handoff metadata MUST\
+  \ include `touch_repos:` listing every member root the bucket actually edited; the\
+  \ coordinator unions those into its Pre-Reconciliation Clean Gate.\n- Bucket agents\
+  \ return patches/artifacts/evidence/proposed-status only. The coordinator owns all\
+  \ shared `.gald3r/`, `CHANGELOG.md`, generated Copilot prompt, parity, and per-repo\
+  \ final-staging writes. `git add .` is forbidden in bucket worktrees; explicit path\
+  \ allowlists only.\n- Checkpoint and review-result commits are created **per repository\
+  \ root** with focused messages. No single commit spans multiple repositories.\n\n\
+  ### Workspace summary output\n\nBoth at the periodic 30-minute heartbeats and at\
+  \ the final summary, `--workspace` runs print:\n\n```\n[WORKSPACE] Mode: workspace[+swarm]\n\
+  [WORKSPACE] Manifest: .gald3r/linking/workspace_manifest.yaml\n[WORKSPACE] Considered\
+  \ repos: <gald3r_source>, gald3r_template_*, example_desktop, ...\n[WORKSPACE] Skipped\
+  \ repos: example_app (lifecycle: frozen_marker_only), external_repo (write_allowed:\
+  \ false)\n[WORKSPACE] Runnable items: {N}    Blocked: {K}    Deferred: {D}\n[WORKSPACE]\
+  \ Per-repo blockers: <template_full> (unrelated dirty: .github/...), ...\n[WORKSPACE]\
+  \ Next recommended: {command}\n```\n\nThe summary makes it explicit which repos\
+  \ were considered, which were skipped, which were blocked, and what to run next.\
+  \ `--workspace` runs never finish silently with implicit cross-repo work.\n\n###\
+  \ Marker-only protection (recap)\n\nMember `.gald3r/` may contain ONLY `.identity`\
+  \ and `PROJECT.md`. `g-skl-workspace`, `g-skl-WPAC-spawn`, `g-skl-WPAC-adopt`, `g-skl-setup`,\
+  \ and `gald3r_install` all consult `gald3r workspace member guard` before any member\
+  \ `.gald3r/` write. `--workspace` runs do NOT add a bypass; the guard is non-negotiable.\
+  \ Any attempted write to a forbidden member `.gald3r/` path is logged as a blocker\
+  \ and excluded from the run.\n\n---\n\n## Behavioral Rules\n\n| Rule | Why |\n|------|-----|\n\
+  | Phase 1 never marks `[✅]` — only `[\U0001F50D]` | Phase 2 reviewer owns `[✅]`\
+  \ |\n| Phase 2 reviewer spawned with no Phase 1 context | Adversarial independence\
+  \ guarantee |\n| Phase 2 inspects through a review worktree or read-only snapshot\
+  \ | Prevents reviewers from mutating implementation checkouts |\n| Coordinator batch-writes\
+  \ TASKS.md and BUGS.md after Phase 2 | Prevents concurrent line-edit conflicts |\n\
+  | **NEVER ask questions, propose options, or request confirmation** — apply the\
+  \ auto-plan and work | This is fire-and-forget; the user has moved on |\n| Skip\
+  \ tasks you can't complete | Maximize total output |\n| Respect CONSTRAINTS.md |\
+  \ Never violate project guardrails |\n| Abort if destructive (schema drop, data\
+  \ loss) | Safety first — log as blocker |\n| Bare `/g-go` is **always** controller-only\
+  \ — never silently scans member repos | Workspace expansion requires explicit `--workspace`\
+  \ opt-in |\n| `--workspace` honors per-repo clean gates, marker-only `.gald3r/`\
+  \ invariant, manifest write policy, and `workspace_touch_policy` | A single global\
+  \ flag must not weaken per-repo safety |\n| Workspace summary names every considered\
+  \ repo, skipped repo, and per-repo blocker | Multi-repo runs MUST be explicit about\
+  \ scope |\n| Workspace checkpoint and review-result commits are **per repository\
+  \ root** | No single commit may span multiple member repositories |\n\n---\n\n##\
+  \ Usage Examples\n\n```\n@g-go\n@g-go tasks 7, 9, 12\n@g-go bugs BUG-003, BUG-007\n\
+  @g-go subsystem vault-hooks-automation\n@g-go bugs-only\n@g-go --swarm\n@g-go --swarm\
+  \ tasks 7, 9, 10, 11, 12\n@g-go --swarm bugs-only\n@g-go --workspace\n@g-go --workspace\
+  \ tasks 220, 221\n@g-go --swarm --workspace\n@g-go --swarm --workspace tasks 220,\
+  \ 221, 222\n@g-go --mode fast tasks 7, 9\n@g-go --mode standard tasks 7, 9\n@g-go\
+  \ --swarm --mode fast tasks 7, 9, 10, 11\n@g-go --swarm --mode cheap bugs-only\n\
+  @g-go --max-iterations 3 tasks 7, 9, 10, 11, 12\n@g-go --timeout-minutes 15 bugs-only\n\
+  @g-go --max-iterations 10 --timeout-minutes 60 --swarm\n@g-go --swarm --workspace\
+  \ --max-iterations 8 --timeout-minutes 45\n```\n\n`--mode fast` / `--mode cheap`\
+  \ route bucket implementers to haiku-class models; the\ncoordinator stays on sonnet-class\
+  \ for routing and reconciliation. `--mode standard` is the\nexplicit form of the\
+  \ default. See the \"Model-Tier Selection\" section above for full\ninheritance\
+  \ rules.\n\n`--max-iterations N` (default `5`, env `GALD3R_MAX_ITERATIONS`) and\
+  \ `--timeout-minutes M`\n(default `30`, env `GALD3R_TIMEOUT_MINUTES`) bound the\
+  \ pipeline run. Whichever fires first\nstops new claims cleanly; in-flight work\
+  \ finishes and the pipeline writes its summary. See\n\"Iteration and Timeout Limits\"\
+  \ above for full semantics.\n\nSwarm lifecycle hooks (`g-hk-on-bucket-start.ps1`,\
+  \ `g-hk-on-bucket-complete.ps1`,\n`g-hk-on-bucket-error.ps1`) are discovered automatically\
+  \ when present in `.cursor/hooks/`,\n`.claude/hooks/`, `.agent/hooks/`, `.codex/hooks/`,\
+  \ `.copilot/hooks/`, or `.opencode/hooks/`.\nHook scripts are read-only observers\
+  \ (logging, notification, metrics); they MUST NOT mutate\n`.gald3r/` state or git\
+  \ state. See \"Swarm Lifecycle Hooks\" above for the parameter contract.\n\nDispatch\
+  \ prompts use template variables (`{{TASK_ID}}`, `{{TASK_TITLE}}`, `{{SKILL_PATH}}`,\n\
+  `{{BRANCH_NAME}}`, `{{TASK_FILE}}`, `{{WORKTREE_PATH}}`, `{{MODE}}`, `{{COORDINATOR_AGENT}}`)\n\
+  resolved at coordinator-dispatch time. Subagents never see unresolved `{{...}}`\
+  \ tokens. See\n\"Prompt Template Variables\" above.\n\n**For manual control (two\
+  \ separate sessions):**\n```\nSession 1:  @g-go-code\nSession 2 (new agent window):\
+  \  @g-go-review\n```\n\nLet's go."
+prompt: Run the gald3r `g-go` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-go, e.g. quoted text or --flag values, exactly
+    as you would type them after the command name.

@@ -137,10 +137,13 @@ https://developers.openai.com/codex/guides/agents-md
   permission, compaction, prompt submit, and subagent lifecycle.
 - **Trust model**: managed (enterprise) hooks run automatically; non-managed hooks require explicit
   user trust before firing.
-- gald3r `g-hk-*.ps1` hooks wire natively — `SessionStart` context injection, `PreToolUse` `.gald3r/`
-  guards, `Stop`/`PostToolUse` checks, etc. (Handler invocation is via the configured `command`;
-  ensure the handler shells `pwsh`/`powershell` for `.ps1` on the host OS.)
-- Source: https://developers.openai.com/codex/hooks
+- gald3r `g-hk-*.py` hooks wire natively via `.codex/hooks.json` (T425/BUG-370 stage 1 refresh —
+  post-T1584 Python port; no PowerShell involved): `SessionStart` → `g-hk-on-session-start.py`,
+  `UserPromptSubmit` → `g-hk-on-user-prompt-submit.py`, `PreToolUse` → `g-hk-on-tool-start.py`
+  (`.gald3r/` guards and every other `tool-start` concern hook), `PostToolUse` →
+  `g-hk-on-tool-end.py`, `Stop` → `g-hk-on-stop.py` — each a thin canonical entrypoint that fans
+  out to gald3r's shared `g_hk_core.py` `CONCERN_CHAIN` for that event (`command`: `python <path>`).
+- Source: https://developers.openai.com/codex/hooks (redirects to https://learn.chatgpt.com/docs/hooks)
 
 ## 7. Rules / Memory — ✅ NATIVE
 
@@ -191,10 +194,20 @@ portable. The instruction file is **`AGENTS.md` (not `CLAUDE.md`)** — ship the
 - **Type**: native (`hooks.json` or inline `[hooks]` in `config.toml`)
 - **Config file**: `.codex/hooks.json` or `[hooks]` in `~/.codex/config.toml` / `.codex/config.toml`
 - **Events available**: SessionStart, SubagentStart, PreToolUse, PermissionRequest, PostToolUse, PreCompact, PostCompact, UserPromptSubmit, SubagentStop, Stop (10)
-- **Event payload format**: event type + optional regex matcher routes to command handlers
-- **Command extensions**: any executable command (shell `pwsh`/`powershell` for `g-hk-*.ps1`)
+- **Event payload format**: single JSON object on stdin per invocation (`tool_name`/`tool_input` for
+  PreToolUse/PostToolUse — the same field names gald3r's `_hook_common.read_stdin_json()` already
+  reads); optional regex `matcher` (omit/`"*"`/`""` matches every occurrence); exit code 2 + stderr
+  blocks/denies, exit 0 + JSON on stdout (`{"continue": true, ...}`) allows
+- **Command extensions**: any executable command (gald3r ships Python — `command`: `python <path>`,
+  post-T1584 Python port; no PowerShell involved); `commandWindows` is an optional Windows-only
+  override
 - **Trust model**: managed/enterprise hooks auto-run; non-managed hooks require user trust
-- **gald3r hook files**: `g-hk-*.ps1` wire natively via the events above (SessionStart, PreToolUse, Stop, etc.)
+- **gald3r hook files** (T425/BUG-370 stage 1, cross-checked against `neutral_source/hooks/
+  g_hk_core.py`'s real `PLATFORM_EVENT_MAP["codex"]`): `g-hk-on-session-start.py` (SessionStart),
+  `g-hk-on-user-prompt-submit.py` (UserPromptSubmit), `g-hk-on-tool-start.py` (PreToolUse —
+  `.gald3r/` guards and every other `tool-start` concern hook), `g-hk-on-tool-end.py`
+  (PostToolUse), `g-hk-on-stop.py` (Stop) — each a thin canonical entrypoint fanning out to
+  `g_hk_core.py`'s `CONCERN_CHAIN` for that event via `.codex/hooks.json`
 
 ## Atypical Handling
 
@@ -209,7 +222,7 @@ portable. The instruction file is **`AGENTS.md` (not `CLAUDE.md`)** — ship the
 - Ship gald3r's open-standard `.agents/skills/g-skl-*/SKILL.md` tree — Codex discovers it natively.
 - Author the instruction surface as **`AGENTS.md`** (not `CLAUDE.md`); fold `g-rl-*` always-apply rules in.
 - Map `g-agnt-*` to `.codex/agents/*.toml`; remember subagents need explicit `/agent`/NL invocation.
-- Hooks fire natively (`g-hk-*.ps1` via configured command handlers across the 10 events); no need to degrade session-start/pre-commit to manual.
+- Hooks fire natively (`.codex/hooks.json`, `g-hk-*.py` scripts via `python <path>`, post-T1584 Python port — no PowerShell involved; T425/BUG-370 stage 1); no need to degrade session-start/pre-commit to manual.
 - Prefer skills over Custom Prompts for user-defined `@g-*` workflows (prompts are deprecated).
 - Re-verify on the next `@g-platform-scan-docs codex` (crawl_max_age_days: 7).
 

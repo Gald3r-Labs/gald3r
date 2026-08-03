@@ -9,13 +9,15 @@ docs_url_secondary:
   - https://aider.chat/docs/usage/modes.html
   - https://aider.chat/docs/usage/lint-test.html
   - https://aider.chat/docs/config/options.html
+  - https://aider.chat/docs/config/aider_conf.html
   - https://github.com/Aider-AI/aider/issues/4506
+  - https://github.com/Aider-AI/aider/issues/4363
 crawl_max_age_days: 14
 vault_doc_path: research/platforms/aider/
-last_doc_scan: 2026-06-02
+last_doc_scan: 2026-07-18
 reference: g-skl-platform-cursor
 status: ⚠️
-task: T1474
+task: T1474, T407
 ---
 
 # PLATFORM_SPEC.md — Aider (AI pair programming in your terminal)
@@ -31,12 +33,20 @@ bus. **Skills** and **MCP** are **not native** at all (community package / open 
 Critically for gald3r, aider has **no `AGENTS.md`/`CLAUDE.md` auto-discovery** — instruction files
 reach it only by pointing `--read` / `.aider.conf.yml` `read:` at an arbitrary markdown file
 (`CONVENTIONS.md` is the documented default). gald3r's Claude-Code artifacts are therefore **NOT
-drop-in reusable**; the install must fold guidance into a pinned read-only convention file.
+drop-in reusable**; the install must fold guidance into a pinned read-only convention file. **T407
+automated that fold**: `gald3r platform install aider` now writes a real `CONVENTIONS.md` AND the
+companion `.aider.conf.yml` `read:` pin in one step (see section 2 and "gald3r Integration Notes"
+below) — a `layout_map.yaml` `conventions_file` entry, deliberately distinct from the generic
+`root_instructions` mechanism other platforms get, because aider's convention file needs that
+explicit companion wiring to ever be read at all.
 
-**Authoring path**: UPDATE. **Verified 2026-06-02** against https://aider.chat/docs (see Verification
-Evidence). This **supersedes** the prior spec (`last_doc_scan: never`): commands/agents/hooks are
-correctly re-graded **⚠️ partial** (not ❌) to reflect aider's real built-in command surface, fixed
-chat modes, and narrow lint/test post-edit trigger, while skills and MCP remain ❌.
+**Authoring path**: UPDATE. **Verified 2026-06-02, re-verified 2026-07-18 (T407)** against
+https://aider.chat/docs (see Verification Evidence) — no change to the underlying facts on
+re-verification: CONVENTIONS.md is still not auto-discovered by filename, and
+github.com/Aider-AI/aider/issues/4363 (recommend AGENTS.md) is still open/unimplemented. This
+**supersedes** the prior spec (`last_doc_scan: never`): commands/agents/hooks are correctly
+re-graded **⚠️ partial** (not ❌) to reflect aider's real built-in command surface, fixed chat modes,
+and narrow lint/test post-edit trigger, while skills and MCP remain ❌.
 
 > **Surface split:** the **core aider CLI** is the gald3r target. **AiderDesk** (the GUI wrapper) and
 > third-party bridges (`mcpm-aider`, the `aider-skills` PyPI package) add MCP / skill loading
@@ -114,7 +124,7 @@ enabled and consume the context budget every turn — pin selectively.
   point.
 - **No general session-start / pre-tool / arbitrary-event hook system** — general pre/post-prompt
   script hooks are an **open feature request (#2045)** ("no general mechanism for running arbitrary
-  scripts on events"). gald3r `g-hk-*.ps1` have **no native event bus**; they run manually (e.g. via
+  scripts on events"). gald3r `g-hk-*.py` hooks have **no native event bus**; they run manually (e.g. via
   `/run`), as `CONVENTIONS.md` guidance text, or via git `core.hooksPath` (pre-commit/pre-push only).
 - Source: https://aider.chat/docs/usage/lint-test.html
 
@@ -166,9 +176,11 @@ index) is an aider-native bonus with no Cursor analog — retrieval, not a writa
 
 **Reuse note (important):** because aider does **NOT** read `CLAUDE.md`/`AGENTS.md` and discovers no
 `.claude/` / `.agents/` trees, gald3r's Claude-Code platform artifacts are **NOT reusable** on aider.
-The only portable install path is to **fold gald3r guidance into a pinned read-only `CONVENTIONS.md`**
+The portable install path is to **fold gald3r guidance into a pinned read-only `CONVENTIONS.md`**
 (plus `.gald3r/PROJECT.md` / `CONSTRAINTS.md` pinned via `read:`) and set `auto-commits: false` to
-defer to gald3r's task-scoped commit discipline.
+defer to gald3r's task-scoped commit discipline. **`gald3r platform install aider` now performs the
+`CONVENTIONS.md` + `.aider.conf.yml` `read:` half of this fold automatically (T407)** — see "gald3r
+Integration Notes" below.
 
 ## Hook System
 
@@ -178,16 +190,18 @@ defer to gald3r's task-scoped commit discipline.
 - **Events available**: post-edit auto-lint, post-edit auto-test, post-edit git auto-commit — **NO**
   SessionStart / SessionEnd / PreToolUse / Stop / arbitrary-event hooks
 - **Event payload format**: none (lint/test invoke configured shell commands; no stdin JSON payload)
-- **Command extensions**: any shell command via `lint-cmd`/`test-cmd`/`/run`; `.ps1` runs only when
-  invoked explicitly (e.g. `pwsh -File g-hk-*.ps1`), not auto-fired on lifecycle events
-- **gald3r hook files**: `g-hk-*.ps1` have **no native event home** — run them manually via `/run`,
+- **Command extensions**: any shell command via `lint-cmd`/`test-cmd`/`/run`; gald3r's `.py` hooks
+  run only when invoked explicitly (e.g. `python <path>`, post-T1584 Python port; no PowerShell involved), not auto-fired on lifecycle events
+- **gald3r hook files**: `g-hk-*.py` have **no native event home** — run them manually via `/run`,
   encode their intent as `CONVENTIONS.md` guidance, or wire pre-commit/pre-push via git
   `core.hooksPath`. General pre/post-prompt hooks are open feature request #2045.
 
 ## Atypical Handling
 
-- **No `AGENTS.md`/`CLAUDE.md` auto-read** (issue #4363) — fold enforcement into `CONVENTIONS.md` +
-  `read:` pins; arbitrary filenames work only as explicit `--read` targets.
+- **No `AGENTS.md`/`CLAUDE.md` auto-read** (issue #4363, still open/unimplemented as of the
+  2026-07-18 re-verification) — fold enforcement into `CONVENTIONS.md` + `read:` pins; arbitrary
+  filenames work only as explicit `--read` targets. `gald3r platform install aider` writes this pin
+  automatically now (T407) — see below.
 - **Auto-commit collision**: aider auto-commits each accepted edit — set `auto-commits: false` to
   defer to gald3r's task-scoped commit discipline, or audit commits after the fact.
 - **Core vs. AiderDesk split**: MCP and external skill loading exist only in AiderDesk / third-party
@@ -195,11 +209,19 @@ defer to gald3r's task-scoped commit discipline.
 
 ## gald3r Integration Notes
 
-- Ship `CONVENTIONS.md` (folded `g-rl-*` guidance) + pin `.gald3r/PROJECT.md` / `CONSTRAINTS.md` via
-  `.aider.conf.yml` `read:`; set `auto-commits: false`.
+- **`gald3r platform install aider` automates the fold (T407).** A fresh install writes a real,
+  non-stub `CONVENTIONS.md` (the same generic instructions body every `root_instructions` platform
+  shares) AND a companion `.aider.conf.yml` with a `read:` key pinning it, via `layout_map.yaml`'s
+  `conventions_file` entry + `generate.py`'s `_emit_conventions_wiring` — a distinct mechanism from
+  the generic `root_instructions` entry other platforms get, since aider's file needs the explicit
+  companion wiring to ever be read at all (verified 2026-07-18 against
+  https://aider.chat/docs/usage/conventions.html + https://aider.chat/docs/config/aider_conf.html).
+- Manual customization still layers on top: fold additional project-specific `g-rl-*` guidance into
+  `CONVENTIONS.md`, and pin more `.gald3r/PROJECT.md` / `CONSTRAINTS.md` context via more `read:`
+  entries; set `auto-commits: false`.
 - Skills/agents/custom-commands/MCP have **no runtime home** — do not expect `.claude/` reuse.
 - Optionally wire `lint-cmd`/`test-cmd` to a gald3r verification script for a post-edit gate; route
-  pre-commit/pre-push `g-hk-*.ps1` via git `core.hooksPath`.
+  pre-commit/pre-push `g-hk-*.py` (via `python <path>`) through git `core.hooksPath`.
 - Re-verify on the next `@g-platform-scan-docs aider` (crawl_max_age_days: 14).
 
 ---
@@ -214,7 +236,7 @@ Legend: ✅ verified working · ⚠️ partial / Cursor-generic · ❌ not suppo
 
 ---
 
-## Verification Evidence (docs crawl 2026-06-02, https://aider.chat/docs)
+## Verification Evidence (docs crawl 2026-06-02, re-verified 2026-07-18 for T407, https://aider.chat/docs)
 
 | Capability | How verified |
 |---|---|
@@ -224,6 +246,6 @@ Legend: ✅ verified working · ⚠️ partial / Cursor-generic · ❌ not suppo
 | Skills | libraries.io/pypi/aider-skills — no native SKILL.md/Agent Skills; community `aider-skills` injects "with zero aider changes" externally → ❌ |
 | Hooks | /usage/lint-test.html — `--auto-lint`/`--lint-cmd` + `--auto-test`/`--test-cmd` post-edit trigger + git auto-commit; general event hooks = open FR #2045 → ⚠️ |
 | MCP | github.com/Aider-AI/aider/issues/4506 — OPEN, no maintainer roadmap; only AiderDesk / `mcpm-aider` bridges (experimental); core CLI has none → ❌ |
-| Instruction file | /usage/conventions.html + issue #4363 — no AGENTS.md/CLAUDE.md auto-discovery; `CONVENTIONS.md` is documented default, any filename works via explicit `--read`/`read:` |
+| Instruction file | /usage/conventions.html + /config/aider_conf.html + issue #4363 (re-checked 2026-07-18, still OPEN/unimplemented) — no AGENTS.md/CLAUDE.md auto-discovery; `CONVENTIONS.md` is documented default, any filename works via explicit `--read`/`read:`; NOT auto-discovered by filename alone. T407: `gald3r platform install aider` now writes both the content file and the `.aider.conf.yml` `read:` pin automatically via the `conventions_file` layout_map.yaml mechanism (distinct from `root_instructions`). |
 | Other extensibility | /config/options.html — `.aider.conf.yml`, model roles (`--model`/`--editor-model`/`--weak-model`), Python scripting API, `--watch-files` (AI!/AI? triggers), `/voice`, `/web` |
-| Cross-compat | aider does NOT read `.claude/`/`.agents/` or `CLAUDE.md`/`AGENTS.md` → gald3r Claude artifacts NOT reusable; fold into pinned `CONVENTIONS.md` |
+| Cross-compat | aider does NOT read `.claude/`/`.agents/` or `CLAUDE.md`/`AGENTS.md` → gald3r Claude artifacts NOT reusable; fold into pinned `CONVENTIONS.md` (now automated by `gald3r platform install aider`, T407) |

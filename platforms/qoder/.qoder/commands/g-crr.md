@@ -1,6 +1,7 @@
-﻿---
-description: Clean-room rewrite pipeline — harvest a repo, write all findings to IDEA_BOARD, create tasks for top candidates, and produce a gald3r-native implementation spec. Calls separate agents per phase.
+---
+description: Clean-room rewrite pipeline — capture a repo as a whole-system, consumer-neutral functional spec centralized in the shared vault (research/CRR_FunctionalSpecs/), write all findings to IDEA_BOARD, create tasks for top candidates, and produce a gald3r-native implementation spec. Calls separate agents per phase.
 subsystem_memberships: [SECURITY_AND_COMPLIANCE]
+execution_tier: guarded_prompt
 ---
 # g-crr (Clean-Room Rewrite)
 
@@ -24,7 +25,7 @@ Activates **g-skl-crr**. Full pipeline: deep harvest → mandatory IDEA_BOARD wr
 
 | Phase | Agent | Output |
 |-------|-------|--------|
-| 1 — Harvest | background subagent | vault note + 5-pass recon report |
+| 1 — Capture | background subagent | whole-system consumer-neutral functional spec (5-pass) in shared vault `research/CRR_FunctionalSpecs/{slug}/` |
 | 2 — IDEA_BOARD | coordinator write | IDEA-HARVEST-NNN entries (mandatory, never skipped) |
 | 3 — Task triage | background subagent | task files for immediate candidates |
 | 4 — CRR spec | background subagent | master clean-room rewrite task (like T1187) |

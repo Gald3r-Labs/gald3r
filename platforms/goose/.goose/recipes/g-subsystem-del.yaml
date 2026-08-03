@@ -1,0 +1,31 @@
+version: 1.0.0
+title: g-subsystem-del
+description: Deprecate a subsystem. Activates **g-skl-subsystems** → DEPRECATE SUBSYSTEM
+  operation.
+instructions: 'Deprecate a subsystem. Activates **g-skl-subsystems** → DEPRECATE SUBSYSTEM
+  operation.
+
+
+  ```
+
+  @g-subsystem-del subsystem-name
+
+  @g-subsystem-del subsystem-name --reason "Merged into feature-staging-pipeline"
+
+  ```
+
+
+  Marks subsystem as `status: deprecated` in spec file YAML frontmatter and SUBSYSTEMS.md
+  index.
+
+  Does NOT delete the spec file (audit trail preserved).
+
+  Prompts to reassign any tasks still referencing this subsystem name.'
+prompt: Run the gald3r `g-subsystem-del` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-subsystem-del, e.g. quoted text or --flag
+    values, exactly as you would type them after the command name.

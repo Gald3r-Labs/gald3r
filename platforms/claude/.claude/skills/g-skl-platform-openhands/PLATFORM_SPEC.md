@@ -143,8 +143,8 @@ prompt at conversation start** — the preferred file for repository-wide, alway
   "additionalContext"}`.
 - Works across **Cloud, CLI, and local GUI** — a true deterministic control layer comparable to
   Claude Code hooks (block dangerous commands on PreToolUse, enforce tests/lint before Stop, inject
-  context on SessionStart). gald3r `g-hk-*` hooks wire natively; invoke a `.ps1` via a shell wrapper
-  (e.g. `pwsh -File ...`) since hooks are shell-command based.
+  context on SessionStart). gald3r `g-hk-*.py` hooks wire natively; invoke `python <path>` directly
+  as the shell command (post-T1584 Python port; no PowerShell involved, no wrapper needed) since hooks are shell-command based.
 - Source: https://docs.openhands.dev/openhands/usage/customization/hooks
 
 ## 7. Rules / Context — ✅ NATIVE
@@ -204,8 +204,8 @@ bundle.
 - **Events available**: PreToolUse, PostToolUse, UserPromptSubmit, Stop, SessionStart, SessionEnd
 - **Event payload format**: JSON via **stdin** (`event_type`, `tool_name`, `tool_input`,
   `session_id`, `working_dir`); block via `{"decision": "deny", "reason", "additionalContext"}`
-- **Command extensions**: shell command + `timeout` + `matcher`; gald3r `.ps1` runs via a shell
-  wrapper (`pwsh -File ...`)
+- **Command extensions**: shell command + `timeout` + `matcher`; gald3r `.py` hooks run via
+  `python <path>` directly (post-T1584 Python port; no PowerShell involved, no wrapper needed)
 - **Surfaces**: Cloud, CLI, local GUI
 
 ## Atypical Handling
@@ -218,7 +218,8 @@ bundle.
   Plugin `commands/` directory.
 - **Advanced agents are code-only** — file-based agents cover the basics; multi-agent roles via
   `DelegateTool` / `register_agent()` require Python.
-- **Hooks are shell-command based** — JSON config, stdin payload; wrap `.ps1` hooks in `pwsh`.
+- **Hooks are shell-command based** — JSON config, stdin payload; gald3r's `g-hk-*.py` hooks run
+  directly via `python <path>` (post-T1584 Python port; no PowerShell involved, no wrapper needed).
 
 ## gald3r Integration Notes
 

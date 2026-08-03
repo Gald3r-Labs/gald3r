@@ -1,0 +1,24 @@
+version: 1.0.0
+title: g-workflow
+description: Score complexity and expand tasks or plan sprints. Activates **g-tasks**
+  → EXPAND or SPRINT PLAN.
+instructions: 'Score complexity and expand tasks or plan sprints. Activates **g-tasks**
+  → EXPAND or SPRINT PLAN.
+
+
+  Activate the **g-tasks** skill:
+
+  - For complex tasks: EXPAND operation
+
+  - For sprint planning: SPRINT PLAN operation
+
+
+  Provide task ID for expansion, or no argument for full sprint plan.'
+prompt: Run the gald3r `g-workflow` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-workflow, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

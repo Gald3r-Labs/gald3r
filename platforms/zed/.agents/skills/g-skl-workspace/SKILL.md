@@ -6,6 +6,17 @@ min_tier: slim
 token_budget: medium
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 # g-skl-workspace
 
 **Files Read**: `.gald3r/linking/workspace_manifest.yaml`, task/bug frontmatter when validating routing metadata, repository paths named by the manifest, and per-repository git status/worktree metadata.
@@ -141,11 +152,12 @@ Default [1] autonomous_child. Choose [1/2]:
 
   ```powershell
   # $memberPath = <absolute_member_path>
-  & "<<template_adv>_root>\setup_gald3r_project.ps1" -TargetPath $memberPath -Platforms cursor,claude
+  gald3r platform install cursor --into $memberPath --generated
+  gald3r platform install claude --into $memberPath --generated
   ```
 
-  Verify `.claude/`, `.cursor/`, `.gald3r_sys/`, `CLAUDE.md` exist on the target afterward. For an already-populated gald3r repo prefer the PROMOTE path (`@g-wpac-promote`) which performs the same installer step.
-- When the user selects **`controlled_member`**, keep the marker-only bootstrap path (`bootstrap_member_gald3r_marker.ps1`) and do NOT run the full installer.
+  Verify `.claude/` and `.cursor/` exist on the target afterward (`platform install` also writes the per-platform root docs — e.g. `CLAUDE.md`/`GALD3R.md` — per T357; `.gald3r_sys/` is permanently retired and is never produced by any current verb, D016/D017/T335/T274 — see BUG-189). For an already-populated gald3r repo prefer the PROMOTE path (`@g-wpac-promote`) which performs the same installer step.
+- When the user selects **`controlled_member`**, keep the marker-only bootstrap path (`gald3r workspace member bootstrap`) and do NOT run the full installer.
 
 ### MEMBER ADD APPLY Gate
 
@@ -220,16 +232,17 @@ SPAWN_APPLY may run only when all gates pass:
      gald3r workspace member bootstrap --member-path "<absolute_target_path>" --member-id "<repo_id>" --apply
      ```
 
-     The guard at exit `1` (BLOCK) refuses apply with `BLOCK spawn_member_repo_gald3r_guard_block`. Exit `2` (ERROR) refuses with `BLOCK spawn_member_repo_gald3r_guard_error`. Bootstrap may itself BLOCK with `BLOCK spawn_member_gald3r_has_control_plane` when the existing `.gald3r/` already contains forbidden content — in that case point the user to `.claude/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1` first. Only the combination of guard ALLOW + bootstrap success completes SPAWN_APPLY.
+     The guard at exit `1` (BLOCK) refuses apply with `BLOCK spawn_member_repo_gald3r_guard_block`. Exit `2` (ERROR) refuses with `BLOCK spawn_member_repo_gald3r_guard_error`. Bootstrap may itself BLOCK with `BLOCK spawn_member_gald3r_has_control_plane` when the existing `.gald3r/` already contains forbidden content — in that case point the user to `gald3r workspace member remediate` first. Only the combination of guard ALLOW + bootstrap success completes SPAWN_APPLY.
 
-   - **`autonomous_child`** — full-framework deploy (T1452): the marker-only guard does NOT apply. After the git root and manifest entry are created, run the full installer on the target so the child gets `.claude/`, `.cursor/`, `.gald3r_sys/`, root docs, and a full `.gald3r/`:
+   - **`autonomous_child`** — full-framework deploy (T1452): the marker-only guard does NOT apply. After the git root and manifest entry are created, run the platform installer on the target so the child gets its IDE overlay (`.claude/`, `.cursor/`) plus that platform's root docs, then scaffold the child's `.gald3r/` control plane with `gald3r setup`. (`.gald3r_sys/` is permanently retired and is never produced by any current or planned verb — D016/D017/T335/T274; this is not a gap, see BUG-189):
 
      ```powershell
      # $memberPath = <absolute_target_path>
-     & "<<template_adv>_root>\setup_gald3r_project.ps1" -TargetPath $memberPath -Platforms cursor,claude
+     gald3r platform install cursor --into $memberPath --generated
+     gald3r platform install claude --into $memberPath --generated
      ```
 
-     Verify `.claude/`, `.cursor/`, `.gald3r_sys/`, `CLAUDE.md` exist on the target afterward. `setup_gald3r_project.ps1` lives at the root of any `<template_adv>` install (reuse the controller's copy when it was installed from an adv template).
+     Verify `.claude/` and `.cursor/` exist on the target afterward (`gald3r platform install` writes the IDE overlay AND that platform's root docs — e.g. `CLAUDE.md`/`GALD3R.md` for claude, T357/BUG-341/T408; `.gald3r_sys/` is intentionally never produced, see BUG-189). `gald3r platform install <platform> --into <dir> --generated` is a `gald3r` engine CLI verb, self-contained (T177) — it reads the neutral component set embedded in the engine binary, no `<template_adv>` checkout required.
 
 Allowed apply writes:
 
@@ -271,9 +284,9 @@ SPAWN raises any of the following BLOCK findings with a single-line remediation:
 - `BLOCK spawn_apply_without_explicit_flag`
 - `BLOCK spawn_active_task_not_authorized`
 - `BLOCK spawn_manifest_write_policy_refused`
-- `BLOCK spawn_member_repo_gald3r_guard_block` — `.claude/skills/g-skl-workspace/scripts/check_member_repo_gald3r_guard.ps1` returned exit 1 for the target path (member repos cannot receive live control plane; only `.identity` + `PROJECT.md` are allowed)
+- `BLOCK spawn_member_repo_gald3r_guard_block` — `gald3r workspace member guard` returned exit 1 for the target path (member repos cannot receive live control plane; only `.identity` + `PROJECT.md` are allowed)
 - `BLOCK spawn_member_repo_gald3r_guard_error` — guard helper returned exit 2 (manifest unparseable or other error); resolve before retrying
-- `BLOCK spawn_member_gald3r_has_control_plane` — bootstrap helper refused because the existing `.gald3r/` already contains forbidden content; run `.claude/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1` (dry-run, then `-Apply`) first
+- `BLOCK spawn_member_gald3r_has_control_plane` — bootstrap helper refused because the existing `.gald3r/` already contains forbidden content; run `gald3r workspace member remediate` (dry-run, then `--apply`) first
 
 ## Operation: MEMBER REMOVE PLAN / MEMBER REMOVE APPLY
 
@@ -793,7 +806,7 @@ Before any phase touches source data, ADOPT confirms controller manifest readine
 1. `.gald3r/linking/workspace_manifest.yaml` exists and parses cleanly via `PARSE_MANIFEST`.
 2. The candidate `--as {member_id}` does not collide with an existing repository ID unless `--allow-readopt` is supplied.
 3. The controller's git working tree is reviewed independently from the source. Apply requires the controller's `.gald3r/`, manifest, and report-output paths to be writable; a dirty controller working tree is not an automatic block but is recorded for review and may be blocked by `--require-clean-controller`.
-4. WPAC inbox conflict gate: `g-hk-wpac-inbox-check.ps1 -BlockOnConflict` is a hard prerequisite; an unresolved `[CONFLICT]` blocks apply (and is recorded as an advisory finding in discovery/dry-run).
+4. WPAC inbox conflict gate: `g-hk-wpac-inbox-check.py -BlockOnConflict` is a hard prerequisite; an unresolved `[CONFLICT]` blocks apply (and is recorded as an advisory finding in discovery/dry-run).
 
 #### Lifecycle State: `planned_adopting_member`
 
@@ -818,8 +831,8 @@ This state exists specifically so the manifest can model "adoption is in progres
 - controller archive bucket writes (Task 204)
 - controller `TASKS.md` / `BUGS.md` row insertions
 - manifest member entry transition from `planned_adopting_member` → `adopted`
-- any source-side cleanup (`remediate_member_gald3r_marker.ps1 -Apply`)
-- any source-side marker bootstrap (`bootstrap_member_gald3r_marker.ps1 -Apply`)
+- any source-side cleanup (`gald3r workspace member remediate --apply`)
+- any source-side marker bootstrap (`gald3r workspace member bootstrap --apply`)
 
 The decision gate is "user supplies `--apply` AND `--plan {report-path}` AND the plan is fresh AND its signature matches a re-run discovery". Anything weaker is refused; see the existing `BLOCK adoption_apply_without_explicit_flag` and `BLOCK adoption_plan_signature_mismatch` refusals below.
 
@@ -1117,9 +1130,9 @@ Apply runs only when all gates pass; any failure aborts with no partial writes:
 7. Manifest `allowed_write_policy` permits the manifest update for the active task (re-checked via ENFORCE_SCOPE).
 8. **Member `.gald3r/` marker-only guard (BUG-021 / Task 213 v1.1 / g-rl-36)**: ADOPT writes go to the control project, never to the member's live control plane. Apply must:
 
-   a. Run the validate helper against the source/member path: `.claude/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1`. If the member entry shows `has_violations`, refuse with `BLOCK adoption_member_repo_live_control_plane` and direct the user to `.claude/skills/g-skl-workspace/scripts/remediate_member_gald3r_marker.ps1` followed by re-adoption.
+   a. Run the validate helper against the source/member path: `gald3r workspace member validate`. If the member entry shows `has_violations`, refuse with `BLOCK adoption_member_repo_live_control_plane` and direct the user to `gald3r workspace member remediate` followed by re-adoption.
 
-   b. After the controller's `.gald3r/` is updated and the member's history has been imported into the controller (per the populated-gald3r adoption flow), call `.claude/skills/g-skl-workspace/scripts/bootstrap_member_gald3r_marker.ps1 -MemberPath {source_path} -MemberId {member_id} -Apply` to ensure the member ends in the marker-only shape (`.identity` + `PROJECT.md` present, control plane absent).
+   b. After the controller's `.gald3r/` is updated and the member's history has been imported into the controller (per the populated-gald3r adoption flow), call `gald3r workspace member bootstrap --member-path {source_path} --member-id {member_id} --apply` to ensure the member ends in the marker-only shape (`.identity` + `PROJECT.md` present, control plane absent).
 
    c. Refuse with `BLOCK adoption_member_repo_gald3r_guard_error` if either helper returns exit `2`.
 
@@ -1142,20 +1155,24 @@ Apply never:
 
 **Full-framework deploy for autonomous_child targets (T1452)**: Workspace-Control ADOPT keeps the
 source repo as a marker-only `controlled_member` by default (it imports state into the controller and
-re-marks the source via `bootstrap_member_gald3r_marker.ps1`). It does NOT install the full framework
+re-marks the source via `gald3r workspace member bootstrap`). It does NOT install the full framework
 into the source. When the intent is instead to make the adopted repo an independent `autonomous_child`
-(full `.gald3r/` plus `.claude/`, `.cursor/`, `.gald3r_sys/`, root docs), do NOT hand-build those
+(full `.gald3r/` plus `.claude/`, `.cursor/`, root docs — `.gald3r_sys/` is NOT part of this
+postcondition, it is permanently retired, D016/D017/T335/T274), do NOT hand-build those
 files: promote the member via PROMOTE_APPLY (`@g-wpac-promote`) and then run the full installer on the
 target path:
 
 ```powershell
 # $memberPath = <absolute_member_path>
-& "<<template_adv>_root>\setup_gald3r_project.ps1" -TargetPath $memberPath -Platforms cursor,claude
+gald3r platform install cursor --into $memberPath --generated
+gald3r platform install claude --into $memberPath --generated
 ```
 
-`setup_gald3r_project.ps1` is at the root of any `<template_adv>` install (reuse the controller's
-copy when it was installed from an adv template). Verify `.claude/`, `.cursor/`, `.gald3r_sys/`,
-`CLAUDE.md` exist on the target afterward.
+`gald3r platform install <platform> --into <dir> --generated` is a `gald3r` engine CLI verb,
+self-contained (T177) — it reads the neutral component set embedded in the engine binary, no
+`<template_adv>` checkout required. Verify `.claude/` and `.cursor/` exist on the target
+afterward (it also writes that platform's root docs — e.g. `CLAUDE.md`/`GALD3R.md` for claude,
+T357/BUG-341/T408; `.gald3r_sys/` is intentionally never produced, see BUG-189).
 
 ### Refusals (BLOCK Findings)
 
@@ -1185,7 +1202,7 @@ ADOPT raises any of the following BLOCK findings with an actionable single-line 
 
 - `BLOCK source_repo_dirty_apply_mode` — source has uncommitted changes, in-progress merge/rebase, or pending worktrees, and `--allow-source-dirty` was not supplied; resolve or commit source state first
 - `BLOCK control_repo_dirty_apply_mode` — controller has uncommitted changes outside the writes ADOPT itself plans, and `--require-clean-controller` was supplied; commit or stash unrelated controller changes first
-- `BLOCK wpac_conflict_gate_unresolved` — `g-hk-wpac-inbox-check.ps1 -BlockOnConflict` reports an open `[CONFLICT]`; resolve via `@g-wpac-read` before re-running apply
+- `BLOCK wpac_conflict_gate_unresolved` — `g-hk-wpac-inbox-check.py -BlockOnConflict` reports an open `[CONFLICT]`; resolve via `@g-wpac-read` before re-running apply
 
 **Boundary preservation**
 
@@ -1235,7 +1252,7 @@ gald3r workspace member bootstrap `
 
 Behavior:
 
-1. Confirms membership via `check_member_repo_gald3r_guard.ps1 -AllowMarkerInit`.
+1. Confirms membership via `gald3r workspace member guard --allow-marker-init`.
 2. Refuses with `BLOCK member_gald3r_has_control_plane` if existing `.gald3r/` already contains forbidden content — directs the user to MEMBER_MARKER_REMEDIATE first.
 3. Creates `.gald3r/.identity` (if absent) tying the member back to the controller (`workspace_role=controlled_member`, `workspace_controller_id`, `workspace_controller_project_id`, `workspace_controller_path`, `member_gald3r_marker_only=true`).
 4. Creates `.gald3r/PROJECT.md` (if absent) as a member-stub naming the member, role, controller, and crosslink.
@@ -1302,11 +1319,11 @@ PROMOTE is distinct from the other lifecycle modes:
 ### PROMOTE PLAN Steps (dry-run, default)
 
 1. Resolve the member path, manifest entry, and `.gald3r/.identity`.
-2. Classify the current role via `check_member_repo_gald3r_guard.ps1` and the member `.identity`.
+2. Classify the current role via `gald3r workspace member guard` and the member `.identity`.
 3. If the role is already `autonomous_child` -> exit with an informational message (no-op).
 4. If the role is `controlled_member` or `migration_source` -> build the promotion plan:
    - missing standard files to scaffold: `RELEASES.md`, `releases/`, `vocab.md`,
-     `workspace/topology.md`, `workspace/inbox.md`, `FEATURES.md`, `BUGS.md`, `PLAN.md`
+     `linking/link_topology.md`, `linking/INBOX.md`, `FEATURES.md`, `BUGS.md`, `PLAN.md`
    - `.identity` changes: `workspace_role -> autonomous_child`, remove
      `member_gald3r_marker_only`, bump `gald3r_version` to the current framework version
    - manifest change: `repositories[<member-id>].workspace_role -> autonomous_child`
@@ -1330,16 +1347,25 @@ files PROMOTE scaffolds. Run the full installer on the promoted path (T1452):
 
 ```powershell
 # $memberPath = <absolute_member_path>
-& "<<template_adv>_root>\setup_gald3r_project.ps1" -TargetPath $memberPath -Platforms cursor,claude
+gald3r platform install cursor --into $memberPath --generated
+gald3r platform install claude --into $memberPath --generated
 ```
 
-This deploys `.claude/`, `.cursor/` (skills, agents, commands, rules, hooks), `.gald3r_sys/`, and
-root docs (`CLAUDE.md`, `AGENTS.md`, `WORKFLOW.md`, `GUARDRAILS.md`, `GALD3R-PROMPT.md`,
-`GALD3R-MIGRATION.md`, `scripts/`). `setup_gald3r_project.ps1` lives at the root of any
-`<template_adv>` install; the same script is already present at the controller's project root
-when it was installed from an adv template -- reuse it. `@g-skl-setup --upgrade-existing` is the
-equivalent skill-driven path. After the install, verify `.claude/`, `.cursor/`, `.gald3r_sys/`, and
-`CLAUDE.md` exist on the target, then run `@g-wrkspc-validate` to confirm.
+This deploys `.claude/`, `.cursor/` (skills, agents, commands, rules, hooks) plus that platform's
+root docs (a subset of `CLAUDE.md`/`AGENTS.md`/`GALD3R.md`, per-platform filtering, T357/BUG-341/
+T408). `.gald3r_sys/` is NOT part of this deploy — it is permanently retired (D016/D017/T335/T274)
+and no current or planned verb writes it; treat that as intentional, not a gap (BUG-189). Likewise
+`WORKFLOW.md`, `GUARDRAILS.md`, `GALD3R-PROMPT.md`, `GALD3R-MIGRATION.md`, and `scripts/` are not
+produced by `platform install` — they are not part of the root-doc set it manages. `gald3r platform
+install <platform> --into <dir> --generated` is a self-contained `gald3r` engine CLI verb (T177) —
+it reads the neutral component set embedded in the engine binary, no `<template_adv>` checkout
+required; run it once per platform. `@g-setup --autonomy full` (an idempotent `.gald3r/` top-up;
+never overwrites existing files) is the equivalent skill-driven path for the `.gald3r/` content
+half — it does not deploy `.claude/`/`.cursor/` platform surfaces or root docs, which still require
+the `gald3r platform install` calls above.
+After the install, verify `.claude/`
+and `.cursor/` (and that platform's root docs) exist on the target, then run `@g-wrkspc-validate`
+to confirm.
 
 ### Helper script
 
@@ -1584,5 +1610,68 @@ Before claiming Workspace-Control work is ready for review:
 
 The authoritative posture map is `<workspace>\LICENSING_STRATEGY.md` and `.gald3r/CONSTRAINTS.md` C-020. License posture changes require updating all three: strategy doc, manifest entries, and per-repo `LICENSE`/`NOTICE` files in a single coordinated task. Bare LICENSE edits without a manifest update violate C-020.
 
-The license check is implemented inside `.claude/skills/g-skl-workspace/scripts/validate_workspace_members_gald3r.ps1` (alongside the existing T213 marker check). Pass `-SkipLicenseCheck` to suppress the license sweep when only marker diagnostics are wanted.
+The license check is implemented inside `gald3r workspace member validate` (alongside the existing T213 marker check). Pass `--skip-license-check` to suppress the license sweep when only marker diagnostics are wanted.
 
+
+---
+
+## WPAC-v2 shared connectivity + entitlement client shim (T1609)
+
+The absorbed engine verbs `gald3r workspace probe|entitlement|token-status` are the ONE shared connectivity surface every `g-skl-wpac-*` verb's
+transport layer (T1608) uses — do not re-implement base-URL / token / probe / 402 logic
+in a verb. Pure stdlib (uv-compatible), read-only on credentials (T605 / C-014), and
+it NEVER raises into a verb's happy path: every call returns a typed `ShimResult`
+whose `outcome` the verb branches on **in code** (g-rl-38):
+
+| Outcome | Meaning | Verb action |
+|---|---|---|
+| `ok` | 2xx + parsed JSON body | use the online result |
+| `offline` | transport fault / failed health probe | fall back to file transport (INBOX.md, messages/, sent_orders/) |
+| `auth_required` | 401/403 — session token rejected | file fallback + tell the user to run `gald3r login` |
+| `upgrade_required` | 402 — entitlement (paid Team plan) | file fallback + print `result.upgrade.upgrade_line()`; do NOT clear the token |
+| `error` | other non-2xx | file fallback; log status + body |
+
+Key surface: `WorldTreeClient.is_online()` (single cached `GET /api/v1/health` probe per
+session), `.request/.get/.post(path, json_body)` (Bearer reuse of the agent/Throne
+`gald3r login` token — keyring service `gald3r-world-tree`, file fallback
+`world_tree_token.json` under the unified per-user home), and
+`.entitlement_hint(feature_id)` (`GET /api/v1/entitlements/check` — a client-side HINT
+only; the server re-enforces on every gated route). Endpoint path constants for the live
+world_tree routes (delegation intake, `/ask`, events, inbox replay, claims, reconcile)
+are exported from the module — mirror them, never hardcode paths in verbs.
+
+CLI verdicts for SKILL.md steps: `gald3r workspace
+probe|entitlement|token-status [--json]` (always exit 0 — verdicts are data).
+Tests: in the engine suite (`tests/test_workspace_wpac_client.py`).
+
+---
+
+## WPAC-v2 shared verb transport — write-ahead outbox + push (T1608)
+
+`gald3r workspace outbox` is the ONE transport layer every `g-skl-wpac-*` verb
+shells out to (it wraps the T1609 shim; verbs never call endpoints directly):
+
+```
+gald3r workspace outbox \
+    send --verb order|ask|event|link [--project-uuid <uuid>] \
+         (--payload '<json>' | --payload-file <path>) [--json]
+gald3r workspace outbox pull   [--json]
+gald3r workspace outbox flush  [--json]
+gald3r workspace outbox        [--json]   (base verb, no subcommand = status view)
+```
+
+Verb → live endpoint: `order` → `POST /api/v1/tasks/delegation/intake` (wpac-order;
+target wakes via inbox auto-wake T494); `ask` → `POST /api/v1/ask` (wpac-ask);
+`event` → `POST /api/v1/events` (wpac-notify/-sync/-send-to/-move — CLOSED catalog;
+non-catalogued types short-circuit to the `fallback` verdict client-side); `link` →
+`POST /api/v1/projects/{id}/links` (wpac-claim/-adopt/-spawn topology → T1625 linking
+registry); `pull` → `GET /api/v1/tasks/delegation` + `GET /api/v1/events` (wpac-read).
+
+Discipline: every `send` WRITE-AHEADS the message to `.gald3r/linking/outbox/` BEFORE
+any network I/O (a mid-verb fault never loses a message); `ok` → delivered (entry moves
+to `outbox/delivered/`, verb skips the cross-repo file-drop); `offline`/`error` → the
+verb performs its FILE transport exactly as WPAC-v1 and the entry stays queued for
+`flush` (reconcile on reconnect); `auth_required`/`upgrade_required` → FILE transport +
+the shim's hint/upgrade line, entry parked as `fallback` (never retried — the file
+path IS the free tier). Path selection is code, never the model (g-rl-38). CLI always
+exits 0. Tests: in the engine suite (`tests/test_workspace_gald3r workspace outbox`).

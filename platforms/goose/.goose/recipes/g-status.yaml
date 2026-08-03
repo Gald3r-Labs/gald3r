@@ -1,0 +1,162 @@
+version: 1.0.0
+title: g-status
+description: 'Generate project status overview: $ARGUMENTS'
+instructions: "Generate project status overview: $ARGUMENTS\n\n### Compiled Retrieval\
+  \ (T494)\n\n**Run `gald3r status` (or `gald3r status --json` for machine-parseable\
+  \ output) FIRST, before doing anything else in this command.** It is a real, deterministic,\
+  \ DB-backed engine verb (`cli/commands/project_status_cmd.py`) — not something to\
+  \ re-derive with ad-hoc SQL or a hand-rolled frontmatter parser in-session. It replaces\
+  \ this command's RETRIEVAL, not its judgment: everything below that references \"\
+  from `gald3r status`\" is now sourced from that verb's output; everything else in\
+  \ this file (spec_task_reqs resolution, the WPAC hook invocation, Workspace-Control\
+  \ member detail, project type/workflow resolution, the PR column, phase progress,\
+  \ next priorities) is judgment this compiled verb deliberately does not attempt,\
+  \ and stays here.\n\n`gald3r status --json` returns: `tasks.by_status` / `tasks.total`\
+  \ / `tasks.completed` / `tasks.completion_pct`, `pending_breakdown` (runnable/gated/blocked/below_value_floor\
+  \ counts), `bugs.by_status` / `bugs.open_total` / `bugs.open_by_severity` (respects\
+  \ `--min-severity`), `awaiting_verification.groups` (pre-grouped by `release_hold`:\
+  \ `ready_for_staging` / `held_manual` / `held_sync_required` / `held_other`), `dependency_blocked`\
+  \ (blocked task rows with `open_dependencies`), `active_milestone`, and `wpac.configured`\
+  \ (+ `parent`/`children`/`siblings` counts or a `reason`). If `.gald3r/gald3r.db`\
+  \ does not exist yet, it reports that plainly rather than crashing — run `gald3r\
+  \ db backfill` first for a fully populated report.\n\n### Waiting Task Specable\
+  \ Check\n\nBefore completing the status report, scan `.gald3r/tasks/**/*.md` for\
+  \ any task with `status: waiting`. For each:\n\n1. **Read `spec_task_reqs:`** —\
+  \ check whether all listed task IDs are `status: completed` in their task files.\n\
+  2. **Report specable tasks** (all spec_task_reqs satisfied):\n   ```\n   ⌛ Specable\
+  \ now: T1239 (all spec_task_reqs satisfied — string reqs remain for human review)\n\
+  \   ```\n3. **Report orphaned waiters** (a dep task is `[❌]` cancelled or `[⏸️]`\
+  \ paused AND `waiting_since` > 24h):\n   ```\n   ⚠️ Orphaned waiter: T1239 — dep\
+  \ T1238 was cancelled 2d ago. Use @g-task-upd --demote with a new plan or @g-task-upd\
+  \ --promote if requirements changed.\n   ```\n4. **Report specable soon** (some\
+  \ but not all spec_task_reqs satisfied):\n   ```\n   ⌛ Specable soon: T1240 (T1239\
+  \ ✅, T1238 still in-progress)\n   ```\n\nThis check runs on every `@g-status` call.\
+  \ Results appear in the **Blockers & Risks** section. This is NOT covered by `gald3r\
+  \ status` — resolving `spec_task_reqs:` needs a fan-out check against an arbitrary\
+  \ per-task id list no compiled helper covers yet.\n\n\n### WPAC Inbox Gate (Only\
+  \ When WPAC Is Configured)\n\n`gald3r status`'s `wpac.configured` field already\
+  \ tells you whether this project is a WPAC participant (same link_topology.md parent/child/sibling\
+  \ check the rule below describes) — use it instead of re-deriving the check. What\
+  \ it does NOT do is run the inbox hook itself (that has real side effects — blocking\
+  \ on conflict — so it stays an explicit prompt-layer action):\n\nBefore task claiming,\
+  \ implementation, verification, planning, or swarm partitioning, if `wpac.configured`\
+  \ is `true`, run the re-callable inbox check when the hook exists:\n\n```powershell\n\
+  $hook = @( \".cursor\\hooks\\g-hk-wpac-inbox-check.py\", \".claude\\hooks\\g-hk-wpac-inbox-check.py\"\
+  , \".agent\\hooks\\g-hk-wpac-inbox-check.py\", \".codex\\hooks\\g-hk-wpac-inbox-check.py\"\
+  , \".opencode\\hooks\\g-hk-wpac-inbox-check.py\" ) | Where-Object { Test-Path $_\
+  \ } | Select-Object -First 1\nif ($hook) { python $hook -ProjectRoot . -BlockOnConflict\
+  \ }\n```\n\nInstalled templates may call the equivalent hook from the active IDE\
+  \ folder. If the check reports `INBOX CONFLICT GATE` or exits with code `2`, stop\
+  \ immediately and run `@g-wpac-read`; do not claim tasks, create worktrees, spawn\
+  \ reviewers, or continue planning until conflicts are resolved. Non-conflict requests,\
+  \ broadcasts, and syncs are advisory and should be surfaced in the session summary.\
+  \ If `wpac.configured` is `false`, skip this gate and report `WPAC: not configured\
+  \ / skipped` (or reuse `gald3r status`'s own WPAC line verbatim).\n\n## What This\
+  \ Command Does\n\nProvides a comprehensive status update for your gald3r project.\n\
+  \n## Status Analysis\n\n### 1. Task Analysis (from `gald3r status` + TASKS.md)\n\
+  `gald3r status` supplies the deterministic counts: total tasks by status (`tasks.by_status`),\
+  \ completion rate (`tasks.completion_pct`), the pending-queue breakdown (`pending_breakdown`),\
+  \ and the dependency-blocked list (`dependency_blocked`). Layer judgment on top:\n\
+  - Tasks by phase, and status LABELS/symbols from the **active workflow profile's**\n\
+  \  `task_statuses[]` (T1239 AC2), not hardcoded. For the default `software_dev`\n\
+  \  profile this is `[\U0001F4CB]` Ready, `[\U0001F504]` In-Progress, `[\U0001F50D\
+  ]` Awaiting-Verification,\n  `[✅]` Done, `[❌]` Failed; a `content_creation` project\
+  \ shows its own\n  vocabulary (`[✍️]` Scripting, `[\U0001F3AC]` In Production, `[✅]`\
+  \ Published, …)\n- Tasks by priority: Critical, High, Medium, Low (read from task\
+  \ files — not part of `gald3r status`'s output)\n- Recently completed tasks, task\
+  \ completion velocity (needs `created_date`/`completed_date` inspection — agent\
+  \ judgment)\n- Blocked or stalled tasks: use `gald3r status`'s `dependency_blocked`\
+  \ list directly rather than re-deriving it\n\n### 2. Bug Analysis (from `gald3r\
+  \ status` + BUGS.md)\n`gald3r status`'s `bugs.open_total` / `bugs.open_by_severity`\
+  \ (respects `--min-severity`) give the deterministic counts. Layer judgment on top:\n\
+  - Critical/High priority bugs requiring attention: read the `critical`/`high` buckets\
+  \ in `bugs.open_by_severity`\n- Bug resolution rate, recently closed bugs, long-standing\
+  \ bugs (needs per-bug date inspection — agent judgment)\n\n### 3. Phase Progress\n\
+  I'll check:\n- Current active phase\n- Phase completion percentage\n- Remaining\
+  \ work in phase\n- Dependencies blocking progress\n\n### 4. Issue Identification\n\
+  I'll highlight:\n- **Blockers**: `gald3r status`'s `dependency_blocked` list (tasks\
+  \ waiting on dependencies)\n- **Risks**: High-priority tasks not started\n- **Delays**:\
+  \ Tasks taking longer than estimated\n- **Critical Bugs**: `gald3r status`'s `bugs.open_by_severity.critical`/`.high`\
+  \ buckets\n\n### 5. Workspace-Control Snapshot (only when configured)\nIf `.gald3r/linking/workspace_manifest.yaml`\
+  \ exists, I'll include a compact Workspace-Control section using `g-skl-workspace`\
+  \ status semantics — this is a DIFFERENT, wider concept than `gald3r status`'s WPAC\
+  \ topology line (member registry/lifecycle/git-cleanliness detail vs. the narrower\
+  \ parent/child/sibling gate), deliberately not duplicated into the compiled verb:\n\
+  - Active manifest path, workspace ID/name, owner repo ID, controlled member count,\
+  \ and member IDs\n- Member lifecycle status, path reachability, write policy summary,\
+  \ and per-member git cleanliness when paths are reachable\n- Current task/bug `workspace_repos`\
+  \ and `workspace_touch_policy` routing metadata when present\n- A clear distinction\
+  \ between WPAC topology/INBOX/order state and Workspace-Control member registry\
+  \ state\n- Task 177 deferral reminder when backend, UI, Docker/Kubernetes/MCP, Valhalla,\
+  \ Yggdrasil, or control-plane status would otherwise be implied\n\nIf the manifest\
+  \ is absent, workspace output stays quiet unless you explicitly ask for workspace\
+  \ details.\n\n## Status Report Format\n\n### \U0001F9E9 Project Type (T1283)\n-\
+  \ Project type: `{project_type}` (from `.gald3r/.identity`; default `software_development`\
+  \ if absent)\n- Workflow profile: `{project_type}.yaml` (`.gald3r/config/workflow_profiles/`)\n\
+  - GitHub integration: `{enabled|disabled}` (enabled only when `project_type=software_development`)\n\
+  - Show this line near the top of the report; no-op silently when invoked outside\
+  \ a gald3r project.\n\n### \U0001F500 Workflow (T1239)\n- Resolve the active profile\
+  \ via `gald3r project-type resolve` (active skill folder; hybrid\n  activation chain)\
+  \ and display: `Workflow: {profile.name} ({profile.id}.yaml)`,\n  e.g. `Workflow:\
+  \ Content Creation (content_creation.yaml)`.\n- This is the session-start workflow\
+  \ header (T1239 AC5). Skip silently when\n  `.gald3r/config/workflow_profiles/`\
+  \ is absent (pre-T1238 installs).\n- All status labels/badges below come from the\
+  \ active profile's `task_statuses[]`\n  (`symbol` + label), **not** hardcoded strings\
+  \ (T1239 AC2). `software_dev`\n  resolves to the legacy labels, so code repos render\
+  \ unchanged.\n\n### \U0001F4CB Task Summary\n- Total tasks: X (Y pending, Z in-progress,\
+  \ W completed) — from `gald3r status`'s `tasks.by_status` / `tasks.total`\n- Completion\
+  \ rate: X% — from `gald3r status`'s `tasks.completion_pct`\n- Recent completions:\
+  \ [List]\n- **Active milestone (g-rl-40 rule 6)**: `gald3r status`'s `active_milestone`\
+  \ line — steer task selection toward it when set, per that rule.\n- **PR column\
+  \ (T1293)**: when at least one task has a `pr_url`, show a compact `PR` column\n\
+  \  per task line — `#1234 (ready)` / `#1234 (merged)` from the task's `pr_url` +\
+  \ `pr_status`\n  frontmatter. **Omit the column entirely** when no task has a `pr_url`\
+  \ (keeps non-software /\n  integration-off projects clean). This is a **pure display\
+  \ read** — never makes a GitHub API\n  call. `@g-status --pr-detail` shows full\
+  \ URLs and (if cached) check status.\n\n### \U0001F680 Release Pipeline (T419 —\
+  \ only when `tasks/awaiting-verification/` has content)\n- Shown only when there\
+  \ are awaiting-verification tasks (`gald3r status`'s `awaiting_verification.total`\
+  \ > 0).\n- `gald3r status`'s `awaiting_verification.groups` already groups by the\
+  \ task's `release_hold` frontmatter field (synced to `.gald3r/gald3r.db` on every\
+  \ write-through) — use it directly instead of re-deriving:\n  - **Ready for staging**:\
+  \ `groups.ready_for_staging` (`release_hold: none`/omitted)\n  - **Held — manual**:\
+  \ `groups.held_manual` (with `release_hold_reason` — read the task file directly;\
+  \ not a DB column, so not in the verb's output)\n  - **Held — sync_required**: `groups.held_sync_required`\
+  \ (with `sync_with` partner — same caveat, read the task file)\n- **Nudge**: when\
+  \ `groups.ready_for_staging` is non-empty, add `\U0001F4A1 N task(s) ready to ship\
+  \ — run @g-ship`.\n- Read-only display; set/clear holds with `@g-task set-release-hold`\
+  \ / `@g-task clear-release-hold`.\n\n### \U0001F41B Bug Summary\n- Open bugs: X\
+  \ (Y critical, Z high) — from `gald3r status`'s `bugs.open_total` / `bugs.open_by_severity`\n\
+  - Resolution rate: X bugs/week\n- Critical issues: [List]\n\n### \U0001F4CA Phase\
+  \ Progress\n- Current Phase: [Name]\n- Progress: X% complete\n- Remaining: Y tasks\n\
+  \n### ⚠️ Blockers & Risks\n- Blocked tasks: `gald3r status`'s `dependency_blocked`\
+  \ list (id, title, and what each is blocked on)\n- High-priority delays: [List]\n\
+  - Critical bugs: `gald3r status`'s `bugs.open_by_severity.critical` bucket\n\n###\
+  \ \U0001F9ED Workspace-Control (if configured)\n- Manifest: `.gald3r/linking/workspace_manifest.yaml`\n\
+  - Owner: `{repo_id}` | Controlled members: `{count}` (`{ids}`)\n- Members: `{id}`\
+  \ `{lifecycle}` `{path present/missing}` `{clean/dirty/missing}` `{writes allowed/blocked}`\n\
+  - Routing: active task/bug scope `{workspace_repos}` with policy `{workspace_touch_policy}`\n\
+  - Boundary: report-only; Task 177 defers backend/UI/control-plane systems\n\n###\
+  \ \U0001F680 Next Priorities\n1. [Priority 1]\n2. [Priority 2]\n3. [Priority 3]\n\
+  \n## When to Use\n- Daily standup preparation\n- Weekly status reviews\n- Sprint\
+  \ retrospectives\n- Stakeholder updates\n\n## What I Need From You\n- Specific areas\
+  \ to focus on (optional)\n- Time period for \"recent\" (default: last 7 days)\n\n\
+  Let's see where your project stands!\n\n\n## Structured output (`--json` / `--toon`)\
+  \ — T1381 / T1382\n\nThis command supports machine-readable output in addition to\
+  \ its default text/markdown:\n\n- `--json` → structured JSON envelope via **g-skl-json-output**\
+  \ (`{ gald3r_version, generated_at, command, schema, data }`), wrapping `gald3r\
+  \ status --json`'s output as the `data` payload rather than an agent-composed dict.\
+  \ For scripting, CI gates, dashboards.\n- `--toon` → **g-skl-toon-output** TOON:\
+  \ compact, lossless, LLM-friendly (tabular arrays state keys once; ~20% smaller\
+  \ than JSON). For agent handoff / context injection / vault ingestion.\n- `--md`\
+  \ forces markdown. With no flag, AGENT_CONFIG `output_format` decides (default `markdown`,\
+  \ unchanged).\n\nOutput is saved to `html_output_dir` (default `docs/`) as `YYYYMMDD_HHMMSS_<IDE>_<TOPIC>.json|.toon`\
+  \ per g-rl-01."
+prompt: Run the gald3r `g-status` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-status, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

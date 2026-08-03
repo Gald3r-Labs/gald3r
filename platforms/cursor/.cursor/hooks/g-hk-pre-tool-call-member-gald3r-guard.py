@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Python port of g-hk-pre-tool-call-member-gald3r-guard.ps1 (T1584).
+"""Thin resolver+verb dispatcher for the member-repo `.gald3r/` guard (T179/T191).
 
 Pre-tool-call guard: refuse Edit/Write to a Workspace-Control member
 repository's .gald3r/ that targets anything other than the marker pair
@@ -8,9 +8,18 @@ repository's .gald3r/ that targets anything other than the marker pair
 Enforces g-rl-36 "Workspace-Control Member `.gald3r/` Marker-Only Guard
 (HARD RULE)" and BUG-021 (T213).
 
-Member repos may keep ONLY .gald3r/.identity and .gald3r/PROJECT.md.
-Everything else (TASKS.md, tasks/, BUGS.md, bugs/, PLAN.md, ...) is
-forbidden.
+This hook used to hand-roll the workspace_manifest.yaml parse and the
+marker-only membership decision inline (flagged fix-thin by the v3 IP
+classification, T1679/T179). That enforcement logic now lives in the
+binary as `gald3r workspace member guard` (backed by
+`gald3r_core.project.workspace_member.guard.run_guard`, wired in
+`cli/commands/workspace.py`). This hook is reduced to the same
+resolver+dispatch pattern already used by `g-hk-policy-check.py` and
+`g-hk-agent-worktree-janitor.py`: resolve the engine via
+`_hook_common.resolve_engine_argv`, extract the write-tool target path
+from the event, pipe it to the verb, and branch on the JSON verdict.
+Fail-open (allow) whenever the engine can't be resolved or the verb call
+errors — a broken guard must never brick a session.
 
 Hook contract: same as g-hk-pre-tool-call-gald3r-guard (Claude Code / Cursor
 PreToolUse spec). exit 2 = deny, exit 0 = allow. The tool event JSON is read
@@ -18,15 +27,26 @@ from stdin; every allow path prints {"permission":"allow"}; the deny path
 prints a permission/deny JSON object and exits 2 (documented blocking
 behavior — preserved). Any unexpected error fails open (allow, exit 0).
 
+BUG-633 (actionability -- the deny reason must also reach stderr): Claude
+Code's PreToolUse hook contract treats exit code 2 as a "blocking error" and
+reads STDERR for the human-readable reason shown back to the calling agent.
+This hook used to print only the `{permission: deny, ...}` JSON body to
+stdout on a deny, so the real reason never reached stderr -- the exact defect
+class BUG-179 fixed for g-hk-pre-tool-call-gald3r-guard.py and BUG-625 fixed
+for g-hk-validate-shell.py. Mirroring BUG-625's additive-only shape: stdout
+stays byte-for-byte unchanged, and the deny reason is also written to stderr.
+
 Bypass: GALD3R_HOOK_BYPASS=1.
 Marker init: GALD3R_MARKER_INIT_ACTIVE=1 (set by
 bootstrap_member_gald3r_marker.ps1 — or its .py sibling where present;
-allows writing the marker pair itself).
+allows writing the marker pair itself) — forwarded to the verb as
+`--allow-marker-init`.
 
 Rule reference: .claude/rules/g-rl-36-workspace-member-gald3r-guard.md
-Guard helper: .cursor/skills/g-skl-workspace/scripts/
-check_member_repo_gald3r_guard.ps1 (prefer a .py sibling at the same path
-when one exists). This hook itself makes no cross-script calls at runtime.
+Verb: `gald3r workspace member guard --target-path PATH [--dot-gald3r-path
+REL] [--allow-marker-init] [--manifest-path PATH] [--json]`
+(`src/gald3r_core/cli/commands/workspace.py`,
+`src/gald3r_core/project/workspace_member/guard.py`).
 """
 # @subsystems: WORKSPACE_COORDINATION
 from __future__ import annotations
@@ -49,10 +69,10 @@ if _g3ct_env not in ("", "0", "off", "false", "no") or _g3ct_os.path.isfile(
         pass
 # --- end gald3r calltrace bootstrap ---
 
-import argparse
 import json
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -61,64 +81,50 @@ import _hook_common  # noqa: E402
 
 _ALLOW = json.dumps({"permission": "allow"}, separators=(",", ":"))
 
-
-def _find_workspace_manifest(start: Path):
-    """Walk up from `start`; return the first workspace_manifest.yaml found."""
-    d = start
-    while True:
-        candidate = d / ".gald3r" / "linking" / "workspace_manifest.yaml"
-        if candidate.is_file():
-            return candidate
-        if d.parent == d:
-            return None
-        d = d.parent
+_WRITE_TOOLS = (
+    "Edit", "Write", "MultiEdit", "NotebookEdit", "Patch",
+    "ApplyPatch", "str_replace_editor",
+)
 
 
-def _marker_only_members(manifest: Path):
-    """Member local_paths whose workspace_role is controlled_member or
-    migration_source (those are the marker-only members)."""
-    try:
-        m_lines = manifest.read_text(encoding="utf-8", errors="replace").splitlines()
-    except OSError:
-        return []
-    if not m_lines:
-        return []
+def _resolve_engine_cmd(project_root: Path):
+    """Resolve the gald3r engine command prefix (P3 Tier-0, T179/T191).
 
-    members = []
-    cur_path = None
-    cur_role = None
-    for line in m_lines:
-        if re.match(r"^\s*-\s+id:\s+\S+", line):
-            # New repository entry — flush previous if it qualifies.
-            if cur_path and cur_role in ("controlled_member", "migration_source"):
-                members.append(cur_path.replace("\\", "/").rstrip("/"))
-            cur_path = None
-            cur_role = None
-            continue
-        m = re.match(r"^\s*local_path:\s*(.+)$", line)
-        if m:
-            cur_path = m.group(1).strip().strip('"').strip("'")
-            continue
-        m = re.match(r"^\s*workspace_role:\s*(\S+)", line)
-        if m:
-            cur_role = m.group(1).strip()
-    # Flush the last entry.
-    if cur_path and cur_role in ("controlled_member", "migration_source"):
-        members.append(cur_path.replace("\\", "/").rstrip("/"))
-    return members
-
-
-def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(
-        description=(
-            "PreToolUse guard: deny Edit/Write inside a Workspace-Control"
-            " member repo's .gald3r/ except the .identity/PROJECT.md marker"
-            " pair. Reads the tool event JSON from stdin; exit 2 = deny."
-        )
+    Same shared resolver as `g-hk-policy-check.py` -- env var -> PATH ->
+    legacy loose resolver -> loud degrade. Returns the command prefix or
+    ``None`` when no engine can be found, in which case the hook no-ops
+    (allow).
+    """
+    return _hook_common.resolve_engine_argv(
+        project_root, hook_name="g-hk-pre-tool-call-member-gald3r-guard"
     )
-    parser.parse_args(argv)
 
-    event = _hook_common.read_stdin_json()
+
+def _resolve_project_root() -> Path:
+    """Prefer the invoking process's cwd walked up to its `.gald3r/`
+    ancestor; fall back to `_hook_common`'s hook-file-relative resolution.
+
+    T516 (T512 inventory row 17 -- HIGHEST PRIORITY): this IS the
+    g-rl-36 member-`.gald3r/` write guard's own root-of-truth resolver. If
+    it resolved onto a gitignored decoy `.gald3r/`, the guard's own
+    root-of-truth was exactly what could be silently spoofed -- applies the
+    shared T512 gitignore-refusal + ambiguity-warning walk-up guard
+    (`_hook_common.guarded_walk_up`).
+    """
+    d = Path.cwd()
+    root = _hook_common.guarded_walk_up(
+        d, exclude=_hook_common.resolved_global_gald3r_home()
+    )
+    return root if root is not None else _hook_common.project_root()
+
+
+def _extract_tool_and_path(event: dict) -> "tuple[str, str]":
+    """Pull the tool name and the write-target path out of the event payload.
+
+    This is event-shape parsing (the resolver's job), not enforcement
+    logic -- the actual member/marker decision is delegated entirely to
+    the `gald3r workspace member guard` verb below.
+    """
     tool = str(event.get("tool_name", "") or "")
     path = ""
     tool_input = event.get("tool_input")
@@ -127,18 +133,24 @@ def main(argv=None) -> int:
             if key in tool_input and tool_input[key]:
                 path = str(tool_input[key])
                 break
+    return tool, path
 
-    write_tools = ("Edit", "Write", "MultiEdit", "NotebookEdit", "Patch",
-                   "ApplyPatch", "str_replace_editor")
-    if tool not in write_tools:
+
+def main(argv=None) -> int:
+    event = _hook_common.read_stdin_json()
+    if not event:
         print(_ALLOW)
         return 0
-    if not path:
+
+    tool, path = _extract_tool_and_path(event)
+    if tool not in _WRITE_TOOLS or not path:
         print(_ALLOW)
         return 0
 
     norm = path.replace("\\", "/")
     if not re.search(r"(^|/)\.gald3r/", norm):
+        # Fast no-op: nothing under any .gald3r/ in the path at all --
+        # avoids an engine round-trip for the overwhelming common case.
         print(_ALLOW)
         return 0
 
@@ -146,80 +158,80 @@ def main(argv=None) -> int:
         print(_ALLOW)
         return 0
 
-    # Build an absolute path.
-    full = path
-    if not os.path.isabs(full):
-        full = os.path.join(os.getcwd(), path)
+    # BUG-373: resolve a relative target against the already-discovered
+    # project root (`_resolve_project_root()`, an ancestor walk from cwd to
+    # the nearest `.gald3r/` -- tolerant of a drifted-but-still-nested cwd),
+    # not a second, independent raw `os.getcwd()` read. Cursor and Claude
+    # Code both guarantee the hook process's cwd == project root, so this
+    # was always harmless there; BUG-372 anchored the Codex *invocation
+    # command* to the git root without changing what cwd the spawned hook
+    # subprocess itself inherits. Live-tested (BUG-373): for the realistic
+    # "agent cwd drifted into a subdirectory of the SAME repo it is already
+    # working in" scenario this hook's `gald3r workspace member guard`
+    # ancestor-prefix repo match and right-anchored `.gald3r/`-suffix
+    # extraction are both invariant to an extra mid-path segment, so this
+    # was not independently exploitable the way the primary guard's strict
+    # `relative_to()` check was -- reusing `root` here is still correct
+    # and removes a redundant ambient `os.getcwd()` read.
+    root = _resolve_project_root()
+    full = path if os.path.isabs(path) else str(root / path)
     full_norm = full.replace("\\", "/")
 
-    # Discover the workspace manifest. Walk up from cwd; stop at filesystem root.
-    manifest = _find_workspace_manifest(Path.cwd())
-    if not manifest:
-        # Not inside a workspace controller — allow (orchestration-only project).
+    m = re.search(r"(?:^|/)\.gald3r/(.*)$", full_norm, re.IGNORECASE)
+    dot_gald3r_path = m.group(1) if m else ""
+
+    engine = _resolve_engine_cmd(root)
+    if engine is None:
+        # Engine not installed / not shipped on this tier -- pure no-op.
         print(_ALLOW)
         return 0
 
-    members = _marker_only_members(manifest)
-    if not members:
+    verb_argv = [*engine, "workspace", "member", "guard",
+                 "--target-path", full, "--json"]
+    if dot_gald3r_path:
+        verb_argv += ["--dot-gald3r-path", dot_gald3r_path]
+    if os.environ.get("GALD3R_MARKER_INIT_ACTIVE") == "1":
+        verb_argv.append("--allow-marker-init")
+
+    try:
+        proc = subprocess.run(
+            verb_argv,
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        result = json.loads(proc.stdout.strip() or "{}")
+    except Exception:
+        # Fail-open: a broken guard/manifest must never block a tool call.
         print(_ALLOW)
         return 0
 
-    # Does the target path live inside any marker-only member's .gald3r/?
-    # (case-insensitive, matching PowerShell -like / -eq semantics)
-    full_lower = full_norm.lower()
-    hit = None
-    for mpath in members:
-        member_gald3r = (mpath + "/.gald3r/").lower()
-        if full_lower.startswith(member_gald3r) or full_lower == member_gald3r.rstrip("/"):
-            hit = mpath
-            break
-    if not hit:
-        print(_ALLOW)
-        return 0
+    if str(result.get("Status", "")).lower() == "block":
+        msg = result.get("Message") or (
+            "Member .gald3r/ marker-only guard: write blocked. "
+            "See .claude/rules/g-rl-36-workspace-member-gald3r-guard.md and BUG-021."
+        )
+        agent_msg = msg + f" Target: {path}"
+        print(json.dumps(
+            {
+                "permission": "deny",
+                "user_message": msg,
+                "agent_message": agent_msg,
+            },
+            separators=(",", ":"),
+        ))
+        # BUG-633: exit 2 is Claude Code's "blocking error" contract -- the reason
+        # MUST also reach STDERR (stdout-only was silently discarded, surfacing as
+        # "No stderr output" to the calling agent). Purely additive: stdout is left
+        # byte-for-byte unchanged. Mirrors BUG-179/BUG-625's fix for the sibling
+        # pre-tool-call guard hooks.
+        sys.stderr.write(agent_msg + "\n")
+        sys.stderr.flush()
+        return 2
 
-    # Compute the suffix inside the member's .gald3r/.
-    prefix = hit + "/.gald3r/"
-    suffix = full_norm[len(prefix):]
-    marker_files = (".identity", "PROJECT.md")
-    is_marker = suffix.lower() in tuple(m.lower() for m in marker_files)
-
-    if os.environ.get("GALD3R_MARKER_INIT_ACTIVE") == "1" and is_marker:
-        # Sanctioned marker bootstrap — allow.
-        print(_ALLOW)
-        return 0
-
-    if is_marker and not Path(full).exists():
-        # Allow creation of marker pair without active flag too — bootstrap
-        # helper will set the flag in normal flow, but allow the case where a
-        # marker is being repaired by the controller.
-        print(_ALLOW)
-        return 0
-
-    if is_marker:
-        # Editing an existing marker file is allowed (parity sync uses this).
-        print(_ALLOW)
-        return 0
-
-    # Anything else inside a member's .gald3r/ is forbidden.
-    msg = (
-        f"Member .gald3r/ marker-only guard: refused Edit/Write to '{suffix}'"
-        f" inside member repository '{hit}'. "
-        "Workspace-Control member repositories may keep ONLY .gald3r/.identity"
-        " and .gald3r/PROJECT.md. "
-        "Live control-plane state (TASKS.md, tasks/, BUGS.md, PLAN.md, ...) is"
-        " forbidden in members. "
-        "Use the workspace controller (<gald3r_source>) for orchestration writes. "
-        "See .claude/rules/g-rl-36-workspace-member-gald3r-guard.md and BUG-021."
-    )
-    print(json.dumps(
-        {
-            "permission": "deny",
-            "user_message": msg,
-            "agent_message": msg + f" Target: {path} (member={hit}, suffix={suffix})",
-        },
-        separators=(",", ":"),
-    ))
-    return 2
+    # allow / warn / error (fail-open) -- all pass through.
+    print(_ALLOW)
+    return 0
 
 
 if __name__ == "__main__":
