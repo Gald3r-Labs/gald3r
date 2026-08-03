@@ -63,6 +63,10 @@
 | `g-agnt-verifier` | Verify completed task work |
 | `g-agnt-project-initializer` | First-time project scaffolding |
 | `g-agnt-wpac-coordinator` | Cross-project coordination — topology, inbox, broadcast, sync |
+| `g-agnt-marketing` | Marketing voice and copy — launch posts, announcements, landing copy |
+| `g-agnt-platformer` | Cross-platform IDE/agent integration — capability gaps, platform docs, status matrix |
+| `g-agnt-test` | Test plan management — fast (L1), comprehensive (L2), regression (L3) |
+| `g-agnt-workspace-manager` | Workspace-Control manifest lifecycle and member repo safety |
 
 ---
 
