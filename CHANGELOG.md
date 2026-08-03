@@ -14,7 +14,50 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-_Pending notes accumulate here and are promoted at release time._
+### Added
+- **Prominent Windows/macOS/Linux support statement** on the README and a direct link to the
+  new docs site, [docs.gald3r.ai](https://docs.gald3r.ai).
+- **`docs/IP_PURGE_PLAN.md`** — the options, exact commands, and consequences for a git-history
+  scrub of the retired `project_template/.gald3r_sys` payload (BUG-639), left as an owner
+  decision; nothing in it has been executed.
+
+### Fixed
+- **`PLATFORM_SUPPORT.html` pointed at 34 dead links.** Every platform card linked to a
+  `github.com/Gald3r-Labs/gald3r_platform_<name>` repo — none of those repos exist (verified
+  against the full `Gald3r-Labs` org roster). This repo is, and has been, a single monorepo:
+  every platform's payload lives in `platforms/<name>/` right here. Cards now link to the real
+  in-repo folders, cover all 38 shipped platforms (4 were missing: `mimo-code`, `pi`, `zcode`,
+  `zed`), and the page's own copy no longer implies a "clone the repo you use" multi-repo model.
+- **Corrected the platform count from 39 to 38 everywhere** (README badges/table/bullets,
+  `CHANGELOG.md`, `PLATFORM_SUPPORT.html`) — `platforms/` has 38 real overlay directories; the
+  prior count included `PLATFORM_REGISTRY.yaml` itself as if it were a platform.
+- **`PLATFORM_CAPABILITY_MATRIX.md`** cited a `strategy/gen_platform_docs.py` generator, a
+  `strategy/PLATFORM_DATA.json` source, and a `COMBINED_READINESS.md` companion — none exist in
+  this repo. Removed those dangling references, corrected its own platform count (34 → 38),
+  added the missing `mimo-code` row, and fixed two directory-name typos (`kilo_code` →
+  `kilo-code`, `kiro_cli` → `kiro-cli`). The per-platform ✅/⚠️/❌ capability cells were not
+  re-verified in this pass — see the file's own reconciliation note.
+
+### Removed
+- **`PLATFORM_COMBINED_READINESS.md`** — an orphaned doc (no incoming links from README or
+  anywhere else) describing the same retired 34-platform, separate-repo-per-platform model as
+  the dead `PLATFORM_SUPPORT.html` links above, sourced from a `strategy/PLATFORM_DATA.json`
+  file that doesn't exist in this repo.
+
+### Changed
+- **`project_template/.gald3r_sys` removed from tracking** (328 files, ~45,000 lines) —
+  compiled-into-binary IP that should never have shipped as loose source (BUG-639). `.gitignore`
+  now guards against it coming back.
+- **Every shipped reference to the retired `.gald3r_sys/schemas|scripts` tree** now points at the
+  current native `gald3r` CLI surface instead (`gald3r schema-migrate`, `gald3r lint
+  post-write`, etc.) across all 38 platform overlays and `project_template` (BUG-598) — an
+  in-flight sweep that had been sitting uncommitted; reviewed file-by-file and confirmed every
+  referenced verb actually exists before committing.
+- **Corrected two stale component counts**: agents was miscounted as 15 (it was counting two
+  non-agent index files alongside the real 13 `g-agnt-*` definitions); rules is 13, not 12, now
+  that `g-rl-33-enforcement_catchall` is committed rather than sitting in the uncommitted sweep.
+
+_Further pending notes accumulate here and are promoted at release time._
 
 ---
 
@@ -27,14 +70,14 @@ _Pending notes accumulate here and are promoted at release time._
   validation, the local database, and multi-agent orchestration now ships as a single signed
   binary from [gald3r_core](https://github.com/Gald3r-Labs/gald3r_core/releases) — with a
   Windows MSI installer. No Python toolchain required.
-- **39 supported AI coding platforms**, up from 34.
-- **15 specialized agents** for review, verification, QA, and infrastructure work.
+- **38 supported AI coding platforms**, up from 34.
+- **13 specialized agents** for review, verification, QA, and infrastructure work.
 
 ### Changed
 - **Version line unified.** "gald3r 4.0" now names the framework and the engine together.
   Version 3.x was template-only, installed per IDE; 4.0 is the first release where the two
   ship as one product.
-- **Shipped component counts:** 116 skills, 182 commands, 38 hooks, 12 rules.
+- **Shipped component counts:** 116 skills, 182 commands, 38 hooks, 13 rules.
 - **Install guidance split by product.** The framework installs from this repo; the engine
   installs from `gald3r_core`; the desktop app installs from `gald3r_throne`. Each product
   is fetched from its own release channel.

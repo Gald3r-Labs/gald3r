@@ -14,11 +14,18 @@
 <p align="center">
   <a href="https://github.com/Gald3r-Labs/gald3r/releases"><img src="https://img.shields.io/badge/version-4.0.0-blue" alt="version 4.0.0" /></a>
   <a href="https://github.com/Gald3r-Labs/gald3r_core"><img src="https://img.shields.io/badge/engine-gald3r__core-6f42c1" alt="engine" /></a>
+  <a href="https://github.com/Gald3r-Labs/gald3r_core/releases"><img src="https://img.shields.io/badge/OS-Windows%20%C2%B7%20macOS%20%C2%B7%20Linux-informational" alt="Windows, macOS, Linux" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-FSL--1.1--Apache-green" alt="license" /></a>
+</p>
+
+<p align="center">
+  <a href="https://docs.gald3r.ai">Docs</a> ·
   <a href="CHANGELOG.md">Changelog</a> ·
   <a href="ROADMAP.md">Roadmap</a> ·
-  <a href="PLATFORM_SUPPORT.html">All 39 platforms</a>
+  <a href="PLATFORM_SUPPORT.html">All 38 platforms</a>
 </p>
+
+<p align="center"><strong>Runs on Windows, macOS, and Linux</strong> — same `.gald3r/` behavior everywhere.</p>
 
 ---
 
@@ -56,16 +63,19 @@ AI already knows the project. Nothing lives in a vendor's session history.
 
 | | | |
 |---|---|---|
-| **gald3r** (this repo) | The framework | The `.gald3r/` brain, plus 116 skills, 182 commands, 12 rules, 38 hooks, and 15 agents — packaged for 39 AI coding platforms. This is what lands *in your project*. |
-| **[gald3r_core](https://github.com/Gald3r-Labs/gald3r_core)** | The engine | One signed binary. Runs every deterministic operation — task and bug lifecycle, validation, the local database, multi-agent orchestration — with **zero LLM calls**. |
+| **gald3r** (this repo) | The framework | The `.gald3r/` brain, plus 116 skills, 182 commands, 13 rules, 38 hooks, and 13 agents — packaged for 38 AI coding platforms. This is what lands *in your project*. |
+| **[gald3r_core](https://github.com/Gald3r-Labs/gald3r_core)** | The engine | One signed binary — the same codebase built for **Windows, macOS, and Linux**. Runs every deterministic operation — task and bug lifecycle, validation, the local database, multi-agent orchestration — with **zero LLM calls**. |
 
 The framework is what your AI reads. The engine is what actually executes. You can run the
 framework on its own; adding the engine makes it fast, deterministic, and enforceable.
 
-> **Getting the engine:** download the signed binary or MSI installer from
-> **[gald3r_core releases](https://github.com/Gald3r-Labs/gald3r_core/releases)**.
-> The desktop app installs from **[gald3r_throne](https://github.com/Gald3r-Labs/gald3r_throne)**.
-> Each product installs from its own repo — this one carries the framework.
+> **Getting the engine:** download the signed binary or installer from
+> **[gald3r_core releases](https://github.com/Gald3r-Labs/gald3r_core/releases)** for your OS.
+> As of the current `4.0.0-beta.1` prerelease that's a signed, Authenticode-verified Windows
+> binary and `.msi` today — macOS (notarized) and Linux ship together at the full `4.0.0`,
+> per that release's own notes. The desktop app installs from
+> **[gald3r_throne](https://github.com/Gald3r-Labs/gald3r_throne)**. Each product installs from
+> its own repo — this one carries the framework. Full docs: **[docs.gald3r.ai](https://docs.gald3r.ai)**.
 
 ---
 
@@ -81,7 +91,7 @@ cp -r gald3r/project_template/. /path/to/your/project/
 Open your project and run `/g-setup` (Claude Code) or `@g-setup` (Cursor). That's it —
 the brain is live and your AI can see it.
 
-### Or use the installer (any of 39 platforms)
+### Or use the installer (any of 38 platforms)
 
 ```bash
 # macOS / Linux
@@ -112,9 +122,9 @@ no Docker.
   `/g-bug-report`, `/g-plan`
 - **38 hooks** that fire on real IDE events — session start, file save, pre-commit — so
   discipline is *enforced*, not merely suggested
-- **12 rules** loaded every session to keep the agent honest
-- **15 specialized agents** for review, verification, QA, and infrastructure work
-- **39 platforms supported**, with Cursor and Claude Code at full parity
+- **13 rules** loaded every session to keep the agent honest
+- **13 specialized agents** for review, verification, QA, and infrastructure work
+- **38 platforms supported**, with Cursor and Claude Code at full parity
 
 ---
 
@@ -124,7 +134,7 @@ no Docker.
 |---|---|---|
 | **Cursor**, **Claude Code** | Tier 1 | Everything — rules, skills, commands, hooks, agents |
 | **Windsurf, Cline, Roo, Aider, Copilot, Codex, Gemini, Qwen, Continue** | Tier 2 | Rules + shared brain + `AGENTS.md` |
-| **30 more** | Tier 3 | Shared brain + `AGENTS.md`, rules where the platform supports them |
+| **27 more** | Tier 3 | Shared brain + `AGENTS.md`, rules where the platform supports them |
 
 Full matrix: [PLATFORM_SUPPORT.html](PLATFORM_SUPPORT.html) ·
 [PLATFORM_CAPABILITY_MATRIX.md](PLATFORM_CAPABILITY_MATRIX.md)
@@ -156,7 +166,7 @@ Full catalog: [gald3r Wiki](https://github.com/Gald3r-Labs/gald3r/wiki)
 
 ```
 project_template/    ← what gets copied into your project
-platforms/           ← per-platform payloads (39 of them)
+platforms/           ← per-platform payloads (38 of them)
 setup_gald3r_project.py / .bat / .sh   ← the installers
 PLATFORM_SUPPORT.html                  ← the full support matrix
 releases/            ← release notes archive
