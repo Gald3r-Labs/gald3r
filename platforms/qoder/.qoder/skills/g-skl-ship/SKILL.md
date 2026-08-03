@@ -118,7 +118,7 @@ in member projects must be migrated forward so projects are never left partially
    # Single member only
    .\custom_scripts\platform_parity_sync.ps1 -MigrateSchemas -Target <gald3r_source> -Apply
    ```
-   The migration engine (`.gald3r_sys/scripts/migrate_schemas.py`) never deletes fields:
+   The migration engine (`gald3r schema-migrate`) never deletes fields:
    deprecated fields become `deprecated_<name>`, removed fields become `legacy_<name>`, and
    un-populatable added fields get a `TODO:` marker. It is idempotent — re-running is a no-op.
 
@@ -294,13 +294,15 @@ The implementing agent appends entries to `CHANGELOG.md` `[Unreleased]` per `g-r
 
 ### 2. Auto mode (Release Please, T1305)
 
-Install the opt-in workflow + config:
+Install the opt-in workflow + config (embedded in `gald3r_core` -- no `.gald3r_sys/` checkout required):
 
 ```bash
-cp .gald3r_sys/templates/github/workflows/release-please.yml .github/workflows/
-cp .gald3r_sys/templates/release-please-config.json ./release-please-config.json
+gald3r template emit release-please-workflow --into .
+gald3r template emit release-please-config --into .
 echo '{".": "0.0.0"}' > .release-please-manifest.json   # set to current version
 ```
+
+Run `gald3r template list` for every available template name (also covers the `ci-dev`/`ci-test`/`ci-public` tiered CI workflows, the `branch-check` PR-convention workflow, the `gitattributes-lfs` LFS template, and the `platform-spec` doc template).
 
 On each push to `main`, Release Please opens/updates a **release PR** that accumulates `CHANGELOG.md` entries (Conventional Commit → Keep-a-Changelog sections, matching gald3r's format) and the version bump. Merging the release PR cuts the release + tag.
 

@@ -81,7 +81,7 @@ the response in the draft file's Status History.
 Only runs after explicit user approval in Phase 3. Actions:
 
 1. Write `g-agnt-<slug>.md` to all active IDE target agent directories
-   (per `.gald3r_sys/_platform_capabilities.json` — `.cursor/agents/`,
+   (per `gald3r platform capabilities` — `.cursor/agents/`,
    `.claude/agents/`, `.codex/agents/`, etc. — where the platform
    supports the `agents/` primitive).
 2. Append a new row to the canonical AGENTS.md roster table.
@@ -113,8 +113,8 @@ Only runs after explicit user approval in Phase 3. Actions:
 - Platform parity is intentional: an agent that exists only in
   `.cursor/` is effectively unhired for users on Claude Code, Codex,
   OpenCode, etc. The default target set is "every platform that supports
-  the `agents/` primitive" as declared in
-  `.gald3r_sys/_platform_capabilities.json`.
+  the `agents/` primitive" as declared by `gald3r platform capabilities`
+  (`crash/sysdata/_platform_capabilities.json`, T283).
 - Estimated context-impact band should be conservative — `medium`
   unless you can demonstrate the agent is reliably `low`. Over-declaring
   causes mild dispatch conservatism; under-declaring causes context

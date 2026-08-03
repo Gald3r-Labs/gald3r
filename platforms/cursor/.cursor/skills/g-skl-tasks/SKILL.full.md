@@ -877,9 +877,9 @@ in the framework template and changes between releases. Use the canonical restor
 1. **Preferred (engine):** run the framework restore engine, which sources the pristine copy
    from `.gald3r_sys/template_verification/.gald3r/`:
    ```powershell
-   uv run python .gald3r_sys/scripts/migrate_schemas.py -ProjectPath <proj> -RestoreMissing -Apply
+   gald3r schema-migrate --root <proj> --restore-missing --apply
    ```
-   (omit `-Apply` to see what it would restore). This restores any missing `.gald3r/` root file,
+   (omit `--apply` to see what it would restore). This restores any missing `.gald3r/` root file,
    including `TASKS.md`, with correct `schema_version` / `gald3r_rel_version` frontmatter.
 2. **Manual copy (single file):** copy `.gald3r_sys/template_verification/.gald3r/TASKS.md` to
    `.gald3r/TASKS.md`. Resolve the source script-adjacent or project-local; never hardcode a

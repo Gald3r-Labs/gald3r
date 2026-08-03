@@ -13,6 +13,15 @@ does not check component tagging. Intentionally NOT an agent-lifecycle event
 hook: it is a git `pre-commit` / direct-check tool (allowlist it in the WS-A-5
 hook-parity lint alongside `g-hk-pre-commit` / `g-hk-pre-push`).
 
+## Relocation (T290)
+`.gald3r_sys/` is retiring. This hook's git-hooks wrapper directory moved from
+`.gald3r_sys/git-hooks/` to a plain top-level `git-hooks/` directory — the
+D-7 KEEP decision above stands (the enforcement mechanism is unchanged; only
+the install location moved). Repos still on the old setup should re-run the
+setup snippet below to repoint `core.hooksPath`. Supersedes the failed T276
+delete attempt (T276 confirmed this file carries a live KEEP decision and
+cannot be deleted outright).
+
 ## Fires On
 Git `pre-commit` event. Inspects every staged file under `.gald3r_sys/` at commit time.
 Not auto-wired to `hooks.json` — activated via `git config core.hooksPath`.
@@ -34,7 +43,7 @@ violation list and the valid group names.
 
 ```powershell
 # Create a git-hooks wrapper directory and link the hook
-$gitHooksDir = ".gald3r_sys\git-hooks"
+$gitHooksDir = "git-hooks"
 New-Item -ItemType Directory -Path $gitHooksDir -Force | Out-Null
 
 # Write a thin pre-commit caller (no .ps1 extension — git expects bare filename)
@@ -44,7 +53,7 @@ python ".cursor/hooks/g-hk-component-tag-check.py"
 '@
 
 # Register with git
-git config core.hooksPath .gald3r_sys/git-hooks
+git config core.hooksPath git-hooks
 ```
 
 Run setup once; it persists in `.git/config`. After that every `git commit` runs the tag check.

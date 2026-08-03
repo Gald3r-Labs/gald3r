@@ -581,10 +581,10 @@ The b0.2 query is **advisory**, **non-blocking**, and **single tool call** (g-rl
 
 > **Loop placement (explicit)**: `post_write_lint` belongs to the implementation loop (Step 4 → b), one rung below b2. After every Write/Edit, run `post_write_lint` → fix inline if it fails → then continue editing. The b2 AC gate and the b3.5 Definition-of-Done gate remain the end-of-task gates; `post_write_lint` is the per-write gate that feeds them clean files.
 
-Canonical entry point (PowerShell, runs the per-extension check for you):
+Canonical entry point (single native verb, runs the per-extension check for you):
 
 ```powershell
-python scripts/gald3r_post_write_lint.py -FilePath "{relative_path_to_written_file}" -ProjectRoot . -Json
+gald3r lint post-write "{relative_path_to_written_file}" --project-root . --json
 ```
 
 Per-language lint commands (single-line PowerShell-safe per g-rl-08 — no multi-line `python -c`):
@@ -596,14 +596,14 @@ Per-language lint commands (single-line PowerShell-safe per g-rl-08 — no multi
 | `.yaml` / `.yml` | `python -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]).read())" "{file}"` |
 | `.toml` | `python -c "import tomllib,sys; tomllib.load(open(sys.argv[1],'rb'))" "{file}"` |
 | `.ts` / `.tsx` / `.js` | `npx tsc --noEmit` (only when a `tsconfig.json` is present; else skip) |
-| `.ps1` / `.psm1` / `.psd1` | `$errs=$null; [System.Management.Automation.Language.Parser]::ParseFile("{file}", [ref]$null, [ref]$errs) > $null; if ($errs.Count) { throw $errs[0].Message }` — or the lighter `[scriptblock]::Create((Get-Content "{file}" -Raw)) > $null` (throws on a syntax error). The shipped helper uses `PSParser::Tokenize`, which also throws on malformed PowerShell. |
+| `.ps1` / `.psm1` / `.psd1` | `$errs=$null; [System.Management.Automation.Language.Parser]::ParseFile("{file}", [ref]$null, [ref]$errs) > $null; if ($errs.Count) { throw $errs[0].Message }` — or the lighter `[scriptblock]::Create((Get-Content "{file}" -Raw)) > $null` (throws on a syntax error). `gald3r lint post-write` uses the same `Parser::ParseFile` form (not `PSParser::Tokenize`), so structural errors such as unbalanced braces are also caught. |
 | Markdown / `.md` / TASKS.md / other prose | Pass silently (use `--skip-post-lint` for explicit prose-only runs) |
 
 Each `python -c` form is **single-line** and passes the file as `sys.argv[1]` so PowerShell never has to interpolate the path into the Python string (avoids the quoting/parse pitfalls called out in g-rl-08). On a clean parse the command exits `0`; on a syntax error it raises and exits non-zero.
 
-If the helper script exits non-zero (`exit 2` = syntax error), **stop and fix the file before proceeding (AC4 — inline fix)**. Do not advance to the next write. Treat a `post_write_lint` failure the same as a TypeScript compile error — it blocks continuation. Re-run `post_write_lint` on the fixed file; only a clean (exit 0) result lets the loop continue.
+If `gald3r lint post-write` exits non-zero (`exit 2` = syntax error), **stop and fix the file before proceeding (AC4 — inline fix)**. Do not advance to the next write. Treat a `post_write_lint` failure the same as a TypeScript compile error — it blocks continuation. Re-run `post_write_lint` on the fixed file; only a clean (exit 0) result lets the loop continue.
 
-**`--skip-post-lint` flag (AC5)** — when `$ARGUMENTS` contains `--skip-post-lint`, the `post_write_lint` step is suppressed for the whole session. Use it for documentation-only or coordination-only runs (Markdown, `TASKS.md`/`BUGS.md` index edits, `.gald3r/` housekeeping) where a syntax linter has nothing meaningful to check. The flag does **not** disable the b2 AC gate or b3.5 DoD gate — it only skips the per-write delta lint. The helper already passes silently on prose/unknown extensions, so `--skip-post-lint` is mainly an explicit-intent signal that avoids spawning the lint subprocess at all on non-code writes; record `post_write_lint: SKIPPED (--skip-post-lint)` once in the session summary when it is set.
+**`--skip-post-lint` flag (AC5)** — when `$ARGUMENTS` contains `--skip-post-lint`, the `post_write_lint` step is suppressed for the whole session. Use it for documentation-only or coordination-only runs (Markdown, `TASKS.md`/`BUGS.md` index edits, `.gald3r/` housekeeping) where a syntax linter has nothing meaningful to check. The flag does **not** disable the b2 AC gate or b3.5 DoD gate — it only skips the per-write delta lint. `gald3r lint post-write` already passes silently on prose/unknown extensions, so `--skip-post-lint` is mainly an explicit-intent signal that avoids spawning the lint subprocess at all on non-code writes; record `post_write_lint: SKIPPED (--skip-post-lint)` once in the session summary when it is set.
 
 **Worked examples (AC6)** — three delta-lint scenarios showing the fix-inline-before-proceeding loop:
 
@@ -611,8 +611,8 @@ If the helper script exits non-zero (`exit 2` = syntax error), **stop and fix th
 
 ```powershell
 # Right after the Write/Edit tool call:
-python scripts/gald3r_post_write_lint.py -FilePath "src/services/charge.py" -ProjectRoot . -Json
-# Equivalent raw check the helper runs:
+gald3r lint post-write "src/services/charge.py" --project-root . --json
+# Equivalent raw check the verb runs:
 python -m py_compile "src/services/charge.py"
 # exit 0  -> {"ok":true,"message":"Syntax OK (.py)",...}  -> continue the loop
 # exit 2  -> {"ok":false,"message":"Syntax error (.py)","detail":"... IndentationError ..."}
@@ -622,7 +622,7 @@ python -m py_compile "src/services/charge.py"
 *JSON write* — you just wrote `config/feature_flags.json`:
 
 ```powershell
-python scripts/gald3r_post_write_lint.py -FilePath "config/feature_flags.json" -ProjectRoot . -Json
+gald3r lint post-write "config/feature_flags.json" --project-root . --json
 # Equivalent raw check:
 python -c "import json,sys; json.load(open(sys.argv[1]))" "config/feature_flags.json"
 # A trailing comma -> json.decoder.JSONDecodeError -> exit 2 -> fix the comma inline, re-run, then continue
@@ -631,7 +631,7 @@ python -c "import json,sys; json.load(open(sys.argv[1]))" "config/feature_flags.
 *YAML write* — you just wrote `.github/workflows/ci.yml`:
 
 ```powershell
-python scripts/gald3r_post_write_lint.py -FilePath ".github/workflows/ci.yml" -ProjectRoot . -Json
+gald3r lint post-write ".github/workflows/ci.yml" --project-root . --json
 # Equivalent raw check:
 python -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]).read())" ".github/workflows/ci.yml"
 # A bad indent / tab -> yaml.scanner.ScannerError -> exit 2 -> fix the indentation inline, re-run, then continue
@@ -639,7 +639,7 @@ python -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]).read())" ".github/w
 
 In all three cases the rule is identical: **lint the file you just wrote → if it fails, fix it inline and re-lint → only a clean exit 0 advances the loop to the next write.**
 
-**Parity note (AC7)** — this `g-go-code.md` under canonical `project_template/.claude/commands/` is the **source of truth** for the `post_write_lint` step. The per-IDE mirrors (`.claude/commands/g-go-code.md`, `.cursor/commands/g-go-code.md`, and the other platform copies) are **propagated later** by `custom_scripts/platform_parity_sync.ps1` — do **not** hand-edit the mirrors. The lint helper `gald3r_post_write_lint.py` lives under the same canonical `.gald3r_sys/scripts/` tree and is synced alongside.
+**Parity note (AC7)** — `gald3r lint post-write` is a native verb of the compiled `gald3r` engine (T284 absorb), not a loose per-project script, so every IDE mirror invokes the byte-identical command — there is no separate helper script to keep in sync. This `g-go-code.md` under canonical `project_template/.claude/commands/` remains the **source of truth** for the wording of the `post_write_lint` step; the per-IDE mirrors (`.claude/commands/g-go-code.md`, `.cursor/commands/g-go-code.md`, and the other platform copies) are still **propagated later** by `custom_scripts/platform_parity_sync.ps1` — do **not** hand-edit the mirrors.
 
 **b2) AC gate** — before moving on, walk every `- [ ]` acceptance criterion in the task spec:
   - Is this criterion now satisfied? Check the actual files, not just intent.

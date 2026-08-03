@@ -191,9 +191,9 @@ Restore order for any missing required file:
 2. **Engine shell-out (optional)** — for a batch restore of all missing single-file artifacts,
    shell out to the canonical engine rather than re-implementing the copy:
    ```
-   uv run python .gald3r_sys/scripts/migrate_schemas.py -ProjectPath <proj> -RestoreMissing -Apply
+   gald3r schema-migrate --root <proj> --restore-missing --apply
    ```
-   (`-RestoreMissing` without `-Apply` reports what it would restore — use for `--dry-run`.)
+   (`--restore-missing` without `--apply` reports what it would restore — use for `--dry-run`.)
    The engine resolves the same `template_verification/.gald3r/` canonical source.
 3. **Empty in-skill template** — only when the canonical file is absent from
    `template_verification/.gald3r/` (e.g. a corrupt or partial install). Fall back to the
@@ -380,14 +380,16 @@ Tool count is sourced from a prior live tool-list capture when available, otherw
 only the safe auto-fixes / TODO markers described below. Skips silently if the
 schema system is not installed.*
 
-The schema layer enforces the file schemas defined in `.gald3r_sys/schemas/`
-(registry: `_registry.yaml`; enum auto-fix map: `_fix_mappings.yaml`). It
+The schema layer enforces the file schemas embedded in the engine
+(`gald3r_core/crash/sysdata/schemas/`; registry: `_registry.yaml`; enum
+auto-fix map: `_fix_mappings.yaml`), validated via `gald3r validate`. It
 auto-fixes what it safely can, inserts `TODO:` markers where human input is
 required, and **never halts** — medic always continues to L1 Output.
 
-**Skip condition**: if `.gald3r_sys/schemas/_registry.yaml` does not exist, skip
-L1-L entirely (schema system not installed). Treat malformed registry/schema
-YAML as a critical L1 finding without crashing the rest of L1.
+**Skip condition**: if the engine has no embedded schema set available (or,
+on a pre-absorption checkout, no on-disk `.gald3r_sys/schemas/_registry.yaml`
+fallback), skip L1-L entirely (schema system not installed). Treat malformed
+registry/schema YAML as a critical L1 finding without crashing the rest of L1.
 
 #### Deterministic processing order
 
@@ -427,9 +429,10 @@ For each matched file:
 
 #### Fix Rules (invalid enum value)
 
-The auto-fix mapping lives in `.gald3r_sys/schemas/_fix_mappings.yaml` — the
-**canonical, extensible** source of enum aliases. Extend that YAML to add new
-aliases; no skill/rule code changes are needed. A hit means an unambiguous fix
+The auto-fix mapping lives in the engine's embedded `_fix_mappings.yaml`
+(`gald3r_core/crash/sysdata/schemas/_fix_mappings.yaml`) — the **canonical,
+extensible** source of enum aliases. Extend that YAML to add new aliases; no
+skill/rule code changes are needed. A hit means an unambiguous fix
 (auto-applied + logged); a miss means insert a `TODO:` (never guess).
 
 | Situation | Action |
