@@ -9,6 +9,36 @@ subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 
 These rules fire on EVERY response, even when no gald3r agent is explicitly active.
 
+## Slash-Command `--help` Interception (T441 — every `/g-`/`@g-` command)
+
+When ANY gald3r slash command is invoked with `-h`, `--help`, or `help` as its only
+argument (i.e. `$ARGUMENTS` is exactly one of those tokens), do **NOT execute the
+command.** Instead respond with a compact usage card derived from the command's own
+file, then stop:
+
+```
+/g-<name> — <one-line purpose (from the file's description/first body line)>
+Usage: /g-<name> [arguments as the file documents them]
+Options: <each documented flag/argument, one line each; "none" if the command takes no input>
+Details: .claude/commands/g-<name>.md
+```
+
+- This is read-only: no `.gald3r/` writes, no skill activation, no task/bug creation.
+- The underlying `gald3r` BINARY verbs already answer `-h/--help` natively (argparse);
+  this convention gives the markdown-prompt command layer the same contract.
+- A bare `/g-<name>` with no arguments still executes normally — only the exact
+  help tokens intercept.
+
+**Enforcement point of record (T442):** as of T442, the canonical enforcement point for
+`--help` interception is the **`## HELP CONTRACT`** block carried in every `g-skl-*/SKILL.md`
+preamble (and inherited by new skills via the `@g-skill-new` scaffold template) — every
+`/g-`/`@g-` command activates a skill, but rules are a Cursor-native concept that several
+supported platforms (including Claude Code, where rule files load as plain optional markdown)
+have no durable equivalent surface for. The rule-level convention documented above remains a
+Claude-specific belt-and-suspenders backstop for platforms that do honor `alwaysApply` rules —
+it is supplementary, not the source of truth. If the two ever disagree, the skill's `## HELP
+CONTRACT` block wins.
+
 ## Error Reporting (Zero Tolerance)
 
 If your response mentions ANY of the following — create a `.gald3r/BUGS.md` entry and bug file in `.gald3r/bugs/` immediately:
@@ -110,7 +140,7 @@ Any of these → full task creation workflow (file first, TASKS.md second, YAML,
 
 ## WPAC INBOX Gate
 
-Before task claiming, implementation, verification, planning, status work, or swarm partitioning, first determine whether the current project is a **WPAC participant**. WPAC is configured only when `.gald3r/workspace/topology.md` declares at least one non-empty parent, child, or sibling relationship, or when `.gald3r/PROJECT.md` explicitly declares WPAC project linking relationships. A Workspace-Control manifest (`.gald3r/linking/workspace_manifest.yaml`) and a local `INBOX.md` alone do **not** make a project part of a WPAC group.
+Before task claiming, implementation, verification, planning, status work, or swarm partitioning, first determine whether the current project is a **WPAC participant**. WPAC is configured only when `.gald3r/linking/link_topology.md` declares at least one non-empty parent, child, or sibling relationship, or when `.gald3r/PROJECT.md` explicitly declares WPAC project linking relationships. A Workspace-Control manifest (`.gald3r/linking/workspace_manifest.yaml`) and a local `INBOX.md` alone do **not** make a project part of a WPAC group.
 
 If and only if the current project is a WPAC participant, run the re-callable `g-hk-wpac-inbox-check.py -BlockOnConflict` hook when present. If it reports `INBOX CONFLICT GATE` or exits with code `2`, stop and run `@g-wpac-read` before continuing. Exception: `g-medic` L1 triage runs the hook without `-BlockOnConflict`, completes health scoring, records the WPAC conflict severity, then blocks L2-L4 planning/apply work and all claim/implementation/review/planning work until `@g-wpac-read` resolves the conflict. Swarm coordinators rerun the check every 30 minutes and before final summaries only while WPAC is active.
 
@@ -122,16 +152,16 @@ Sits between the **WPAC INBOX Gate** and the **Clean Controller Gate** on the `g
 
 Behavior at each invocation:
 
-1. Run `.gald3r_sys/skills/g-skl-git-commit/scripts/gald3r_housekeeping_commit.ps1` against the orchestration git root. The helper reads `git status --porcelain=v1 -uall`, classifies every dirty path against an explicit allowlist of safe controller `.gald3r/` coordination paths and a deny list of sensitive/identity/config paths, and returns one of: `clean`, `safe-gald3r-housekeeping`, `safe-gald3r-coordination`, `unsafe-gald3r`, `mixed-dirty`, `conflict`, `drift-detected`, or `committed-*` (when `-Apply`).
+1. Run `gald3r housekeep --orchestration-root <root> --mode preflight` (or `--mode post-write` at the post-coordinator-write point) against the orchestration git root. The command reads `git status --porcelain=v1 -uall`, classifies every dirty path against an explicit allowlist of safe controller `.gald3r/` coordination paths and a deny list of sensitive/identity/config paths, and emits a JSON payload (pass `--text` for human-readable output) whose `status` is one of: `clean`, `safe-gald3r-housekeeping` (preflight), `safe-gald3r-coordination` (post-write), `unsafe-gald3r`, `mixed-dirty`, `conflict`, `drift-detected`, `config-fault`, or `committed-safe-gald3r-housekeeping` / `committed-safe-gald3r-coordination` (with `--apply`).
 2. If `clean` → continue without writing.
-3. If `safe-gald3r-housekeeping` (preflight) or `safe-gald3r-coordination` (post-write) → invoke the helper with `-Apply`. The helper stages **only** the classified-safe paths via explicit `git add -- <paths>`, re-checks for drift, then commits with one of:
+3. If `safe-gald3r-housekeeping` (preflight) or `safe-gald3r-coordination` (post-write) → re-run with `--apply` (and `--task-id <id>` / `--bug-id <id>` when ownership is clear), e.g. `gald3r housekeep --orchestration-root <root> --mode preflight --apply --task-id <id>`. `gald3r housekeep --apply` stages **only** the classified-safe paths via explicit `git add -- <paths>`, re-checks for drift, then commits with one of:
    - `chore(gald3r): preflight gald3r housekeeping`
    - `chore(gald3r): commit g-go coordination state`
-   Include `Task: #<id>` / `Bug: BUG-<id>` in the body when ownership is clear (the helper accepts `-TaskId` / `-BugId`). `git add .` is **never** used.
+   Include `Task: #<id>` / `Bug: BUG-<id>` in the body when ownership is clear (`--task-id` / `--bug-id`). `git add .` is **never** used.
 4. If `unsafe-gald3r`, `mixed-dirty`, `conflict`, or `drift-detected` → preserve the existing **Clean Controller Gate** hard-block. Do not auto-commit. Report the exact unsafe paths and reasons; user action required.
-5. Member-repo targets (marker-only `.gald3r/` with `.identity` but no manifest and no `TASKS.md`) are refused with `config-fault`. The helper never writes member repository `.gald3r/` content.
+5. Member-repo targets (marker-only `.gald3r/` with `.identity` but no manifest and no `TASKS.md`) are refused with `status: config-fault` (`reason: member-repo-target`). `gald3r housekeep` never writes member repository `.gald3r/` content.
 
-Concurrency / drift protection: in `--swarm` flows only the coordinator runs this gate, and the helper re-checks `git status` immediately before staging and again immediately after committing; if another writer altered the tree between classify and stage, the helper aborts the staging and exits non-zero with `drift-detected` so the coordinator falls back to the hard-gate path.
+Concurrency / drift protection: in `--swarm` flows only the coordinator runs this gate. `gald3r housekeep --apply` stages the classified-safe paths explicitly (`git add -- <paths>`), then re-checks `git status` before committing; if any unstaged change outside that path set appeared during staging (another writer touched the tree concurrently), it reverts the staging (`git reset HEAD -- <paths>`) and returns `status: drift-detected` instead of committing, so the coordinator falls back to the hard-gate path.
 
 This gate is **controller-only `g-go*` behavior**. It is not a global rule for every gald3r command. Member repositories' marker-only `.gald3r/` policy is unchanged.
 
@@ -179,6 +209,17 @@ Default implementation-to-review handoff is a code-complete checkpoint commit. A
 ## Review Result Commit Gate
 
 After `g-go-review`, `g-go-review --swarm`, or `g-go` Phase 2 writes PASS or FAIL review statuses, the reviewer/coordinator MUST create a review-result commit by default. This applies to PASS (`[✅]`), FAIL back to pending/open (`[📋]`), requires-user-attention (`[🚨]`), and mixed verdicts. Do not stop at a mandatory commit offer when a safe commit is possible; the review result itself is the audit artifact.
+
+**Verb-before-commit (BUG-511).** "Writes PASS or FAIL review statuses" means the DB-authoritative
+CLI verb has actually run for every reviewed item — `gald3r task verify <id> --pass|--fail` for
+tasks, `gald3r bug resolve <id>` / `gald3r bug update <id> --status open` for bugs (g-rl-40) —
+**not** that a Status History row, Agent Notes entry, or commit message merely *describes* the
+transition. BUG-511 is the live incident: commit `799cf510` asserted a FAIL transition in its
+message while no code path had actually invoked `task verify --fail`, leaving the task
+`awaiting-verification` in the DB and invisible to `gald3r task ready` until a human found it by
+hand. A review-result commit whose staged changes do not correspond to an actual verify-verb
+invocation for every covered item is a Review Result Commit Gate violation, full stop — see
+`g-go-review.md`'s "Verification Verb Gate" section for the exact per-item command contract.
 
 The review-result commit must stage only review-owned paths by explicit allowlist. Never use `git add .`; exclude `.gald3r-worktree.json`, terminal transcripts, local logs, unrelated files, and other non-deliverable artifacts. Allowed reasons not to create the commit are limited to unresolved conflicts, failed commit hooks, staged or untracked unrelated changes, detected secrets, dirty generated outputs not owned by review, missing user permission for destructive or out-of-scope changes, or repository state that prevents a safe commit. If blocked, state the exact blocker in the final summary.
 
@@ -286,7 +327,7 @@ Push offers in `g-go` / `g-go-code` / `g-go-review` appear only after the final 
 
 Run the following checks (any one positive = controller/WPAC repo):
 1. `.gald3r/linking/workspace_manifest.yaml` exists — this IS a Workspace-Control controller
-2. `.gald3r/workspace/topology.md` exists with a non-empty `parent:`, `children:`, or `siblings:` block — this IS a WPAC participant
+2. `.gald3r/linking/link_topology.md` exists with a non-empty `parent:`, `children:`, or `siblings:` block — this IS a WPAC participant
 3. `.gald3r/TASKS.md` exists AND `.gald3r/tasks/` directory is non-empty — this IS an active gald3r coordination repo
 
 ### Mandatory warning when any check is positive
@@ -358,14 +399,27 @@ Any of these → experiment workflow:
 
 Token budgets are not advisory. Context overrun degrades output quality before the hard stop and causes the documented `g-go-go` context panic failure pattern (BUG-107).
 
-**When approaching context limits (est. >80% context used):**
+**Base the decision on a MEASUREMENT, not an eyeballed estimate (T375).** Agent
+self-estimates of context have been measured running ~3x high in this project
+(claimed ~88% vs real ~30%; claimed ~85% vs real ~35%) — the root cause was
+summing cumulative tokens across the whole session instead of reading the
+last turn's resident figure. `gald3r context` reads that resident figure
+directly from the session's own transcript (Claude Code today; see `docs/`'s
+T375 vendor survey for other vendors' status) and reports `context_pct`, or
+an explicit unmeasured/`None` when no vendor source resolves — NEVER a
+guessed number. Prefer it over a felt sense of "this feels full."
+
+**When approaching context limits (`gald3r context`'s `context_pct` ≥ 80%, OR — only when `gald3r context` itself reports unmeasured — a clearly-felt, explicitly-labeled-as-unmeasured sense of being near the limit):**
 1. Stop the current operation
 2. Summarize: what was done, what is verified, what remains
-3. Surface the breach explicitly to the user
+3. Surface the breach explicitly to the user, citing the measured `context_pct` (or stating plainly that no measurement was available and this is a judgment call)
 4. Do NOT silently continue — "just one more thing" while overrunning is the failure mode
 
-**Correct response when breaching:**
-> "Context approaching limit. Completed: [X]. Verified: [Y]. Remaining: [Z]. Recommend starting a fresh session."
+**Correct response when breaching (measured):**
+> "Context at 84.3% (measured via `gald3r context`, source: claude-code-transcript). Completed: [X]. Verified: [Y]. Remaining: [Z]. Recommend starting a fresh session."
+
+**Correct response when breaching (unmeasured):**
+> "Context unmeasured (no vendor context source resolved) but appears near the limit. Completed: [X]. Verified: [Y]. Remaining: [Z]. Recommend starting a fresh session."
 
 | Rationalization | Reality |
 |---|---|
@@ -373,6 +427,8 @@ Token budgets are not advisory. Context overrun degrades output quality before t
 | "The model handles it gracefully" | Output quality degrades before the hard stop. Stop early. |
 | "I'll mention the limit at the end" | Surface it before the breach, not after. |
 | "g-go-go will handle it" | g-go-go's fire-and-forget loop breaks exactly here. Stop the loop. |
+| "80% feels about right, I don't need to run `gald3r context`" | That feeling is exactly the ~3x-overestimate defect T375 measured twice in this project. Run it. |
+| "gald3r context isn't wired up here, so I'll just estimate" | Report "unmeasured" honestly instead — an estimate is precisely the wrong answer this gate exists to prevent. |
 
 ## Conflict Pattern Gate (HARD RULE — implementation)
 

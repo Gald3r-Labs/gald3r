@@ -193,9 +193,10 @@ cheapest high-parity install ships the gald3r skill tree plus `AGENTS.md` (alway
 - **Event payload format**: CLI — event JSON via **STDIN**; flow control via **exit codes**
   (`0` ok, `2` blocks `PreToolUse`). IDE — action is **"Ask Kiro"** (agent prompt) or
   **"Run Command"** (shell command).
-- **Command extensions**: shell `Run Command` (IDE) / shell command (CLI). PowerShell `.ps1` can be
-  invoked as the shell command; a `g-hk-*.ps1` shim wires under the CLI lifecycle events.
-- **gald3r hook files**: gald3r `g-hk-*.ps1` map most cleanly to the **CLI** lifecycle events
+- **Command extensions**: shell `Run Command` (IDE) / shell command (CLI). gald3r `g-hk-*.py` hooks
+  wire via `python <path>` (post-T1584 Python port; no PowerShell involved) as the shell command,
+  wired under the CLI lifecycle events.
+- **gald3r hook files**: gald3r `g-hk-*.py` map most cleanly to the **CLI** lifecycle events
   (`agentSpawn` ≈ session start, `userPromptSubmit`, `preToolUse`/`postToolUse`, `Stop`). The IDE
   file-event model fits file-save-style hooks only.
 

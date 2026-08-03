@@ -1,5 +1,8 @@
 ---
+description: 'Show CRASH activation stats (Commands/Rules/Agents/Skills/Hooks) from crash_activations.jsonl.'
+argument-hint: '[--write-report] [--reset] [--json] [--root <path>]'
 subsystem_memberships: [LOGGING_SYSTEM]
+execution_tier: orchestration
 ---
 Show CRASH activation stats (Commands / Rules / Agents / Skills / Hooks): $ARGUMENTS
 
@@ -22,13 +25,15 @@ The data lives in `.gald3r/logs/crash_activations.jsonl` — one JSON line per a
 | `@g-crash-stats --reset` | Archive `crash_activations.jsonl` → `crash_activations_YYYYMMDD_HHMMSS.jsonl` and start fresh. |
 | `@g-crash-stats --json` | Machine-readable stats payload. |
 
-Engine equivalents (the command is a thin wrapper over the engine):
+Engine equivalents (the command is a thin wrapper over the native `gald3r crash-stats` verb,
+`gald3r_core.crash.activation` + `cli/commands/crash_stats_cmd.py`, T301):
 
 ```bash
-uv run gald3r crash-stats                 # report
-uv run gald3r crash-stats --write-report  # report + dated .md
-uv run gald3r --crash-stats-reset         # archive + fresh start
-uv run gald3r --json crash-stats          # JSON
+gald3r crash-stats                        # report
+gald3r crash-stats --write-report         # report + dated .md
+gald3r crash-stats --reset                # archive + fresh start
+gald3r crash-stats --json                 # JSON
+gald3r crash-stats --root PATH            # target a project other than cwd
 ```
 
 ## Output Modes (session signature)
@@ -42,19 +47,26 @@ Set `GALD3R_CRASH_STATS` to surface a compact 3-5 line stats summary automatical
 | `show_in_terminal` | Print the summary table to stdout at session/dispatch end. |
 | (unset / `off`) | **Disabled — zero overhead.** No recording, no signature. |
 
-## Recording Activations (honest scope)
+## Recording Activations (honest scope, T301 update)
 
-The engine auto-records every **Command** it dispatches. IDE harnesses do **not** emit a discrete
-event for every Rule/Skill/Agent/Hook activation, so those are recorded on the
-**manual/heuristic path**: a hook or an agent reports an activation explicitly. From a hook or
-script:
+**gald3r_core's own CLI dispatch (`cli/main.py`) does not yet auto-record every Command it
+runs** — porting that producer (the donor's `CrashTracker` debug-tracer bridge) is out of T301's
+scope (reader/reporter + thin verb only; see the filed follow-up task). Until that producer
+lands, every activation in `.gald3r/logs/crash_activations.jsonl` comes from the
+**manual/heuristic path**: the `g-hk-crash-record` hook (wired to the IDE's `stop` event, T1624)
+or an explicit `record_activation(...)` call from a hook/agent/script. This means
+`gald3r crash-stats` on a project where `GALD3R_CRASH_STATS` was never enabled and no hook has
+fired honestly reports `total_activations: 0` — never fabricated numbers (g-rl-35) — rather than
+implying command-level coverage that does not exist yet.
+
+From a hook or script:
 
 ```bash
-uv run python -c "from gald3r import crash; crash.record_activation('skill','g-skl-tasks',trigger_source='@g-status',force=True)"
+uv run python -c "from gald3r_core.crash import activation; activation.record_activation('skill','g-skl-tasks',trigger_source='@g-status',force=True)"
 ```
 
 The **Never Activated** and **Should Be Called But Isn't** sections turn the gap into a positive
-signal: any registered component (scanned from `.cursor/`/`.claude/` skills, rules, commands,
+signal: any registered component (scanned from `.claude/`/`.cursor/` skills, rules, commands,
 agents, hooks) with zero records is surfaced — rather than silently assumed-active. Rules/skills
 that declare intent (`fires_on:` / `activate_for:`) but have 0 activations are flagged with ⚠️.
 

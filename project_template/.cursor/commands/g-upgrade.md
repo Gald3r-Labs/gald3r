@@ -1,6 +1,7 @@
 ﻿---
 description: Check for gald3r updates and upgrade if available
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
+execution_tier: orchestration
 ---
 
 ## @g-upgrade — gald3r Update Check & Upgrade
@@ -45,25 +46,41 @@ v1.2.1
 The session-start version check skips the notification if `latestVersion` appears in this file.
 This file is gitignored (host-local user preference).
 
-### Engine-CLI equivalent (offline / no-MCP path — T473/T475)
+### Native CLI equivalent (offline / no-MCP path — T303/T473/T475)
 
-When the world_tree MCP is not reachable, the same check + safe upgrade run **fully offline** via the
-engine CLI (one shared core for the agent and template-installed projects — no fork):
+When the world_tree MCP is not reachable, the same version check runs **fully offline** via
+gald3r_core's own native `gald3r` CLI (T303 absorbed `version-check` from the legacy vendored
+engine into gald3r_core's compiled binary — one shared core, no separate engine process, no fork):
 
 ```
-gald3r version-check            # query world_tree's T112 version surface (degrades gracefully offline)
-gald3r upgrade                  # dry-run: version delta + planned ADD/MERGE/DEPRECATE
-gald3r upgrade --apply          # BACKUP .gald3r/ to a timestamped gitignored .zip -> migrate -> ROLLBACK on failure
+gald3r version-check            # query world_tree's version-surface route (JWT-gated -- run
+                                 # `gald3r login` first for a real comparison); degrades HONESTLY
+                                 # to "offline" (unreachable), "auth_required" (no/stale session
+                                 # token), or "not yet available" (route absent on this deployment)
+                                 # -- never fabricates a version, mirrors the `gald3r connect`
+                                 # honesty-gate convention
+gald3r schema-migrate            # dry-run (default): reports .gald3r/ files needing schema migration
+gald3r schema-migrate --apply    # writes migrated .gald3r/ files to disk
+gald3r schema-migrate --restore-missing --apply  # also restores accidentally-deleted single-file
+                                                  # .gald3r/ artifacts from the embedded canonical snapshot
 ```
 
-`gald3r upgrade --apply` writes a timestamped backup to `.gald3r/_backups/.gald3r_backup_*.zip`
-(covered by the `.gald3r/.gitignore` `*.zip` rule — never committed) **before** migrating, and
-restores from it if the migration fails. **T422:** this is the minimal version-check + backup/
-rollback wrapper; it does not duplicate the deferred T422 consumer-upgrade subsystem
-(managed-manifest + conflict-resolver), which consumes/extends it when it lands.
+`gald3r version-check` is a real, native gald3r_core verb (T303, resolving the `version-check` gap
+the T292 verb-sweep flagged) — see `server_bridge.version_check`'s module docstring for the honesty-
+gate audit: a live probe against the deployed world_tree confirmed the version-surface route IS
+registered and JWT-gated (401, distinct from sibling unmapped paths which 404). The legacy engine's
+migration verb was `gald3r upgrade`; the current shipped equivalent is `gald3r schema-migrate`
+(T304 repointed this doc's wording to match the built CLI). `gald3r schema-migrate` is dry-run by
+default; pass `--apply` to write. It does **not** write a timestamped backup zip or auto-rollback
+on failure — that BACKUP/ROLLBACK behavior described in an earlier revision of this doc does not
+exist in the shipped verb; a backup-zip wrapper remains an unimplemented follow-up idea, not a
+current guarantee.
+**T422:** this is the minimal version-check + schema-migrate wrapper; it does not duplicate the
+deferred T422 consumer-upgrade subsystem (managed-manifest + conflict-resolver), which
+consumes/extends it when it lands.
 
 ### Notes
 
-- Upgrade uses `gald3r_install mode=upgrade` (MCP) or `gald3r upgrade --apply` (CLI); both preserve all `.gald3r/` user data (tasks/bugs/PLAN/etc. are on an absolute denylist)
+- Upgrade uses `gald3r_install mode=upgrade` (MCP) or `gald3r schema-migrate --apply` (CLI); both preserve all `.gald3r/` user data (tasks/bugs/PLAN/etc. are on an absolute denylist)
 - After upgrade, any cached skill/rule content in the current session should be treated as potentially stale — re-read skills before relying on them
 - The `--force` flag is useful in CI or non-interactive contexts

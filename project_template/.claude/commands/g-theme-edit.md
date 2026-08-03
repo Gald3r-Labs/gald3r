@@ -1,5 +1,8 @@
-﻿---
+---
+description: 'Open the gald3r theme editor to create, edit, import, export, preview, or activate HTML themes'
+argument-hint: '[create|edit|import|export|preview|activate] [name] [options]'
 subsystem_memberships: [UI_AND_OUTPUT]
+execution_tier: guarded_prompt
 ---
 Open the gald3r theme editor: $ARGUMENTS
 

@@ -41,7 +41,6 @@ if _g3ct_env not in ("", "0", "off", "false", "no") or _g3ct_os.path.isfile(
 # --- end gald3r calltrace bootstrap ---
 
 import argparse
-import importlib.util
 import os
 import re
 import subprocess
@@ -54,24 +53,18 @@ import _hook_common  # noqa: F401  (shared bootstrap; this hook is pure stdlib)
 
 
 def _resolve_engine_cmd(project_root: Path):
-    """Resolve the gald3r engine command prefix via the zero-IP resolver.
+    """Resolve the gald3r engine command prefix (P3 Tier-0, T179/T191).
 
     The WPAC inbox migrate/archive logic was absorbed (A3 / T1660) into the
-    `gald3r workspace inbox migrate|archive` verbs. Returns the command prefix
-    (e.g. ``["gald3r"]``) or ``None`` when the resolver is not shipped or no
-    engine can be found."""
-    resolver = project_root / ".gald3r_sys" / "scripts" / "gald3r_bin.py"
-    if not resolver.is_file():
-        return None
-    try:
-        spec = importlib.util.spec_from_file_location("gald3r_bin_wpac_inbox", str(resolver))
-        if not spec or not spec.loader:
-            return None
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)  # type: ignore[union-attr]
-        return mod.resolve_engine_cmd(project_root)
-    except Exception:
-        return None
+    `gald3r workspace inbox migrate|archive` verbs. Delegates to the shared
+    `_hook_common.resolve_engine_argv` (env var -> PATH -> legacy loose
+    resolver -> loud degrade) so PATH resolution works even when the loose
+    `.gald3r_sys/scripts/gald3r_bin.py` IP script is not shipped. Returns the
+    command prefix (e.g. ``["gald3r"]``) or ``None`` when no engine can be
+    found."""
+    return _hook_common.resolve_engine_argv(
+        project_root, hook_name="g-hk-wpac-inbox-check"
+    )
 
 # U+2014 EM DASH - kept out of the source bytes for ASCII safety (mirrors the
 # .ps1 [char]0x2014). Real inbox headings separate fields with an em-dash; the

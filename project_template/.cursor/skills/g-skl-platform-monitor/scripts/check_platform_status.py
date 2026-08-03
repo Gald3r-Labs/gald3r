@@ -113,13 +113,20 @@ def _load_known_platforms() -> List[str]:
         try:
             from platform_registry import known_platforms
         except ImportError:
-            # Last-resort fallback if the shared reader is unavailable: the original
-            # 23-platform list, so the tool degrades gracefully rather than crashing.
+            # Last-resort fallback if the shared reader module itself cannot be
+            # imported at all (e.g. a packaging fault dropped platform_registry.py
+            # from this script's own folder) -- kept in sync BY HAND with
+            # platform_registry.py's own `_FALLBACK_PLATFORMS` list (T386: this
+            # copy used to be a stale 23-platform list -- the literal "23 vs
+            # 38/39" disconnect the owner reported -- while the real roster had
+            # already grown to 38; do not let this drift again).
             return [
                 "cursor", "claude", "copilot", "codex", "antigravity", "windsurf",
-                "gemini", "cline", "roo", "opencode", "openhands", "kiro", "aider",
-                "augment", "goose", "junie", "kiro-cli", "mistral", "openclaw",
-                "qwen", "replit", "subq", "warp",
+                "cline", "opencode", "openhands", "kiro", "kiro-cli",
+                "augment", "goose", "junie", "openclaw", "qwen", "aider", "mistral",
+                "warp", "replit", "deepcode", "trae", "kilo-code", "amp", "codebuddy",
+                "hermes", "kimi", "qoder", "continue", "mimo-code", "subq", "roo",
+                "void", "astrbot", "zcode", "zed", "pi",
             ]
     return list(known_platforms())
 

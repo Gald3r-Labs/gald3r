@@ -1,15 +1,40 @@
 #!/usr/bin/env python3
-"""Python port of g-hk-component-tag-check.ps1 (T1584).
+"""Thin resolver+verb dispatcher for the g-rl-38 subsystem-tagging guard (T318).
 
-Git pre-commit hook: enforce subsystem tagging on .gald3r_sys components.
-Blocks commits that add new component files to .gald3r_sys/ without subsystem
-tagging.
+Git pre-commit hook: enforce subsystem tagging on staged `.gald3r_sys/` components.
+Blocks commits that add new component files to `.gald3r_sys/` without subsystem tagging.
 
-Run modes:
+This hook used to hand-roll the staged-file git scan and the tag-presence regex checks
+inline (flagged fix-thin by the v3 IP classification alongside T179's hook). That
+enforcement logic now lives in the binary as `gald3r lint tag-check` (backed by
+`gald3r_core.project.lint.tag_check.lint_tag_check`, wired in `cli/commands/lint_cmd.py`).
+This hook is reduced to the same resolver+dispatch pattern already used by
+`g-hk-policy-check.py`, `g-hk-agent-worktree-janitor.py`, `g-hk-pre-push.py`, and
+`g-hk-pre-tool-call-member-gald3r-guard.py`: resolve the engine via
+`_hook_common.resolve_engine_argv`, forward the `-WarnOnly` flag, and propagate the
+verb's stdout/stderr/exit code untouched (no output capture -- the child inherits this
+process's stdio, so the printed violation report is byte-for-byte identical to the old
+inline implementation).
+
+Fail-open when the engine can't be resolved (no `gald3r` binary on PATH / not shipped on
+this tier): this is a deliberate, disclosed trade-off matching every other absorbed-verb
+hook in this tree (see e.g. `g-hk-policy-check.py`'s docstring) -- before this thin, the
+check ran unconditionally (pure git + stdlib, no engine dependency); after, a project
+without the compiled binary installed gets no enforcement from this hook. Kept per D-7
+("KEPT -- not superseded"; see `.claude/hooks/g-hk-component-tag-check.md`) as the only
+enforcement path for g-rl-38 tagging.
+
+Run modes (unchanged):
   - git pre-commit hook (via core.hooksPath): called with no arguments, no stdin
   - Direct check:  python g-hk-component-tag-check.py [-WarnOnly] [-Staged]
 
-Exit codes: 0 = pass (allow commit), 1 = fail (block commit)
+Exit codes (unchanged): 0 = pass (allow commit) or engine not resolvable (fail-open),
+1 = fail (block commit).
+
+Rule reference: .claude/rules/g-rl-38-component-creation-standards.md
+Verb: `gald3r lint tag-check [--root PATH] [--warn-only] [--json]`
+(`src/gald3r_core/cli/commands/lint_cmd.py`,
+`src/gald3r_core/project/lint/tag_check.py`).
 """
 # @subsystems: PROJECT_IDENTITY_SETUP
 from __future__ import annotations
@@ -33,54 +58,39 @@ if _g3ct_env not in ("", "0", "off", "false", "no") or _g3ct_os.path.isfile(
 # --- end gald3r calltrace bootstrap ---
 
 import argparse
-import re
 import subprocess
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import _hook_common  # noqa: F401  (shared bootstrap; pure-stdlib path used here)
-
-MARKDOWN_DIRS = ["skills", "commands", "agents", "rules"]
-SCRIPT_DIRS = ["hooks", "scripts"]
-
-VALID_GROUPS_TEXT = """
-Each .gald3r_sys component needs:
-  Markdown (.md):  'subsystem_memberships: [GROUP]' in YAML frontmatter
-  PowerShell (.ps1): '# @subsystems: GROUP' in first 15 lines
-
-Valid groups: LOGGING_SYSTEM | MEMORY_AND_KNOWLEDGE | TASK_MANAGEMENT |
-  BUG_AND_QUALITY | WORKSPACE_COORDINATION | PROJECT_IDENTITY_SETUP |
-  PLATFORM_INTEGRATION | AGENT_ORCHESTRATION | RELEASE_AND_VERSIONING |
-  VAULT_AND_RESEARCH | UI_AND_OUTPUT | SECURITY_AND_COMPLIANCE | UNGROUPED
-
-Run @g-skill-new / @g-command-new / @g-rule-new to scaffold with tags pre-filled.
-Or add tags manually and re-stage the files.
-"""
+import _hook_common  # noqa: E402
 
 
-def _git(args: list) -> str:
-    """Run a git command and return stdout, or '' on any failure."""
-    try:
-        result = subprocess.run(
-            ["git"] + args,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-        )
-        if result.returncode != 0:
-            return ""
-        return result.stdout.strip()
-    except OSError:
-        return ""
+def _resolve_engine_cmd(project_root: Path):
+    """Resolve the gald3r engine command prefix (P3 Tier-0, T179/T191).
+
+    Same shared resolver as `g-hk-policy-check.py` -- env var -> PATH -> legacy loose
+    resolver -> loud degrade. Returns the command prefix or ``None`` when no engine can be
+    found, in which case the hook no-ops (allow the commit -- fail-open).
+    """
+    return _hook_common.resolve_engine_argv(
+        project_root, hook_name="g-hk-component-tag-check"
+    )
 
 
-def _in_taggable_dir(rel_path: str, dirs: list) -> bool:
-    for d in dirs:
-        if f".gald3r_sys/{d}/" in rel_path or f".gald3r_sys\\{d}\\" in rel_path:
-            return True
-    return False
+def _find_project_root() -> Path:
+    """Walk up from cwd for a `.gald3r/` ancestor; fall back to `_hook_common`'s
+    hook-file-relative resolution.
+
+    T516 (T512 inventory row 10 -- pre-commit component-tag enforcement,
+    g-rl-38): applies the shared T512 gitignore-refusal + ambiguity-warning
+    walk-up guard (`_hook_common.guarded_walk_up`).
+    """
+    d = Path.cwd()
+    root = _hook_common.guarded_walk_up(
+        d, exclude=_hook_common.resolved_global_gald3r_home()
+    )
+    return root if root is not None else _hook_common.project_root()
 
 
 def main() -> int:
@@ -93,76 +103,46 @@ def main() -> int:
     )
     parser.add_argument(
         "-Staged", "--staged", dest="staged", action="store_true",
-        help="Explicit staged mode (default when called from git)",
+        help="Explicit staged mode (default when called from git) -- accepted for CLI "
+        "compatibility; no-op, since the verb always inspects the git staged index.",
     )
     args = parser.parse_args()
 
-    # Determine repo root
-    repo_root = _git(["rev-parse", "--show-toplevel"])
-    if not repo_root:
-        print("[tag-check] Not inside a git repo — skipping.")
-        return 0
-    repo_root_path = Path(repo_root)
-
-    # Get staged files (ACM: Added, Copied, Modified)
-    staged_files = _git(["diff", "--cached", "--name-only", "--diff-filter=ACM"])
-    if not staged_files:
+    root = _find_project_root()
+    engine = _resolve_engine_cmd(root)
+    if engine is None:
+        # Engine not installed / not shipped on this tier -- pure no-op (fail-open),
+        # matching every other absorbed-verb hook in this tree.
         return 0
 
-    violations = []
-
-    for rel_path in staged_files.splitlines():
-        rel_path = rel_path.strip()
-        if not rel_path:
-            continue
-        full_path = repo_root_path / rel_path.replace("/", "\\" if sys.platform == "win32" else "/")
-        if not full_path.is_file():
-            continue
-
-        # Only check files under .gald3r_sys
-        if not (rel_path.startswith(".gald3r_sys/") or rel_path.startswith(".gald3r_sys\\")):
-            continue
-
-        ext = full_path.suffix.lower()
-
-        if ext == ".md":
-            if not _in_taggable_dir(rel_path, MARKDOWN_DIRS):
-                continue
-            try:
-                content = full_path.read_text(encoding="utf-8", errors="replace")
-            except OSError:
-                continue
-            if not re.search(r"subsystem_memberships\s*:", content):
-                violations.append(f"MISSING subsystem_memberships: in {rel_path}")
-        elif ext == ".ps1":
-            if not _in_taggable_dir(rel_path, SCRIPT_DIRS):
-                continue
-            try:
-                lines = full_path.read_text(
-                    encoding="utf-8", errors="replace"
-                ).splitlines()[:15]
-            except OSError:
-                continue
-            has_tag = any(re.match(r"^#\s*@subsystems\s*:", ln) for ln in lines)
-            if not has_tag:
-                violations.append(
-                    f"MISSING '# @subsystems:' comment in first 15 lines: {rel_path}"
-                )
-
-    if not violations:
-        return 0
-
-    # Report violations
-    print("")
-    print("=== [g-hk-component-tag-check] SUBSYSTEM TAGGING VIOLATIONS ===")
-    print("")
-    for v in violations:
-        print(f"  !! {v}")
-    print(VALID_GROUPS_TEXT)
-
+    cmd = [*engine, "lint", "tag-check"]
     if args.warn_only:
+        cmd.append("--warn-only")
+
+    try:
+        # No output capture: the verb's stdout/stderr are this process's own (git invokes
+        # this hook with its stdio already connected to the terminal/commit UI), so the
+        # printed violation report reaches the same destination the old inline
+        # implementation wrote to, byte-for-byte.
+        #
+        # BUG-574: `stdout`/`stderr` are passed EXPLICITLY (not omitted/None) so Python's
+        # Windows subprocess implementation sets STARTUPINFO's STARTF_USESTDHANDLES with
+        # this process's own std handles. When omitted, Windows CreateProcess() falls back
+        # to ambient/default std-handle inheritance, which reproducibly loses the
+        # grandchild's stdout/stderr specifically when this hook itself runs as a NESTED
+        # child (e.g. the real `.githooks/pre-commit` dispatcher chain: `sh -> python
+        # <this hook> -> gald3r.exe`) -- the exit code still propagates correctly (the
+        # commit is still blocked/allowed correctly), but the explanatory violation banner
+        # vanished silently, leaving a confusing "commit failed, no output" UX. Live-
+        # reproduced end to end via the actual dispatcher chain during BUG-574
+        # investigation; explicit stdout=/stderr= reliably restores the banner. No-op on
+        # POSIX, where fd inheritance does not depend on this distinction.
+        proc = subprocess.run(cmd, timeout=30, stdout=sys.stdout, stderr=sys.stderr)
+        return proc.returncode
+    except Exception:
+        # Fail-open: a broken engine invocation must never block a commit outright beyond
+        # what the verb itself would have decided.
         return 0
-    return 1
 
 
 if __name__ == "__main__":
@@ -175,5 +155,5 @@ if __name__ == "__main__":
     except SystemExit:
         raise
     except Exception:
-        # Never crash the session on unexpected errors — fail open.
+        # Never crash the session on unexpected errors -- fail open.
         sys.exit(0)

@@ -1,5 +1,7 @@
-﻿---
+---
+description: 'Report a new bug via g-skl-bugs REPORT — assigns BUG-NNN, creates the bug file, updates BUGS.md.'
 subsystem_memberships: [BUG_AND_QUALITY]
+execution_tier: guarded_prompt
 ---
 Report a new bug. Activates **g-skl-bugs** → REPORT BUG operation.
 

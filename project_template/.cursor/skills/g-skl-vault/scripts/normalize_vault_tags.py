@@ -72,9 +72,11 @@ TYPE_TO_CATEGORY = {
 }
 
 # Matches `tags: [...]` or `tags:\n  - item` patterns in frontmatter
-TAGS_INLINE_RE = re.compile(r"(?m)^(tags:\s*\[)([^\]]*?)(\])")
-TAGS_BLOCK_RE  = re.compile(r"(?m)^(tags:\s*\n)((?:[ \t]*-[^\n]*\n)*)")
-TYPE_RE        = re.compile(r"(?m)^type:\s*(.+?)\s*$")
+# Same-line-only whitespace ([ 	]) throughout -- BUG-486/T510 severity-10
+# class: \s crosses newlines and captures the NEXT line on blank values.
+TAGS_INLINE_RE = re.compile(r"(?m)^(tags:[ \t]*\[)([^\]]*?)(\])")
+TAGS_BLOCK_RE  = re.compile(r"(?m)^(tags:[ \t]*\n)((?:[ \t]*-[^\n]*\n)*)")
+TYPE_RE        = re.compile(r"(?m)^type:[ \t]*(.+?)[ \t]*$")
 
 # Folded from fix_platform_doc_tags.py — repair the tags key itself
 HAS_TAGS_RE    = re.compile(r"(?m)^tags:")

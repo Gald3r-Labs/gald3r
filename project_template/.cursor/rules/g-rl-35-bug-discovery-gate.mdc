@@ -74,10 +74,10 @@ bounded fixes and otherwise records `needs_attention`.
 
 1. Run the triage loop (assess → gate → fix-if-safe → log):
    ```bash
-   python .claude/skills/g-skl-auto-triage/scripts/invoke_triage.py \
-       -BugId "BUG-{id}" -Kind "{spec_defect|policy_incongruity|design_gap}" \
-       -Files "<absolute_path>" -FixType "{schema_comment|manifest_annotation|command_annotation|rule_annotation|constraint_expire}" \
-       -FixContent "<text>" -ProjectRoot "<repo_root>" -BugFilePath "<absolute_bug_md>"
+   gald3r bug triage \
+       --bug-id "BUG-{id}" --kind "{spec_defect|policy_incongruity|design_gap}" \
+       --file "<absolute_path>" --fix-type "{schema_comment|manifest_annotation|command_annotation|rule_annotation|constraint_expire}" \
+       --fix-content "<text>" --project-root "<repo_root>" --bug-file-path "<absolute_bug_md>"
    ```
 2. The script writes the outcome to the bug's `triage_status:` / `triage_risk_score:` frontmatter
    and appends an audit row to `.gald3r/logs/triage_auto_YYYYMMDD.log`.
@@ -96,11 +96,23 @@ See `g-skl-auto-triage/SKILL.md` for the full risk formula and Phase 1 hard limi
 total_pages = len(items) / page_size  # should use ceil division
 ```
 
+```javascript
+// BUG[BUG-07]: Race condition on concurrent writes — see .gald3r/bugs/bug007_write_race.md
+await saveRecord(data);
+```
+
+```typescript
+// BUG[BUG-09]: Missing null guard on user.profile — see .gald3r/bugs/bug009_null_profile.md
+return user.profile.name;
+```
+
+```sql
+-- BUG[BUG-12]: NULL guard missing — divide-by-zero possible — see .gald3r/bugs/bug012_null_divide.md
+```
+
 ```powershell
 # BUG[BUG-14]: Path assumes Windows drive letter — see .gald3r/bugs/bug014_path_assumption.md
 ```
-
-For JS/TS use `//`, for SQL use `--`. Same format, same `.gald3r/bugs/` reference path.
 
 The `BUG[BUG-{id}]` format intentionally mirrors `TODO[TASK-X→TASK-Y]` from `g-rl-34` for a uniform annotation system.
 
@@ -112,6 +124,68 @@ Do NOT report as pre-existing bugs:
 - Intentional placeholder values (test fixtures, examples with clearly fake data)
 - Linter warnings already tracked as tech debt in BUGS.md
 - Cosmetic issues (formatting, whitespace, naming) **unless** they cause incorrect behavior
+
+---
+
+## Numeric Severity Scale (1-10) & Focus-Mode Triage (T-triage)
+
+Alongside the coarse `severity` enum, score every bug (by **damage if left
+unfixed**) and every task (by **value if done**) on this 1-10 scale. The scale is
+canonical in `coordination/autopilot/severity_scale.py` (`SEVERITY_RUBRIC`); the
+enum still validates, and a record with no numeric score derives one from its
+enum (`resolve_score`), so nothing needs migrating.
+
+| Score | Meaning (anchor) |
+|------:|------------------|
+| 1 | Typo in a message or docs; pure cosmetic |
+| 2 | Cosmetic-but-visible (formatting, naming, whitespace) |
+| 3 | Minor doc/UX inaccuracy, stale comment, non-behavioral nit |
+| 4 | Small correctness nit in a non-critical path; low-value test gap |
+| **5** | **Token/compute inefficiency or measurable waste; recoverable UX friction** |
+| 6 | Wrong output in an edge case; real bug, small blast radius |
+| 7 | Broken feature, silent data staleness, incorrect results users rely on |
+| 8 | Crash on a common path; security-relevant weakness; auth/permission gap |
+| 9 | Data corruption, auth bypass, privilege escalation, irreversible state loss |
+| **10** | **Runaway/infinite token burn; data or hardware destruction; IP/API-key/secret leak** |
+
+Bugs score on the DAMAGE table above. **Tasks score on VALUE-if-done** — a
+high-value feature is NOT "data destruction", so score it on this parallel table,
+never the damage one (else focus mode skips your most important product work):
+
+| Score | Task value |
+|------:|------------|
+| 1 | Busywork; internal nitpick, no user/product value |
+| 3 | Minor internal polish or convenience |
+| 5 | Useful improvement; pays for itself, not urgent |
+| **6** | **Public-facing docs: announce features, explain usage, user docs** |
+| 7 | Important feature users will notice and value |
+| 8 | Major user-facing capability / a differentiator rivals lack |
+| 9 | Critical path to a release or demo; blocks other high-value work |
+| **10** | **Unblocks the core product / the acquisition demo — the moat** |
+
+**Record the score** in a bug's `severity` numeric field / a task's
+`priority_score` field when filing at/above the active floor.
+
+**Highest-severity-first.** When choosing what to work, rank by score descending;
+never pick a score-3 nit while a score-8 defect is runnable.
+
+**Focus mode — two independent floors.** Bugs and tasks are floored separately
+because they need opposite defaults:
+
+- **`--min-severity N` (BUGS, damage).** Default **5** — skips the 1-4 nitpick band
+  AND **must not manufacture new sub-floor bugs** (note a sub-floor observation in
+  one line and move on rather than filing it). This is the sanctioned exception to
+  the zero-tolerance logging in this rule / g-rl-33, for the focused run only. Bug
+  generation was the infinite self-audit churn, so bugs are floored by default.
+  `--min-severity 1` restores full zero-tolerance logging.
+- **`--min-value N` (TASKS, value).** Default **0 — work EVERY task.** Tasks are
+  deliberate value work that should converge to done, so they are NOT filtered by
+  default. Pass `--min-value 7` for best-tasks-and-up.
+
+A floor is a **hard stop, not a slider** — it never lowers itself, so a focused run
+will not burn the backlog to nothing over time; sub-floor items sit untouched until
+the operator deliberately lowers the floor. Grade-inflation on either axis is caught
+at the Phase-2 review gate, which validates the assigned score as part of the AC check.
 
 ---
 

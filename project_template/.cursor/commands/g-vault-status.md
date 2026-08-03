@@ -1,5 +1,8 @@
-﻿---
+---
+description: 'Summarize vault health: note counts by type, active paths, recent log.md activity, migration warnings'
+argument-hint: '[none]'
 subsystem_memberships: [VAULT_AND_RESEARCH]
+execution_tier: orchestration
 ---
 Show vault status: $ARGUMENTS
 

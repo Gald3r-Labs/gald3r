@@ -167,9 +167,9 @@ as additional scopes. gald3r's `AGENTS.md` is the first-class instruction input 
 - Use cases: auto-format, security checks blocking dangerous ops, protecting sensitive files,
   desktop notifications, verifying task completion before session close — so gald3r SessionStart
   context injection, PreToolUse `.gald3r/` guards, and pre-commit gates wire in via shell commands.
-- **OS note / `.ps1`:** hook `command` is an arbitrary shell command; PowerShell `g-hk-*.ps1` hooks
-  run by invoking `pwsh -File g-hk-*.ps1` (PowerShell not assumed by default — Kimi Code is
-  cross-platform and shell-agnostic).
+- **OS note:** hook `command` is an arbitrary shell command; gald3r `g-hk-*.py` hooks
+  run by invoking `python <path>` directly (post-T1584 Python port; no PowerShell involved — Kimi
+  Code is cross-platform and shell-agnostic).
 - Source: https://moonshotai.github.io/kimi-code/en/customization/hooks.html
 
 ## 7. Rules / Memory — ✅ NATIVE
@@ -228,7 +228,7 @@ platforms), plus an `AGENTS.md`, with hooks wired in `$KIMI_CODE_HOME/config.tom
   PermissionResult, Notification (partial list confirmed; full 13-event enumeration pending a
   dedicated re-scan — see rebrand_note in frontmatter)
 - **Event payload format**: JSON via stdin; result via exit codes (`0` allow / `2` block / other = log only); optional `matcher` regex + `timeout` (1-600s, default 30s)
-- **Command extensions**: arbitrary shell `command`; `g-hk-*.ps1` wire via `pwsh -File ...` (PowerShell not assumed by default — cross-platform agent)
+- **Command extensions**: arbitrary shell `command`; `g-hk-*.py` wire via `python <path>` (post-T1584 Python port; no PowerShell involved — cross-platform agent)
 - **Maturity**: documented as a complete customization surface post-rebrand; re-verify stability given the Python/uv → Node.js runtime change
 
 ## Atypical Handling
@@ -250,7 +250,7 @@ platforms), plus an `AGENTS.md`, with hooks wired in `$KIMI_CODE_HOME/config.tom
 - Ship gald3r's `SKILL.md` tree into `.kimi-code/skills/` (native) or `.agents/skills/`
   (cross-tool) + an `AGENTS.md` instruction file (or run `/init`).
 - Wire hooks in `$KIMI_CODE_HOME/config.toml` (default `~/.kimi-code/config.toml`) via `[[hooks]]`;
-  invoke `g-hk-*.ps1` through `pwsh -File` since PowerShell is not the default shell.
+  invoke `g-hk-*.py` through `python <path>` (post-T1584 Python port; no PowerShell involved).
 - Map gald3r commands to Kimi `/skill:<name>`; consider Flow skills (`type: flow`) for multi-step
   gald3r workflows and Custom Plugins for executable tooling.
 - Re-verify on the next `@g-platform-scan-docs kimi` (crawl_max_age_days: 14) — confirm the full

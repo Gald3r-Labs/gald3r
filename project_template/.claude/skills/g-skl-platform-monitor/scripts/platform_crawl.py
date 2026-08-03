@@ -127,17 +127,6 @@ _SAMPLE_DOCS: Dict[str, List[Dict[str, str]]] = {
             "url": "https://docs.anthropic.com/claude-code",
         },
     ],
-    "gemini": [
-        {
-            "content": (
-                "Gemini CLI supports settings.json lifecycle hooks, GEMINI.md memory, "
-                "TOML custom commands, markdown subagents, SKILL.md agent skills, and "
-                "MCP servers."
-            ),
-            "title": "Gemini CLI — configuration",
-            "url": "https://ai.google.dev/gemini-api/docs",
-        },
-    ],
 }
 
 # Sample crawl-ledger registry (parity with the 0018 seed rows). Uses the registry
@@ -154,12 +143,6 @@ _SAMPLE_REGISTRY: List[Dict[str, object]] = [
         "last_crawled_at": "2026-06-20T11:00:00+00:00",
         "pages_count": 37,
         "crawl_status": "success",
-    },
-    {
-        "platform": "gemini",
-        "last_crawled_at": None,
-        "pages_count": 0,
-        "crawl_status": "never",
     },
 ]
 

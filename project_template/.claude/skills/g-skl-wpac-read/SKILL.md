@@ -5,6 +5,16 @@ token_budget: medium
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
 
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 > **Multi-agent framework (T1094):** Inbound handler — actions all inbound frameworks (delegation/broadcast/negotiation/conflict).
 # g-skl-wpac-read
 
@@ -89,7 +99,7 @@ The inbox is a lightweight **index** at `.gald3r/linking/INBOX.md` (marked `<!--
    - If `broadcast_completion` received:
      - Offer to mark the parent's tracker task `[✅]`
      - **Resolve the outbound order ledger record** (Layer 3 of cross-project dependency tracking):
-       1. Search `.gald3r/workspace/sent_orders/order_*.md` for a record where `sent_to:` matches the sending child project AND (`remote_task_id:` matches the child's source task id from the completion ping, OR `remote_task_title:` matches the original broadcast title — exact string match preferred, fuzzy match as fallback)
+       1. Search `.gald3r/linking/sent_orders/order_*.md` for a record where `sent_to:` matches the sending child project AND (`remote_task_id:` matches the child's source task id from the completion ping, OR `remote_task_title:` matches the original broadcast title — exact string match preferred, fuzzy match as fallback)
        2. If a matching record is found:
           - Update its frontmatter: `status: completed`, `last_sync: YYYY-MM-DD`
           - Append Sync History row: `| YYYY-MM-DD | completed | Completion ping received from {child_project_id} |`
@@ -106,7 +116,7 @@ The inbox is a lightweight **index** at `.gald3r/linking/INBOX.md` (marked `<!--
 6. **Handle PEER SYNCS** (sibling contract changed):
    - Show: which sibling, which contract, what changed
    - Confirm task exists (created when peer_sync arrived)
-   - Open the peer copy for review: `.gald3r/workspace/peers/{sibling_name}.md`
+   - Open the peer copy for review: `.gald3r/linking/_peers/{sibling_name}.md`
    - After human updates the contract: mark task complete, update INBOX to `[DONE]`
    - If sibling path accessible: write completion notice to sibling's INBOX.md
 
@@ -117,7 +127,7 @@ The inbox is a lightweight **index** at `.gald3r/linking/INBOX.md` (marked `<!--
      📡 Peer capability update from {sender}:
         {capability_name}: {old_status} → {new_status}
         Reason: {reason}
-        Peer snapshot written to: .gald3r/workspace/peers/{sender}_capabilities.md
+        Peer snapshot written to: .gald3r/linking/_peers/{sender}_capabilities.md
      ```
    - No task to create, no approval needed
    - Ask: "Acknowledge and mark done? [y/n]" (default: yes)
@@ -127,7 +137,7 @@ The inbox is a lightweight **index** at `.gald3r/linking/INBOX.md` (marked `<!--
    - Also check `pending_orders/` and surface count: "⚠️ N broadcast(s) staged in pending_orders/ for [project] — not yet accessible"
 
 8. **Show peer capabilities summary** (after INBOX processing):
-   - Read all files matching `.gald3r/workspace/peers/*_capabilities.md`
+   - Read all files matching `.gald3r/linking/_peers/*_capabilities.md`
    - If any exist, display a compact table:
      ```
      Peer Capabilities (last received snapshots):

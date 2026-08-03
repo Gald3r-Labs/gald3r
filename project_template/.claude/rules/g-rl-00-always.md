@@ -7,19 +7,40 @@ subsystem_memberships: [LOGGING_SYSTEM]
 1. Include in the final line(s) on every response to the user:
    * Current timestamp with date, hour, and minutes (e.g., "2026-02-01 09:45 UTC")
    * List of tools used during the call
-   * Context usage percentage (ALWAYS show, even if low)
-   * Context breakdown showing:
-     - Rules context: estimated % of context from .cursor/rules/
-     - MCP context: estimated % from MCP tool descriptors/schemas
-     - Conversation: % from actual conversation history
-     - Skills/Other: % from skills, agents, and other sources
+   * Context usage — a MEASURED figure, not an eyeballed estimate (T375). On a
+     Claude Code session, run `gald3r context` (reads the session's own
+     transcript JSONL — resident tokens = input + cache-read + cache-creation
+     from the LAST turn, never a cumulative sum across turns) and report its
+     `context_pct`. If `gald3r context` reports no resolvable source (`source:
+     null`) or is unavailable in this environment, print `Context: unmeasured`
+     — literally that word — rather than a guessed percentage. Agent
+     self-estimates of context have been measured running ~3x high in this
+     project (claimed ~88% vs real ~30%; claimed ~85% vs real ~35%), which is
+     exactly the defect `gald3r context` exists to retire — an invented number
+     is worse than an honest "unmeasured".
+   * Context breakdown (when `gald3r context` resolved a reading): show its
+     `resident_tokens` / `context_window` and the vendor `source` it measured
+     from (e.g. `claude-code-transcript`) instead of the old guessed
+     Rules/MCP/Conversation/Skills split — that split was itself part of the
+     estimate this rule used to require. When unmeasured, omit the breakdown
+     entirely rather than fabricate one.
 
-   Example format:
+   Example format (measured):
    ```
    ---
    2026-02-01 09:45 UTC
    Model: Claude Opus 4, Tokens: ~12,500 input / ~800 output, Est. Cost: ~$0.16
-   Context: 45% used (Rules: ~15%, MCP: ~8%, Conversation: ~18%, Skills/Other: ~4%)
+   Context: 45.2% used (792,086 / 1,000,000 tokens, source: claude-code-transcript)
+   Tools: Shell, Read, StrReplace
+   ---
+   ```
+
+   Example format (unmeasured -- no vendor context source resolvable, e.g. not running under Claude Code):
+   ```
+   ---
+   2026-02-01 09:45 UTC
+   Model: Claude Opus 4, Tokens: ~12,500 input / ~800 output, Est. Cost: ~$0.16
+   Context: unmeasured
    Tools: Shell, Read, StrReplace
    ---
    ```

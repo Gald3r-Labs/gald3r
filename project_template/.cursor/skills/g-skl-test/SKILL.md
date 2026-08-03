@@ -1,9 +1,20 @@
-﻿---
+---
 name: g-skl-test
 description: Create, maintain, and run multi-level test plans (fast, comprehensive, regression) for gald3r systems and features. Use when creating test plans, running tests, checking test coverage gaps, doing code review, verification, or when preparing a release. Enforces C-013/C-014/C-015 constraints. Triggered by @g-test command and g-agnt-test agent.
 token_budget: medium
 subsystem_memberships: [BUG_AND_QUALITY]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 # g-skl-test — Test Plan Management
 
 **Files Owned**: `.gald3r/test-plans/`, `.gald3r/TEST_PLANS.md`
@@ -127,25 +138,27 @@ TEST PLAN AUDIT:
 ### FUNCTIONAL (L0) — gald3r systems health harness (T1540)
 
 **Called for an install health check, a pre-release quality stamp, or a CI gate.**
-Distinct from L1/L2/L3 code tests: this runs `gald3r selftest`, which
-exercises each gald3r *system* and produces a per-system PASS/PARTIAL/FAIL plus an overall
-functionality percentage.
+Distinct from L1/L2/L3 code tests: this exercises each gald3r *system* and produces a
+per-system PASS/PARTIAL/FAIL plus an overall functionality percentage. **Prefer the engine
+command** `gald3r doctor` (pure, read-only — it recomputes index integrity without mutating
+state); fall back to the co-located script only where the engine is unavailable.
 
 **Run:**
 
 ```powershell
-# Full run against the current install (writes .gald3r/reports/system_test_YYYYMMDD_HHMMSS.md)
-gald3r selftest
+# Primary — engine health check (read-only)
+gald3r doctor                       # full run, human table
+gald3r doctor --fail-below 80       # CI gate: exit 1 when overall score < 80
+gald3r --json doctor                # machine-readable summary for dashboards / handoff
+gald3r doctor --only tasks,bugs     # subset of system groups
 
-# CI gate: exit non-zero when overall score < 80%
-gald3r selftest
-
-# Machine-readable summary for dashboards / agent handoff
-gald3r selftest
-
-# Subset of systems
+# Fallback (L0, no engine) — the co-located script (also writes a markdown report under .gald3r/reports/)
 gald3r selftest
 ```
+
+> The engine `doctor` covers the deterministic, read-only checks (structure + per-system
+> phantom/orphan integrity + skills). The git-hook / subprocess-parity / encoding checks live
+> only in the fallback script (they are impure and intentionally out of the Mode-A engine).
 
 **Systems under test (13):** task, bug, platform_spec, parity, hooks, git_hooks, schema,
 constraints, subsystems, skills, wpac, release, encoding. Skipped systems (e.g. WPAC on a

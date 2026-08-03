@@ -6,11 +6,11 @@ Proves: an authorized scheduled reset RE-INVOKES with --resume (non-terminal), c
 marker, bumps resets_done, keeps the run active; budget exhaustion turns a reset into a
 terminal exit; a genuine hard stop still terminates; an unauthorized stop still re-invokes.
 
-# BUG[BUG-199] kind=code: g-hk-ggo-stop-detect.py has no scheduled_context_reset special
-# case (falls into the generic hard-stop branch instead) — see .gald3r/bugs/bug199_*.md.
-# This fixture preserves the documented Rolling Amnesia contract from the original .ps1
-# and is expected to fail T1/T4 until BUG-199 is fixed; it is not wired into the L1/L2/L3
-# test manifest, so this pre-existing gap does not block the suite.
+# BUG-128 (migrated from donor BUG-199) kind=code: g-hk-ggo-stop-detect.py was missing
+# the scheduled_context_reset special case (it fell into the generic hard-stop branch
+# instead) — see .gald3r/bugs/open/bug128_g-hk-ggo-stop-detect-py-missing-schedule.md.
+# Fixed: the hook now consumes the marker and re-invokes with --resume when budget
+# remains. This fixture is not wired into the L1/L2/L3 test manifest; run it directly.
 """
 # @subsystems: AGENT_ORCHESTRATION
 from __future__ import annotations
@@ -45,22 +45,18 @@ from typing import Optional
 
 
 def _bootstrap_engine_utils() -> bool:
-    """Make gald3r.utils importable: installed package, else walk up to .gald3r_sys/engine/src."""
+    """Make gald3r.utils importable via the installed package.
+
+    T274 (P5-E blocker): the pre-retirement ".gald3r_sys/engine/src" fallback
+    walk is removed -- ".gald3r_sys/" is actively purged from every project
+    by the deploy pipeline (T335) and never exists in a fresh install, so
+    that branch was permanently dead code, not a real fallback.
+    """
     try:
         import gald3r.utils  # noqa: F401
         return True
     except ImportError:
-        pass
-    for parent in Path(__file__).resolve().parents:
-        cand = parent / ".gald3r_sys" / "engine" / "src"
-        if (cand / "gald3r" / "utils" / "__init__.py").is_file():
-            sys.path.insert(0, str(cand))
-            try:
-                import gald3r.utils  # noqa: F401
-                return True
-            except ImportError:
-                return False
-    return False
+        return False
 
 
 _HAS_UTILS = _bootstrap_engine_utils()
@@ -106,6 +102,12 @@ REPO_ROOT = find_repo_root(SCRIPT_DIR)
 
 def locate_hook() -> Optional[Path]:
     for candidate in (
+        # Tracked source of truth (T177) — prefer this so the test always
+        # exercises the file that is actually fixed/reviewed/committed, even
+        # in a fresh checkout/worktree where the gitignored, regenerated
+        # per-platform copies below have not been synced yet.
+        REPO_ROOT / "src" / "gald3r_core" / "platform" / "pipeline"
+        / "neutral_source" / "hooks" / "g-hk-ggo-stop-detect.py",
         REPO_ROOT / ".claude" / "hooks" / "g-hk-ggo-stop-detect.py",
         REPO_ROOT / ".cursor" / "hooks" / "g-hk-ggo-stop-detect.py",
     ):
@@ -137,9 +139,16 @@ def new_root(state: dict) -> Path:
 
 def invoke_hook(hook: Path, root: Path, session_id: str) -> dict:
     payload = json.dumps({"session_id": session_id})
+    # BUG-337: explicitly stamp GALD3R_GGO_COORDINATOR=1 rather than relying on
+    # whatever the ambient shell happens to have set. g-hk-ggo-stop-detect.py's
+    # Case 0.5 (BUG-217) allow-exits immediately when this var is unset/falsy,
+    # which otherwise short-circuits the Rolling Amnesia (BUG-128/BUG-107) logic
+    # this test exists to exercise -- making the suite pass or fail based on
+    # ambient environment instead of the hook's actual behavior.
+    env = dict(os.environ, GALD3R_GGO_COORDINATOR="1")
     proc = subprocess.run(
         [sys.executable, str(hook), "-ProjectRoot", str(root)],
-        input=payload, capture_output=True, text=True,
+        input=payload, capture_output=True, text=True, env=env,
     )
     return json.loads(proc.stdout)
 
@@ -204,6 +213,25 @@ def main() -> int:
     res = invoke_hook(hook, root, "sess-4")
     assert_(res.get("decision") == "block", "decision=block (unauthorized-stop re-invoke intact)")
     assert_("BUG-107" in (res.get("reason") or ""), "reason cites BUG-107 contract")
+    shutil.rmtree(root, ignore_errors=True)
+
+    cprint("\n=== T5: stuck reset at re-invoke ceiling => TERMINAL exit (BUG-128) ===", "cyan")
+    # A coordinator that re-declares scheduled_context_reset without making real
+    # progress must NOT spin forever: once reinvoke_count reaches the shared
+    # ceiling (min(budget_remaining, 25)), a reset degrades to a terminal
+    # allow-exit like any other stop -- the coordinator-independent backstop.
+    root = new_root({
+        "active": True, "platform": "claude", "session_id": "sess-5", "iter": 4,
+        "budget_remaining": 5, "authorized_hard_stop": "scheduled_context_reset",
+        "reinvoke_count": 5, "resets_done": 5,
+    })
+    res = invoke_hook(hook, root, "sess-5")
+    assert_(res.get("continue") is True,
+            "continue=true (reset degraded to terminal at ceiling)")
+    assert_(res.get("decision") is None or res.get("decision") != "block",
+            "not a block decision (no unbounded reset re-invoke)")
+    assert_(not (root / ".gald3r" / "logs" / "ggo_run_state.json").exists(),
+            "marker cleared on ceiling-terminal exit")
     shutil.rmtree(root, ignore_errors=True)
 
     print("")

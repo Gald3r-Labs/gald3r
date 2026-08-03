@@ -1,5 +1,8 @@
-﻿---
+---
+description: 'Initialize or reinitialize the gald3r v3 task-management system in this project via g-skl-setup.'
+argument-hint: '[--autonomy full]'
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
+execution_tier: orchestration
 ---
 Initialize the gald3r system: $ARGUMENTS
 
@@ -19,31 +22,37 @@ Before doing anything else, detect whether this project has a `.gald3r_sys/` fol
 
 ### Case A: `.gald3r_sys/` EXISTS (gald3r already installed)
 ```powershell
-python setup_gald3r_project.py --platform auto
+gald3r platform install <platform> --into . --generated
 ```
-This regenerates the current platform's dirs from `.gald3r_sys/`. Proceed to Step 1.
+This regenerates the current platform's dirs straight from the neutral component set embedded
+in the `gald3r` engine binary (self-contained, T177 — no `.gald3r_sys/` checkout needed to read
+from). Proceed to Step 1.
 
 ### Case B: `.gald3r_sys/` is MISSING (first-time setup / fresh clone)
-The user needs to run the installer from their `gald3r_template` download:
+The user needs the `gald3r` engine binary, then the self-contained platform installer:
 ```
-1. Locate your downloaded gald3r_template folder
-2. Run: .\setup_gald3r_project.ps1
-   (interactive installer — asks for target path and platform selection)
+1. Install the gald3r engine if not already present: run g-install-agent
+   (/g-install-agent in Claude Code, @g-install-agent in Cursor), or verify with
+   `gald3r --version`
+2. Run: gald3r platform install <platform> --into <target_path> --generated
+   (writes that platform's IDE dirs straight from the engine's embedded neutral
+   component set — asks/accepts an explicit platform id, e.g. cursor, claude)
 3. START A NEW SESSION after installation completes so skills/rules load
 4. Then re-run @g-setup (or /g-setup) in the new session
 ```
 
-If no template was downloaded, advise the user:
-> "To set up gald3r for the first time, clone or download the gald3r template from
-> https://github.com/wrc3/<template_adv> (or _full, or _slim) and run
-> setup_gald3r_project.ps1 from that folder, pointing it at your project directory.
+If the `gald3r` engine binary is not yet installed, advise the user:
+> "To set up gald3r for the first time, install the gald3r engine binary via
+> g-install-agent, then run `gald3r platform install <platform> --into <target_path>
+> --generated` from your project directory (no template download needed — the
+> component set ships inside the engine binary).
 > Then start a new IDE session so the skills and rules load into context."
 
 ### Determining which platform to install
 Ask the user which IDE they primarily use if it cannot be auto-detected:
 1. **Cursor IDE** → `cursor`
 2. **Claude Code** (CLI) → `claude`
-3. **Gemini / Antigravity** → `agent`
+3. **Antigravity** → `antigravity` (T454: `gemini` platform retired 2026-07-23, EOL 2026-06-18)
 4. **OpenAI Codex CLI** → `codex`
 5. **OpenCode (sst.dev)** → `opencode`
 6. **GitHub Copilot** → `copilot`
@@ -122,7 +131,8 @@ vault_location={LOCAL}
 
 Ask **only** if the project may publish to a public repo (multi-tier graduation, or the user
 wants a public sibling). Skip silently otherwise — the safe default needs no prompt. Also offered
-on `@g-setup --upgrade-existing`.
+on `@g-setup --autonomy full` (the file top-up path for an already-scaffolded project — see
+`--upgrade-existing` deprecation, T364).
 
 ```
 Public publish: how should git history be handled when you publish to a public repo?

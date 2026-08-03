@@ -120,7 +120,9 @@ def get_note_date(path: Path) -> datetime.datetime:
         raw = path.read_text(encoding="utf-8-sig", errors="replace")
         fm = re.match(r"^---\r?\n(.+?)\r?\n---", raw, re.DOTALL)
         if fm:
-            dm = re.search(r"^date:\s*(.+)$", fm.group(1), re.MULTILINE)
+            # [ \t] not \s -- BUG-486/T510 class: \s crosses newlines, so a
+            # blank date: would capture the NEXT frontmatter line's text.
+            dm = re.search(r"^date:[ \t]*(.+)$", fm.group(1), re.MULTILINE)
             if dm:
                 parsed = _parse_date_loose(dm.group(1))
                 if parsed is not None:

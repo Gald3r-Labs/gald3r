@@ -7,6 +7,23 @@ C-026 worktree TASKS.md writes (BLOCK), gald3r task sync drift (WARN),
 protected files per g-rl-02 (BLOCK), and bare stubs/TODOs without the
 TODO[TASK-X->TASK-Y] annotation per g-rl-34 (BLOCK).
 
+BUG-401: the "protected files" gate is reconciled with g-rl-02's
+per-repo tracking policy. `.env`/`.mcp.json` (genuine secrets/machine-local
+credentials) remain UNCONDITIONALLY blocked. Coordination-directory paths
+(`.gald3r/`, `.claude/`, `AGENTS.md`, `CLAUDE.md`, etc.) only block when
+THIS repo's own `.gitignore` says the path is ignored yet it was staged
+anyway (drift, e.g. `git add -f`) -- a controller/WPAC repo that
+intentionally tracks `.gald3r/`/`CLAUDE.md` is never blocked for doing so.
+See `git_check_ignore()` and the "PROTECTED FILES ALLOWLIST" section below.
+
+BUG-608: the secrets check scans only genuinely ADDED diff CONTENT lines
+(`diff_added_content_lines()`), never unchanged unified-diff CONTEXT
+lines that merely sit inside a hunk's surrounding context because an
+unrelated nearby line changed, and never removed ('-') lines either
+(deleting a secret-shaped line is not a new leak). Previously any
+pre-existing, unmodified secret-shaped string within 3 lines of a real
+change falsely BLOCKed the commit.
+
 Exit 1 = BLOCK (commit halted). Exit 0 = ALLOW or WARN (commit proceeds).
 GALD3R_HOOK_BYPASS=1 downgrades BLOCK to WARN (T600 §3.3 override path).
 -BlockOnFailure is accepted but is a no-op because the exit-code semantics
@@ -58,7 +75,33 @@ DEFAULT_SECRET_PATTERNS = [
     r"-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----",
 ]
 
-PROTECTED_PATTERNS = [
+# BUG-597: narrow, explicit opt-out for individual diff lines that intentionally
+# construct fake secret-shaped fixtures to test detection/redaction logic itself.
+# Per-line and marker-based (not path-based) so a real secret pasted anywhere,
+# including under tests/, still blocks -- only a line carrying this exact marker
+# comment is excluded from the scan.
+SECRET_SCAN_ALLOW_MARKER = "secret-scan: allow"
+
+# Unconditional -- always forbidden regardless of per-repo tracking policy.
+# These are genuine secrets / machine-local credentials per g-rl-02's
+# "Protected Files" table ("the one category that is always forbidden,
+# regardless of repo type").
+UNCONDITIONAL_PROTECTED_PATTERNS = [
+    r"^\.env(\..*)?$",
+    r"^\.mcp\.json$",
+]
+
+# Coordination-directory patterns -- BUG-401: g-rl-02 now documents that
+# tracked-vs-ignored for these is PER-REPO POLICY, not a fixed always-block
+# list ("Before treating a path as protected, check what the repo actually
+# does: `git check-ignore -v <path>` ... If git status shows an
+# intentionally-tracked coordination path as staged, that's expected --
+# do not block the commit."). A controller/WPAC repo (this repo included)
+# intentionally TRACKS .gald3r/, AGENTS.md, CLAUDE.md, etc. These patterns
+# only block when THIS repo's own .gitignore excludes the path yet it was
+# staged anyway (drift -- e.g. `git add -f`); see git_check_ignore() and
+# the "PROTECTED FILES ALLOWLIST" section below for the reconciliation.
+COORDINATION_DIR_PATTERNS = [
     r"^\.agent/",
     r"^\.claude/",
     r"^\.codex/",
@@ -73,9 +116,12 @@ PROTECTED_PATTERNS = [
     r"^CLAUDE\.md$",
     r"^GEMINI\.md$",
     r"^GUARDRAILS\.md$",
-    r"^\.env(\..*)?$",
-    r"^\.mcp\.json$",
 ]
+
+# Back-compat combined view (BUG-401 predecessor shape) -- not used for the
+# BLOCK decision itself anymore (see section 4 below), kept only in case any
+# external tooling imports this module's PROTECTED_PATTERNS name directly.
+PROTECTED_PATTERNS = UNCONDITIONAL_PROTECTED_PATTERNS + COORDINATION_DIR_PATTERNS
 
 STUB_BLOCK_PATTERNS = [
     r"^\+\s*(#|//|--)\s*(TODO|FIXME)\b",
@@ -100,6 +146,106 @@ def run_git(args: list) -> str:
         return proc.stdout or ""
     except (OSError, subprocess.SubprocessError):
         return ""
+
+
+def git_check_ignore(paths: list) -> set:
+    """Return the subset of `paths` THIS repo's own .gitignore excludes.
+
+    BUG-401: reconciles the "PROTECTED FILES ALLOWLIST" coordination-dir
+    patterns with g-rl-02's per-repo tracking policy -- a path only counts
+    as drift (force-staged despite being ignored) when git itself says the
+    path is ignored; an intentionally-tracked path (this repo's own
+    `.gald3r/`, `CLAUDE.md`, etc.) must never be reported here.
+
+    Uses a single `git check-ignore --no-index --stdin` call (same
+    subprocess style as run_git() above) so the whole staged set is
+    classified in one shot instead of one subprocess per candidate path.
+    `--no-index` is required: by default `git check-ignore` consults the
+    index and reports an ALREADY-TRACKED-OR-STAGED path as "not ignored"
+    even when a .gitignore rule matches it (verified against real git
+    2.52 behavior -- staging a path with `git add -f` flips
+    `check-ignore`'s answer from ignored to not-ignored unless `--no-index`
+    is passed) -- exactly the force-staged-drift case this function exists
+    to catch, so the default (index-aware) mode would silently defeat the
+    BUG-401 fix. `git check-ignore` exits 0 when at least one supplied path
+    is ignored, 1 when none are, and 128 on a fatal error (e.g. not inside a
+    git work tree) -- only exit codes 0 and 1 are meaningful pass/fail
+    signals; anything else (including a process launch failure) fails OPEN
+    (returns no ignored paths) rather than mis-blocking every coordination-
+    dir commit in a repo that deliberately tracks them.
+    """
+    if not paths:
+        return set()
+    try:
+        proc = subprocess.run(
+            ["git", "check-ignore", "--no-index", "--stdin"],
+            input="\n".join(paths),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+    except (OSError, subprocess.SubprocessError):
+        return set()
+    if proc.returncode not in (0, 1):
+        return set()
+    # stdout lists exactly the paths (as supplied) that ARE ignored, one per line.
+    return {ln for ln in proc.stdout.splitlines() if ln}
+
+
+def diff_added_content_lines(diff_lines: list) -> list:
+    """Return only genuinely ADDED CONTENT lines from unified diff output.
+
+    BUG-608: the secrets check previously scanned every line of
+    `git diff --cached` output verbatim, including unchanged unified-diff
+    CONTEXT lines (the default 3-line hunk context git shows around each
+    change). A pre-existing, unmodified secret-shaped string sitting a few
+    lines away from a real change would get swept into a hunk's context and
+    falsely BLOCK the commit even though nothing about that line was
+    touched.
+
+    Only ADDED ('+') lines are scanned -- not removed ('-') lines. Deleting
+    a secret-shaped line is not a new leak entering the repository (it is
+    still recoverable from history either way), so flagging it has no
+    security benefit and only produces the same kind of false-positive
+    friction this bug is about, on the departing side of an edit instead of
+    the context side. Unchanged context lines and removed lines are both
+    pre-existing/departing content, never new material.
+
+    Per the unified diff grammar, every line between a hunk header
+    (`@@ ... @@`) and the next hunk/file boundary begins with exactly one
+    marker character: ' ' (context, unchanged), '+' (added), '-' (removed),
+    or '\\' (a "No newline at end of file" marker, not content). The
+    per-file `--- a/path` / `+++ b/path` headers that precede the FIRST
+    hunk of each file are NOT content and must not be scanned even though
+    `+++ b/path` begins with '+' characters.
+
+    Naive prefix matching (e.g. `not line.startswith("+++")`) is not fully
+    safe here: a genuinely ADDED line whose own content happens to start
+    with "++ " would collide with the header spelling and be silently
+    dropped -- exactly the kind of false-negative regression BUG-608 warned
+    against. Tracking whether we are currently inside a hunk (seen `@@` for
+    the current file, not yet a new `diff --git` file boundary) resolves
+    the ambiguity precisely instead of guessing from the line's spelling.
+    """
+    added_lines = []
+    in_hunk = False
+    for ln in diff_lines:
+        if ln.startswith("diff --git "):
+            in_hunk = False
+            continue
+        if ln.startswith("@@"):
+            in_hunk = True
+            continue
+        if not in_hunk:
+            # Lines before the first hunk of a file (diff --git, index,
+            # mode, --- a/path, +++ b/path) are headers, never content.
+            continue
+        if ln.startswith("+"):
+            added_lines.append(ln[1:])
+        # '-' (removed), ' ' (context), and '\' (no-newline marker) are
+        # intentionally excluded -- none of them are new content.
+    return added_lines
 
 
 def load_secret_patterns(repo_root: str) -> list:
@@ -146,47 +292,19 @@ def load_secret_patterns(repo_root: str) -> list:
     return list(DEFAULT_SECRET_PATTERNS)
 
 
-def load_engine(repo_root: str):
-    """Return the gald3r `Gald3r` class if the engine is importable, else None.
-
-    Tries the ambient import first, then the installed engine source at
-    `<repo>/.gald3r_sys/engine/src`. Returns None (so the validation gate degrades to a
-    skip/WARN, never blocking) when the engine or its deps aren't available."""
-    try:
-        from gald3r.core import Gald3r  # type: ignore
-        return Gald3r
-    except Exception:
-        pass
-    src = Path(repo_root) / ".gald3r_sys" / "engine" / "src"
-    if src.is_dir():
-        sys.path.insert(0, str(src))
-        try:
-            from gald3r.core import Gald3r  # type: ignore
-            return Gald3r
-        except Exception:
-            return None
-    return None
-
-
 def resolve_engine_cmd(repo_root: str):
-    """Resolve the gald3r engine command prefix via the zero-IP resolver (A6/T1663).
+    """Resolve the gald3r engine command prefix (P3 Tier-0, T179/T191 — A6/T1663).
 
     The org policy CHECK op was absorbed from g-skl-policy's `policy_engine.py`
-    into the `gald3r policy check` verb. Returns the command prefix
-    (e.g. ``["gald3r"]``) or ``None`` (skip, never block) when the resolver is
-    not shipped or no engine can be found."""
-    resolver = Path(repo_root) / ".gald3r_sys" / "scripts" / "gald3r_bin.py"
-    if not resolver.is_file():
-        return None
-    try:
-        spec = importlib.util.spec_from_file_location("gald3r_bin_precommit", str(resolver))
-        if spec and spec.loader:
-            mod = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(mod)  # type: ignore[union-attr]
-            return mod.resolve_engine_cmd(Path(repo_root))
-    except Exception:
-        return None
-    return None
+    into the `gald3r policy check` verb. Delegates to the shared
+    `_hook_common.resolve_engine_argv` (env var -> PATH -> legacy loose
+    resolver -> loud degrade) so PATH resolution works even when the loose
+    `.gald3r_sys/scripts/gald3r_bin.py` IP script is not shipped. Returns the
+    command prefix (e.g. ``["gald3r"]``) or ``None`` (skip, never block)
+    when no engine can be found."""
+    return _hook_common.resolve_engine_argv(
+        Path(repo_root), hook_name="g-hk-pre-commit"
+    )
 
 
 def main(argv: list) -> int:
@@ -213,6 +331,10 @@ def main(argv: list) -> int:
         repo_root = str((Path(__file__).resolve().parent / ".." / "..").resolve())
 
     secret_patterns = load_secret_patterns(repo_root)
+    # Resolved once, shared by section 6 (.gald3r VALIDATION GATE) and section 7 (org
+    # policy) below -- both shell out to the gald3r engine via the same PATH-first
+    # resolver (T292/T299: neither section imports the engine's Python package directly).
+    engine_cmd = resolve_engine_cmd(repo_root)
 
     block = False
     warns = []
@@ -224,13 +346,25 @@ def main(argv: list) -> int:
     # --- 1. SECRETS CHECK (BLOCK) ---
     diff = run_git(["diff", "--cached"])
     diff_lines = re.split(r"\r?\n", diff) if diff else []
+    # BUG-608: scan only genuinely ADDED content lines, never bare
+    # unified-diff CONTEXT lines that merely sit near an unrelated change,
+    # and never removed ('-') lines either (deleting a secret-shaped line
+    # is not a new leak -- see diff_added_content_lines()'s docstring).
+    # diff_added_content_lines() tracks hunk boundaries explicitly rather
+    # than guessing from a line's own spelling (BUG-608), which also fixes
+    # a false-negative the original BUG-597 naive '+'/'+++' prefix check
+    # had: a genuinely added line whose content itself starts with "++"
+    # (e.g. "++counter;") would otherwise collide with the "+++ b/path"
+    # file-header spelling and be silently skipped.
+    added_content_lines = diff_added_content_lines(diff_lines)
+    scannable_lines = [ln for ln in added_content_lines if SECRET_SCAN_ALLOW_MARKER not in ln]
     secret_hits = []
     for pat in secret_patterns:
         try:
             rx = re.compile(pat, re.IGNORECASE)  # Select-String is case-insensitive
         except re.error:
             continue
-        hits = ["  " + ln.strip() for ln in diff_lines if rx.search(ln)]
+        hits = ["  " + ln.strip() for ln in scannable_lines if rx.search(ln)]
         if hits:
             secret_hits.extend(hits[:3])
 
@@ -282,14 +416,14 @@ def main(argv: list) -> int:
     ]
     if tasks_md_staged_check:
         worktree_list = run_git(["worktree", "list"]).splitlines()
-        primary_worktree = next(
-            (
-                ln
-                for ln in worktree_list
-                if re.search(r"\[HEAD\]|\[main\]|\[dev\]", ln, re.IGNORECASE)
-            ),
-            None,
-        )
+        # BUG-538: `git worktree list` always lists the primary/main working
+        # tree FIRST, followed by any linked worktrees (see git-worktree(1))
+        # -- anchor on that ordering guarantee instead of pattern-matching a
+        # branch name. The prior `[HEAD]|[main]|[dev]` search silently
+        # failed to identify the primary worktree whenever it was checked
+        # out on any other branch name, which defaulted `primary_norm` to
+        # `cwd_norm` and disabled the guard entirely for that case.
+        primary_worktree = worktree_list[0] if worktree_list else None
         cwd_norm = str(Path.cwd().resolve()).rstrip("\\/")
         primary_norm = (
             re.split(r"\s+", primary_worktree)[0].rstrip("\\/")
@@ -297,13 +431,41 @@ def main(argv: list) -> int:
             else cwd_norm
         )
 
+        # BUG-532: `git worktree list` output always uses forward slashes
+        # while Path.cwd().resolve() is backslash-separated on Windows, so
+        # a raw casefold() equality comparison could NEVER match even when
+        # the commit genuinely runs from the primary checkout -- every
+        # coordinator reconciliation commit from the real primary checkout
+        # was falsely BLOCKED whenever any worktrees were registered.
+        # Compare separator-normalized forms for the primary-checkout
+        # equality check so it is OS-agnostic.
+        cwd_slash = cwd_norm.replace("\\", "/")
+        primary_slash = primary_norm.replace("\\", "/")
+
+        # BUG-538: the old fallback searched for a cwd match against ANY
+        # bracketed line in `worktree_list` -- but EVERY worktree entry
+        # (including genuine bucket/non-primary worktrees) carries its own
+        # `[branch]` bracket, so a bucket worktree's cwd matched its OWN
+        # entry just as readily as the primary checkout matched its own
+        # entry. That silently defeated the block for genuine
+        # non-primary-worktree commits on any platform/path combination
+        # where separators happened to align between `cwd_norm` and the
+        # `git worktree list` text (e.g. non-Windows, where both are
+        # already forward-slash). Restrict the fallback to the SINGLE
+        # primary-worktree line (`worktree_list[0]`) so it can only ever
+        # confirm "cwd IS the primary checkout", never "cwd is *a*
+        # worktree" (which is trivially true for every worktree, primary
+        # or not).
+        cwd_is_primary_line = bool(
+            primary_worktree
+            and "[" in primary_worktree
+            and re.search(re.escape(cwd_norm), primary_worktree, re.IGNORECASE)
+        )
+
         in_non_primary_worktree = (
             len(worktree_list) > 1
-            and cwd_norm.casefold() != primary_norm.casefold()
-            and not any(
-                re.search(re.escape(cwd_norm), ln, re.IGNORECASE) and "[" in ln
-                for ln in worktree_list
-            )
+            and cwd_slash.casefold() != primary_slash.casefold()
+            and not cwd_is_primary_line
         )
 
         if in_non_primary_worktree:
@@ -344,14 +506,37 @@ def main(argv: list) -> int:
         print("gald3r sync: SKIP (no .gald3r/ in this repo)")
 
     # --- 4. PROTECTED FILES ALLOWLIST (BLOCK) ---
-    # Enforces g-rl-02 § "Protected Files" — never commit these even by mistake.
+    # Enforces g-rl-02 § "Protected Files". BUG-401: two classes now --
+    # UNCONDITIONAL (.env/.mcp.json — genuine secrets, always blocked) and
+    # COORDINATION_DIR_PATTERNS (.gald3r/, .claude/, CLAUDE.md, etc. — only
+    # blocked when git_check_ignore() confirms THIS repo's own .gitignore
+    # excludes the path, i.e. real drift, not intentional per-repo tracking).
     protected_hits = []
+    coordination_candidates = []  # list of (staged_path, rel_path, pattern)
     for f in staged_files:
         rel = f.replace("\\", "/")
-        for pat in PROTECTED_PATTERNS:
+        matched_unconditional = False
+        for pat in UNCONDITIONAL_PROTECTED_PATTERNS:
             if re.search(pat, rel, re.IGNORECASE):
                 protected_hits.append(f"  {rel}  (matches /{pat}/)")
+                matched_unconditional = True
                 break
+        if matched_unconditional:
+            continue
+        for pat in COORDINATION_DIR_PATTERNS:
+            if re.search(pat, rel, re.IGNORECASE):
+                coordination_candidates.append((f, rel, pat))
+                break
+
+    if coordination_candidates:
+        ignored = git_check_ignore([f for f, _rel, _pat in coordination_candidates])
+        for f, rel, pat in coordination_candidates:
+            if f in ignored or rel in ignored:
+                protected_hits.append(
+                    f"  {rel}  (matches /{pat}/ AND this repo's .gitignore "
+                    f"excludes it -- force-staged drift)"
+                )
+
     if protected_hits:
         print(
             f"Protected files: BLOCK — {len(protected_hits)} staged path(s) match the Protected Files allowlist:"
@@ -410,29 +595,43 @@ def main(argv: list) -> int:
     else:
         print("Stub annotation: PASS")
 
-    # --- 6. .gald3r VALIDATION GATE (BLOCK) — T520 ---
-    # Run the deterministic engine validator on staged task/bug files: schema, status
-    # vocabulary, and folder placement. The engine ENFORCES what g-rl-34/35/38 advise.
+    # --- 6. .gald3r VALIDATION GATE (BLOCK) — T520/T299 ---
+    # Run the native `gald3r validate` verb (T299 -- replaces the earlier direct
+    # `gald3r.core.Gald3r` engine import, which made this hook import the vendored
+    # .gald3r_sys/engine package the T292 retirement plan deletes) on staged task/bug
+    # files: schema, status vocabulary, and folder placement. --strict additionally
+    # enforces required-field presence, matching the old engine-backed gate's always-on
+    # behavior (its `gald3r.schema.task`/`bugs._validate` checked required fields
+    # unconditionally, with no opt-in flag). Shells out via the same PATH-first
+    # `engine_cmd` resolver section 7 (below) uses -- ENFORCES what g-rl-34/35/38 advise.
     staged_gald3r = [
         f for f in staged_files
         if re.search(r"\.gald3r[/\\](tasks|bugs)[/\\].*\.md$", f.replace("\\", "/"), re.IGNORECASE)
     ]
     if staged_gald3r:
-        Gald3r = load_engine(repo_root)
-        if Gald3r is None:
-            warns.append("WARN: staged .gald3r task/bug files but the engine isn't importable — validation skipped.")
-            print("validate gate: SKIP (engine not importable)")
+        if engine_cmd is None:
+            warns.append("WARN: staged .gald3r task/bug files but the gald3r engine isn't resolvable — validation skipped.")
+            print("validate gate: SKIP (engine not resolvable)")
         else:
             try:
-                g = Gald3r(root=repo_root)
                 abs_paths = [str((Path(repo_root) / f)) for f in staged_gald3r]
-                rep = g.validate.run(paths=abs_paths)
+                proc = subprocess.run(
+                    [*engine_cmd, "validate", "--json", "--strict", "--root", repo_root, *abs_paths],
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                )
+                rep = json.loads(proc.stdout.strip() or "{}")
+                if "ok" not in rep:
+                    raise ValueError(f"unexpected `gald3r validate` output (exit {proc.returncode})")
                 if rep["ok"]:
-                    print(f"validate gate: PASS ({rep['checked']} staged file(s))")
+                    print(f"validate gate: PASS ({rep.get('checked', 0)} staged file(s))")
                 else:
-                    print(f"validate gate: BLOCK — {rep['errors']} error(s), "
-                          f"{rep['fixable']} fixable in staged .gald3r files:")
-                    shown = [v for v in rep["violations"] if v["kind"] in ("error", "fixable")]
+                    print(f"validate gate: BLOCK — {rep.get('errors', 0)} error(s), "
+                          f"{rep.get('fixable', 0)} fixable in staged .gald3r files:")
+                    shown = [
+                        v for v in rep.get("violations", []) if v.get("kind") in ("error", "fixable")
+                    ]
                     for v in shown[:10]:
                         print(f"  [{v['kind']}] {v['file']}: {v['message']}")
                     if len(shown) > 10:
@@ -447,7 +646,6 @@ def main(argv: list) -> int:
     # Deterministic CHECK op against the active org policy bundle (g-skl-policy).
     # No-ops on free/retail installs (no org tier / no rules) — never fixed inline
     # unless the fix is 1-3 lines and zero-risk per g-rl-38; enforcement is by code.
-    engine_cmd = resolve_engine_cmd(repo_root)
     if engine_cmd is None:
         print("org policy: SKIP (gald3r engine not installed)")
     else:

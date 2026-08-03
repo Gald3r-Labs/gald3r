@@ -1,5 +1,7 @@
 ---
+description: 'Run tiered L1-L4 .gald3r/ health diagnostics and heals via the g-medic skill.'
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
+execution_tier: guarded_prompt
 ---
 
 ### WPAC Inbox Health Gate
@@ -10,7 +12,7 @@ If WPAC is configured, run the re-callable WPAC inbox check without `-BlockOnCon
 
 ```powershell
 $hook = @( ".cursor\hooks\g-hk-wpac-inbox-check.py", ".claude\hooks\g-hk-wpac-inbox-check.py", ".agent\hooks\g-hk-wpac-inbox-check.py", ".codex\hooks\g-hk-wpac-inbox-check.py", ".opencode\hooks\g-hk-wpac-inbox-check.py" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
-if ($hook) { powershell -NoProfile -ExecutionPolicy Bypass -File $hook -ProjectRoot . }
+if ($hook) { python $hook -ProjectRoot . }
 ```
 
 If the output reports `INBOX CONFLICT GATE`, finish L1 triage and include a health severity/score impact, then stop before L2-L4 planning/apply work, task claiming, implementation, or verification. Require `@g-wpac-read` before continuing. Non-conflict requests, broadcasts, and syncs are advisory and should be surfaced in the medic summary. If WPAC is not configured, skip this gate and report `WPAC: not configured / skipped`.

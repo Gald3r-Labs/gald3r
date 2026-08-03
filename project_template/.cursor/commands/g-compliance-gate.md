@@ -1,7 +1,9 @@
-﻿---
-subsystem_memberships: [SECURITY_AND_COMPLIANCE]
 ---
-Activate the g-skl-compliance skill and run a GATE operation: $ARGUMENTS
+description: 'Return a PASS/WARN/FAIL exit-code compliance verdict from the latest license/dependency scan report.'
+subsystem_memberships: [SECURITY_AND_COMPLIANCE]
+execution_tier: orchestration
+---
+Activate the g-skl-compliance skill and run a GATE operation.
 
 ## What This Command Does
 

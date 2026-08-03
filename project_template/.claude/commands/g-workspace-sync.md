@@ -1,5 +1,8 @@
-﻿---
+---
+description: 'Preview a Workspace-Control manifest sync dry-run via g-skl-workspace SYNC PLAN (alias for g-wrkspc-sync).'
+argument-hint: '[--dry-run]'
 subsystem_memberships: [WORKSPACE_COORDINATION]
+execution_tier: orchestration
 ---
 Compatibility Alias for `@g-wrkspc-sync`: $ARGUMENTS
 

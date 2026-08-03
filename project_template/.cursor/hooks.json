@@ -1,17 +1,9 @@
 {
   "version": 1,
-  "_doc": {
-    "hook_md_contract": "T1171: Each hook script ('.ps1') has a companion '.md' self-description file at the same path (e.g. '.cursor/hooks/g-hk-session-start.md' for '.cursor/hooks/g-hk-session-start.py'). The hook.md uses the 5-section template (# Hook / ## Fires On / ## What It Does / ## Side Effects / ## Related Tasks) defined by '@g-hook-create'. The runtime contract is: when a hook fires under 'preToolUse' (or any other event), the harness SHOULD read the matching hook.md and inject its content as 'additional_context' so the agent knows what the hook just did or why a tool call was blocked. See 'skills/g-skl-platform-cursor/SKILL.md' §3a and §11.",
-    "hook_md_authoring": "Use '@g-hook-create <hook-name> <event>' to scaffold a new pair atomically. See 'commands/g-hook-create.md'.",
-    "hook_md_source_of_truth": "Source the human-facing hook description from the 'hook.md' file; this 'hooks.json' is for wiring only. Do not duplicate the description here.",
-    "gald3r_lifecycle_events": "T1055/T1624: In addition to the harness-native events wired above ('sessionStart', 'stop', 'beforeShellExecution', 'preToolUse'), gald3r defines two gald3r-internal lifecycle events: 'pre_skill' and 'post_skill'. Neither Cursor nor Claude Code exposes a native skill-boundary event, so these are dispatched by the gald3r skill/command runner (or fired manually) and are NOT auto-wired here. Skill events carry 'skill_name', 'skill_path', 'timestamp'. Reference example hooks: 'g-hk-pre-skill-timing', 'g-hk-post-skill-timing' (each with a companion hook.md). The former 'pre_session'/'post_session' internal event names were RETIRED by T1624 (WS-A-1, decision D-8): the session-trace hooks ('g-hk-pre-session-trace', 'g-hk-post-session-trace') now fire on the CANONICAL session-start/stop events — wired under 'sessionStart'/'stop' above and in 'g_hk_core.py' CONCERN_CHAIN. See 'commands/g-create-hook.md' for the full event list and 'skills/g-skl-platform-cursor/SKILL.md' Section 3a.",
-    "t424_canonical_core": "T424: gald3r is consolidating its ~18 Cursor-native events to a canonical reduced set of 6 ('session-start','session-end','user-prompt-submit','tool-start','tool-end','stop') with ONE shared Python core. The core is 'g_hk_core.py'; thin per-platform entrypoints 'g-hk-on-<event>.py' delegate to 'g_hk_core.dispatch(<event>)'. The new 'postToolUse' (-> g-hk-on-tool-end) and 'beforeSubmitPrompt' (-> g-hk-on-user-prompt-submit) entries below are the first canonical-event wirings in Cursor. The pre-existing 'sessionStart'/'stop'/'beforeShellExecution'/'preToolUse' per-concern entries are retained as-is during the rebuild; re-pointing them at the canonical entrypoints is the AC4 fan-out follow-up. See '.cursor/hooks/README.md' and '.gald3r/tasks/.../task424'."
-  },
   "hooks": {
     "sessionStart": [
       {
-        "command": "python .cursor/hooks/g-hk-session-start.py",
-        "_hook_md": ".cursor/hooks/g-hk-session-start.md"
+        "command": "python .cursor/hooks/g-hk-session-start.py"
       },
       {
         "command": "python .cursor/hooks/g-hk-pre-session-trace.py",
@@ -32,16 +24,13 @@
     ],
     "stop": [
       {
-        "command": "python .cursor/hooks/g-hk-agent-complete.py",
-        "_hook_md": ".cursor/hooks/g-hk-agent-complete.md"
+        "command": "python .cursor/hooks/g-hk-agent-complete.py"
       },
       {
-        "command": "python .cursor/hooks/g-hk-nightly-learn.py",
-        "_hook_md": ".cursor/hooks/g-hk-nightly-learn.md"
+        "command": "python .cursor/hooks/g-hk-nightly-learn.py"
       },
       {
-        "command": "python .cursor/hooks/g-hk-session-end.py",
-        "_hook_md": ".cursor/hooks/g-hk-session-end.md"
+        "command": "python .cursor/hooks/g-hk-session-end.py"
       },
       {
         "command": "python .cursor/hooks/g-hk-encoding-normalize.py -Quiet",
@@ -50,6 +39,10 @@
       {
         "command": "python .cursor/hooks/g-hk-ggo-stop-detect.py",
         "_hook_md": ".cursor/hooks/g-hk-ggo-stop-detect.md"
+      },
+      {
+        "command": "python .cursor/hooks/g-hk-goal-stop-detect.py",
+        "_hook_md": ".cursor/hooks/g-hk-goal-stop-detect.md"
       },
       {
         "command": "python .cursor/hooks/g-hk-post-session-trace.py",
@@ -82,29 +75,25 @@
     ],
     "beforeShellExecution": [
       {
-        "command": "python .cursor/hooks/g-hk-validate-shell.py",
-        "_hook_md": ".cursor/hooks/g-hk-validate-shell.md"
+        "command": "python .cursor/hooks/g-hk-validate-shell.py"
       }
     ],
     "preToolUse": [
       {
-        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Patch|ApplyPatch|str_replace_editor",
         "command": "python .cursor/hooks/g-hk-pre-tool-call-gald3r-guard.py",
-        "_hook_md": ".cursor/hooks/g-hk-pre-tool-call-gald3r-guard.md"
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Patch|ApplyPatch|str_replace_editor"
       },
       {
-        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Patch|ApplyPatch|str_replace_editor",
         "command": "python .cursor/hooks/g-hk-pre-tool-call-prd-freeze.py",
-        "_hook_md": ".cursor/hooks/g-hk-pre-tool-call-prd-freeze.md"
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Patch|ApplyPatch|str_replace_editor"
       },
       {
-        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Patch|ApplyPatch|str_replace_editor",
         "command": "python .cursor/hooks/g-hk-pre-tool-call-member-gald3r-guard.py",
-        "_hook_md": ".cursor/hooks/g-hk-pre-tool-call-member-gald3r-guard.md"
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Patch|ApplyPatch|str_replace_editor"
       },
       {
-        "matcher": "Bash|Shell|Terminal|run_terminal_cmd",
         "command": "python .cursor/hooks/g-hk-pre-tool-call.py",
+        "matcher": "Bash|Shell|Terminal|run_terminal_cmd",
         "_hook_md": ".cursor/hooks/g-hk-pre-tool-call.md"
       }
     ],
