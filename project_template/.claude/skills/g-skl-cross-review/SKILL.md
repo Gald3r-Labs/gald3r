@@ -1,4 +1,6 @@
 ---
+name: g-skl-cross-review
+description: Cross-vendor code review — a reviewer on a DIFFERENT LLM vendor judges only the diff + acceptance contract; blocking findings re-dispatch the implementer.
 subsystem_memberships: [AGENT_ORCHESTRATION]
 skill_trust_level: core
 ---
