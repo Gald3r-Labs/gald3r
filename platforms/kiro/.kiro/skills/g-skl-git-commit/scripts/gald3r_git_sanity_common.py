@@ -32,14 +32,26 @@ if _g3ct_env not in ("", "0", "off", "false", "no") or _g3ct_os.path.isfile(
 from typing import List
 
 # Mirrors Get-Gald3rSecretPatterns in gald3r_git_sanity_common.ps1 exactly.
+#
+# BUG-658: the four `<field>=` patterns used to be `\S+`-valued, which matched
+# EVERY Python keyword argument (`api_key=args.api_key`), test fixture, and
+# documented placeholder (`api_key=local`) -- blocking legitimate commits with
+# no exemption mechanism. They now require the VALUE to look like an actual
+# hand-typed credential: an optionally-quoted contiguous token of 16+
+# [A-Za-z0-9_\-] characters. Variable references (`args.api_key` -- the dot
+# breaks the token class inside 16 chars), short placeholders (`local`,
+# `ollama`), and expressions stop matching; real keys (sk-..., hex blobs,
+# base64-ish tokens) still do. The standalone prefix patterns (sk-/Bearer/
+# AKIA/BEGIN PRIVATE KEY) are untouched and still catch bare secrets outside
+# assignments.
 SECRET_PATTERNS: List[str] = [
     r"sk-[a-zA-Z0-9]{20,}",
     r"Bearer\s+[a-zA-Z0-9._\-]{20,}",
     r"AKIA[A-Z0-9]{16}",
-    r"password\s*=\s*\S+",
-    r"api_key\s*=\s*\S+",
-    r"secret_key\s*=\s*\S+",
-    r"private_key\s*=\s*\S+",
+    r"password\s*=\s*[\"']?[A-Za-z0-9_\-]{16,}",
+    r"api_key\s*=\s*[\"']?[A-Za-z0-9_\-]{16,}",
+    r"secret_key\s*=\s*[\"']?[A-Za-z0-9_\-]{16,}",
+    r"private_key\s*=\s*[\"']?[A-Za-z0-9_\-]{16,}",
     r"-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----",
 ]
 

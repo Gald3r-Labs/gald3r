@@ -1,9 +1,20 @@
-﻿---
+---
 name: g-skl-recon-docs
 description: Documentation URL ingestion with periodic revisit. Crawls URLs into research/platforms/, tracks staleness per _index.yaml, surfaces stale count at session start. Depends on g-skl-crawl (crawl4ai).
 token_budget: high
 subsystem_memberships: [VAULT_AND_RESEARCH]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 # g-recon-docs
 
 **Scripts**: `.cursor/skills/g-skl-ingest-docs/scripts/`
@@ -47,7 +58,7 @@ python .cursor/skills/g-skl-ingest-docs/scripts/ingest_doc.py \
 3. Write vault note to `research/platforms/{slugified-name}.md`
 4. Update / create `research/platforms/_index.yaml` entry: `{url, name, last_fetched, refresh_days, status}`
 5. Append to `vault/log.md`
-6. After **REFRESH_STALE** completes any successful fetches, `refresh_stale_docs.py` runs `scripts/gen_vault_moc.py --auto` when available (MOC / graph hubs).
+6. After **REFRESH_STALE** completes any successful fetches, `refresh_stale_docs.py` runs `gen_vault_moc.py --auto` when available (MOC / graph hubs). The script is resolved from the sibling `g-skl-vault/scripts/gen_vault_moc.py` (BUG-126: previously only a parent-of-parent `scripts/` walk was attempted, so the rebuild silently skipped).
 
 ---
 

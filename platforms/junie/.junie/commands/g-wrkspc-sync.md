@@ -1,5 +1,8 @@
-﻿---
+---
+description: 'Dry-run plan a Workspace-Control member alignment check via g-skl-workspace SYNC_PLAN'
+argument-hint: '[--dry-run]'
 subsystem_memberships: [WORKSPACE_COORDINATION]
+execution_tier: orchestration
 ---
 Plan a Workspace-Control sync dry-run: $ARGUMENTS
 

@@ -6,6 +6,17 @@ min_tier: slim
 token_budget: medium
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 # g-skl-workspace
 
 **Files Read**: `.gald3r/linking/workspace_manifest.yaml`, task/bug frontmatter when validating routing metadata, repository paths named by the manifest, and per-repository git status/worktree metadata.
@@ -30,11 +41,11 @@ Task 170 defines the shared worktree primitive for those git boundaries. When a 
 
 `g-rl-33` **Clean Controller** and **Pre-Reconciliation** gates apply per **git root** in the computed **touch set**: always the orchestration checkout; plus manifest-resolved roots for task/bug `workspace_repos:` (v1); optionally `extended_touch_repos:`, swarm coordinator `touch_repos:`, and subsystem spec `locations:` entries that are **absolute filesystem paths** (v2). Each included root gets the same `git status --short` + explicit coordinator allowlist discipline described elsewhere in this skill for export/adopt/member-write preflights. Use **this skill** and `workspace_manifest.yaml` as the authoritative map from `repository.id` → `local_path`; report planned-missing members per lifecycle rules **without** expanding the touch set until paths exist.
 
-Workspace-Control differs from PCAC:
+Workspace-Control differs from WPAC:
 
-- PCAC coordinates independent projects through topology, INBOX messages, orders, requests, dependencies, and peer snapshots.
+- WPAC coordinates independent projects through topology, INBOX messages, orders, requests, dependencies, and peer snapshots.
 - Workspace-Control routes local agent scope across an explicit member allow-list owned by one control project.
-- PCAC state is not a filesystem write allow-list.
+- WPAC state is not a filesystem write allow-list.
 - Workspace-Control does not create member-local tasks or mutate member repositories unless a lifecycle operation such as `SPAWN_APPLY` is explicitly requested and authorized by the active task.
 
 ---
@@ -141,10 +152,11 @@ Default [1] autonomous_child. Choose [1/2]:
 
   ```powershell
   # $memberPath = <absolute_member_path>
-  & "<<template_adv>_root>\setup_gald3r_project.ps1" -TargetPath $memberPath -Platforms cursor,claude
+  gald3r platform install cursor --into $memberPath --generated
+  gald3r platform install claude --into $memberPath --generated
   ```
 
-  Verify `.claude/`, `.cursor/`, `.gald3r_sys/`, `CLAUDE.md` exist on the target afterward. For an already-populated gald3r repo prefer the PROMOTE path (`@g-wpac-promote`) which performs the same installer step.
+  Verify `.claude/` and `.cursor/` exist on the target afterward (`platform install` also writes the per-platform root docs — e.g. `CLAUDE.md`/`GALD3R.md` — per T357; `.gald3r_sys/` is permanently retired and is never produced by any current verb, D016/D017/T335/T274 — see BUG-189). For an already-populated gald3r repo prefer the PROMOTE path (`@g-wpac-promote`) which performs the same installer step.
 - When the user selects **`controlled_member`**, keep the marker-only bootstrap path (`gald3r workspace member bootstrap`) and do NOT run the full installer.
 
 ### MEMBER ADD APPLY Gate
@@ -155,7 +167,7 @@ Apply may update only `.gald3r/linking/workspace_manifest.yaml`. It must not ini
 
 **Usage**: `@g-wrkspc-spawn <project_name> --id <repo_id> --path <path> --dry-run|--apply`
 
-Creates and registers a new local Workspace-Control member project. This mirrors the simplicity of `@g-pcac-spawn`, but it is strictly local workspace membership, not PCAC topology.
+Creates and registers a new local Workspace-Control member project. This mirrors the simplicity of `@g-wpac-spawn`, but it is strictly local workspace membership, not WPAC topology.
 
 Use SPAWN when the destination folder is new or intentionally empty and the control project needs a clean independent git root for future work, such as `example_desktop`. Do not use SPAWN for existing gald3r projects with task/bug history; use `@g-wrkspc-adopt`. Do not use SPAWN for an already-created repo that only needs registry metadata; use `@g-wrkspc-member-add`.
 
@@ -197,7 +209,7 @@ Optional arguments:
     write_allowed: false
 ```
 
-8. Report that no app runtime, generated template output, PCAC topology, remotes, tasks, bugs, PRDs, or source files will be created by SPAWN.
+8. Report that no app runtime, generated template output, WPAC topology, remotes, tasks, bugs, PRDs, or source files will be created by SPAWN.
 
 ### SPAWN APPLY Gate
 
@@ -222,14 +234,15 @@ SPAWN_APPLY may run only when all gates pass:
 
      The guard at exit `1` (BLOCK) refuses apply with `BLOCK spawn_member_repo_gald3r_guard_block`. Exit `2` (ERROR) refuses with `BLOCK spawn_member_repo_gald3r_guard_error`. Bootstrap may itself BLOCK with `BLOCK spawn_member_gald3r_has_control_plane` when the existing `.gald3r/` already contains forbidden content — in that case point the user to `gald3r workspace member remediate` first. Only the combination of guard ALLOW + bootstrap success completes SPAWN_APPLY.
 
-   - **`autonomous_child`** — full-framework deploy (T1452): the marker-only guard does NOT apply. After the git root and manifest entry are created, run the full installer on the target so the child gets `.claude/`, `.cursor/`, `.gald3r_sys/`, root docs, and a full `.gald3r/`:
+   - **`autonomous_child`** — full-framework deploy (T1452): the marker-only guard does NOT apply. After the git root and manifest entry are created, run the platform installer on the target so the child gets its IDE overlay (`.claude/`, `.cursor/`) plus that platform's root docs, then scaffold the child's `.gald3r/` control plane with `gald3r setup`. (`.gald3r_sys/` is permanently retired and is never produced by any current or planned verb — D016/D017/T335/T274; this is not a gap, see BUG-189):
 
      ```powershell
      # $memberPath = <absolute_target_path>
-     & "<<template_adv>_root>\setup_gald3r_project.ps1" -TargetPath $memberPath -Platforms cursor,claude
+     gald3r platform install cursor --into $memberPath --generated
+     gald3r platform install claude --into $memberPath --generated
      ```
 
-     Verify `.claude/`, `.cursor/`, `.gald3r_sys/`, `CLAUDE.md` exist on the target afterward. `setup_gald3r_project.ps1` lives at the root of any `<template_adv>` install (reuse the controller's copy when it was installed from an adv template).
+     Verify `.claude/` and `.cursor/` exist on the target afterward (`gald3r platform install` writes the IDE overlay AND that platform's root docs — e.g. `CLAUDE.md`/`GALD3R.md` for claude, T357/BUG-341/T408; `.gald3r_sys/` is intentionally never produced, see BUG-189). `gald3r platform install <platform> --into <dir> --generated` is a `gald3r` engine CLI verb, self-contained (T177) — it reads the neutral component set embedded in the engine binary, no `<template_adv>` checkout required.
 
 Allowed apply writes:
 
@@ -245,7 +258,7 @@ Forbidden apply writes (for `controlled_member` targets):
 - Do not create member `.gald3r/` task, bug, feature, PRD, subsystem, or linking files.
 - Do not copy app scaffolds or runtime source.
 - Do not create remotes, branches beyond the default initial branch, tags, commits, or worktrees.
-- Do not write PCAC topology/INBOX/order files.
+- Do not write WPAC topology/INBOX/order files.
 - Do not import/adopt existing history; ADOPT owns that flow.
 
 Required apply output:
@@ -255,7 +268,7 @@ Workspace member spawned: <repo_id> at <path>
 Created independent git root: yes
 Manifest updated: .gald3r/linking/workspace_manifest.yaml
 Member source/app files were not scaffolded.
-PCAC topology was not modified.
+WPAC topology was not modified.
 ```
 
 ### Refusals
@@ -312,7 +325,7 @@ schema:
       - repositories
       - controlled_members
       - routing_policy
-      - pcac_relationship
+      - wpac_relationship
 ```
 
 If `schema.parse_contract.required_top_level_keys` is missing, fall back to the six keys above and report that the parse contract was missing.
@@ -626,7 +639,7 @@ Expected findings:
 Workspace validation: FAIL
 - [FAIL] missing required top-level key: repositories
 - [FAIL] missing required top-level key: routing_policy
-- [FAIL] missing required top-level key: pcac_relationship
+- [FAIL] missing required top-level key: wpac_relationship
 ```
 
 ---
@@ -705,7 +718,7 @@ Apply mode exists only behind explicit helper flags and must rerun preflight imm
 
 ADOPT brings an existing gald3r-managed project (one that already has a populated `.gald3r/` folder with tasks, bugs, features, PRDs, subsystem specs, plans, constraints, and linking data) into a Workspace-Control control project. It is the Workspace-Control mode operation for projects like `example_app` that pre-date adoption and must remain independent git roots with their own ongoing work.
 
-ADOPT is not PCAC. It is not a task delegation. It does not write the source `.gald3r/`. It does not write member repository files. It only updates control-project state and the workspace manifest.
+ADOPT is not WPAC. It is not a task delegation. It does not write the source `.gald3r/`. It does not write member repository files. It only updates control-project state and the workspace manifest.
 
 For the full design, see `docs/20260426_090736_Cursor_WORKSPACE_CONTROL_PROJECT_ADOPTION.md`.
 
@@ -726,7 +739,7 @@ The remaining ADOPT phases below all describe the `populated_gald3r_adoption` mo
 
 ### Mode: `populated_gald3r_adoption` — Existing Full Gald3r Project Adoption
 
-This is the only ADOPT submode at present. It is the canonical path for adopting mature standalone gald3r projects (the prototype target is `<ECOSYSTEM_ROOT>/example_app`) that already manage their own tasks, bugs, features, PRDs, releases, constraints, subsystems, plans, and PCAC linking data.
+This is the only ADOPT submode at present. It is the canonical path for adopting mature standalone gald3r projects (the prototype target is `<ECOSYSTEM_ROOT>/example_app`) that already manage their own tasks, bugs, features, PRDs, releases, constraints, subsystems, plans, and WPAC linking data.
 
 The mode name `populated_gald3r_adoption` is a stable identifier and may appear in:
 
@@ -759,7 +772,7 @@ The mode name `populated_gald3r_adoption` is a stable identifier and may appear 
 | Plans                               | `.gald3r/PLAN.md` headings + linked feature references                                                            |
 | Project / mission                   | `.gald3r/PROJECT.md`: mission, goals, project linking section                                                     |
 | Ideas                               | `.gald3r/IDEA_BOARD.md`: count, age distribution                                                                  |
-| Linking / PCAC                      | `.gald3r/linking/INBOX.md`, `link_topology.md`, `sent_orders/*.md`, `pending_orders/*.md`, `peers/*`, capabilities |
+| Linking / WPAC                      | `.gald3r/linking/INBOX.md`, `link_topology.md`, `sent_orders/*.md`, `pending_orders/*.md`, `peers/*`, capabilities |
 | Reports                             | `.gald3r/reports/*.md`: count, kinds (heartbeats, SWOTs, SPRINT, KPI, prior adoption ledgers if any)              |
 | Logs                                | `.gald3r/logs/*.log`: presence + sizes (never copied; flagged as transient)                                       |
 | Experiments                         | `.gald3r/experiments/EXPERIMENTS.md`, `SELF_EVOLUTION.md`, `EXP-NNN.md`: active stages, autopsies                  |
@@ -793,7 +806,7 @@ Before any phase touches source data, ADOPT confirms controller manifest readine
 1. `.gald3r/linking/workspace_manifest.yaml` exists and parses cleanly via `PARSE_MANIFEST`.
 2. The candidate `--as {member_id}` does not collide with an existing repository ID unless `--allow-readopt` is supplied.
 3. The controller's git working tree is reviewed independently from the source. Apply requires the controller's `.gald3r/`, manifest, and report-output paths to be writable; a dirty controller working tree is not an automatic block but is recorded for review and may be blocked by `--require-clean-controller`.
-4. PCAC inbox conflict gate: `g-hk-pcac-inbox-check.ps1 -BlockOnConflict` is a hard prerequisite; an unresolved `[CONFLICT]` blocks apply (and is recorded as an advisory finding in discovery/dry-run).
+4. WPAC inbox conflict gate: `g-hk-wpac-inbox-check.py -BlockOnConflict` is a hard prerequisite; an unresolved `[CONFLICT]` blocks apply (and is recorded as an advisory finding in discovery/dry-run).
 
 #### Lifecycle State: `planned_adopting_member`
 
@@ -865,7 +878,7 @@ adoption:
   source_artifact_archive_path: "<ECOSYSTEM_ROOT>/example_web/.gald3r_archive_20260429.zip!tasks/task013_features_comparison_page.md"  # archive-aware fallback (BUG-034)
 ```
 
-Resolution order for verifiers, audit tooling, and `@g-pcac-status` lookups:
+Resolution order for verifiers, audit tooling, and `@g-wpac-status` lookups:
 
 1. Try `source_artifact_path` on disk first — if it resolves, use it (pre-finalization sources, or sources that were never finalized).
 2. If on-disk does not resolve and `source_artifact_archive_path` is present, resolve via the archive zip (parse `<archive_zip>!<entry_path>`; open the zip read-only and read the named entry).
@@ -908,7 +921,7 @@ Per-artifact mapping (default classes; reviewer may override per-record at dry-r
 | Subsystem (name exact match)                  | conflict-deferred                                | Refused without `--resolve-conflict subsystem-name={name}=keep-source\|keep-controller\|merge\|skip`   | See collision #6                                                                          |
 | Plan / mission / project identity             | link-only                                        | `.gald3r/adopted/{member_id}/{filename}.ref`                                                              | Source canonical; controller never copies mission/plan body                              |
 | Idea (`IDEA_BOARD.md`)                        | active-control-visible (open) / archived-reference (closed) | Section in controller `IDEA_BOARD.md`                                                       | Synthetic `idea-{member_id}-{seq}` ID for ID-map only                                    |
-| Linking / PCAC                                | link-only                                        | `.gald3r/adopted/{member_id}/linking/{filename}.ref`                                                      | Source canonical                                                                          |
+| Linking / WPAC                                | link-only                                        | `.gald3r/adopted/{member_id}/linking/{filename}.ref`                                                      | Source canonical                                                                          |
 | Report                                        | link-only (default) / archived-reference (`--copy-reports`) | Stub or copy at `.gald3r/archive/adopted/{member_id}/reports/`                              | Never an active queue item (T215 AC9)                                                    |
 | Log                                           | link-only (always)                                | `.gald3r/adopted/{member_id}/logs/{filename}.ref`                                                         | Bytes never copied                                                                        |
 | Experiment (active)                           | merge-candidate                                  | `.gald3r/experiments/exp{controller_id}_{slug}_adopted_{member_id}.md`                                    | Next `EXP-NNN` after merge accept                                                         |
@@ -966,7 +979,7 @@ The full lifecycle classification + import policy matrix lives in `docs/20260428
 | Subsystems | link-only (no name overlap) / merge-candidate (fuzzy match) | conflict-deferred (exact name match) | Namespaced as `{name}-{member_id}`; adopted task `subsystems:` field rewritten. |
 | Plan / mission / identity | link-only | n/a | Source-anchored; controller never absorbs project mission. |
 | Ideas (per row) | active-control-visible | archived-reference | Synthetic `idea-{member_id}-{seq}` ID assigned at dry-run. |
-| Linking / PCAC | link-only | n/a | Source's controller status (if any) → conflict-deferred unless `--accept-source-controller-as-data-only`. |
+| Linking / WPAC | link-only | n/a | Source's controller status (if any) → conflict-deferred unless `--accept-source-controller-as-data-only`. |
 | Reports | link-only | link-only | Opt-in `--copy-reports {pattern}` upgrades to archived-reference. |
 | Logs | link-only (always) | link-only | Cannot be promoted; bytes never copied. |
 | Experiments | merge-candidate | archived-reference | Chain parents rewritten when both accepted. |
@@ -978,7 +991,7 @@ The full lifecycle classification + import policy matrix lives in `docs/20260428
 **Active index rendering** (controller `TASKS.md` / `BUGS.md` / `FEATURES.md` / `RELEASES.md` / `PRDS.md` / `CONSTRAINTS.md` / `IDEA_BOARD.md`):
 
 1. Rows carry an `[adopted:{member_id}]` prefix appended to existing emoji block; regenerated from frontmatter `adoption.member_id`, never hand-edited.
-2. PCAC + adoption stack: `[PCAC] [adopted:{member_id}] {title}` when source task carries `pcac_source` block.
+2. WPAC + adoption stack: `[WPAC] [adopted:{member_id}] {title}` when source task carries `wpac_source` block.
 3. Subsystems lists are rewritten through the per-adoption subsystem ID map (link-only = `{name}-{member_id}`; keep-controller resolved = unprefixed).
 4. Every adopted active file gets a markdown-comment provenance footer (`<!-- ADOPTION PROVENANCE ... -->`) so plain markdown viewers can trace lineage without parsing frontmatter.
 
@@ -1144,18 +1157,22 @@ Apply never:
 source repo as a marker-only `controlled_member` by default (it imports state into the controller and
 re-marks the source via `gald3r workspace member bootstrap`). It does NOT install the full framework
 into the source. When the intent is instead to make the adopted repo an independent `autonomous_child`
-(full `.gald3r/` plus `.claude/`, `.cursor/`, `.gald3r_sys/`, root docs), do NOT hand-build those
+(full `.gald3r/` plus `.claude/`, `.cursor/`, root docs — `.gald3r_sys/` is NOT part of this
+postcondition, it is permanently retired, D016/D017/T335/T274), do NOT hand-build those
 files: promote the member via PROMOTE_APPLY (`@g-wpac-promote`) and then run the full installer on the
 target path:
 
 ```powershell
 # $memberPath = <absolute_member_path>
-& "<<template_adv>_root>\setup_gald3r_project.ps1" -TargetPath $memberPath -Platforms cursor,claude
+gald3r platform install cursor --into $memberPath --generated
+gald3r platform install claude --into $memberPath --generated
 ```
 
-`setup_gald3r_project.ps1` is at the root of any `<template_adv>` install (reuse the controller's
-copy when it was installed from an adv template). Verify `.claude/`, `.cursor/`, `.gald3r_sys/`,
-`CLAUDE.md` exist on the target afterward.
+`gald3r platform install <platform> --into <dir> --generated` is a `gald3r` engine CLI verb,
+self-contained (T177) — it reads the neutral component set embedded in the engine binary, no
+`<template_adv>` checkout required. Verify `.claude/` and `.cursor/` exist on the target
+afterward (it also writes that platform's root docs — e.g. `CLAUDE.md`/`GALD3R.md` for claude,
+T357/BUG-341/T408; `.gald3r_sys/` is intentionally never produced, see BUG-189).
 
 ### Refusals (BLOCK Findings)
 
@@ -1185,7 +1202,7 @@ ADOPT raises any of the following BLOCK findings with an actionable single-line 
 
 - `BLOCK source_repo_dirty_apply_mode` — source has uncommitted changes, in-progress merge/rebase, or pending worktrees, and `--allow-source-dirty` was not supplied; resolve or commit source state first
 - `BLOCK control_repo_dirty_apply_mode` — controller has uncommitted changes outside the writes ADOPT itself plans, and `--require-clean-controller` was supplied; commit or stash unrelated controller changes first
-- `BLOCK pcac_conflict_gate_unresolved` — `g-hk-pcac-inbox-check.ps1 -BlockOnConflict` reports an open `[CONFLICT]`; resolve via `@g-pcac-read` before re-running apply
+- `BLOCK wpac_conflict_gate_unresolved` — `g-hk-wpac-inbox-check.py -BlockOnConflict` reports an open `[CONFLICT]`; resolve via `@g-wpac-read` before re-running apply
 
 **Boundary preservation**
 
@@ -1213,7 +1230,7 @@ A synthetic offline sample dry-run report at `.gald3r/reports/adoption_dryrun_sa
 - **vs. SPAWN**: SPAWN creates a brand-new minimal independent git root and registers it in the manifest; ADOPT consumes an existing gald3r project with history; MEMBER_ADD only registers an existing or planned path.
 - **vs. MEMBER_ADD**: MEMBER_ADD plans/applies a registry-only entry for a new member without creating the directory or git root; ADOPT plans/applies a full adoption that also touches control-project task/bug/feature/PRD/subsystem state.
 - **vs. EXPORT_PLAN / SYNC_PLAN**: those are template-export/sync planning surfaces; ADOPT is a project-adoption surface. They do not overlap.
-- **vs. PCAC**: PCAC `@g-pcac-adopt` registers a parent/child topology relationship for cross-project messaging; Workspace-Control ADOPT updates manifest membership and imports artifact state for routing/visibility. Both can be run for the same external project independently.
+- **vs. WPAC**: WPAC `@g-wpac-adopt` registers a parent/child topology relationship for cross-project messaging; Workspace-Control ADOPT updates manifest membership and imports artifact state for routing/visibility. Both can be run for the same external project independently.
 
 ---
 
@@ -1306,7 +1323,7 @@ PROMOTE is distinct from the other lifecycle modes:
 3. If the role is already `autonomous_child` -> exit with an informational message (no-op).
 4. If the role is `controlled_member` or `migration_source` -> build the promotion plan:
    - missing standard files to scaffold: `RELEASES.md`, `releases/`, `vocab.md`,
-     `workspace/topology.md`, `workspace/inbox.md`, `FEATURES.md`, `BUGS.md`, `PLAN.md`
+     `linking/link_topology.md`, `linking/INBOX.md`, `FEATURES.md`, `BUGS.md`, `PLAN.md`
    - `.identity` changes: `workspace_role -> autonomous_child`, remove
      `member_gald3r_marker_only`, bump `gald3r_version` to the current framework version
    - manifest change: `repositories[<member-id>].workspace_role -> autonomous_child`
@@ -1330,16 +1347,25 @@ files PROMOTE scaffolds. Run the full installer on the promoted path (T1452):
 
 ```powershell
 # $memberPath = <absolute_member_path>
-& "<<template_adv>_root>\setup_gald3r_project.ps1" -TargetPath $memberPath -Platforms cursor,claude
+gald3r platform install cursor --into $memberPath --generated
+gald3r platform install claude --into $memberPath --generated
 ```
 
-This deploys `.claude/`, `.cursor/` (skills, agents, commands, rules, hooks), `.gald3r_sys/`, and
-root docs (`CLAUDE.md`, `AGENTS.md`, `WORKFLOW.md`, `GUARDRAILS.md`, `GALD3R-PROMPT.md`,
-`GALD3R-MIGRATION.md`, `scripts/`). `setup_gald3r_project.ps1` lives at the root of any
-`<template_adv>` install; the same script is already present at the controller's project root
-when it was installed from an adv template -- reuse it. `@g-skl-setup --upgrade-existing` is the
-equivalent skill-driven path. After the install, verify `.claude/`, `.cursor/`, `.gald3r_sys/`, and
-`CLAUDE.md` exist on the target, then run `@g-wrkspc-validate` to confirm.
+This deploys `.claude/`, `.cursor/` (skills, agents, commands, rules, hooks) plus that platform's
+root docs (a subset of `CLAUDE.md`/`AGENTS.md`/`GALD3R.md`, per-platform filtering, T357/BUG-341/
+T408). `.gald3r_sys/` is NOT part of this deploy — it is permanently retired (D016/D017/T335/T274)
+and no current or planned verb writes it; treat that as intentional, not a gap (BUG-189). Likewise
+`WORKFLOW.md`, `GUARDRAILS.md`, `GALD3R-PROMPT.md`, `GALD3R-MIGRATION.md`, and `scripts/` are not
+produced by `platform install` — they are not part of the root-doc set it manages. `gald3r platform
+install <platform> --into <dir> --generated` is a self-contained `gald3r` engine CLI verb (T177) —
+it reads the neutral component set embedded in the engine binary, no `<template_adv>` checkout
+required; run it once per platform. `@g-setup --autonomy full` (an idempotent `.gald3r/` top-up;
+never overwrites existing files) is the equivalent skill-driven path for the `.gald3r/` content
+half — it does not deploy `.claude/`/`.cursor/` platform surfaces or root docs, which still require
+the `gald3r platform install` calls above.
+After the install, verify `.claude/`
+and `.cursor/` (and that platform's root docs) exist on the target, then run `@g-wrkspc-validate`
+to confirm.
 
 ### Helper script
 
@@ -1462,9 +1488,9 @@ Each repo is a separate git boundary. Report status, branch, remotes, rollback, 
 
 ## Coexistence With Other gald3r Skills
 
-### `g-skl-pcac-*`
+### `g-skl-wpac-*`
 
-PCAC owns topology, INBOX, orders, requests, peer snapshots, and cross-project dependency messages. `g-skl-workspace` owns manifest-backed local workspace scope reporting. Do not replace PCAC order/request flows with workspace manifest entries.
+WPAC owns topology, INBOX, orders, requests, peer snapshots, and cross-project dependency messages. `g-skl-workspace` owns manifest-backed local workspace scope reporting. Do not replace WPAC order/request flows with workspace manifest entries.
 
 ### `g-skl-tasks`
 
@@ -1485,7 +1511,7 @@ Status and report surfaces may embed a compact Workspace-Control snapshot by reu
 - Stay quiet when `.gald3r/linking/workspace_manifest.yaml` is absent, unless the user explicitly asks for workspace detail.
 - Show manifest path, workspace identity, owner ID, controlled member count/IDs, member lifecycle status, path reachability, write policy summary, and per-member git root/branch/dirty/remotes/worktree context when paths are reachable.
 - Show active task/bug `workspace_repos` and `workspace_touch_policy` metadata when present; omitted metadata means current repository only.
-- Distinguish PCAC topology/INBOX/order/request state from Workspace-Control member registry state.
+- Distinguish WPAC topology/INBOX/order/request state from Workspace-Control member registry state.
 - Cite Task 177 boundaries when users might expect backend, UI, Docker/Kubernetes/MCP, `example_app`, `yggdrasil`, dashboards, or control-plane status. Those systems are deferred and should not be treated as missing bootstrap components.
 
 ### Template Parity Tooling
@@ -1563,7 +1589,7 @@ Before claiming Workspace-Control work is ready for review:
 - STATUS can read the canonical manifest and summarize owner plus members, including per-repo git root/branch/dirty/remotes/worktree context when reachable.
 - VALIDATE checks shape, duplicate IDs, local paths, lifecycle values, touch policies, independent git roots, nested member assumptions, reparse paths, and stale routing references.
 - MEMBER LIST shows only manifest-declared repositories.
-- SPAWN PLAN reports the exact path, manifest entry, and no-scaffold/no-PCAC boundaries; SPAWN APPLY creates only a minimal independent git root and the control-project manifest update.
+- SPAWN PLAN reports the exact path, manifest entry, and no-scaffold/no-WPAC boundaries; SPAWN APPLY creates only a minimal independent git root and the control-project manifest update.
 - EXPORT PLAN and SYNC PLAN state source/destination intent and no-write dry-run behavior.
 - The response names `.gald3r/linking/workspace_manifest.yaml` as canonical and does not rely on the docs seed manifest.
 - INIT/MEMBER ADD/MEMBER REMOVE dry-runs produce explicit no-write plans and apply modes write only the manifest registry.
@@ -1586,3 +1612,66 @@ The authoritative posture map is `<workspace>\LICENSING_STRATEGY.md` and `.gald3
 
 The license check is implemented inside `gald3r workspace member validate` (alongside the existing T213 marker check). Pass `--skip-license-check` to suppress the license sweep when only marker diagnostics are wanted.
 
+
+---
+
+## WPAC-v2 shared connectivity + entitlement client shim (T1609)
+
+The absorbed engine verbs `gald3r workspace probe|entitlement|token-status` are the ONE shared connectivity surface every `g-skl-wpac-*` verb's
+transport layer (T1608) uses — do not re-implement base-URL / token / probe / 402 logic
+in a verb. Pure stdlib (uv-compatible), read-only on credentials (T605 / C-014), and
+it NEVER raises into a verb's happy path: every call returns a typed `ShimResult`
+whose `outcome` the verb branches on **in code** (g-rl-38):
+
+| Outcome | Meaning | Verb action |
+|---|---|---|
+| `ok` | 2xx + parsed JSON body | use the online result |
+| `offline` | transport fault / failed health probe | fall back to file transport (INBOX.md, messages/, sent_orders/) |
+| `auth_required` | 401/403 — session token rejected | file fallback + tell the user to run `gald3r login` |
+| `upgrade_required` | 402 — entitlement (paid Team plan) | file fallback + print `result.upgrade.upgrade_line()`; do NOT clear the token |
+| `error` | other non-2xx | file fallback; log status + body |
+
+Key surface: `WorldTreeClient.is_online()` (single cached `GET /api/v1/health` probe per
+session), `.request/.get/.post(path, json_body)` (Bearer reuse of the agent/Throne
+`gald3r login` token — keyring service `gald3r-world-tree`, file fallback
+`world_tree_token.json` under the unified per-user home), and
+`.entitlement_hint(feature_id)` (`GET /api/v1/entitlements/check` — a client-side HINT
+only; the server re-enforces on every gated route). Endpoint path constants for the live
+world_tree routes (delegation intake, `/ask`, events, inbox replay, claims, reconcile)
+are exported from the module — mirror them, never hardcode paths in verbs.
+
+CLI verdicts for SKILL.md steps: `gald3r workspace
+probe|entitlement|token-status [--json]` (always exit 0 — verdicts are data).
+Tests: in the engine suite (`tests/test_workspace_wpac_client.py`).
+
+---
+
+## WPAC-v2 shared verb transport — write-ahead outbox + push (T1608)
+
+`gald3r workspace outbox` is the ONE transport layer every `g-skl-wpac-*` verb
+shells out to (it wraps the T1609 shim; verbs never call endpoints directly):
+
+```
+gald3r workspace outbox \
+    send --verb order|ask|event|link [--project-uuid <uuid>] \
+         (--payload '<json>' | --payload-file <path>) [--json]
+gald3r workspace outbox pull   [--json]
+gald3r workspace outbox flush  [--json]
+gald3r workspace outbox        [--json]   (base verb, no subcommand = status view)
+```
+
+Verb → live endpoint: `order` → `POST /api/v1/tasks/delegation/intake` (wpac-order;
+target wakes via inbox auto-wake T494); `ask` → `POST /api/v1/ask` (wpac-ask);
+`event` → `POST /api/v1/events` (wpac-notify/-sync/-send-to/-move — CLOSED catalog;
+non-catalogued types short-circuit to the `fallback` verdict client-side); `link` →
+`POST /api/v1/projects/{id}/links` (wpac-claim/-adopt/-spawn topology → T1625 linking
+registry); `pull` → `GET /api/v1/tasks/delegation` + `GET /api/v1/events` (wpac-read).
+
+Discipline: every `send` WRITE-AHEADS the message to `.gald3r/linking/outbox/` BEFORE
+any network I/O (a mid-verb fault never loses a message); `ok` → delivered (entry moves
+to `outbox/delivered/`, verb skips the cross-repo file-drop); `offline`/`error` → the
+verb performs its FILE transport exactly as WPAC-v1 and the entry stays queued for
+`flush` (reconcile on reconnect); `auth_required`/`upgrade_required` → FILE transport +
+the shim's hint/upgrade line, entry parked as `fallback` (never retried — the file
+path IS the free tier). Path selection is code, never the model (g-rl-38). CLI always
+exits 0. Tests: in the engine suite (`tests/test_workspace_gald3r workspace outbox`).

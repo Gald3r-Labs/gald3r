@@ -1,0 +1,47 @@
+version: 1.0.0
+title: g-juggernaut
+description: g-juggernaut
+instructions: '# g-juggernaut
+
+
+  Alias for `@g-mission`. Unstoppable autonomous loop until a verifiable condition
+  is met: $ARGUMENTS
+
+
+  See `@g-mission` for full documentation.
+
+
+  ## Usage
+
+
+  ```
+
+  @g-juggernaut <condition>
+
+  @g-juggernaut <condition> --budget <N>
+
+  @g-juggernaut status
+
+  @g-juggernaut clear
+
+  @g-juggernaut <condition> --until-empty
+
+  @g-juggernaut --from-task T{id}
+
+  ```
+
+
+  This command is identical to `@g-mission` in every way. The name evokes unstoppable
+  forward momentum — once launched, it does not stop until the condition is provably
+  satisfied or the turn budget is exhausted.
+
+
+  **Delegates to**: `@g-mission $ARGUMENTS`'
+prompt: Run the gald3r `g-juggernaut` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-juggernaut, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

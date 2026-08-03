@@ -1,26 +1,11 @@
 {
-  "_doc": "T510: OpenHands reads `.openhands/hooks.json` (snake_case event keys; per-event array of { matcher, hooks:[{command,timeout}] }; `command` is a shell command or script path; stdin JSON payload; exit 2 or {\"decision\":\"deny\"} blocks). Each native event routes to a thin canonical entrypoint `python .openhands/hooks/g-hk-on-<event>.py` which calls `g_hk_core.dispatch(\"<event>\")`. The shared core `.openhands/hooks/g_hk_core.py` is byte-identical across every platform overlay and runs the per-event CONCERN_CHAIN (concern hooks self-gate on payload). Native->canonical map (g_hk_core.PLATFORM_EVENT_MAP['openhands']): SessionStart->session-start, SessionEnd->session-end, UserPromptSubmit->user-prompt-submit, PreToolUse->tool-start, PostToolUse->tool-end, Stop->stop. timeout is in seconds. Schema verified against https://docs.openhands.dev/openhands/usage/customization/hooks .",
-  "session_start": [
+  "post_tool_use": [
     {
       "matcher": "*",
       "hooks": [
-        { "command": "python .openhands/hooks/g-hk-on-session-start.py", "timeout": 60 }
-      ]
-    }
-  ],
-  "session_end": [
-    {
-      "matcher": "*",
-      "hooks": [
-        { "command": "python .openhands/hooks/g-hk-on-session-end.py", "timeout": 60 }
-      ]
-    }
-  ],
-  "user_prompt_submit": [
-    {
-      "matcher": "*",
-      "hooks": [
-        { "command": "python .openhands/hooks/g-hk-on-user-prompt-submit.py", "timeout": 60 }
+        {
+          "command": "python .openhands/hooks/g-hk-on-tool-end.py"
+        }
       ]
     }
   ],
@@ -28,15 +13,29 @@
     {
       "matcher": "*",
       "hooks": [
-        { "command": "python .openhands/hooks/g-hk-on-tool-start.py", "timeout": 60 }
+        {
+          "command": "python .openhands/hooks/g-hk-on-tool-start.py"
+        }
       ]
     }
   ],
-  "post_tool_use": [
+  "session_end": [
     {
       "matcher": "*",
       "hooks": [
-        { "command": "python .openhands/hooks/g-hk-on-tool-end.py", "timeout": 60 }
+        {
+          "command": "python .openhands/hooks/g-hk-on-session-end.py"
+        }
+      ]
+    }
+  ],
+  "session_start": [
+    {
+      "matcher": "*",
+      "hooks": [
+        {
+          "command": "python .openhands/hooks/g-hk-on-session-start.py"
+        }
       ]
     }
   ],
@@ -44,7 +43,19 @@
     {
       "matcher": "*",
       "hooks": [
-        { "command": "python .openhands/hooks/g-hk-on-stop.py", "timeout": 120 }
+        {
+          "command": "python .openhands/hooks/g-hk-on-stop.py"
+        }
+      ]
+    }
+  ],
+  "user_prompt_submit": [
+    {
+      "matcher": "*",
+      "hooks": [
+        {
+          "command": "python .openhands/hooks/g-hk-on-user-prompt-submit.py"
+        }
       ]
     }
   ]

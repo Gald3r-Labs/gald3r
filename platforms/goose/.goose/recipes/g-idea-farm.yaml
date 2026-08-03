@@ -1,0 +1,18 @@
+version: 1.0.0
+title: g-idea-farm
+description: Scan codebase for improvement ideas. Activates **g-ideas** → FARM operation.
+instructions: 'Scan codebase for improvement ideas. Activates **g-ideas** → FARM operation.
+
+
+  Activate the **g-ideas** skill, FARM operation.
+
+
+  Runs 5 scan passes. Adds up to 10 new ideas to IDEA_BOARD.md. Skips duplicates.'
+prompt: Run the gald3r `g-idea-farm` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-idea-farm, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

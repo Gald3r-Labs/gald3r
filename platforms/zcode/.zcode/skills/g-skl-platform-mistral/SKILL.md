@@ -23,6 +23,17 @@ token_budget: low
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
 
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
+
 # g-skl-platform-mistral
 
 Activate for: setting up gald3r with Mistral Vibe CLI (`mistral-vibe`), authoring Mistral project
@@ -141,7 +152,7 @@ mistral-vibe --version    # or: vibe --version  (confirm CLI install)
 | Skills (`g-skl-*/SKILL.md`) | ✅ | native agentskills.io; `~/.vibe/skills`, `./.vibe/skills`, `./.agents/skills`, `skill_paths` |
 | Agents (`g-agnt-*.md`) | ✅ | native custom agents + subagents `.vibe/agents/*.toml` (`vibe --agent`; `agent_type=subagent`); **needs md→TOML port** |
 | MCP | ✅ | `config.toml` `[[mcp_servers]]` (http / streamable-http / stdio); namespaced `{server}_{tool}`; no OAuth yet |
-| Hooks (`g-hk-*.ps1`) | ⚠️ | experimental **post-agent-turn** only (v2.9.0); no schema/file location; no pre-tool/session-start/pre-commit |
+| Hooks (`g-hk-*.py`) | ⚠️ | experimental **post-agent-turn** only (v2.9.0); no schema/file location; no pre-tool/session-start/pre-commit |
 | Rules (`g-rl-*`) | ⚠️ | `AGENTS.md` layered injection (+ optional custom system prompt); no scoped `.mdc`/glob rules |
 | Commands (`@g-*`) | ⚠️ | slash commands only via skills (`user-invocable: true` → `/skill-name`); no command-file dir |
 
@@ -153,7 +164,7 @@ mistral-vibe --version    # or: vibe --version  (confirm CLI install)
 > authoritative, machine-readable statement of this — the (currently undocumented) event list and how
 > gald3r hook behaviors must run until it is verified (manually, via rules text, or via git
 > `core.hooksPath`) — lives in [`PLATFORM_SPEC.md` -> `## Hook System`](./PLATFORM_SPEC.md). Reference
-> that block rather than re-listing hook details here. The gald3r `g-hk-*.ps1` wiring for mistral is
+> that block rather than re-listing hook details here. The gald3r `g-hk-*.py` wiring for mistral is
 > **[STUB] / unverified** — do not fabricate an event-to-hook mapping.
 > **Last verified against platform version:** mistral v2.13.0 (docs crawl `last_doc_scan: 2026-06-02`).
 > Re-verify the event names in `PLATFORM_SPEC.md` `## Hook System` on the next
@@ -162,7 +173,7 @@ mistral-vibe --version    # or: vibe --version  (confirm CLI install)
 Honest boundaries vs. the Cursor reference (full detail in `PLATFORM_SPEC.md` §1–§9):
 
 - **Hooks ⚠️**: experimental **post-agent-turn** lifecycle only (v2.9.0); no published event list or
-  schema, and no pre-tool/session-start/pre-commit — gald3r's `g-hk-*.ps1` + `hooks.json` cannot be
+  schema, and no pre-tool/session-start/pre-commit — gald3r's `g-hk-*.py` + `hooks.json` cannot be
   ported until Mistral documents the format. (issue #250 CLOSED unimplemented; #531 OPEN)
 - **Rules ⚠️**: no `.mdc` scoped-rule system; gald3r's `g-rl-*` rules collapse into a single
   `AGENTS.md` blob (no `globs`, no per-rule on-demand loading); optional custom system prompt via

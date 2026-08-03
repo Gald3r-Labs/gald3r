@@ -21,6 +21,16 @@ token_budget: medium
 subsystem_memberships: [SECURITY_AND_COMPLIANCE]
 ---
 
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 # g-skl-compliance
 
 **Activate for**: `@g-compliance-scan`, `@g-compliance-gate`, `@g-compliance-report`, license compliance, dependency audit, SCA scan, "is our code clean?".
@@ -107,10 +117,10 @@ Report format:
 
 **Step 4 — Log to .gald3r/reports/**
 
-```powershell
-# Invoke the stub helper (or full implementation when available):
-# TODO[TASK-906→TASK-<follow-up>]: Replace stub with full ORT/FOSSA/Snyk/PMD pipeline
-python .claude/skills/g-skl-compliance/scripts/run_compliance_scan.py -Scanner $scanner -RepoRoot (Get-Location).Path
+```bash
+# Invoke the scanner helper:
+# TODO[TASK-906→TASK-<follow-up>]: Wire full ORT/FOSSA/Snyk/PMD pipeline
+python .claude/skills/g-skl-compliance/scripts/run_compliance_scan.py -Scanner "$scanner" -RepoRoot "$(pwd)"
 ```
 
 ---
@@ -210,32 +220,20 @@ When no external SCA tool is available, parse package manifests directly.
 
 ---
 
-## PowerShell Helper Stub
+## Scanner Helper (Python)
 
 `.claude/skills/g-skl-compliance/scripts/run_compliance_scan.py` — called by SCAN operation and `@g-compliance-gate` hook.
 
-```powershell
+```bash
 # TODO[TASK-906→TASK-<follow-up>]: Full ORT/FOSSA/Snyk/PMD pipeline implementation
-# Current stub: detects scanner name and exits 0
-param(
-    [string]$Scanner = 'auto',
-    [string]$RepoRoot = (Get-Location).Path
-)
+# Phase-1 behavior: detect scanner name on PATH (ort/fossa/snyk/pmd/pmdc → fallback),
+# write a placeholder report to .gald3r/reports/, print PASS diagnostics, and exit 0.
+python .claude/skills/g-skl-compliance/scripts/run_compliance_scan.py -Scanner auto -RepoRoot "$(pwd)"
 
-$detected = $null
-foreach ($cmd in @('ort','fossa','snyk','pmdc','pmd')) {
-    if (Get-Command $cmd -ErrorAction SilentlyContinue) {
-        $detected = $cmd; break
-    }
-}
-if (-not $detected) { $detected = 'fallback' }
-
-if ($Scanner -ne 'auto') { $detected = $Scanner }
-
-Write-Host "g-skl-compliance: detected scanner = $detected"
-Write-Host "g-skl-compliance: repo root = $RepoRoot"
-Write-Host "g-skl-compliance: stub — full scan pipeline deferred to follow-up task"
-exit 0
+# Flags:
+#   -Scanner / --scanner    auto | ort | fossa | snyk | pmd | pmdc | fallback (default: auto)
+#   -RepoRoot / --repo-root  scan root (default: current directory)
+#   -Strict  / --strict      gate mode — exit 2 on FAIL-level violations
 ```
 
 ---

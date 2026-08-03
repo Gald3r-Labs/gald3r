@@ -102,7 +102,7 @@ is required — gald3r's `AGENTS.md` / `CLAUDE.md` are first-class inputs.
 - **Lifecycle hooks** configured in `.augment/settings.json`. Events: **PreToolUse** (blocking),
   **PostToolUse**, **Stop**, **SessionStart**, **SessionEnd**. Event data arrives via **stdin JSON**;
   results via exit codes / output streams. Commands may be `.sh` / **`.ps1`** / `.cmd` / `.bat` —
-  **PowerShell is explicitly supported**, so gald3r `g-hk-*.ps1` hooks wire **natively**
+  any executable command is accepted, so gald3r `g-hk-*.py` hooks wire **natively** via `python <path>`
   (SessionStart context injection, PreToolUse `.gald3r/` guards, pre-commit gates, etc.).
 - Source: https://docs.augmentcode.com/cli/hooks
 
@@ -153,7 +153,7 @@ tree (or a Claude-Code-format plugin bundle).
 - **Events available**: PreToolUse, PostToolUse, Stop, SessionStart, SessionEnd
 - **Event payload format**: JSON via stdin; result via exit codes / output streams
 - **Command extensions**: `.sh`, `.ps1`, `.cmd`, `.bat` (PowerShell supported)
-- **gald3r hook files**: `g-hk-*.ps1` wire natively via the events above
+- **gald3r hook files**: `g-hk-*.py` wire natively via `python <path>` across the events above
 
 ## Atypical Handling
 

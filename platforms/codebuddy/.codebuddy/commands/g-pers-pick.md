@@ -1,5 +1,7 @@
-﻿---
+---
+description: 'Switch the active personality pack (or clear to none) and update .gald3r/.identity.'
 subsystem_memberships: [PLATFORM_INTEGRATION]
+execution_tier: orchestration
 ---
 # g-pers-pick — Switch to a personality pack
 

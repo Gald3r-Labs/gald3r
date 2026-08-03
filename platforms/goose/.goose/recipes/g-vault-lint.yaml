@@ -1,0 +1,19 @@
+version: 1.0.0
+title: g-vault-lint
+description: 'Lint the vault: $ARGUMENTS'
+instructions: "Lint the vault: $ARGUMENTS\n\n## What This Command Does\n\nRuns a structural\
+  \ and freshness audit of the vault.\n\n## Workflow\n\n1. Use `g-skl-knowledge-refresh`\n\
+  2. Check freshness via `_index.yaml`\n3. Check structure:\n   - broken wikilinks\
+  \ (`gald3r vault lint` — slug-tolerant resolution, T185)\n   - orphan pages\n  \
+  \ - missing entities or concepts\n   - duplicate or weak cards\n   - contradictions\
+  \ needing review\n   - OKF-conformance (T185): frontmatter parses, `type:` non-empty,\
+  \ UTF-8 no BOM\n     (folded into `gald3r vault lint`; see `g-skl-vault/SKILL.full.md`\
+  \ §4 Lint)\n4. Write a concise report\n5. Append a `lint` entry to `log.md`"
+prompt: Run the gald3r `g-vault-lint` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-vault-lint, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

@@ -1,5 +1,7 @@
 ---
+description: 'Audit subsystem and skill group-tagging compliance against PRODUCT_SYSTEMS.md via g-skl-subsystems AUDIT.'
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
+execution_tier: orchestration
 ---
 # @g-subsystem-audit
 
@@ -41,6 +43,7 @@ Activates **g-skl-subsystems** → AUDIT operation.
 
 - `@g-system-rebuild` — regenerate PRODUCT_SYSTEMS.md from tags
 - `add_subsystem_tags.ps1` — bulk-tag SKILL.md files
-- `aggregate_subsystems.ps1` — generates PRODUCT_SYSTEMS.md
+- `gald3r subsystem aggregate` — generates PRODUCT_SYSTEMS.md (BUG-196; replaces the
+  never-authored/lost `aggregate_subsystems.ps1`)
 - `g-skl-subsystems` AUDIT operation — the underlying implementation
 - C-026 — constraint requiring `parent_system:` on all new subsystem specs

@@ -1,0 +1,16 @@
+version: 1.0.0
+title: g-cli-codex
+description: "\uFEFF---"
+instructions: "\uFEFF---\ndescription: OpenAI Codex CLI quick reference — approval\
+  \ modes, sandbox config, provider/model flags, session management, CI/overnight\
+  \ use.\nsubsystem_memberships: [PLATFORM_INTEGRATION]\nexecution_tier: prompt_only\n\
+  ---\n# /g-cli-codex\n\nActivates `g-skl-cli-codex`. Use when running OpenAI Codex\
+  \ from the terminal.\n\n```\n/g-cli-codex    → load g-skl-cli-codex context\n```"
+prompt: Run the gald3r `g-cli-codex` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-cli-codex, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

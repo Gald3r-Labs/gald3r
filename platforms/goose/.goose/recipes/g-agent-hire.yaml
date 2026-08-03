@@ -1,0 +1,94 @@
+version: 1.0.0
+title: g-agent-hire
+description: g-agent-hire — Research-gated new agent creation workflow
+instructions: "# g-agent-hire — Research-gated new agent creation workflow\n\nAdds\
+  \ a new gald3r agent through a four-phase research-gated workflow so\nnew agents\
+  \ land with quality, uniqueness, and parity baked in — rather\nthan being added\
+  \ ad hoc with overlap, unclear ownership, or trigger-phrase\ncollisions.\n\nThe\
+  \ command is interactive at the REVIEW phase by design — humans approve\nthe contract\
+  \ before any IDE-target file is written.\n\n## Usage\n\n```\n@g-agent-hire \"<role\
+  \ description>\"\n@g-agent-hire \"<role description>\" --reference <repo-or-url>\
+  \          # optional: prime research with a specific reference\n@g-agent-hire \"\
+  <role description>\" --skill <existing-skill-id>        # optional: pre-declare\
+  \ an owned skill\n@g-agent-hire status                                         \
+  \         # show the current draft state if a hire is in progress\n@g-agent-hire\
+  \ cancel                                                  # abort an in-progress\
+  \ hire and discard the draft\n```\n\n## Phases\n\n### Phase 1 — RESEARCH\n\nCalls\
+  \ `@g-skl-res-review` (or `@g-res-review`) to analyze 2-3 reference\nimplementations\
+  \ of the requested agent role.\n\n- Pull candidates from: vault `research/CRR_FunctionalSpecs/`,\
+  \ prior gald3r harvests\n  (IDEA-HARVEST-* in `IDEA_BOARD.md`), and — if `--reference`\
+  \ was passed\n  — the user-supplied reference repo or URL.\n- Output: a `research_note`\
+  \ summarizing how 2-3 best-in-class\n  implementations of this role behave (responsibilities,\
+  \ trigger phrases,\n  failure modes, owned tools/skills).\n- Surface the research\
+  \ summary inline to the user before moving to DRAFT.\n- Hard fail this phase rather\
+  \ than synthesize from memory when no\n  reference can be found — the point is to\
+  \ ground the new agent in\n  observed practice, not in hallucinated norms.\n\n###\
+  \ Phase 2 — DRAFT\n\nGenerates the new agent's contract, following existing gald3r\
+  \ agent\nstructure (see `.claude/agents/g-agnt-*.md` and the AGENTS.md\n\"Agents\"\
+  \ roster). Produces:\n\n1. `.claude/agents/g-agnt-<slug>.md` — full agent contract:\n\
+  \   - YAML frontmatter: `name`, `description` (third-person, includes\n     trigger\
+  \ phrases), `model`, `tools` (allowed-tools list),\n     `disable-model-invocation`\n\
+  \   - Body sections: **Role**, **Use proactively when:**, **Trigger\n     phrases**,\
+  \ **Owned skills**, **Boundary**, **Estimated context impact**\n2. A delta for the\
+  \ AGENTS.md roster table (new row in the \"Agents\" or\n   platform-equivalent section).\n\
+  3. A short rationale: which reference implementations from Phase 1\n   shaped the\
+  \ draft.\n\nThe draft is written to a staging location only:\n`.gald3r/reports/agent_drafts/<slug>_YYYYMMDD_HHMMSS.md`\
+  \ — not to any\nIDE target directory yet.\n\n### Phase 3 — REVIEW\n\nPresents the\
+  \ draft to the user without writing to any IDE target\ndirectory. The presentation\
+  \ MUST include:\n\n- Role + responsibilities\n- Trigger phrases (with a collision\
+  \ check — see Quality Gates below)\n- Owned skills / commands the agent will dispatch\n\
+  - Estimated context impact (in coarse `low` / `medium` / `high` /\n  `very_high`\
+  \ bands, mirroring `token_budget:` in SKILL.md frontmatter\n  per T1172a)\n- Diff\
+  \ summary of what Phase 4 will write to which platform dirs\n\nPause for explicit\
+  \ user `approve` / `reject` / `revise` input. Capture\nthe response in the draft\
+  \ file's Status History.\n\n### Phase 4 — HIRE\n\nOnly runs after explicit user\
+  \ approval in Phase 3. Actions:\n\n1. Write `g-agnt-<slug>.md` to all active IDE\
+  \ target agent directories\n   (per `gald3r platform capabilities` — `.cursor/agents/`,\n\
+  \   `.claude/agents/`, `.codex/agents/`, etc. — where the platform\n   supports\
+  \ the `agents/` primitive).\n2. Append a new row to the canonical AGENTS.md roster\
+  \ table.\n3. Run `custom_scripts/platform_parity_sync.ps1 -Sync` so external template\n\
+  \   member repos pick up the new agent (controller parity is owned by\n   <gald3r_source>\
+  \ — see CLAUDE.md learned fact #31).\n4. Move the staged draft to\n   `.gald3r/reports/agent_drafts/hired/<slug>_<ISO>.md`\
+  \ for audit.\n5. Append a CHANGELOG.md `[Unreleased]` entry under \"Added\" describing\n\
+  \   the new agent.\n\n## Quality Gates (enforced before Phase 4)\n\n| Gate | Rule\
+  \ |\n|---|---|\n| Trigger-phrase uniqueness | The new agent's trigger phrases MUST\
+  \ NOT collide with any existing agent's trigger phrases. Scan all `g-agnt-*.md`\
+  \ files and the AGENTS.md roster. Collisions block the hire — revise or rename.\
+  \ |\n| Skill ownership | The new agent MUST reference at least one owned skill (`.claude/skills/g-skl-*/`\
+  \ entry). An agent with zero skill ownership is overlap with an existing role —\
+  \ either declare ownership or do not hire. |\n| `use proactively when:` present\
+  \ | The agent contract MUST contain a populated `Use proactively when:` section\
+  \ so the model invokes it appropriately. Empty or boilerplate sections block the\
+  \ hire. |\n| Description format | `description:` field MUST be third-person and\
+  \ contain trigger terms a model can match against — see [[skl-skill-create]] \"\
+  Writing Effective Descriptions\". |\n\n## Notes\n\n- `@g-skl-agent-creator` is **not**\
+  \ a precondition for this command —\n  the skill name appears in T1017's spec but\
+  \ no such skill currently\n  ships with gald3r. `@g-agent-hire` itself IS the workflow;\
+  \ future\n  refactor may extract reusable phases into a `g-skl-agent-creator`\n\
+  \  skill, in which case this command will delegate. For now: this command\n  is\
+  \ self-contained.\n- Platform parity is intentional: an agent that exists only in\n\
+  \  `.cursor/` is effectively unhired for users on Claude Code, Codex,\n  OpenCode,\
+  \ etc. The default target set is \"every platform that supports\n  the `agents/`\
+  \ primitive\" as declared by `gald3r platform capabilities`\n  (`crash/sysdata/_platform_capabilities.json`,\
+  \ T283).\n- Estimated context-impact band should be conservative — `medium`\n  unless\
+  \ you can demonstrate the agent is reliably `low`. Over-declaring\n  causes mild\
+  \ dispatch conservatism; under-declaring causes context\n  exhaustion (same contract\
+  \ as `token_budget:` in SKILL.md).\n\n## Subsystem Tagging (g-rl-38 — mandatory)\n\
+  \nThe agent file written in Phase 4 MUST include `subsystem_memberships: [GROUP]`\
+  \ in its YAML\nfrontmatter. The REVIEW phase contract template already prompts for\
+  \ this. If a group is not\nconfirmed during REVIEW, default to `AGENT_ORCHESTRATION`\
+  \ and flag for follow-up.\nAfter Phase 4, offer to regenerate `PRODUCT_SYSTEMS.md`:\n\
+  `gald3r subsystem aggregate --apply` (BUG-196; replaces the never-authored/lost\n\
+  `aggregate_subsystems.ps1`)\n\n## Related\n\n- T1017 — original task spec .\n- T1172a\
+  \ — `token_budget:` ordinal bands (re-used here for the\n  agent's \"Estimated context\
+  \ impact\").\n- `custom_scripts/platform_parity_sync.ps1` — controller parity machinery\n\
+  \  invoked in Phase 4.\n- AGENTS.md \"Agents\" roster table — canonical source-of-truth\
+  \ for the\n  active agent set."
+prompt: Run the gald3r `g-agent-hire` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-agent-hire, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

@@ -1,48 +1,27 @@
 {
-  "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENTS_TEAMS": "true"
-  },
-  "permissions": {
-    "defaultMode": "bypassPermissions",
-    "allow": []
-  },
-  "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": [],
-  "mcpServers": {
-    "gald3r_docker": {
-      "url": "http://localhost:8092/mcp",
-      "transport": "streamable-http"
-    },
-    "chrome-devtools": {
-      "command": "npx",
-      "args": [
-        "chrome-devtools-mcp@latest"
-      ]
-    }
-  },
   "hooks": {
     "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/g-hk-session-start.py"
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/g-hk-session-start.py\""
           },
           {
             "type": "command",
-            "command": "python .claude/hooks/g-hk-pre-session-trace.py"
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/g-hk-pre-session-trace.py\""
           },
           {
             "type": "command",
-            "command": "python .claude/hooks/g-hk-vault-resolve.py"
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/g-hk-vault-resolve.py\""
           },
           {
             "type": "command",
-            "command": "python .claude/hooks/g-hk-vault-migrate.py --if-diverged"
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/g-hk-vault-migrate.py\" --if-diverged"
           },
           {
             "type": "command",
-            "command": "python .claude/hooks/g-hk-agent-worktree-janitor.py -EventName SessionStart"
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/g-hk-agent-worktree-janitor.py\" -EventName SessionStart"
           }
         ]
       }
@@ -52,51 +31,55 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/g-hk-agent-complete.py"
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/g-hk-agent-complete.py\""
           },
           {
             "type": "command",
-            "command": "python .claude/hooks/g-hk-nightly-learn.py"
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/g-hk-nightly-learn.py\""
           },
           {
             "type": "command",
-            "command": "python .claude/hooks/g-hk-session-end.py"
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/g-hk-session-end.py\""
           },
           {
             "type": "command",
-            "command": "python .claude/hooks/g-hk-encoding-normalize.py -Quiet"
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/g-hk-encoding-normalize.py\" -Quiet"
           },
           {
             "type": "command",
-            "command": "python .claude/hooks/g-hk-ggo-stop-detect.py"
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/g-hk-ggo-stop-detect.py\""
           },
           {
             "type": "command",
-            "command": "python .claude/hooks/g-hk-post-session-trace.py"
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/g-hk-goal-stop-detect.py\""
           },
           {
             "type": "command",
-            "command": "python .claude/hooks/g-hk-crash-record.py --component-type hook --component-name stop-chain --trigger-source settings.json"
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/g-hk-post-session-trace.py\""
           },
           {
             "type": "command",
-            "command": "python .claude/hooks/g-hk-graph-update.py"
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/g-hk-crash-record.py\" --component-type hook --component-name stop-chain --trigger-source settings.json"
           },
           {
             "type": "command",
-            "command": "python .claude/hooks/g-hk-vault-verify.py"
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/g-hk-graph-update.py\""
           },
           {
             "type": "command",
-            "command": "python .claude/hooks/raw-inbox-watcher.py --hook-mode"
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/g-hk-vault-verify.py\""
           },
           {
             "type": "command",
-            "command": "python .claude/hooks/g-hk-vault-reindex.py"
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/raw-inbox-watcher.py\" --hook-mode"
           },
           {
             "type": "command",
-            "command": "python .claude/hooks/g-hk-agent-worktree-janitor.py -EventName Stop"
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/g-hk-vault-reindex.py\""
+          },
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/g-hk-agent-worktree-janitor.py\" -EventName Stop"
           }
         ]
       }
@@ -107,15 +90,15 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/g-hk-pre-tool-call-gald3r-guard.py"
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/g-hk-pre-tool-call-gald3r-guard.py\""
           },
           {
             "type": "command",
-            "command": "python .claude/hooks/g-hk-pre-tool-call-prd-freeze.py"
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/g-hk-pre-tool-call-prd-freeze.py\""
           },
           {
             "type": "command",
-            "command": "python .claude/hooks/g-hk-pre-tool-call-member-gald3r-guard.py"
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/g-hk-pre-tool-call-member-gald3r-guard.py\""
           }
         ]
       },
@@ -124,11 +107,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/g-hk-validate-shell.py"
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/g-hk-validate-shell.py\""
           },
           {
             "type": "command",
-            "command": "python .claude/hooks/g-hk-pre-tool-call.py"
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/g-hk-pre-tool-call.py\""
           }
         ]
       }
@@ -138,7 +121,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/g-hk-on-tool-end.py"
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/g-hk-on-tool-end.py\""
           }
         ]
       }
@@ -148,7 +131,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/g-hk-on-user-prompt-submit.py"
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/g-hk-on-user-prompt-submit.py\""
           }
         ]
       }

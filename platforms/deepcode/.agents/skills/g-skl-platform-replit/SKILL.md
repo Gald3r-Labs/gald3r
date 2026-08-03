@@ -13,7 +13,7 @@ docs_url_secondary:
   - https://blog.replit.com/introducing-workflows
 last_doc_scan: 2026-06-02
 capability_status:
-  hooks: "❌ no native lifecycle hooks; task lifecycle is observational; Linux container + g-hk-*.ps1 PowerShell mismatch"
+  hooks: "❌ no native lifecycle hooks; task lifecycle is observational; no hook surface for g-hk-*.py to wire into"
   rules: "✅ replit.md single instruction/memory blob (auto-read, self-updated); no .mdc / no glob scoping"
   skills: "✅ Agent Skills (agentskills.io SKILL.md) in /.agents/skills — lazy-loaded, Project/User/Enterprise scopes"
   commands: "❌ no user-authored slash-command registry; Workflows are shell-command runners, not agent commands"
@@ -22,6 +22,16 @@ capability_status:
 token_budget: low
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
 
 # g-skl-platform-replit
 
@@ -117,8 +127,8 @@ node --version                      # cloud shell is Linux/Node
 - **Instruction file is `replit.md`, not AGENTS.md/CLAUDE.md** — `AGENTS.md` is community-only; Replit
   standardizes on `replit.md` (root-only; "doesn't automatically apply to other AI tools").
 - Treating `.replit` as an instruction file — it is NOT; it is run/env config. Instructions → `replit.md`.
-- **No hooks**: `g-hk-*.ps1` never auto-fire (no hook surface) AND PowerShell is absent in the Linux
-  container — use `replit.md` prose, git `core.hooksPath` bash, or Plan mode for review gates.
+- **No hooks**: `g-hk-*.py` never auto-fire (no hook surface) — use `replit.md` prose, git
+  `core.hooksPath` bash, or Plan mode for review gates.
 - **No agent commands**: Workflows are shell-command Run buttons (build/test), not gald3r `/g-*`
   commands — trigger gald3r flows via the matching Agent Skill or chat intent.
 - **No custom-agent files**: `g-agnt-*.md` has no load path — use Plan/Build modes + effort tiers, or
@@ -130,7 +140,7 @@ node --version                      # cloud shell is Linux/Node
 
 | Feature | Status | Notes |
 |---|---|---|
-| Hooks (`g-hk-*.ps1`) | ❌ | No hook surface; task lifecycle is observational; Linux container has no PowerShell |
+| Hooks (`g-hk-*.py`) | ❌ | No hook surface; task lifecycle is observational |
 | Skills (`g-skl-*/SKILL.md`) | ✅ | agentskills.io `SKILL.md` in **`/.agents/skills`**; lazy-loaded; Project/User/Enterprise scopes (~Apr 2026) |
 | Agents (`g-agnt-*.md`) | ⚠️ | Native Plan/Build modes + effort tiers (Lite/Economy/Power/Turbo); no user-definable custom-agent file format |
 | Commands (`@g-*`) | ❌ | No slash-command registry; Workflows are shell runners, not agent commands |

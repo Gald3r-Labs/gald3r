@@ -113,8 +113,8 @@ Source: https://docs.subq.ai/overview/
 
 - **No lifecycle / event-hook system** (session-start, pre-tool, pre-commit, file-watch, or a
   `hooks.json` equivalent) is documented. The only "automatic" behavior is **internal turn-redirection
-  inside the plugin**, which is **not** a user-configurable script hook. gald3r PowerShell
-  `g-hk-*.ps1` hooks do **not** run on SubQ; they must run via the **host** (e.g. Claude Code
+  inside the plugin**, which is **not** a user-configurable script hook. gald3r's
+  `g-hk-*.py` hooks do **not** run on SubQ; they must run via the **host** (e.g. Claude Code
   `.claude/settings.json` hooks) or via git `core.hooksPath` / manual invocation.
 - Source: https://subq.ai/code
 
@@ -166,7 +166,7 @@ belongs to the **host** the plugin is installed into.
   internal turn-redirection, not a hook
 - **Event payload format**: n/a
 - **OS limits**: n/a (no hook runtime to constrain)
-- **gald3r hook files**: `g-hk-*.ps1` do **not** run on SubQ — wire them on the **host** (e.g.
+- **gald3r hook files**: `g-hk-*.py` do **not** run on SubQ — wire them on the **host** (e.g.
   Claude Code `.claude/settings.json`) or via git `core.hooksPath` / manual invocation instead
 
 ## Atypical Handling

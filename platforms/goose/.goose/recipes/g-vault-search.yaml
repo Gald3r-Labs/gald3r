@@ -1,0 +1,34 @@
+version: 1.0.0
+title: g-vault-search
+description: 'Search the vault: $ARGUMENTS'
+instructions: 'Search the vault: $ARGUMENTS
+
+
+  ## What This Command Does
+
+
+  Searches the file-first vault without requiring MCP or database services.
+
+
+  ## Workflow
+
+
+  1. Use `g-skl-vault`
+
+  2. Read `index.md` for the human map
+
+  3. Read `_index.yaml` for exact routing and metadata
+
+  4. Open the most relevant notes
+
+  5. Answer from the notes
+
+  6. If the result is durable, offer to save it back as a compiled note'
+prompt: Run the gald3r `g-vault-search` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-vault-search, e.g. quoted text or --flag
+    values, exactly as you would type them after the command name.

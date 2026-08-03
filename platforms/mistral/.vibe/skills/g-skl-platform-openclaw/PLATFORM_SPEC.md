@@ -26,7 +26,7 @@ OpenClaw is an **open-source, self-hosted AI agent gateway** oriented around cha
 gald3r-relevant extension primitives — slash commands, rules/memory, sub-agents, Agent Skills,
 lifecycle hooks, and MCP (client **and** server). Critically for gald3r, OpenClaw's instruction-file
 convention is **`AGENTS.md` + `SOUL.md`** (it does **not** read `CLAUDE.md`), and its hook handlers
-are **TypeScript** (`HOOK.md` + `handler.ts`), so gald3r's PowerShell `g-hk-*.ps1` hooks are **not
+are **TypeScript** (`HOOK.md` + `handler.ts`), so gald3r's `g-hk-*.py` hooks are **not
 drop-in portable** even though the hook mechanism itself is native.
 
 **Authoring path**: UPDATE. **Verified 2026-06-02** against https://docs.openclaw.ai (see
@@ -144,7 +144,7 @@ directly into the agent context on the first turn of a new session. `SOUL.md`, `
   `boot-md` (runs `BOOT.md` when the gateway starts).
 - **gald3r caveat (honest):** the mechanism is native, but handlers are **TypeScript** (`handler.ts`),
   and the event names differ from gald3r's (`gateway:startup` / `agent:bootstrap` / `command:new` vs
-  gald3r `SessionStart` / `Stop` / `PreToolUse`). gald3r's PowerShell `g-hk-*.ps1` hooks are therefore
+  gald3r `SessionStart` / `Stop` / `PreToolUse`). gald3r's `g-hk-*.py` hooks are therefore
   **not drop-in portable** — they must be re-expressed as `handler.ts` (or invoked as a child process
   from one), and the gald3r event→hook mapping for OpenClaw is **[STUB] / unverified**. Do not
   fabricate an event-to-hook mapping.
@@ -213,9 +213,9 @@ gald3r's `AGENTS.md` + `g-skl-*/SKILL.md` artifacts are largely reusable. The on
   `message:sent`
 - **Event payload format**: async TypeScript handler (`handler.ts`) receives the event object; this
   is **not** a stdin-JSON / exit-code contract
-- **Command extensions**: `.ts` (TypeScript) — **not** `.ps1` / `.sh`. PowerShell hooks must be
-  re-expressed as `handler.ts` or shelled out from one.
-- **gald3r hook files**: gald3r `g-hk-*.ps1` are **[STUB] / unverified** for OpenClaw — the
+- **Command extensions**: `.ts` (TypeScript) — **not** `.py` / `.sh`. gald3r's Python hooks must be
+  re-expressed as `handler.ts` or shelled out from one (e.g. spawning `python <path>`).
+- **gald3r hook files**: gald3r `g-hk-*.py` are **[STUB] / unverified** for OpenClaw — the
   event→hook mapping is **not** fabricated here. Re-verify on the next `@g-platform-scan-docs openclaw`.
 
 ## Atypical Handling

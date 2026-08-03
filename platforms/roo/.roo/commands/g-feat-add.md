@@ -1,5 +1,7 @@
-﻿---
+---
+description: 'Stage a new feature in features/ via g-skl-features STAGE, deduping against existing features first.'
 subsystem_memberships: [RELEASE_AND_VERSIONING]
+execution_tier: guarded_prompt
 ---
 Stage a new feature. Activates **g-skl-features** → STAGE operation.
 
@@ -7,7 +9,7 @@ Stage a new feature. Activates **g-skl-features** → STAGE operation.
 @g-feat-add "Feature Name"
 @g-feat-add "Feature Name" --goal G-01
 @g-feat-add "Feature Name" --tier full
-@g-feat-add "Feature Name" --from-harvest research/harvests/repo_slug/
+@g-feat-add "Feature Name" --from-harvest research/CRR_FunctionalSpecs/repo_slug/
 @g-feat-add "Feature Name" --skip-match
 ```
 

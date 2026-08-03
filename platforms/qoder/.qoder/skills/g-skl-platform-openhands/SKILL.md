@@ -24,6 +24,17 @@ token_budget: low
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
 
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
+
 # g-skl-platform-openhands
 
 Activate for: setting up gald3r with OpenHands (SDK / CLI / GUI / Cloud), authoring File-Based Agents / Agent Skills / lifecycle hooks / MCP / Plugins, or verifying the OpenHands gald3r install.
@@ -77,7 +88,7 @@ to the **OpenHands/extensions** registry / Cloud Plugin Launcher.
 - **Instruction file is `AGENTS.md`** — unlike Augment, OpenHands does **not** require `CLAUDE.md`.
   Write gald3r's always-on rules into `AGENTS.md` (or modular General Skills).
 - **Hooks** fire via `.openhands/hooks.json` (six events, stdin JSON, deny decisions). Wrap gald3r
-  `.ps1` hooks in a shell command (`pwsh -File ...`).
+  `.py` hooks in a shell command (`python <path>`, post-T1584 Python port; no PowerShell involved).
 - **Commands** ship as Skills-as-commands (`/skill-name`) and/or a Plugin `commands/` dir — there is
   no standalone per-repo command-file format.
 
@@ -106,7 +117,7 @@ Test-Path config.toml                            # [mcp] servers
 
 | Feature | Status | Notes |
 |---|---|---|
-| Hooks (`g-hk-*` via `pwsh`) | ✅ | `.openhands/hooks.json`; PreToolUse/PostToolUse/UserPromptSubmit/Stop/SessionStart/SessionEnd; stdin JSON; `{"decision":"deny"}` |
+| Hooks (`g-hk-*.py` via `python <path>`) | ✅ | `.openhands/hooks.json`; PreToolUse/PostToolUse/UserPromptSubmit/Stop/SessionStart/SessionEnd; stdin JSON; `{"decision":"deny"}` |
 | Skills (`g-skl-*/SKILL.md`) | ✅ | extended AgentSkills; `.agents/skills` (> deprecated `.openhands/skills`/`microagents`); `.claude/skills` accepted |
 | Agents (`g-agnt-*.md`) | ✅ | File-Based Agents `.agents/agents/*.md` (md + YAML) + `DelegateTool`; advanced via SDK `register_agent()` |
 | Commands (`@g-*`) | ✅ | Plugin `commands/*.md` + Skills as `/skill-name` (no standalone per-repo command file) |

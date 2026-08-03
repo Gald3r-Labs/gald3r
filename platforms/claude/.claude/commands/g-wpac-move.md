@@ -1,5 +1,8 @@
-﻿---
+---
+description: 'Move files or subsystems to a related WPAC project with provenance logging and safety gates.'
+argument-hint: '<source-path> -> <dest-project>'
 subsystem_memberships: [WORKSPACE_COORDINATION]
+execution_tier: guarded_prompt
 ---
 Transfer files or folders to another project in the topology: $ARGUMENTS
 

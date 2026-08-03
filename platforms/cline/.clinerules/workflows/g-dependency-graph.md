@@ -1,5 +1,7 @@
-﻿---
+---
+description: 'Generate or refresh task and/or subsystem dependency Mermaid graphs via g-skl-dependency-graph.'
 subsystem_memberships: [BUG_AND_QUALITY]
+execution_tier: orchestration
 ---
 Activate `g-skl-dependency-graph` to generate or refresh dependency graphs for tasks and/or subsystems.
 

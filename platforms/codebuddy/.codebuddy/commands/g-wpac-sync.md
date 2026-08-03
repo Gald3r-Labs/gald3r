@@ -1,5 +1,8 @@
-﻿---
+---
+description: 'Sync contract changes with sibling project(s) via WPAC INBOX using g-skl-wpac-sync (advisory only)'
+argument-hint: '<sibling-name|all> [-- description-of-changes]'
 subsystem_memberships: [WORKSPACE_COORDINATION]
+execution_tier: orchestration
 ---
 Initiate or respond to a sibling contract sync: $ARGUMENTS
 
@@ -10,7 +13,7 @@ Exchanges updated contract information with one or more sibling projects. Adviso
 ## Workflow
 
 ### 1. Load Topology
-Read `.gald3r/workspace/topology.md` to get siblings list.
+Read `.gald3r/linking/link_topology.md` to get siblings list.
 
 ### 2. Choose Target Sibling(s)
 - specific sibling by name
@@ -24,15 +27,15 @@ Review what is new or changed in your project contract:
 - Updated contact paths
 
 ### 4. Write SYNC Entry to Sibling INBOX
-Append `[SYNC]` entry to `{sibling}/.gald3r/workspace/inbox.md`:
+Append `[SYNC]` entry to `{sibling}/.gald3r/linking/INBOX.md`:
 ```markdown
 ## [SYNC] {date} — {this_project_name}
 **Updated**: {what changed}
-**Contract ref**: {workspace/peers/{this_project_name}.md}
+**Contract ref**: {linking/_peers/{this_project_name}.md}
 ```
 
 ### 5. Update Local Peer Copy
-Write/update `workspace/peers/{sibling_name}.md` with the latest peer contract.
+Write/update `linking/_peers/{sibling_name}.md` with the latest peer contract.
 
 ### 6. Report
 Confirm which siblings were notified. They will action at next session.

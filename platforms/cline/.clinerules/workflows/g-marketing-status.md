@@ -1,5 +1,7 @@
-﻿---
+---
+description: 'Show marketing activity status (reports, open tasks, channels) via g-skl-marketing STATUS mode.'
 subsystem_memberships: [AGENT_ORCHESTRATION]
+execution_tier: orchestration
 ---
 # @g-marketing-status
 

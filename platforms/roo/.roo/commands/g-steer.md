@@ -1,5 +1,8 @@
 ---
+description: 'Inject a one-shot steering prompt into a running g-go-code worktree session via steer.md.'
+argument-hint: '<task-id> "<prompt>" [--role <role>] [--owner <owner>]'
 subsystem_memberships: [TASK_MANAGEMENT]
+execution_tier: orchestration
 ---
 Steer a running g-go-code worktree session mid-flight without restarting it: $ARGUMENTS
 
@@ -32,8 +35,8 @@ the pending steer. Each new redirection requires a new `@g-steer` call.
    ```powershell
    gald3r worktree steer -TaskId {id} -Role code -Owner {owner} -SteerText "<steering prompt>" -Json
    ```
-   Installed templates may call the helper from the `gald3r worktree`
-   skill directory when no root `scripts/` copy exists.
+   Checkouts that ship a root `gald3r worktree` copy (the gald3r source repo)
+   may call the helper from there instead.
 3. The helper writes `steer.md` atomically (temp file + rename) at the worktree root so the running
    session never reads a half-written file.
 4. Confirm to user: `🧭 Steer queued for T{id} — the running session will pick it up at the next AC-gate.`

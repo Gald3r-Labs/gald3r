@@ -1,5 +1,8 @@
 ---
+description: 'Implement queued tasks/bugs through to awaiting-verification only; never runs review itself'
+argument-hint: '[tasks N,M | bugs BUG-N | subsystem NAME | bugs-only] [--swarm] [--mode fast|standard] [--provider <id>[:<model>]] [--model <id>] [--implementer-provider <id>] [--implementer-model <id>] [--resume T{id}]'
 subsystem_memberships: [TASK_MANAGEMENT]
+execution_tier: orchestration
 ---
 Implementation-only backlog execution: $ARGUMENTS
 
@@ -31,22 +34,41 @@ argument before spawning subagents.
 |----------|------|--------------|--------------|----------|
 | `fast` (alias `cheap`) | haiku-class | `claude-haiku-4-5` | `gpt-4o-mini` / `haiku` | Simple tasks, cost-sensitive runs, bucket agents on parallel-safe work |
 | `standard` (default) | sonnet-class | `claude-sonnet-4-6` | `sonnet-4` | Most tasks, coordinator role, anything requiring real reasoning |
-| (no flag) | inherit | session default | session default | Fall through to the IDE-configured default model |
+| (no flag) | inherit | session default (host-aware, T580: Cursor -> `gpt-5.6-terra-medium` by default — see g-go-go.md's "Provider & Model Routing") | session default | Fall through to the IDE-configured / host-mapped default model |
 
 `cheap` is a strict alias for `fast` (same tier, same model mapping). Use whichever reads
 more naturally for the session — they are interchangeable.
 
+### Explicit `--provider`/`--model` override (T580, BUG-612 companion)
+
+`$ARGUMENTS` MAY also carry an explicit `--provider <provider>[:<model>]` and/or `--model
+<model>` (applies to every bucket implementer this session dispatches), plus
+`--implementer-provider`/`--implementer-model` for the same thing spelled role-explicitly. These
+outrank both `--mode` and task `preferred_model:` (see "Resolution precedence" below) — known
+providers: `claude`, `cursor-agent`. When `g-go-code` is dispatched BY a `g-go --swarm`
+coordinator, the coordinator has already resolved this per-role (via
+`GALD3R_GGO_IMPLEMENTER_PROVIDER`/`GALD3R_GGO_IMPLEMENTER_MODEL` if set) and this session should
+honor that rather than re-resolving independently.
+
 ### Resolution precedence (highest wins)
 
-1. **Task YAML `preferred_model:`** — if the task being implemented sets `preferred_model:`
+1. **Role-specific CLI override** — `--implementer-provider`/`--implementer-model` (or the
+   `GALD3R_GGO_IMPLEMENTER_PROVIDER`/`_MODEL` env vars a swarm coordinator sets when dispatching
+   this session) (T580).
+2. **Global CLI override** — `--provider`/`--model` in `$ARGUMENTS` (T580).
+3. **Invoking host / parent-model mapping** — a detected Cursor host maps to `cursor-agent` +
+   `gpt-5.6-terra-medium` by default; Claude Code / unknown hosts stay on `claude` (T580,
+   BUG-612 — see g-go-go.md's "Provider & Model Routing" for the full table).
+4. **Task YAML `preferred_model:`** — if the task being implemented sets `preferred_model:`
    (`haiku` | `sonnet` | `opus` | `fast` | `standard`) in its frontmatter, that overrides the
    session `--mode` for that specific task only. Use this to force a complex task onto Opus
    even when the session is running in `fast`, or to keep a trivial follow-up on Haiku even
    when the session is running in `standard`.
-2. **Session `--mode` flag** — when `$ARGUMENTS` contains `--mode fast`, `--mode standard`,
+5. **Session `--mode` flag** — when `$ARGUMENTS` contains `--mode fast`, `--mode standard`,
    or `--mode cheap`, that mode applies to every queued item that does not override.
-3. **Session default** — when neither is set, fall through to whatever the host IDE is
-   currently configured for. Do not pick a tier silently.
+6. **Session default** — when nothing above is set, fall through to whatever the host IDE
+   is currently configured for (host-mapped per step 3 when detectable). Do not pick a tier
+   silently.
 
 ### Status History mode logging (AC5)
 
@@ -235,7 +257,7 @@ writes (TASKS.md, BUGS.md, task files, CHANGELOG.md, generated prompts, parity o
 ### Step 0 — Workspace Member Clean-Status Preflight (T1431)
 
 Before the WPAC gate / task selection / claim / worktree creation, run the **read-only** workspace
-member clean-status preflight: scan `.gald3r/workspace/workspace_manifest.yaml`, run
+member clean-status preflight: scan `.gald3r/linking/workspace_manifest.yaml`, run
 `git -C <path> status --short` on each `autonomous_child` member, and either print
 `Workspace clean -- N members checked` (proceed) or a per-repo dirty-status table asking the user
 to commit/stash first. Never auto-commits or writes. `--skip-member-clean-check` bypasses with a
@@ -246,7 +268,7 @@ printed warning. Additive to the Housekeeping Commit Gate. **Full authoritative 
 
 ### WPAC inbox Gate (Only When WPAC is configured)
 
-Before task claiming, implementation, verification, planning, or swarm partitioning, first determine whether this project is a WPAC participant. WPAC is configured only when `.gald3r/workspace/topology.md` declares at least one parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares WPAC project linking relationships. A Workspace-Control manifest and local `INBOX.md` alone do not make the project a WPAC group member.
+Before task claiming, implementation, verification, planning, or swarm partitioning, first determine whether this project is a WPAC participant. WPAC is configured only when `.gald3r/linking/link_topology.md` declares at least one parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares WPAC project linking relationships. A Workspace-Control manifest and local `INBOX.md` alone do not make the project a WPAC group member.
 
 If WPAC is configured, run the re-callable WPAC inbox check when the hook exists.
 
@@ -254,7 +276,7 @@ If WPAC is configured, run the re-callable WPAC inbox check when the hook exists
 
 ```powershell
 $hook = @( ".cursor\hooks\g-hk-wpac-inbox-check.py", ".claude\hooks\g-hk-wpac-inbox-check.py", ".agent\hooks\g-hk-wpac-inbox-check.py", ".codex\hooks\g-hk-wpac-inbox-check.py", ".opencode\hooks\g-hk-wpac-inbox-check.py" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
-if ($hook) { powershell -NoProfile -ExecutionPolicy Bypass -File $hook -ProjectRoot . -BlockOnConflict }
+if ($hook) { python $hook -ProjectRoot . -BlockOnConflict }
 ```
 
 Installed templates may call the equivalent hook from the active IDE folder. If the check reports `INBOX CONFLICT GATE` or exits with code `2`, stop immediately and run `@g-wpac-read`; do not claim tasks, create worktrees, spawn reviewers, or continue planning until conflicts are resolved. Non-conflict requests, broadcasts, and syncs are advisory and should be surfaced in the session summary.
@@ -275,7 +297,7 @@ Behavior:
 - **`safe-gald3r-housekeeping`** -> the helper stages **only** allowlisted controller `.gald3r/` paths via explicit `git add -- <paths>` (never `git add .`), re-checks for drift, and creates a focused `chore(gald3r): preflight gald3r housekeeping` commit. The run continues automatically.
 - **`unsafe-gald3r` / `mixed-dirty` / `conflict` / `drift-detected` / unknown `.gald3r` paths / member-repo `config-fault`** -> the helper exits non-zero, the existing Clean Controller Gate hard-block applies, and the run STOPs with the exact unsafe paths listed.
 
-The helper allowlist covers the safe controller `.gald3r/` coordination surfaces (TASKS.md, BUGS.md, FEATURES.md, PRDS.md, SUBSYSTEMS.md, IDEA_BOARD.md, learned-facts.md, tasks/, bugs/, features/, prds/, subsystems/, reports/, logs/wpac_auto_actions.log, workspace/sent_orders/, workspace/inbox.md). The deny list covers `.identity`, `.user_id`, `.project_id`, `.vault_location`, `vault/`, `config/`, `.gald3r-worktree.json`, secret-named files, and unknown `.gald3r/` paths. Member-repo targets (marker-only `.gald3r/`) are refused -- this gate is **controller-only**.
+The helper allowlist covers the safe controller `.gald3r/` coordination surfaces (TASKS.md, BUGS.md, FEATURES.md, PRDS.md, SUBSYSTEMS.md, IDEA_BOARD.md, learned-facts.md, tasks/, bugs/, features/, prds/, subsystems/, reports/, logs/wpac_auto_actions.log, linking/sent_orders/, linking/INBOX.md). The deny list covers `.identity`, `.user_id`, `.project_id`, `.vault_location`, `vault/`, `config/`, `.gald3r-worktree.json`, secret-named files, and unknown `.gald3r/` paths. Member-repo targets (marker-only `.gald3r/`) are refused -- this gate is **controller-only**.
 
 Re-run the helper in `-Mode post-write -Apply` immediately after coordinator-owned shared `.gald3r` writes (task/bug status writes, review-result writes, sent_orders ledger updates, safe report/log outputs) and before the next major phase so the shared-state dirty window stays short. In `--swarm` flows only the coordinator runs the helper; bucket agents remain handoff producers.
 ### Clean Controller Gate (before claims, worktrees, reconciliation)
@@ -286,7 +308,7 @@ After the WPAC gate is skipped or passes:
 
 2. **`gald3r worktree create -AllowDirty`**: do not use this switch for `g-go`, `g-go-code`, `g-go-review`, or any `--swarm` variant **except** when every dirty path is owned exclusively by the active task/bug scope and a `## Status History` row documents that override. Otherwise clean the checkout first. The same **per-root** `-AllowDirty` discipline applies to every repository included in the touch set below when multi-repo work is in scope.
 
-3. **Member touch-set (v1 — `workspace_repos`)** — The orchestration root is **always** gated. When the active task or bug declares **`workspace_repos:`** with manifest `repository.id` entries, extend the gate to each **other** resolved member root (blast radius follows declared cross-repo scope). Read `.gald3r/workspace/workspace_manifest.yaml` when present; map each listed ID (deduplicated) to `repositories[?].local_path`. For each existing path, run `git -C "<path>" rev-parse --show-toplevel` then `git status --short` at that root. Apply the same **explicit coordinator staging allowlist** per root. Skip IDs whose paths are missing while `lifecycle_status` is a planned/bootstrap gap (report only; do not expand the touch set). If the manifest is missing while `workspace_repos` is non-empty, or an ID is unknown under `repositories:`, **STOP** multi-repo coordinator work until manifest or frontmatter is repaired (controller-only queue items whose `workspace_repos` lists only the owner id may proceed once that id resolves).
+3. **Member touch-set (v1 — `workspace_repos`)** — The orchestration root is **always** gated. When the active task or bug declares **`workspace_repos:`** with manifest `repository.id` entries, extend the gate to each **other** resolved member root (blast radius follows declared cross-repo scope). Read `.gald3r/linking/workspace_manifest.yaml` when present; map each listed ID (deduplicated) to `repositories[?].local_path`. For each existing path, run `git -C "<path>" rev-parse --show-toplevel` then `git status --short` at that root. Apply the same **explicit coordinator staging allowlist** per root. Skip IDs whose paths are missing while `lifecycle_status` is a planned/bootstrap gap (report only; do not expand the touch set). If the manifest is missing while `workspace_repos` is non-empty, or an ID is unknown under `repositories:`, **STOP** multi-repo coordinator work until manifest or frontmatter is repaired (controller-only queue items whose `workspace_repos` lists only the owner id may proceed once that id resolves).
 
 4. **Touch-set expansion (v2 — optional signals)** — Union extra repository roots into the same per-root checks (still **not** a blanket scan of every manifest member):
    - **`extended_touch_repos:`** — optional task/bug YAML list of additional manifest `repository.id` values beyond `workspace_repos`.
@@ -365,6 +387,22 @@ When in doubt on Windows, default to PowerShell for any snippet that uses `@(`, 
 
 ---
 
+### Step 0b — CLI Invocation Rule: `uv run gald3r` (BUG-591)
+
+Every `gald3r <verb>` call in this run — including the ones later in this document
+(`gald3r worktree create`, `gald3r housekeep`, `gald3r project-type resolve`, `gald3r search`,
+`gald3r task`/`gald3r bug` verbs, `gald3r validate`, etc.) — MUST be run as **`uv run gald3r
+<verb>`**, never bare `gald3r`, whenever cwd is a dev checkout of `gald3r_core` (this repo, a
+worktree of it, or a Workspace-Control member that is itself such a checkout). A bare `gald3r`
+call can silently resolve to a stale globally-installed PATH binary that shadows this checkout's
+own dev source — confirmed damage (BUG-591) includes wrong `db backfill` counts, missing verb
+groups misreported as "invalid choice", and a worktree-isolated agent's own status-update call
+landing in the MAIN checkout's `.gald3r/` instead of its own, defeating worktree isolation.
+**Full text, rationale, and the optional machine-actionable staleness hard-fail check: see
+`g-go.md` Step 0b.**
+
+---
+
 ### 1. Load Context (Before Touching Anything)
 
 Read in this order:
@@ -381,6 +419,11 @@ Read in this order:
   strings (AC1). Absent `.gald3r/config/workflow_profiles/` → built-in
   `software_dev` lifecycle (unchanged behavior).
 - `git log --oneline -10` — recent changes
+
+> **Codebase search (g-rl-43 / BUG-519)**: for any codebase content search, prefer
+> `gald3r search <pattern> [--path DIR]`; it is **mandatory**, not just preferred, whenever
+> a search must see inside `.gald3r/` or `.gald3r_sys/` — the harness/ripgrep `Grep` tool is
+> gitignore-aware and silently misses gitignored trees like `.gald3r_sys/` on broad searches.
 
 ### 2. Build the Work Queue
 
@@ -491,12 +534,13 @@ For each queued task or bug, generate a locked implementation plan and append it
 After speccing claims are resolved and before any implementation file changes or primary-checkout status writes, isolate every queued item with the T170 helper:
 
 ```powershell
-gald3r worktree create -TaskId {id} -Role code -Owner {platform_or_agent_slug} -Json
+gald3r worktree create -TaskId {id} -Role code -Json
 ```
 
 Installed templates may call the helper from the `gald3r worktree` skill directory when no root `scripts/` copy exists.
 
 Rules:
+- **Owner (T580/BUG-612)**: omit `-Owner` — the helper auto-resolves it from your ACTUAL routed provider (`agent_role_routing.resolve_worktree_owner_label`, reading `GALD3R_GGO_IMPLEMENTER_PROVIDER`/`GALD3R_GGO_COORDINATOR_PROVIDER`, whichever `-Role` maps to) before falling back to `USERNAME`/`USER`/`agent`. A Claude-hosted or override-free run resolves nothing extra here and keeps the pre-T580 USERNAME-based owner unchanged; a Cursor-hosted run (or any explicit `--provider`/role override) gets a real, non-`claude` owner label instead of a guessed literal. Pass `-Owner <value>` explicitly only when you need to override that resolution yourself.
 - Worktree root defaults to `$env:GALD3R_WORKTREE_ROOT`, else `<repo-parent>/.gald3r-worktrees/<repo-name>`.
 - The helper must refuse nested worktrees inside the active checkout.
 - The helper blocks when the active checkout is dirty unless the **Clean Controller Gate** is satisfied with a documented `-AllowDirty` override in the owning task or bug `## Status History` (see `g-rl-33`).
@@ -528,9 +572,9 @@ This gate ensures g-go-review has a pre-defined, unambiguous contract to check. 
 
 **b0.1 Impact Scan (T921 → T1158, default-on)**
 
-Call `graph_impact` on each file in the task touch set via gald3r_muninn MCP. The PowerShell wrapper is the canonical entry point and falls back automatically when the muninn graph is not indexed:
+Call `graph_impact` on each file in the task touch set via gald3r_muninn MCP. The Python wrapper is the canonical entry point and falls back automatically when the muninn graph is not indexed:
 
-```powershell
+```bash
 python scripts/graph_impact.py -File "{file_to_be_modified}" -Depth 2 -Json
 ```
 
@@ -1076,6 +1120,25 @@ Handoff only: for independent verification, open a NEW agent session and run @g-
 Rolling waves: {continued|stopped}; next runnable queue: {ids or none}; verified-dependency blockers: {ids or none}
 ```
 
+## Spawned-agent task/bug creation (T585 AC3)
+
+During this run, **any** task or bug a spawned agent needs to create (deferred sub-feature,
+newly discovered bug, follow-up) goes into the **hot inbox**, never a direct `tasks/open/` /
+`bugs/open/` write + index regeneration:
+
+- **Preferred** — call the engine verb (`gald3r task create …` / `gald3r bug report …`, or the
+  `gald3r_task_*` / `gald3r_bug_*` MCP tools). When the run marker
+  (`.gald3r/logs/ggo_run_state.json` `active: true`, or `GALD3R_AGENT_RUN=1`) is set, the engine
+  **auto-routes** the new item to `tasks/inbox/` / `bugs/inbox/` as an id-less, uuid-suffixed
+  draft — no id is assigned at create time.
+- **Manual fallback** (no engine) — hand-write the draft directly into `tasks/inbox/` /
+  `bugs/inbox/` (id-less, uuid-suffixed filename). Do **not** write `tasks/open/` / `bugs/open/`
+  or touch `TASKS.md` / `BUGS.md`.
+
+The hot-inbox **intake** (run at each iteration boundary — see the inbox-intake step) is the
+*single ID-assigning authority*: it assigns ids atomically, so N concurrent agents can never
+collide on the next id. This is the spawn-side complement of that intake step.
+
 ## Behavioral Rules
 
 | Rule | Why |
@@ -1156,8 +1219,9 @@ Spawning {N} implementation agents...
 **Step S6: Spawn sub-agents**
 - Before spawning, create or reuse one coding worktree per bucket:
   ```powershell
-  gald3r worktree create -TaskId bucket-{bucket_number} -Role code-swarm -Owner {platform_or_agent_slug} -BucketId {bucket_number} -LockFiles {bucket_planned_paths} -BucketTtlMinutes 60 -StaleBaseAction Recreate -Json
+  gald3r worktree create -TaskId bucket-{bucket_number} -Role code-swarm -BucketId {bucket_number} -LockFiles {bucket_planned_paths} -BucketTtlMinutes 60 -StaleBaseAction Recreate -Json
   ```
+  Owner is auto-resolved (T580/BUG-612) — see Step 3's owner-resolution note above; omit `-Owner` here too unless you need an explicit override.
   **`-StaleBaseAction Recreate` is mandatory for rolling-wave bucket worktrees.** Without it,
   iteration-2+ bucket worktrees silently reuse the iteration-1 worktrees (same `TaskId
   bucket-N`), which forked from the session-start HEAD. Implementers then miss all Alembic

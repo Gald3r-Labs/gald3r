@@ -55,7 +55,7 @@ gald3r convention folder:
     ├── prompts/       *.prompt.md     ← reusable slash commands (YAML frontmatter; /command-name)
     ├── agents/        AGENT-NAME.md   ← custom agents (specialist persona; tool restrictions)
     ├── skills/        <name>/SKILL.md ← Agent Skills (YAML frontmatter: name + description)
-    └── hooks/         *.json          ← Copilot CLI lifecycle hooks (bash/PowerShell variants)
+    └── hooks/         *.json          ← Copilot CLI lifecycle hooks (bash variant runs gald3r `g-hk-*.py` via `python <path>`)
 
 .claude/skills/<name>/SKILL.md        ← Copilot ALSO discovers Agent Skills here  (cross-tool)
 .agents/skills/<name>/SKILL.md        ← Copilot ALSO discovers Agent Skills here  (cross-tool)
@@ -138,8 +138,9 @@ dedicated `COPILOT.md` is required — gald3r's `AGENTS.md` is a first-class inp
 - **Copilot CLI hooks** are "custom shell commands that execute deterministically at specific points
   in an agent's workflow." Events: **sessionStart**, **userPromptSubmitted**, **preToolUse**,
   **postToolUse**, **sessionEnd**, **errorOccurred**. For **preToolUse**, a hook returning **`deny`
-  blocks the tool**. Configured in **`.github/hooks/*.json`** with **bash/PowerShell variants** — so
-  gald3r `g-hk-*.ps1` hooks wire via the PowerShell variant (sessionStart context injection,
+  blocks the tool**. Configured in **`.github/hooks/*.json`** with **bash / any-executable variants**
+  — so gald3r `g-hk-*.py` hooks wire via the bash variant running `python <path>` (post-T1584 Python
+  port; no PowerShell involved; sessionStart context injection,
   preToolUse `.gald3r/` guards, etc.).
 - **Surface caveat**: hooks are GA on the **Copilot CLI**; **Agent hooks are also in preview for
   VS Code**.
@@ -202,10 +203,10 @@ separate port** — the cheapest path to a high-parity Copilot install is to shi
 - **Type**: native (Copilot CLI lifecycle hooks; JSON config) — agent-session only (NOT git hooks / CI / Actions)
 - **Config file**: `.github/hooks/*.json`
 - **Events available**: sessionStart, userPromptSubmitted, preToolUse (returning `deny` blocks the tool), postToolUse, sessionEnd, errorOccurred
-- **Event payload format**: JSON config; hook objects carry **bash / PowerShell** command variants
-- **Command extensions**: `.sh` (bash variant), `.ps1` (PowerShell variant)
+- **Event payload format**: JSON config; hook objects carry **bash** command variants (any executable)
+- **Command extensions**: `.sh` (bash variant) running any executable, incl. gald3r's `g-hk-*.py` via `python <path>`
 - **Surface limit**: GA on the Copilot **CLI**; **preview** in VS Code
-- **gald3r hook files**: `g-hk-*.ps1` wire via the PowerShell variant across the events above (agent-session scope only)
+- **gald3r hook files**: `g-hk-*.py` wire via the bash variant running `python <path>` across the events above (agent-session scope only)
 
 ## Atypical Handling
 
@@ -223,7 +224,7 @@ separate port** — the cheapest path to a high-parity Copilot install is to shi
 
 - Ship gald3r's `.claude/skills/` tree — Copilot discovers it; generate
   `.github/copilot-instructions.md` (from always-apply rules) and `AGENTS.md`.
-- Hooks wire on the Copilot **CLI** via the PowerShell variant; VS Code hook support is **preview**
+- Hooks wire on the Copilot **CLI** via the bash variant running `python <path>`; VS Code hook support is **preview**
   — do not assume session-start/pre-commit hooks fire in the VS Code surface yet.
 - Prompt-file slash commands are **VS Code-only** — gald3r commands are not executable on the CLI.
 - Re-verify on the next `@g-platform-scan-docs copilot` (crawl_max_age_days: 7).
@@ -256,6 +257,6 @@ Rationale (honest, surface-aware):
 | Rules | Cheat sheet — custom instructions `.github/copilot-instructions.md` (repo) + `.github/instructions/*.instructions.md` (`applyTo:`) + `AGENTS.md`/`CLAUDE.md`/`GEMINI.md`; plus Agentic Memory (Pro/Pro+ preview) |
 | Agents | Cheat sheet — custom agents `.github/agents/AGENT-NAME.md` (specialist persona, tool restrictions) + subagents; GA in JetBrains 2026; VS 2026 v18.4+; org via `.github-private` |
 | Skills | /concepts/agents/about-agent-skills — Agent Skills `SKILL.md` (name+description); discovered in `.github/skills/`, `.claude/skills/`, `.agents/skills/`; added Apr 2026; cross-tool standard |
-| Hooks | /reference/hooks-configuration — `.github/hooks/*.json`; sessionStart/userPromptSubmitted/preToolUse/postToolUse/sessionEnd/errorOccurred; preToolUse `deny` blocks; bash/PowerShell; CLI GA, VS Code preview |
+| Hooks | /reference/hooks-configuration — `.github/hooks/*.json`; sessionStart/userPromptSubmitted/preToolUse/postToolUse/sessionEnd/errorOccurred; preToolUse `deny` blocks; bash variant runs gald3r `g-hk-*.py` via `python <path>`; CLI GA, VS Code preview |
 | MCP | /concepts/context/mcp — `mcpServers` object; STDIO/HTTP/SSE; `mcp.json` (IDE) / `~/.copilot/mcp-config.json` (CLI) / repo settings (cloud); GitHub MCP Registry (preview) |
 | Cross-compat | Copilot reads `AGENTS.md` (nearest-in-tree) and discovers `.claude/` + `.agents/` skills → gald3r Claude-Code skill artifacts reusable |

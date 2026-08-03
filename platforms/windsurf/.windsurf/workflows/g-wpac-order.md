@@ -1,16 +1,19 @@
-﻿---
+---
+description: 'Broadcast a WPAC task order from this parent project to one or more child projects.'
+argument-hint: '[child-name:] <order-description> [cascade:N]'
 subsystem_memberships: [WORKSPACE_COORDINATION]
+execution_tier: guarded_prompt
 ---
 Push a task or directive to child projects: $ARGUMENTS
 
 ## What This Command Does
 
-Broadcasts a task order from this parent project to one or more child projects using the PCAC (Project Command and Control) topology. Uses `g-skl-wpac-order`.
+Broadcasts a task order from this parent project to one or more child projects using the WPAC (Project Command and Control) topology. Uses `g-skl-wpac-order`.
 
 ## Workflow
 
 ### 1. Load Topology
-Read `.gald3r/workspace/topology.md` to identify children.
+Read `.gald3r/linking/link_topology.md` to identify children.
 
 ### 2. Determine Target
 ```
@@ -32,7 +35,7 @@ Before writing, check each target child's INBOX.md for existing CONFLICTs.
 For each accessible child:
 - Create task file in `{child}/.gald3r/tasks/`
 - Update `{child}/.gald3r/TASKS.md`
-- Append `[BROADCAST]` entry to `{child}/.gald3r/workspace/inbox.md`
+- Append `[BROADCAST]` entry to `{child}/.gald3r/linking/INBOX.md`
 
 ### 6. Report
 Show results: ✅ created / ⚠️ conflict / ❌ inaccessible

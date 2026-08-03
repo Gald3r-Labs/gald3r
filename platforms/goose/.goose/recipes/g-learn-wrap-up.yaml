@@ -1,0 +1,40 @@
+version: 1.0.0
+title: g-learn-wrap-up
+description: g-learn-wrap-up
+instructions: "# g-learn-wrap-up\n\nManually flush session learning artifacts before\
+  \ ending a conversation — or any time you want to save without waiting for the automatic\
+  \ stop-event trigger.\n\n## What It Does\n\n1. **Chat log** — runs `g-hk-cursor-chat-logger.py`\
+  \ against the current session transcript\n2. **Learned facts extraction** — runs\
+  \ `gald3r learn nightly` (force mode, bypasses the 5-stop counter)\n3. **Vocab checkpoint**\
+  \ — confirms `.gald3r/vocab.md` is up to date\n4. **Memory capture** — offers `memory_capture_session`\
+  \ summary via example_app MCP (optional, requires Docker)\n\n## Usage\n\n```\n@g-learn-wrap-up\n\
+  @g-learn-wrap-up --no-memory    # skip MCP memory capture (offline/fast)\n@g-learn-wrap-up\
+  \ --chat-only    # only save the chat log\n@g-learn-wrap-up --facts-only   # only\
+  \ run learned-facts extraction\n```\n\n## Related Commands (g-learn-* group)\n\n\
+  | Command | Purpose |\n|---|---|\n| `@g-learn-wrap-up` | This command — manual session\
+  \ flush |\n| `@g-learn-review` | Review and curate `.gald3r/learned-facts.md` |\n\
+  | `@g-vocab-add` | Add abbreviation to `.gald3r/vocab.md` |\n| `@g-vocab-list` |\
+  \ Show all active abbreviations |\n\n## Implementation\n\nRun these PowerShell steps\
+  \ in order:\n\n```powershell\n# 1. Chat log (resolve project root first)\n$ProjectRoot\
+  \ = git -C . rev-parse --show-toplevel 2>$null\nif (-not $ProjectRoot) { $ProjectRoot\
+  \ = (Get-Location).Path }\n\npy \"$ProjectRoot\\.cursor\\hooks\\g-hk-cursor-chat-logger.py\"\
+  \ `\n   --project-path $ProjectRoot `\n   --platform cursor `\n   --status completed\n\
+  \n# 2. Learned facts (force run, bypass counter)\ngald3r learn nightly `\n   --force\n\
+  \n# 3. Report vocab row count\n$vocabFile = \"$ProjectRoot\\.gald3r\\vocab.md\"\n\
+  if (Test-Path $vocabFile) {\n    $rows = (Get-Content $vocabFile | Where-Object\
+  \ { $_ -match '^\\|' -and $_ -notmatch '---' -and $_ -notmatch 'Abbreviation' }).Count\n\
+  \    Write-Host \"\U0001F4D6 Vocab: $rows active abbreviations\"\n}\n```\n\nIf `--no-memory`\
+  \ is NOT passed, also offer:\n\n```\nmemory_capture_session(project_id=<from .gald3r/.identity>,\
+  \ summary=<session summary>)\n```\n\n## Notes\n\n- The `g-learn-*` prefix groups\
+  \ all session-memory and knowledge commands together for visual discoverability\
+  \ (CRASH convention)\n- This command is safe to run mid-session — it does not end\
+  \ the conversation\n- The 5-stop counter in `g-hk-nightly-learn.py` is bypassed;\
+  \ the counter is NOT reset by this command"
+prompt: Run the gald3r `g-learn-wrap-up` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-learn-wrap-up, e.g. quoted text or --flag
+    values, exactly as you would type them after the command name.

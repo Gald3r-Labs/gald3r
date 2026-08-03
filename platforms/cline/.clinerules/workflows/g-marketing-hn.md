@@ -1,5 +1,7 @@
-﻿---
+---
+description: 'Draft a Hacker News Show/Tell HN post — titles, story, timing advice — via g-skl-marketing.'
 subsystem_memberships: [AGENT_ORCHESTRATION]
+execution_tier: prompt_only
 ---
 # @g-marketing-hn
 

@@ -1,5 +1,7 @@
-﻿---
+---
+description: 'Report a new bug via g-skl-bugs REPORT — assigns BUG-NNN, creates the bug file, updates BUGS.md.'
 subsystem_memberships: [BUG_AND_QUALITY]
+execution_tier: guarded_prompt
 ---
 Report a new bug. Activates **g-skl-bugs** → REPORT BUG operation.
 
@@ -9,6 +11,8 @@ Report a new bug. Activates **g-skl-bugs** → REPORT BUG operation.
 ```
 
 Zero-tolerance: pre-existing and unrelated bugs still get logged. Describe the bug and the skill handles BUG-NNN ID assignment, file creation, BUGS.md index entry.
+
+> **Active agent run → inbox routing (T585):** during a `g-go-go` / `g-go-code` / swarm run (marker `.gald3r/logs/ggo_run_state.json` `active: true`, or env `GALD3R_AGENT_RUN=1`), the skill/engine writes the new bug to `bugs/inbox/` as an **id-less draft**; the hot-inbox intake assigns the real BUG-NNN id atomically at the next iteration boundary, so concurrent agents never collide on the next id. Display: *"Agent run detected — bug queued to inbox for safe ID assignment."* No active run → direct create, unchanged.
 
 > **Alias**: `@g-bug-report` also works (deprecated; use `@g-bug-add` for new work).
 

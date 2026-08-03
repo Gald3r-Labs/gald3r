@@ -1,5 +1,7 @@
-﻿---
+---
+description: 'Scaffold a new gald3r MCP plugin from _template/ and register it in plugin_catalog.json.'
 subsystem_memberships: [PLATFORM_INTEGRATION]
+execution_tier: orchestration
 ---
 Scaffold a new gald3r MCP plugin from the `_template/` directory and stage a
 matching entry in `docker/gald3r/plugin_catalog.json`.

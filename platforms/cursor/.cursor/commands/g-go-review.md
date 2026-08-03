@@ -1,5 +1,8 @@
 ---
+description: 'Verify tasks/bugs awaiting review in a fresh session: PASS/FAIL scoring, no self-review, auto-commits verdict.'
+argument-hint: '[tasks <id...>] [--swarm] [--provider <id>[:<model>]] [--model <id>] [--reviewer-provider <id>] [--reviewer-model <id>]'
 subsystem_memberships: [TASK_MANAGEMENT]
+execution_tier: orchestration
 ---
 Verification-only backlog review: $ARGUMENTS
 
@@ -17,13 +20,28 @@ Verification-only backlog review: $ARGUMENTS
 > **local-only** — `g-go-review` does not re-evaluate `g_go_default_scope`; let `g-go` own the
 > controller-default workspace_all expansion.
 
+## Provider & Model Selection (T580, BUG-612 companion)
+
+`$ARGUMENTS` MAY carry an explicit `--provider <provider>[:<model>]` and/or `--model <model>`
+(global) plus `--reviewer-provider`/`--reviewer-model` (role-explicit — identical to the global
+form here since this command's only role IS the reviewer). Resolution order: role-specific /
+global CLI override > invoking host/parent-model mapping (a detected Cursor host maps to
+`cursor-agent` + `gpt-5.6-terra-medium` by default; Claude Code / unknown hosts stay `claude`) >
+task `preferred_model:` > session default — see `g-go-go.md`'s "Provider & Model Routing"
+section for the full precedence/host-mapping table `gald3r autopilot loop` implements in code
+(`agent_role_routing.resolve_agent_target("reviewer", ...)`). **Independence is unaffected by
+provider/model choice** — a reviewer resolved to a different provider or model than the
+implementer still runs in a fresh session with no Phase 1 context; provider/model selection and
+review independence are orthogonal concerns and this command enforces both regardless of which
+provider was used to implement the work under review.
+
 ---
 
 
 ### Step 0 — Workspace Member Clean-Status Preflight (T1431)
 
 Before the WPAC gate / review-queue build / claim / review-worktree creation, run the **read-only**
-workspace member clean-status preflight: scan `.gald3r/workspace/workspace_manifest.yaml`, run
+workspace member clean-status preflight: scan `.gald3r/linking/workspace_manifest.yaml`, run
 `git -C <path> status --short` on each `autonomous_child` member, and either print
 `Workspace clean -- N members checked` (proceed) or a per-repo dirty-status table asking the user
 to commit/stash first. Never auto-commits or writes. `--skip-member-clean-check` bypasses with a
@@ -32,15 +50,27 @@ printed warning. Additive to the Housekeeping Commit Gate. **Full authoritative 
 
 ---
 
+### Step 0b — CLI Invocation Rule: `uv run gald3r` (BUG-591)
+
+Every `gald3r <verb>` call in this run (`gald3r housekeep`, `gald3r task`/`gald3r bug` verdict
+verbs, `gald3r worktree create` for a review-swarm bucket, `gald3r search`, etc.) MUST run as
+**`uv run gald3r <verb>`**, never bare `gald3r`, whenever cwd is a dev checkout of `gald3r_core`.
+A bare call can resolve to a stale PATH binary that silently shadows this checkout's dev source
+(BUG-591) — including a reviewer's own PASS/FAIL status-write landing in the wrong `.gald3r/`
+across a worktree boundary. **Full text, rationale, and the optional machine-actionable staleness
+hard-fail check: see `g-go.md` Step 0b.**
+
+---
+
 ### WPAC inbox Gate (Only When WPAC is configured)
 
-Before task claiming, implementation, verification, planning, or swarm partitioning, first determine whether this project is a WPAC participant. WPAC is configured only when `.gald3r/workspace/topology.md` declares at least one parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares WPAC project linking relationships. A Workspace-Control manifest and local `INBOX.md` alone do not make the project a WPAC group member.
+Before task claiming, implementation, verification, planning, or swarm partitioning, first determine whether this project is a WPAC participant. WPAC is configured only when `.gald3r/linking/link_topology.md` declares at least one parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares WPAC project linking relationships. A Workspace-Control manifest and local `INBOX.md` alone do not make the project a WPAC group member.
 
 If WPAC is configured, run the re-callable inbox check when the hook exists:
 
 ```powershell
 $hook = @( ".cursor\hooks\g-hk-wpac-inbox-check.py", ".claude\hooks\g-hk-wpac-inbox-check.py", ".agent\hooks\g-hk-wpac-inbox-check.py", ".codex\hooks\g-hk-wpac-inbox-check.py", ".opencode\hooks\g-hk-wpac-inbox-check.py" ) | Where-Object { Test-Path $_ } | Select-Object -First 1
-if ($hook) { powershell -NoProfile -ExecutionPolicy Bypass -File $hook -ProjectRoot . -BlockOnConflict }
+if ($hook) { python $hook -ProjectRoot . -BlockOnConflict }
 ```
 
 Installed templates may call the equivalent hook from the active IDE folder. If the check reports `INBOX CONFLICT GATE` or exits with code `2`, stop immediately and run `@g-wpac-read`; do not claim tasks, create worktrees, spawn reviewers, or continue planning until conflicts are resolved. Non-conflict requests, broadcasts, and syncs are advisory and should be surfaced in the session summary. If WPAC is not configured, skip this gate and report `WPAC: not configured / skipped`.
@@ -61,7 +91,7 @@ Behavior:
 - **`safe-gald3r-housekeeping`** -> the helper stages **only** allowlisted controller `.gald3r/` paths via explicit `git add -- <paths>` (never `git add .`), re-checks for drift, and creates a focused `chore(gald3r): preflight gald3r housekeeping` commit. The run continues automatically.
 - **`unsafe-gald3r` / `mixed-dirty` / `conflict` / `drift-detected` / unknown `.gald3r` paths / member-repo `config-fault`** -> the helper exits non-zero, the existing Clean Controller Gate hard-block applies, and the run STOPs with the exact unsafe paths listed.
 
-The helper allowlist covers the safe controller `.gald3r/` coordination surfaces (TASKS.md, BUGS.md, FEATURES.md, PRDS.md, SUBSYSTEMS.md, IDEA_BOARD.md, learned-facts.md, tasks/, bugs/, features/, prds/, subsystems/, reports/, logs/wpac_auto_actions.log, workspace/sent_orders/, workspace/inbox.md). The deny list covers `.identity`, `.user_id`, `.project_id`, `.vault_location`, `vault/`, `config/`, `.gald3r-worktree.json`, secret-named files, and unknown `.gald3r/` paths. Member-repo targets (marker-only `.gald3r/`) are refused -- this gate is **controller-only**.
+The helper allowlist covers the safe controller `.gald3r/` coordination surfaces (TASKS.md, BUGS.md, FEATURES.md, PRDS.md, SUBSYSTEMS.md, IDEA_BOARD.md, learned-facts.md, tasks/, bugs/, features/, prds/, subsystems/, reports/, logs/wpac_auto_actions.log, linking/sent_orders/, linking/INBOX.md). The deny list covers `.identity`, `.user_id`, `.project_id`, `.vault_location`, `vault/`, `config/`, `.gald3r-worktree.json`, secret-named files, and unknown `.gald3r/` paths. Member-repo targets (marker-only `.gald3r/`) are refused -- this gate is **controller-only**.
 
 Re-run the helper in `-Mode post-write -Apply` immediately after coordinator-owned shared `.gald3r` writes (task/bug status writes, review-result writes, sent_orders ledger updates, safe report/log outputs) and before the next major phase so the shared-state dirty window stays short. In `--swarm` flows only the coordinator runs the helper; bucket agents remain handoff producers.
 ### Clean Controller Gate (before claims, worktrees, reconciliation)
@@ -72,7 +102,7 @@ After the WPAC gate is skipped or passes:
 
 2. **`gald3r worktree create -AllowDirty`**: do not use this switch for `g-go`, `g-go-code`, `g-go-review`, or any `--swarm` variant **except** when every dirty path is owned exclusively by the active task/bug scope and a `## Status History` row documents that override. Otherwise clean the checkout first. The same **per-root** `-AllowDirty` discipline applies to every repository included in the touch set below when multi-repo work is in scope.
 
-3. **Member touch-set (v1 — `workspace_repos`)** — The orchestration root is **always** gated. When the active task or bug declares **`workspace_repos:`** with manifest `repository.id` entries, extend the gate to each **other** resolved member root (blast radius follows declared cross-repo scope). Read `.gald3r/workspace/workspace_manifest.yaml` when present; map each listed ID (deduplicated) to `repositories[?].local_path`. For each existing path, run `git -C "<path>" rev-parse --show-toplevel` then `git status --short` at that root. Apply the same **explicit coordinator staging allowlist** per root. Skip IDs whose paths are missing while `lifecycle_status` is a planned/bootstrap gap (report only; do not expand the touch set). If the manifest is missing while `workspace_repos` is non-empty, or an ID is unknown under `repositories:`, **STOP** multi-repo coordinator work until manifest or frontmatter is repaired (controller-only queue items whose `workspace_repos` lists only the owner id may proceed once that id resolves).
+3. **Member touch-set (v1 — `workspace_repos`)** — The orchestration root is **always** gated. When the active task or bug declares **`workspace_repos:`** with manifest `repository.id` entries, extend the gate to each **other** resolved member root (blast radius follows declared cross-repo scope). Read `.gald3r/linking/workspace_manifest.yaml` when present; map each listed ID (deduplicated) to `repositories[?].local_path`. For each existing path, run `git -C "<path>" rev-parse --show-toplevel` then `git status --short` at that root. Apply the same **explicit coordinator staging allowlist** per root. Skip IDs whose paths are missing while `lifecycle_status` is a planned/bootstrap gap (report only; do not expand the touch set). If the manifest is missing while `workspace_repos` is non-empty, or an ID is unknown under `repositories:`, **STOP** multi-repo coordinator work until manifest or frontmatter is repaired (controller-only queue items whose `workspace_repos` lists only the owner id may proceed once that id resolves).
 
 4. **Touch-set expansion (v2 — optional signals)** — Union extra repository roots into the same per-root checks (still **not** a blanket scan of every manifest member):
    - **`extended_touch_repos:`** — optional task/bug YAML list of additional manifest `repository.id` values beyond `workspace_repos`.
@@ -144,6 +174,11 @@ Read in this order:
 
 > If a task has no `## Handoff Report` section, note "No Handoff Report" in your review summary and proceed to read the implementation files listed in acceptance criteria directly.
 
+> **Codebase search (g-rl-43 / BUG-519)**: for any codebase content search, prefer
+> `gald3r search <pattern> [--path DIR]`; it is **mandatory**, not just preferred, whenever
+> a search must see inside `.gald3r/` or `.gald3r_sys/` — the harness/ripgrep `Grep` tool is
+> gitignore-aware and silently misses gitignored trees like `.gald3r_sys/` on broad searches.
+
 ### 2. Build the Review Queue
 
 Collect all reviewable items — both tasks **and bugs**:
@@ -175,6 +210,13 @@ Before inspecting implementation details, claim each selected item:
    verifier_claimed_at: "{ISO-8601 timestamp}"
    verifier_claim_expires_at: "{ISO-8601 timestamp}"  # default 120 minutes
    ```
+   **Resolving `{platform_or_agent_slug}` (T580/BUG-612):** this is a recorded audit field, not a
+   CLI flag with an auto-default, so it must be filled in explicitly. Read
+   `$env:GALD3R_GGO_REVIEWER_PROVIDER` (PowerShell) / `$GALD3R_GGO_REVIEWER_PROVIDER` (bash) — the
+   actually-resolved reviewer provider T580's role routing exports whenever it differs from the
+   Claude default (Cursor host mapping, an explicit `--reviewer-provider`/`--provider` override,
+   ...). If that variable is unset or empty, use your own real host identity (`claude`,
+   `cursor-agent`, ...) — never a bare literal guess independent of what actually launched you.
 3. Append Status History: `awaiting-verification -> verification-in-progress`.
 4. If reclaiming a stale `[🕵️]` item, the Status History message must name the previous `verifier_owner` and claim expiry.
 5. Never review an item currently claimed by a different non-expired verifier.
@@ -186,8 +228,13 @@ After claiming and before inspecting implementation details, isolate the review 
 **Default: review worktree from checkpoint commit.** Use the shared T170 helper when the review source is branch-addressable. Normal `g-go-code` / `g-go --swarm` handoff provides a code-complete checkpoint branch and commit SHA; prefer that source over dirty snapshot inspection.
 
 ```powershell
-gald3r worktree create -TaskId {id_or_bucket} -Role review -Owner {platform_or_agent_slug} -BaseBranch {review_source_branch_or_HEAD} -Json
+gald3r worktree create -TaskId {id_or_bucket} -Role review -BaseBranch {review_source_branch_or_HEAD} -Json
 ```
+
+Owner is auto-resolved (T580/BUG-612): omitting `-Owner` lets the helper pick up your ACTUALLY
+resolved reviewer provider (`GALD3R_GGO_REVIEWER_PROVIDER`) before falling back to the pre-T580
+`USERNAME`/`USER`/`agent` default — same mechanism as `g-go-code.md` Step 3. Pass `-Owner <value>`
+explicitly only to override it.
 
 Before using worktree mode, prove the candidate changes are reachable from `review_source_branch_or_HEAD`:
 - If the implementation has a checkpoint commit, record that branch/commit as the review source and create the review worktree from it.
@@ -235,9 +282,86 @@ If the handoff names a checkpoint commit, do not use snapshot mode unless the ch
 
 **Fix-forward boundary.** Review is read-only by default. If the user explicitly requests fix-forward review, the reviewer may write fixes only inside its own `review` worktree, must return a patch/result payload, and the coordinator must reconcile those changes explicitly. Never edit an implementation worktree or the primary checkout directly during review.
 
+### 2b-i. Verify Worktree Base Commit — MANDATORY (BUG-620)
+
+**Before trusting ANY code read from `review_worktree_path` (or `shared_worktree_path`)**, the
+reviewer MUST independently confirm the worktree is actually checked out at, or ahead of, the
+stated checkpoint commit. This applies regardless of how the worktree was provisioned — the T170
+`gald3r worktree create` helper documented above, or an Agent tool's own `isolation: 'worktree'`
+param when the reviewer itself is spawned as a subagent. BUG-620 confirmed, independently, via 3
+of 4 fresh reviewers in one review-swarm iteration, that a worktree can be silently pinned at a
+commit dozens of commits behind the actual checkpoint SHA under review — with every fix commit
+under review literally absent from the checked-out files. Trusting the checkout at face value
+risks a false RESOLVE (reviewing stale, already-superseded code that happens to still pass) or a
+false REOPEN (missing a real fix present only at the true tip). It self-corrected by luck in that
+incident, not by design — this step makes the check mandatory instead of incidental.
+
+Run, in the worktree directory, **before reading or evaluating any file inside it**:
+
+```powershell
+git -C {review_worktree_path} rev-parse HEAD
+git -C {review_worktree_path} merge-base --is-ancestor {review_source_commit} HEAD
+```
+
+- `merge-base --is-ancestor` exits `0` when `HEAD` equals or descends from `review_source_commit`
+  (the stated checkpoint SHA) → **verification PASSES**, proceed normally.
+- A non-zero exit (or `HEAD` not resolving at all) → the worktree's `HEAD` is stale, diverged, or
+  otherwise does not contain the checkpoint commit → **verification FAILS**. Do **not** proceed to
+  read or evaluate code from this worktree yet.
+
+**On verification failure, self-correct BEFORE proceeding** — never silently review whatever
+happens to be checked out. Pick whichever is fastest and safest for the situation:
+- Re-fetch and re-checkout the worktree against the stated checkpoint SHA/branch (`git -C
+  {review_worktree_path} fetch`, then `git -C {review_worktree_path} checkout
+  {review_source_commit}`), or re-run the T170 `gald3r worktree create` helper to reprovision it.
+- Overlay just the files needed via `git -C {review_worktree_path} show
+  {review_source_commit}:{path}`, reading the correct commit's content directly rather than
+  trusting the rest of the stale checkout.
+- A documented fast-forward-only merge into the worktree branch (`git -C {review_worktree_path}
+  merge --ff-only {review_source_commit}`), review the now-current files, then revert that merge
+  once the review read is complete so the worktree is left as found.
+
+**Report the mismatch — mandatory when verification failed.** The review report / Review Note
+MUST explicitly state that a base-commit mismatch was detected and how it was self-corrected, e.g.:
+`BASE-COMMIT MISMATCH: worktree HEAD was {stale_sha} (worktree not an ancestor of
+{review_source_commit}); re-fetched and re-checked-out before review.` This is required even when
+the self-correction fully resolved the issue — the coordinator/user needs to know staleness
+occurred, since the underlying worktree-provisioning defect is a separate, out-of-band concern
+(likely the Agent tool's own `isolation: 'worktree'` behavior, outside this repo's fix surface)
+that this check exists to catch, not to silently paper over.
+
+Applies to `review_isolation_mode: worktree` and `review_isolation_mode: shared-worktree`. Not
+required for `review_isolation_mode: snapshot`, since snapshot mode reads `review_source_commit`
+directly via `git rev-parse HEAD` in the actual checkout at read time — there is no separately
+provisioned worktree to drift from what was stated.
+
 **Standalone vs coordinator-managed writes.**
-- Standalone `@g-go-review` may write the claimed task/bug status files and indexes directly, then creates the review-result commit after those writes.
+- Standalone `@g-go-review` records the claimed item's verdict via the verify verb (`gald3r task verify` / `gald3r bug resolve` / `gald3r bug update` — see the Verification Verb Gate in step 3/§"Verification Verb Gate" below, never a hand-edit of the task/bug file or index), then creates the review-result commit after those writes.
 - When spawned by `g-go` Phase 2 or `g-go-review --swarm`, reviewers run in coordinator-managed mode: return PASS/FAIL payloads, Status History rows, evidence, and authorized fix-forward patches only. The coordinator owns all task/bug file, `TASKS.md`, `BUGS.md`, changelog/docs, generated prompt, parity sync, final staging, and review-result commit writes.
+
+### 2c. Compute Review Depth (Ladder Level) — T539 throughput-20/hr program
+
+**Before inspecting implementation details** (immediately after establishing review isolation at 2b), compute a **ladder level** for each claimed item. This is the mechanism that lets Step 3 below scale review depth to actual risk instead of applying the same full adversarial pass to every item — the single biggest lever in the owner's 20-verified-items/hour throughput target (2026-07-30, T537-T539).
+
+Run, against the review source resolved at 2b (`review_source_commit` / `review_worktree_path` / `review_snapshot_path`):
+
+```powershell
+gald3r task review-depth {id} --diff-range "$(git merge-base main {review_source_commit})..{review_source_commit}" --json
+```
+
+For bugs, the same verb exists on the `bug` side:
+
+```powershell
+gald3r bug review-depth {id} --diff-range "$(git merge-base main {review_source_commit})..{review_source_commit}" --json
+```
+
+(Substitute the actual merge-base against whatever the project's trunk branch is when not `main`. Read-only — this never writes anything; it is safe to run before or after the `[🔍] -> [🕵️]` claim.)
+
+The call returns a JSON payload with `level` (`"minimal"` / `"standard"` / `"thorough"` — see `g-skl-verify-ladder`'s existing level vocabulary; this reuses it, not a new scale), `blast_radius` (`"low"` / `"medium"` / `"high"`), `score`, and `reasons` (a human-readable trail of which score components fired — files touched, subsystem criticality, severity/value score, test delta). Record `review_ladder_level`, `review_ladder_score`, and the `reasons` list for this item; Step 3 below and the verify-verb call both read them.
+
+**Owner safety valve.** The command already applies `review_min_level:` from `.gald3r/config/AGENT_CONFIG.md` (or an explicit `--level` override) as a **floor** — it can only raise the effective level, never lower it. If `review_min_level: thorough` is set, every item resolves to `thorough` regardless of its computed score; this is the sanctioned way to force the whole queue back to today's full-depth behavior without touching any code. `floored: true` / `floor_level` in the JSON payload tell you when this happened — mention it in the per-item review note when it did.
+
+**This is a floor on SPEED, never a ceiling on JUDGMENT.** A reviewer who notices something suspicious at `minimal` or `standard` depth — an AC that doesn't obviously hold, a diff that looks bigger than the numstat implies, a security-sensitive pattern the scorer didn't recognize — MUST escalate that item to `thorough` treatment before recording a verdict. The computed level sets the DEFAULT depth; it never overrides reviewer judgment that more scrutiny is warranted.
 
 ### 3. Review Each Item
 
@@ -245,14 +369,24 @@ If the handoff names a checkpoint commit, do not use snapshot mode unless the ch
 
 For each `[🕵️]` task claimed by this verifier:
 
+**Review depth by ladder level (T539)** — branch on the `review_ladder_level` computed at Step 2c before running (a)-(g) below:
+
+| Level | Run | Skip |
+|-------|-----|------|
+| `minimal` | (a) read AC, abbreviated (b) — confirm each criterion against a quick read of the diff (not a full re-derivation), confirm lint/tests-green from the Handoff Report or a single listed `verification_commands` run, (c), (d) for anything obviously encountered, (e), (f), (g) | b2, b3, Step S, Step E, Step U |
+| `standard` | (a), full per-criterion (b), b2 (workspace boundary — cheap, always run), b3 inline OWASP/STRIDE pass (only when the diff already meets its own web/API/auth/data/integration trigger), (c), (d), (e), (f), (g) | Step S two-phase adversarial scan, Step U (unless an AC explicitly requires a live UI-test gate) |
+| `thorough` | Everything — (a) through (g), b2, b3, Step S, Step E, Step U, exactly as documented below (today's default, unchanged) | nothing |
+
+**This table sets the DEFAULT depth only — it is a floor on speed, never a ceiling on judgment** (see Step 2c). Any FAIL, any Critical/High security finding, or reviewer judgment that an item needs deeper scrutiny than its computed level provides ESCALATES that item to `thorough` treatment before recording a verdict, regardless of what Step 2c computed. When you escalate, note why in the review note (`escalated {level} -> thorough: {reason}`).
+
 **a) Read task spec** — list all acceptance criteria
 **b) Check each criterion against actual files/code**
   - If `review_isolation_mode: worktree`, inspect files under `review_worktree_path`.
   - If `review_isolation_mode: snapshot`, inspect files under `review_snapshot_path` read-only.
 **b2) Workspace boundary check** — run `g-skl-workspace` ENFORCE_SCOPE against changed paths and the task/bug routing metadata; unknown manifest repo IDs, undeclared member writes, docs-only source changes, or member writes without manifest permission fail the item.
-**b3) Security pass (inline OWASP/STRIDE)** — for tasks that touch web/API/auth/data/integration code, apply the OWASP Top 10 checklist from `g-skl-code-review` Step 2 to changed files. For tasks adding new services, cross-process boundaries, or significant architectural changes, apply STRIDE. Security findings are rated **Critical / High / Medium / Low**. Report each finding with OWASP/STRIDE category, file:line, and recommended fix. Code annotated with `# nosec: <justification>` or `# security-exempt: <reason>` is waived. Any Critical or High finding → flag as unmet criterion (FAIL).
+**b3) Security pass (inline OWASP/STRIDE)** — for tasks that touch web/API/auth/data/integration code, apply the OWASP Top 10 checklist from `g-skl-code-review` Step 2 to changed files. For tasks adding new services, cross-process boundaries, or significant architectural changes, apply STRIDE. Security findings are rated **Critical / High / Medium / Low**. Report each finding with OWASP/STRIDE category, file:line, and recommended fix. Code annotated with `# nosec: <justification>` or `# security-exempt: <reason>` is waived. Any Critical or High finding → flag as unmet criterion (FAIL). (T539: SKIPPED entirely at `minimal` ladder level — see the Review-depth-by-level table above. Note a critical/security-critical subsystem match already forces `thorough` at Step 2c, so this skip only ever applies to genuinely low-blast-radius, non-critical-subsystem items.)
 
-**Step S — Two-phase security scan (T1167)** — runs **after** b3 inline security pass and **before** the `[🔍] → [✅]` write at step (e). Invokes `g-skl-security-scan` in **Two-Phase Mode** when the candidate review source has any changed files outside of `*.md` / `docs/**` / `CHANGELOG.md` / `README.md` / `LICENSE`.
+**Step S — Two-phase security scan (T1167)** — runs **after** b3 inline security pass and **before** the `[🔍] → [✅]` write at step (e). Invokes `g-skl-security-scan` in **Two-Phase Mode** when the candidate review source has any changed files outside of `*.md` / `docs/**` / `CHANGELOG.md` / `README.md` / `LICENSE`. **T539 gate**: only runs at `thorough` ladder level — at `minimal`/`standard`, mark Step S `SKIPPED — ladder level {level} (T539)` in the review note and continue to (c) without invoking the two-phase scan.
 
   1. **Eligibility** — list changed files via `git diff HEAD~1..HEAD --name-only` against the candidate review source (worktree branch/SHA established in Step 2b, or snapshot path). If all changed paths match the doc-only allowlist, mark Step S as `SKIPPED` and continue to (c).
   2. **Invocation** — call `@g-skl-security-scan` with the active task ID and review isolation mode passed through. The skill writes `.gald3r/reports/security/threat_model.md` (Phase 1) and `.gald3r/reports/security/security_report_YYYYMMDD_HHMMSS.md` (Phase 2).
@@ -267,7 +401,7 @@ For each `[🕵️]` task claimed by this verifier:
   6. **Doc-only short-circuit** — Step S is intentionally skipped when changed files match `^(\*.md|docs/.*|CHANGELOG\.md|README\.md|LICENSE|\.gitignore)$`. The skip is recorded in the review note as `Step S SKIPPED — doc-only diff`.
   7. **Idempotency** — re-running Step S overwrites `threat_model.md` but never overwrites a timestamped `security_report_*.md`. Multiple runs accumulate; the latest report's verdict is the gate verdict for this review pass.
 
-**Step E — Encoding CI scan (T1448, optional/non-blocking)** — after Step S and before (c), reviewers MAY run the encoding-normalize hook in scan mode as a lightweight CI encoding check over the candidate's changed files:
+**Step E — Encoding CI scan (T1448, optional/non-blocking)** — after Step S and before (c), reviewers MAY run the encoding-normalize hook in scan mode as a lightweight CI encoding check over the candidate's changed files. (T539: skipped at `minimal` ladder level along with the other optional deep-checks; still optional/MAY at `standard`/`thorough` as documented below.)
 
 ```powershell
 # Reports (exit 1) if any changed text file needs encoding normalization; writes nothing.
@@ -276,21 +410,40 @@ For each `[🕵️]` task claimed by this verifier:
 
 This surfaces stray BOMs / CRLF / UTF-16 drift before they reach the integration branch. It is **advisory by default** — a non-clean scan is recorded in the review note (`Step E: N file(s) need encoding normalization`) and is informational, not an automatic FAIL (the pre-commit hook fixes these on commit). Projects that want it enforced can treat a non-zero scan as a FAIL via `encoding_scan_enforced: true` in `AGENT_CONFIG.md`.
 
+**Step U — UI-Test Verification (Task 190 / BUG-354, optional/opt-in)** — after Step E and before (c), reviewers MAY drive+verify a native desktop app (Throne, or any OS-level UI) end-to-end when the candidate change is UI-affecting (touches the desktop app's UI code, a native dialog, or an AC explicitly calls for visual/interaction verification).
+
+  1. **Eligibility** — this step only applies when the task/bug touches UI-affecting code (`g-skl-computer-use` triggers: desktop UI code paths, native dialogs, screen-driven ACs) **and** the reviewer has a concrete, scripted step list to run (see `g-skl-computer-use` SKILL.md Quick Start). No eligible change → skip silently, no note required.
+  2. **Invocation** — build (or reuse) a JSON step list per `g-skl-computer-use`'s declarative step format, then invoke the CLI seam (Task 190 / BUG-354):
+     ```powershell
+     gald3r ui-test run --steps <path-to-steps.json> --json
+     ```
+     This shells out to `UITestDriver` / `run_ui_test` (`gald3r_core.tools.computer.ui_test_driver`) without requiring the reviewer to import Python. **Dry-run by default** — records the plan, fires no real input, and reports `status: skipped` for any `verify` step (this is expected and NOT a failure). Live drive additionally requires **both** `--live` on the command **and** the host environment variable `GALD3R_COMPUTER_USE_LIVE=1` — the reviewer only sets these deliberately, on a machine handed over for that purpose (never on a shared/CI host by default).
+  3. **Gate verdict**:
+     - `status: pass` or `status: skipped` (dry-run, no live host available) → record in the review note as informational; does not affect the PASS/FAIL verdict at (c) unless the task's acceptance criteria explicitly require a live UI verification.
+     - `status: fail` (live run only — a scripted step or verify check did not match) → treat as an unmet criterion for any AC that explicitly required UI verification; otherwise record as a note and do not auto-fail unrelated ACs.
+  4. **Non-blocking by default** — like Step E, this step is advisory unless the task's acceptance criteria explicitly name a live UI-test gate. Most reviews will see it skipped (no eligible UI change, or no live host configured) — record `Step U SKIPPED — {reason}` in the review note.
+
 **c) Score PASS or FAIL per criterion**
 **d) Bug check during review** — if you encounter a bug not covered by the task's ACs:
   - Determine: introduced by this task? → flag as unmet criterion → task FAIL
   - Pre-existing? → log BUG entry via `g-skl-bugs`, add `BUG[BUG-{id}]` comment, note in session summary — does NOT fail this task (see `g-rl-35`)
 **e) Overall result:**
-  - All criteria PASS → mark `[✅]` from `[🕵️]` + append verification note to task file + **run docs check (step 3f)**
-  - Any criterion FAIL → **before changing status**:
-    1. Append a row to `## Status History` at the bottom of the task file (add section if missing):
+
+**T539 auditability requirement**: every verify-verb call below MUST prefix its `--summary`/`--reason` text with `[ladder:{review_ladder_level} score={review_ladder_score}]` (values from Step 2c). This is what makes the ladder level auditable — a human (or a future agent) reading the task's `## Status History` row can see exactly why this item got a lighter or heavier review, without cross-referencing a separate log. When Step 2c's `floored: true`, also include the floor: `[ladder:{level} score={score} floored-by=review_min_level]`.
+
+  - All criteria PASS → **invoke the verify verb — mandatory, this IS how you record the verdict** (see the Verification Verb Gate below):
+    ```
+    gald3r task verify {id} --pass --summary "[ladder:{review_ladder_level} score={review_ladder_score}] {brief PASS summary}"
+    ```
+    This performs the DB-first `completed` transition, moves the task file into `tasks/completed/<YYYY>/<MM>/`, appends the Status History row, and resyncs `TASKS.md` — all in one call. Do **not** hand-edit the task file `status:` field or `TASKS.md`'s indicator directly. Then **run docs check (step 3f)**.
+  - Any criterion FAIL → **before recording the verdict**:
+    1. **🚨 STUCK LOOP CHECK (pre-check)** — count all existing rows in the task's `## Status History` where the Message column contains `FAIL:`. This determines which path below applies.
+    2. **Count < 3 — invoke the verify verb, mandatory:**
        ```
-       | YYYY-MM-DD | verification-in-progress | pending | FAIL: {AC-NNN, AC-NNN} not met — {brief reason}; impl_sha/branch cleared |
+       gald3r task verify {id} --fail --reason "[ladder:{review_ladder_level} score={review_ladder_score}] {AC-NNN, AC-NNN} not met — {brief reason}"
        ```
-    2. **Clear stale provenance (T1380)** — reset `implementation_sha: ''` and `implementation_branch: ''` in the task file YAML frontmatter. This prevents the next implementer from inheriting a SHA that points at a failed attempt. (PASS path: leave sha/branch unchanged — they are correct provenance for completed work.)
-    3. **🚨 STUCK LOOP CHECK** — count all rows in the task's `## Status History` where the Message column contains `FAIL:`:
-       - **Count < 3** → mark back to `[📋]` (pending) in task file YAML and TASKS.md
-       - **Count ≥ 3** → mark `[🚨]` (requires-user-attention) in task file YAML and TASKS.md; append a `## [🚨] Requires User Attention` block to the task file:
+       This performs the DB-first `pending` transition, appends the `FAIL: {reason}` Status History row, and resyncs the task file + `TASKS.md` — all in one call. Do **not** hand-edit the task file `status:` field or `TASKS.md`'s indicator directly — that bypasses the SQLite DB `gald3r task ready` reads from and leaves the task invisible to future queue scans, silently. **This is the exact failure BUG-511 documented**: a review-result commit asserted a FAIL transition (`[🔍] → [📋]`) that no code path had actually performed, and the task sat `awaiting-verification` in the DB — invisible to `gald3r task ready` — until a human found it by hand.
+    3. **Count ≥ 3 — `[🚨]` escalation:** run the same `gald3r task verify {id} --fail --reason "..."` call first (still mandatory — it is the only sanctioned way to record the DB-side FAIL verdict), then separately mark the task `[🚨]` (requires-user-attention) by hand-editing the task file YAML `status:` field and `TASKS.md`'s indicator. (No CLI verb exists yet for this escalation status — that is a known gap, not something to work around by inventing a flag; see this bug's follow-up notes.) Append a `## [🚨] Requires User Attention` block to the task file:
          ```markdown
          ## [🚨] Requires User Attention
 
@@ -304,8 +457,9 @@ This surfaces stray BOMs / CRLF / UTF-16 drift before they reach the integration
          - Cancel → mark `[❌]` with reason
          - Override as complete → mark `[✅]` with manual sign-off note
          ```
-    4. Document specific failure reason in task file (Review Note section)
-    - The Status History row message must name which ACs failed and why. `FAIL` alone is not acceptable.
+    4. **Clear stale provenance (T1380)** — separately from the verb call, reset `implementation_sha: ''` and `implementation_branch: ''` in the task file YAML frontmatter (the verify verb does not do this). This prevents the next implementer from inheriting a SHA that points at a failed attempt. (PASS path: leave sha/branch unchanged — they are correct provenance for completed work.)
+    5. Document specific failure reason in task file (Review Note section) — this is supplementary context; it augments but never replaces the verify-verb call in step 2/3 above.
+    - The `--reason` text must name which ACs failed and why. A generic or empty reason is not acceptable.
     - **Agents must NEVER autonomously reset `[🚨]` back to `[📋]` — only a human can do this.**
 
 **f) Docs check** (PASS tasks only — fires at true completion):
@@ -341,12 +495,22 @@ REVIEW: Task 014 — g-go role separation
 
 For each `[🕵️]` bug claimed by this verifier:
 
+**Review depth by ladder level (T539)** — same `review_ladder_level` computed at Step 2c applies here (via `gald3r bug review-depth`): at `minimal`, (c) Regression check is a quick read of the fix's immediate surrounding lines only; at `standard`/`thorough`, scan the broader call chain as documented below. This is a floor on speed, never a ceiling on judgment — escalate to a full regression scan whenever something looks off, same rule as 3A.
+
 **a) Read bug file** — note: title, affected file/line, fix description in Status History
 **b) Verify the fix is present** — check the referenced file/line; confirm the bug no longer exists as described
 **c) Regression check** — scan surrounding code for obvious regressions introduced by the fix
 **d) Overall result:**
-  - Fix confirmed present + no regression → mark `[✅]` from `[🕵️]` in BUGS.md index + set bug file `status: completed` + append verification note to bug file Status History
-  - Fix absent or regression found → mark back to `[📋]` (open) from `[🕵️]` in BUGS.md + set bug file `status: open` + append FAIL row to bug file Status History with specific reason
+  - Fix confirmed present + no regression → **invoke the verify verb, mandatory** (see the Verification Verb Gate below):
+    ```
+    gald3r bug resolve {id}
+    ```
+    This moves the bug to `bugs/completed/`, sets `status: completed`, appends the verification note to Status History, and resyncs `BUGS.md` — do **not** hand-edit the bug file `status:` field or `BUGS.md`'s indicator directly. **T539 auditability**: `bug resolve` has no free-text summary field, so immediately append `[ladder:{review_ladder_level} score={review_ladder_score}]` to the bug file's `## Notes` section as a supplementary edit (same "augments, never replaces the verb call" pattern already used for the task-side Review Note).
+  - Fix absent or regression found → **invoke the verify verb, mandatory**:
+    ```
+    gald3r bug update {id} --status open --note "[ladder:{review_ladder_level} score={review_ladder_score}] FAIL: {specific reason the fix is absent/regressed}"
+    ```
+    This resyncs the bug file `status:` field, `BUGS.md`'s indicator, and appends the note — do **not** hand-edit `BUGS.md` or the bug file directly. This is the bug-side equivalent of the gap BUG-511 documented for tasks: a commit that only *describes* the reopen, without this call, leaves the bug's status stale wherever anything reads it programmatically.
 
 **Bug verdict format:**
 ```
@@ -433,6 +597,17 @@ In `g-go-review --swarm`, reviewers are evidence producers. They must not write 
 The coordinator alone performs `.gald3r` status writes, `TASKS.md`/`BUGS.md` updates, changelog/docs updates, generated prompt regeneration, parity sync, final staging, and review-result commit operations.
 
 **Follow-Up Task Filing Gate (coordinator responsibility)**: After collecting all reviewer follow-up requests, and before writing the final Review Session Summary, the coordinator MUST call `g-skl-tasks CREATE TASK` for each follow-up item. Reference actual task IDs (e.g. `T1110`) in the summary — NEVER slug-style names like `T1043-followup-*`. Named-but-not-filed follow-ups are a policy violation.
+
+### Verification Verb Gate (BUG-511 — MANDATORY before any review-result commit)
+
+**Before creating the review-result commit, you MUST have already invoked the state-transition CLI verb for EVERY item in this review batch:**
+
+- Tasks: `gald3r task verify <id> --pass [--summary "..."]` (PASS) or `gald3r task verify <id> --fail --reason "..."` (FAIL) — see step 3A(e).
+- Bugs: `gald3r bug resolve <id>` (PASS) or `gald3r bug update <id> --status open --note "FAIL: ..."` (FAIL) — see step 3B(d).
+
+If you have not run the corresponding verb for every item in this batch, **do that now, before committing**. Writing a Status History row, an Agent Notes entry, or a commit message that *describes* a PASS/FAIL transition is not the same as *performing* it — these CLI verbs are the only path that also writes the SQLite DB row that `gald3r task ready` and other queue queries read from (g-rl-40). Hand-editing the task/bug file `status:` field or the `TASKS.md`/`BUGS.md` indicator directly leaves the DB row stuck at its prior status (e.g. `awaiting-verification`), making the item invisible to future queue scans — silently, with no error — exactly as BUG-511 documented (commit `799cf510` claimed a FAIL transition that no code path actually performed; the task stayed `awaiting-verification` in the DB until a human found it by hand).
+
+**A review-result commit with no corresponding verify call for any item in the batch is a Review Result Commit Gate violation (g-rl-33), not a lesser or partial compliance.** This applies identically in standalone and coordinator-managed (`--swarm`) mode — in swarm mode, the coordinator's "batch-update TASKS.md/BUGS.md" step (Step R7 below) means looping this verb once per item, not hand-editing the index files.
 
 ### Review-Result Commit
 
@@ -529,26 +704,33 @@ Spawning {N} reviewer agents...
   - A filter argument for that reviewer's slice — supports both task IDs and bug IDs:
     `tasks 14 bugs BUG-013` OR `tasks 15 18`
   - Independence reminder: "Do not review tasks or bugs you implemented in this session."
-- **IMPORTANT**: Each reviewer produces a **result payload** (PASS/FAIL per item + Status History rows + evidence). Reviewers do **not** write to `TASKS.md`, `BUGS.md`, primary-checkout task/bug files, changelog/docs, generated prompts, parity outputs, or commits. The coordinator owns all final writes.
+  - Base-commit verification reminder (BUG-620): "Before trusting any code in your worktree, run
+    Step 2b-i — `git rev-parse HEAD` + `git merge-base --is-ancestor {review_source_commit}
+    HEAD` — and self-correct on mismatch. This applies even if your worktree came from the Agent
+    tool's own `isolation: 'worktree'` param rather than the T170 helper; the provisioning
+    mechanism is not your concern, but verifying what it handed you is."
+- Each bucket reviewer runs its own Step 2c for every item in its slice (`gald3r task review-depth` / `gald3r bug review-depth`) before reviewing — this is per-item, not per-bucket, since items in the same bucket can carry very different blast radii.
+- **IMPORTANT**: Each reviewer produces a **result payload** (PASS/FAIL per item + Status History rows + evidence + the computed `review_ladder_level`/`review_ladder_score` per item). Reviewers do **not** write to `TASKS.md`, `BUGS.md`, primary-checkout task/bug files, changelog/docs, generated prompts, parity outputs, or commits. The coordinator owns all final writes.
 
-**Step R7: Collect, batch-update TASKS.md, and merge summary**
+**Step R7: Collect, invoke verify verbs, and merge summary**
 
 After all reviewers complete:
-1. Read each reviewer's results (which tasks/bugs PASS, which FAIL)
-2. **Batch-update individual task/bug files** with review notes and Status History rows from reviewer payloads. For each FAIL item: also reset `implementation_sha: ''` and `implementation_branch: ''` in frontmatter (T1380).
-3. **Batch-update TASKS.md** in a single write:
-   - Task PASS items: `[🕵️]` → `[✅]`
-   - Task FAIL items: `[🕵️]` → `[📋]` (back to pending)
-4. **Batch-update BUGS.md** in a single write:
-   - Bug PASS items: `[🕵️]` → `[✅]`
-   - Bug FAIL items: `[🕵️]` → `[📋]` (back to open)
-5. Preserve review worktrees for failed or fix-forward items; otherwise remove them only through the T170 helper after confirming `.gald3r-worktree.json` ownership metadata:
+1. Read each reviewer's results (which tasks/bugs PASS, which FAIL), the per-item `review_ladder_level`/`review_ladder_score`, and any supplementary Review Note / evidence text.
+2. **Invoke the verify verb for every item — mandatory (Verification Verb Gate, above). This performs the batch update; it is not a separate step from it. Every `--summary`/`--reason`/`--note` value MUST be prefixed `[ladder:{level} score={score}]` (T539 auditability requirement, same as standalone mode step 3A(e)):**
+   - Tasks: `gald3r task verify <id> --pass --summary "[ladder:{level} score={score}] ..."` (PASS) or `gald3r task verify <id> --fail --reason "[ladder:{level} score={score}] {AC-NNN not met — reason}"` (FAIL), once per item. The verb appends the Status History row and resyncs the task file + `TASKS.md` automatically — do not hand-edit either. FAIL items whose Status History already has ≥3 `FAIL:` rows also get the `[🚨]` escalation per step 3A(e)(3) (no CLI verb exists for that status yet — hand-edit is the only path there).
+   - Bugs: `gald3r bug resolve <id>` (PASS — append `[ladder:{level} score={score}]` to the bug's `## Notes` section separately, since `bug resolve` has no free-text field) or `gald3r bug update <id> --status open --note "[ladder:{level} score={score}] FAIL: {reason}"` (FAIL), once per item — resyncs the bug file + `BUGS.md` automatically.
+   - For each FAIL task item, separately reset `implementation_sha: ''` and `implementation_branch: ''` in frontmatter (T1380) — the verb does not do this.
+   - Append any additional Review Note / evidence text to the task/bug file as a supplementary edit — this augments, but never replaces, the verb call above.
+3. Preserve review worktrees for failed or fix-forward items; otherwise remove them only through the T170 helper after confirming `.gald3r-worktree.json` ownership metadata:
    ```powershell
-   gald3r worktree remove -TaskId {id_or_bucket} -Role review-swarm -Owner {platform_or_agent_slug} -Apply
+   gald3r worktree remove -TaskId {id_or_bucket} -Role review-swarm -Apply
    ```
-   For a single-review worktree, use `-Role review` with the same `-TaskId` and `-Owner` used at creation.
-6. Create the review-result commit after PASS/FAIL status writes, unless one of the narrow non-commit blockers from `Review-Result Commit` applies.
-7. Write unified review summary with the review-result commit SHA or the explicit non-commit blocker:
+   Omit `-Owner` here too — the same T580/BUG-612 auto-resolution used at creation resolves to the
+   identical value throughout this session (the underlying env var does not change mid-session), so
+   it matches automatically. For a single-review worktree, use `-Role review` with the same
+   `-TaskId`. Pass `-Owner <value>` explicitly only if creation itself used an explicit override.
+4. Create the review-result commit after PASS/FAIL verify-verb writes (step 2), unless one of the narrow non-commit blockers from `Review-Result Commit` applies.
+5. Write unified review summary with the review-result commit SHA or the explicit non-commit blocker:
 
 ```markdown
 ## Swarm Review Session Summary

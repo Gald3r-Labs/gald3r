@@ -1,0 +1,41 @@
+version: 1.0.0
+title: g-bug-del
+description: Purge a bug that was created in the WRONG repository (a routing error).
+  Runs the compiled
+instructions: "Purge a bug that was created in the WRONG repository (a routing error).\
+  \ Runs the compiled\n**`gald3r bug delete`** verb (T497 -- backs g-rl-33's Routing\
+  \ Error Hard Delete rule, which\npreviously had no deterministic implementation).\n\
+  \n```\n@g-bug-del BUG-12 --reason \"Created in the wrong repo; canonical copy is\
+  \ BUG-3 in gald3r_world_tree\"\n@g-bug-del BUG-12 --reason \"...\" --apply\n```\n\
+  \n## What This Command Is For\n\n**Only for genuine routing errors** -- a bug file\
+  \ that should never have existed in this\nrepository at all. This is NOT how to\
+  \ close a bug as fixed or as a design-ruling wontfix:\n\n- Bug is actually fixed\
+  \ -> `@g-bug-fix` / `gald3r bug resolve`.\n- Bug is superseded by a design ruling\
+  \ -> `gald3r bug resolve --wontfix --reason \"...\"` (BUG-424).\n- Bug was created\
+  \ in the wrong repo -> THIS command.\n\n## What This Command Does\n\nPer g-rl-33's\
+  \ \"Routing Error Hard Delete\" rule (mirrored on the bug side): an unconditional\n\
+  `git rm` + commit -- never a status-only close, since the bug record itself should\
+  \ not exist\nhere. `gald3r bug delete`:\n\n1. Locates the bug file and requires\
+  \ a non-empty `--reason` (dry-run or apply -- always).\n2. `git rm`s the file (falls\
+  \ back to a plain filesystem delete if the file was never\n   git-tracked).\n3.\
+  \ Removes the bug's row from `gald3r.db` so `gald3r db verify` never reports an\
+  \ `orphan_row`\n   for it.\n4. Regenerates `BUGS.md` so it no longer links to the\
+  \ removed file.\n5. Commits with message `chore(bugs): purge BUG-{id} routing error`,\
+  \ including the `--reason`\n   text.\n\n**Before running `--apply`:** create the\
+  \ canonical bug record in the CORRECT repository first,\nper g-rl-33's full protocol.\n\
+  \n## Flags\n\n| Flag | Effect |\n|---|---|\n| (none) | Dry-run preview -- reports\
+  \ the file and the commit message that would be used. Writes nothing. |\n| `--apply`\
+  \ | Actually `git rm` the file, remove the DB row, and commit. |\n| `--reason TEXT`\
+  \ | **Required** (both dry-run and apply) -- the auditable \"why\" for the purge.\
+  \ |\n| `--json` | Machine-readable report. |\n\n## Safety\n\n- Dry-run is the default\
+  \ -- `--apply` is required to write or commit anything.\n- Never a soft-delete/cancelled\
+  \ stub: g-rl-33 forbids that alternative outright.\n- Accepts either `BUG-12`, `12`,\
+  \ or `bug-012` as the id."
+prompt: Run the gald3r `g-bug-del` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-bug-del, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

@@ -1,15 +1,47 @@
-﻿---
+---
 name: g-skl-wpac-order
 description: As a parent project, push a task to one or more child projects with configurable cascade depth (1–3). Creates tasks in child .gald3r/ folders and an INBOX notification.
 token_budget: medium
 subsystem_memberships: [WORKSPACE_COORDINATION]
 ---
 
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 > **Multi-agent framework (T1094):** Delegation + Broadcast — parent pushes task(s) to child project(s).
 # g-skl-wpac-order
 
 ## When to Use
 `@g-wpac-order` command. When a change in this project requires action in child projects.
+
+## Transport layer (WPAC-v2 — T1608)
+
+**Step 0-T — transport verdict (code decides, never the model — g-rl-38).** Before the
+file steps below, for EACH target child build the delegation-intake payload (the live
+`world_tree` `TaskIntakeRequest` contract: `title`, `description`, `task_type`,
+`priority`, `project_id`, `subsystems[]`, `dependencies[]`, `acceptance_criteria[]`,
+`source_project` = this project) and run the shared transport (T1609 shim underneath):
+
+```
+gald3r workspace outbox send --verb order --payload-file <payload.json>
+```
+
+| Verdict | Action |
+|---|---|
+| `ok` | Delivered via `POST /api/v1/tasks/delegation/intake` — the target wakes via inbox auto-wake (world_tree T494), replacing the WPAC ORDER file-drop and the session-start poll. SKIP the cross-repo direct-write (steps 5a–5d) for that child; STILL write the LOCAL sent_orders ledger (step 5e) with `transport: world_tree` and `task_uuid: "<TaskIntakeResponse.task.id>"` as proper frontmatter fields (T263 — queryable by `gald3r valk order-status`, not just noted in a Sync History row) plus a Sync History row recording the same UUID for the human-readable audit trail. |
+| `offline` / `error` | Perform ALL file steps below exactly as today (behavior identical to WPAC-v1). The message was write-aheaded to `.gald3r/linking/outbox/` BEFORE any network I/O, so nothing is lost — `gald3r workspace outbox flush` reconciles it on reconnect. |
+| `auth_required` | File steps below + tell the user to run `gald3r login`. Entry parked (not retried). |
+| `upgrade_required` | File steps below + print the shim's upgrade line (online transport is paid-Team gated per T633/T641; the file transport stays free). Entry parked (not retried). |
+
+Everything below this section is the **OFFLINE / FILE FALLBACK transport** — the verb
+surface (name + arguments) is unchanged.
 
 ## WPAC Direct-Write Authority (ADR-003, ADR-013)
 
@@ -32,8 +64,8 @@ subsystem_memberships: [WORKSPACE_COORDINATION]
 Steps `5a-5e` in the main flow write directly to `<child_local_path>/.gald3r/`:
 - Task file → `<child_local_path>/.gald3r/tasks/open/taskNNN_*.md`
 - TASKS.md row → appended to `<child_local_path>/.gald3r/TASKS.md`
-- Inbox entry → `<child_local_path>/.gald3r/workspace/inbox.md` (audit trail only)
-- Sent-orders record → controller's `.gald3r/workspace/sent_orders/` (as before)
+- Inbox entry → `<child_local_path>/.gald3r/linking/INBOX.md` (audit trail only)
+- Sent-orders record → controller's `.gald3r/linking/sent_orders/` (as before)
 
 **Transitive authority (ADR-013)**: A controller can write to grandchildren (depth-2) and deeper through the parent-child tree. Each hop: confirm the intermediate parent is also in the manifest and accessible.
 
@@ -105,7 +137,7 @@ When direct-writing a task, generate a UUIDv4 for the `uuid:` frontmatter field.
    `- [WPAC][📋] **Task NNN**: [title] — broadcast from [this project]`
    - The `[WPAC]` prefix is render-only (regenerated from frontmatter `wpac_source:` block) — never hand-edit.
 
-   d. Append to `child/.gald3r/workspace/inbox.md`:
+   d. Append to `child/.gald3r/linking/INBOX.md`:
    ```markdown
    ## [OPEN] BCAST-XXX — from: [this project] — YYYY-MM-DD
    **Type:** broadcast
@@ -116,7 +148,7 @@ When direct-writing a task, generate a UUIDv4 for the `uuid:` frontmatter field.
    **Status:** task_created
    ```
 
-   e. **Create local outbound order ledger record** at `.gald3r/workspace/sent_orders/order_{YYYYMMDD-HHMMSS}_{child_project_id}_{task_slug}.md`:
+   e. **Create local outbound order ledger record** at `.gald3r/linking/sent_orders/order_{YYYYMMDD-HHMMSS}_{child_project_id}_{task_slug}.md`:
    ```markdown
    ---
    order_id: "ord-{uuid-short}"            # 8-char uuid suffix is fine
@@ -125,7 +157,9 @@ When direct-writing a task, generate a UUIDv4 for the `uuid:` frontmatter field.
    sent_at: "YYYY-MM-DD"
    local_depends: [task_id, ...]            # which LOCAL tasks/features gate on this
    remote_task_title: "[broadcast title]"
-   remote_task_id: NNN                      # the child task id created in step b
+   remote_task_id: NNN                      # the child task id created in step b (direct-write) or the world_tree-assigned id (online)
+   transport: file                          # file | world_tree — which delivery path actually ran (Step 0-T)
+   task_uuid: ""                            # world_tree TaskIntakeResponse.task.id (T263) — ONLY set when transport: world_tree; "" for file-transport-only sends. Required for `gald3r valk order-status` to live-refresh this order — leave blank rather than guessing.
    status: sent                             # sent | acknowledged | in-progress | completed | blocked | timed-out | abandoned
    last_sync: "YYYY-MM-DD"
    broadcast_id: "BCAST-XXX"                # cross-link to INBOX entry
@@ -143,15 +177,16 @@ When direct-writing a task, generate a UUIDv4 for the `uuid:` frontmatter field.
 
    | Timestamp  | Status | Notes |
    |------------|--------|-------|
-   | YYYY-MM-DD | sent   | Order dispatched + child task created |
+   | YYYY-MM-DD | sent   | Order dispatched + child task created (task_uuid: <uuid> when transport: world_tree) |
    ```
 
-   - Ensure `.gald3r/workspace/sent_orders/` exists; create if missing.
+   - Ensure `.gald3r/linking/sent_orders/` exists; create if missing.
    - The `order_id` is the stable cross-reference used by `cross_project_ref:` on local tasks/features.
    - If any local task/feature was passed in via `--depends-on` or interactive prompt, append its ID to `local_depends:` AND write a `cross_project_ref:` entry on that local task/feature pointing back at this `order_id` (see `g-skl-tasks` and `g-skl-features` schemas).
+   - **`task_uuid:` (T263)** — when Step 0-T's transport verdict was `ok`, set this to the exact `task.id` string from the `POST /api/v1/tasks/delegation/intake` response body (`TaskIntakeResponse.task.id`). This is what lets `gald3r valk order-status <order_id>` resolve a live `GET /api/v1/tasks/delegation/{task_id}` status instead of only ever reading this file's own cached `status:` field. Leave `task_uuid: ""` for file-transport-only sends (`offline`/`error`/`auth_required`/`upgrade_required` verdicts) — there is no world_tree-assigned id to record in that case, and `valk order-status` correctly falls back to this ledger's cached `status:` when the field is empty.
 
 6. **If child path not accessible**: stage the order locally instead of dropping it
-   - Write to `.gald3r/workspace/pending_orders/order_[child_project_name]_[date].md`:
+   - Write to `.gald3r/linking/pending_orders/order_[child_project_name]_[date].md`:
    ```markdown
    ---
    type: pending_order
@@ -180,24 +215,24 @@ When direct-writing a task, generate a UUIDv4 for the `uuid:` frontmatter field.
    [full INBOX markdown that would have been appended to child INBOX.md]
    ```
    - Report: "📦 [child-project]: order staged in pending_orders/ — will deliver when accessible"
-   - **Also create the outbound order ledger record** at `.gald3r/workspace/sent_orders/order_{YYYYMMDD-HHMMSS}_{child_project_id}_{task_slug}.md` with the same frontmatter described in step 5e, but with:
+   - **Also create the outbound order ledger record** at `.gald3r/linking/sent_orders/order_{YYYYMMDD-HHMMSS}_{child_project_id}_{task_slug}.md` with the same frontmatter described in step 5e, but with:
      - `status: blocked` (target inaccessible — not yet delivered)
      - `remote_task_id: null` (will be filled when the staged order delivers and the child task ID is known)
      - Add a Sync History row: `| YYYY-MM-DD | blocked | Target path inaccessible — staged in pending_orders/ |`
    - When the staged order is later delivered (via Step 0 pre-flight), the same `sent_orders/` record is updated: `status: sent`, `remote_task_id: NNN` is filled in, and a new Sync History row is appended.
 
 **Step 0 (pre-flight — runs before steps 1-6 above)**:
-   - Check `.gald3r/workspace/pending_orders/` for any staged orders with `Status: pending_delivery`
+   - Check `.gald3r/linking/pending_orders/` for any staged orders with `Status: pending_delivery`
    - For each staged order where the target path is NOW accessible:
      - Deliver: create the task + append INBOX entry as described in step 5
-     - Move staged file to `.gald3r/workspace/pending_orders/delivered/`
-     - **Update the matching `.gald3r/workspace/sent_orders/` record**: set `status: sent`, fill `remote_task_id: NNN` (the child task ID just created), update `last_sync:`, append Sync History row `| YYYY-MM-DD | sent | Delivered from pending_orders staging |`
+     - Move staged file to `.gald3r/linking/pending_orders/delivered/`
+     - **Update the matching `.gald3r/linking/sent_orders/` record**: set `status: sent`, fill `remote_task_id: NNN` (the child task ID just created), update `last_sync:`, append Sync History row `| YYYY-MM-DD | sent | Delivered from pending_orders staging |`
      - Report: "📨 Delivered staged order to [child_project]: [title]"
    - Check for duplicate: if BCAST ID already exists in child INBOX.md, skip (idempotent)
 
 7. **No local tracking task** (T167 — was: "create local broadcast tracker task"):
 
-   WPAC orders are tracked **exclusively** via the `.gald3r/workspace/sent_orders/order_*.md` ledger written in step 5e (and step 6 fallback for staged orders). Do NOT create a local `[ ]`/`[📋]` "Broadcast tracker" task — children may never respond, and stale tracker tasks pollute the backlog forever.
+   WPAC orders are tracked **exclusively** via the `.gald3r/linking/sent_orders/order_*.md` ledger written in step 5e (and step 6 fallback for staged orders). Do NOT create a local `[ ]`/`[📋]` "Broadcast tracker" task — children may never respond, and stale tracker tasks pollute the backlog forever.
 
    - **Outbound state lives on the ledger** — frontmatter `status:` (`sent` → `acknowledged` → `in-progress` → `completed` | `blocked` | `abandoned`) is the single source of truth.
    - **Session-start visibility** — `g-rl-25` Step 6b surfaces awaiting + resolved + stale orders at every session open. No local task is needed for the parent to see what's outstanding.

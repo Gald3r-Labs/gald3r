@@ -1,0 +1,53 @@
+version: 1.0.0
+title: g-install-agent
+description: 'DEPRECATED -- use `/g-install-update` instead: $ARGUMENTS'
+instructions: "DEPRECATED -- use `/g-install-update` instead: $ARGUMENTS\n\n## What\
+  \ This Command Does\n\n**gald3r_agent (the standalone \"Agent CLI binary\" product)\
+  \ is RETIRED (BUG-587).** It was\ncombined with the templates repo to BECOME gald3r_core\
+  \ -- there is no current \"Agent CLI\nbinary\" product separate from gald3r_core\
+  \ itself, and the public repo this command used to\ndownload from (`Gald3r-Labs/gald3r_agent`)\
+  \ is a dead, superseded artifact. A user who ran the\nold version of this command\
+  \ would download a stale binary from that dead repo and believe it\nwas current\
+  \ `gald3r`.\n\nThis command now runs `gald3r install agent`, which is itself a **deprecated\
+  \ CLI alias** that\nredirects to `gald3r install update` (T302/BUG-587; `cli/commands/install.py`\
+  \ +\n`core.install.github_release`) -- it prints a deprecation warning, then installs\
+  \ the CURRENT\n`gald3r_core` binary from `Gald3r-Labs/gald3r_core`, verified via\
+  \ SHA-256 sidecar, over\nwhatever `gald3r` currently resolves to on PATH.\n\n**Prefer\
+  \ `/g-install-update` directly** for any new script or workflow. This command is\
+  \ kept\nonly so an existing script or muscle-memory invocation still does something\
+  \ correct instead of\nsilently failing or fetching a superseded artifact.\n\n##\
+  \ Steps\n\n1. Resolve how to invoke `gald3r` for this machine: an already-installed\
+  \ `gald3r`/`gald3r.exe`\n   on PATH (MSI, npm, winget, homebrew, ...), or `uv run\
+  \ gald3r` from a gald3r_core dev\n   checkout. If nothing resolves at all, see \"\
+  Zero-binary fallback\" below.\n2. Run the verb in dry-run first to show the plan\
+  \ (fully offline — no network call at plan\n   time), then for real:\n   ```powershell\n\
+  \   gald3r install agent --dry-run\n   gald3r install agent\n   ```\n3. Pass through\
+  \ any user flags from `$ARGUMENTS` (e.g. `--release vX.Y.Z`,\n   `--require-verification`,\
+  \ `--allow-unsigned`, `--token`, `--json`).\n4. Report the printed deprecation warning\
+  \ AND the resolved version (`gald3r --version` against\n   the refreshed binary)\
+  \ -- tell the user to switch to `/g-install-update` / `gald3r install\n   update`\
+  \ going forward.\n\n## Zero-binary fallback (no `gald3r` reachable at all — the\
+  \ true first-run case)\n\nIf nothing resolves in step 1 (a brand-new machine with\
+  \ no gald3r install of any kind and no\ndev checkout), there is no verb to run yet\
+  \ — download the asset directly, by hand or script,\nfrom the CURRENT release repo,\
+  \ `Gald3r-Labs/gald3r_core` (never `Gald3r-Labs/gald3r_agent` --\nthat repo is retired):\n\
+  - Asset: `gald3r.exe` (Windows) / `gald3r` (Linux/macOS) from the latest\n  `Gald3r-Labs/gald3r_core`\
+  \ release.\n- Also download the matching `.sha256` sidecar and verify the checksum\
+  \ before trusting the\n  binary (fail closed on mismatch; BUG-198).\n- Place it\
+  \ on PATH as `gald3r`, `chmod +x` on POSIX.\n- From that point on, `/g-install-update`\
+  \ (or `gald3r install update`) handles every future\n  update.\n\n## Notes\n\n-\
+  \ `--release vX.Y.Z` pins a specific release; default is latest.\n- `--require-verification`\
+  \ fails closed if the `.sha256` checksum is missing or mismatched (BUG-198).\n-\
+  \ `--allow-unsigned` proceeds past a missing `.sha256` sidecar (not recommended);\
+  \ overridden\n  by `--require-verification` when both are passed (fail-closed wins).\n\
+  - On network failure / 404 (no release at that repo/tag) / missing asset the verb\
+  \ degrades\n  gracefully with an honest, specific message — surface it, do not retry\
+  \ blindly."
+prompt: Run the gald3r `g-install-agent` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-install-agent, e.g. quoted text or --flag
+    values, exactly as you would type them after the command name.

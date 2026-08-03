@@ -1,5 +1,8 @@
 ---
+description: 'Append a follow-up prompt to a running g-go-code worktree''s queue.md, or list pending items'
+argument-hint: 'T<id> "<prompt>" [--role <role>] [--owner <owner>] | T<id> --list'
 subsystem_memberships: [TASK_MANAGEMENT]
+execution_tier: orchestration
 ---
 Queue follow-up work into a running g-go-code worktree session, to run after the main goal completes: $ARGUMENTS
 
@@ -29,8 +32,8 @@ current goal or losing the worktree's context.
    ```powershell
    gald3r worktree queue -TaskId {id} -Role code -Owner {owner} -QueueText "<follow-up prompt>" -Json
    ```
-   Installed templates may call the helper from the `gald3r worktree`
-   skill directory when no root `scripts/` copy exists.
+   Checkouts that ship a root `gald3r worktree` copy (the gald3r source repo)
+   may call the helper from there instead.
 3. The helper creates `queue.md` with a header on first write, then appends `- [ ] <prompt>` (internal
    newlines collapsed so each item stays on one row).
 4. Confirm to user: `📥 Queued for T{id} — will be processed after the main goal completes ({pending_count} pending).`

@@ -10,6 +10,15 @@ creates a successor PRD and updates the supersede chain atomically.
 Hook contract: same as g-hk-pre-tool-call-gald3r-guard (Claude Code / Cursor
 PreToolUse spec). exit 2 = deny, exit 0 = allow.
 
+BUG-633 (actionability -- the deny reason must also reach stderr): Claude
+Code's PreToolUse hook contract treats exit code 2 as a "blocking error" and
+reads STDERR for the human-readable reason shown back to the calling agent.
+This hook used to print only a `{permission: deny, ...}` JSON body to stdout
+on a deny, so the real reason never reached stderr -- the exact defect class
+BUG-179 fixed for g-hk-pre-tool-call-gald3r-guard.py and BUG-625 fixed for
+g-hk-validate-shell.py. Mirroring BUG-625's additive-only shape: stdout stays
+byte-for-byte unchanged, and the deny reason is also written to stderr.
+
 Bypass: GALD3R_HOOK_BYPASS=1.
 Revise flow: GALD3R_PRD_REVISE_ACTIVE=1 (set by @g-prd-revise).
 
@@ -88,10 +97,20 @@ def main() -> int:
     if not re.search(r"(?i)(^|/)\.gald3r/prds/prd\d+_[^/]+\.md$", norm):
         return _allow()
 
-    # Resolve full path: if relative, prefix with cwd.
+    # Resolve full path: if relative, resolve against the real project root
+    # (BUG-373), not the hook process's own cwd. Cursor and Claude Code both
+    # guarantee the hook process's cwd == project root, so the two were
+    # equivalent there and this was always harmless. BUG-372 anchored the
+    # Codex *invocation command* to the git root so the hook script is
+    # reliably located/launched even when the Codex agent's own session cwd
+    # has drifted into a subdirectory -- but that anchoring does not change
+    # what cwd the spawned hook subprocess itself inherits, so a drifted cwd
+    # could previously resolve a relative PRD path to a nonexistent
+    # location, hit the "new PRD creation is allowed" branch below, and
+    # silently fail open on an existing released/superseded PRD.
     full = Path(path)
     if not full.is_absolute():
-        full = Path(os.getcwd()) / path
+        full = _hook_common.project_root() / path
     if not full.exists():
         # New PRD creation is allowed; freeze applies only to existing released/superseded.
         return _allow()
@@ -132,11 +151,19 @@ def main() -> int:
             "Use @g-prd-revise to create a successor PRD instead (atomically updates the supersede chain). "
             "See .claude/rules/g-rl-33-enforcement_catchall.md § 'PRD Freeze Gate (HARD RULE - C-019)'."
         )
+        agent_msg = msg + f" Target: {path} (status={status})"
         print(json.dumps({
             "permission": "deny",
             "user_message": msg,
-            "agent_message": msg + f" Target: {path} (status={status})",
+            "agent_message": agent_msg,
         }, separators=(",", ":")))
+        # BUG-633: exit 2 is Claude Code's "blocking error" contract -- the reason
+        # MUST also reach STDERR (stdout-only was silently discarded, surfacing as
+        # "No stderr output" to the calling agent). Purely additive: stdout is left
+        # byte-for-byte unchanged. Mirrors BUG-179/BUG-625's fix for the sibling
+        # pre-tool-call guard hooks.
+        sys.stderr.write(agent_msg + "\n")
+        sys.stderr.flush()
         return 2
 
     return _allow()

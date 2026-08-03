@@ -24,6 +24,16 @@ token_budget: low
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
 
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 # g-skl-platform-cline
 
 Activate for: setting up gald3r with Cline (VS Code / JetBrains / CLI / SDK), authoring rules/workflows/skills/hooks, configuring MCP, or verifying the Cline gald3r install.
@@ -81,8 +91,9 @@ Test-Path .cline/skills                  # Agent Skills dir (NOT .claude/skills)
 ## 4. Common Pitfalls
 
 - **Hooks are macOS/Linux only** at time of research (v3.36). On **Windows** (the <gald3r_source>
-  dev env) `g-hk-*.ps1` do **not** wire natively — use git `core.hooksPath` or manual invocation for
-  session-start / pre-tool gating until Windows hook support lands.
+  dev env) hooks do **not** wire natively regardless of `g-hk-*.py` invocation (`python <path>`) —
+  use git `core.hooksPath` or manual invocation for session-start / pre-tool gating until Windows
+  hook support lands.
 - **Subagents/teams need the Cline SDK / CLI runtime**, not the bare IDE chat — don't expect
   `g-agnt-*` orchestration from the extension chat alone.
 - **Instruction file is `AGENTS.md`, not `CLAUDE.md`** — Cline does not auto-load `CLAUDE.md`.
@@ -94,7 +105,7 @@ Test-Path .cline/skills                  # Agent Skills dir (NOT .claude/skills)
 
 | Feature | Status | Notes |
 |---|---|---|
-| Hooks (`g-hk-*.ps1`) | ✅ | 6 events (PreToolUse/PostToolUse/UserPromptSubmit/TaskStart/TaskResume/TaskCancel); executable scripts, JSON stdin/stdout — **macOS/Linux only, no Windows** |
+| Hooks (`g-hk-*.py`) | ✅ | 6 events (PreToolUse/PostToolUse/UserPromptSubmit/TaskStart/TaskResume/TaskCancel); executable scripts, JSON stdin/stdout — **macOS/Linux only, no Windows** |
 | Skills (`g-skl-*/SKILL.md`) | ✅ | Agent Skills, 3-tier progressive disclosure; `.cline/skills/` or `~/.cline/skills/`; `use_skill` tool |
 | Agents (`g-agnt-*.md`) | ✅ | SDK subagents + teams (own model/tools/prompt, shared task board) — **SDK / CLI runtime, not bare IDE chat** |
 | Commands (`@g-*`) | ✅ | Workflows = slash commands `.clinerules/workflows/*.md` (`/<filename>`) + built-ins |

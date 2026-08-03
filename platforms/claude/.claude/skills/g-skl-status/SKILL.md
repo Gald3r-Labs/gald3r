@@ -4,16 +4,27 @@ description: Show project status — session context, active tasks, phase progre
 token_budget: low
 subsystem_memberships: [TASK_MANAGEMENT]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 # gald3r-status
 
 ## When to Use
 Session start, checking project health, @g-status command.
 
-## PCAC Inbox Gate
+## WPAC Inbox Gate
 
-At the start of this skill, determine whether the project is a PCAC participant. PCAC is active only when `.gald3r/linking/link_topology.md` declares at least one parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares PCAC project linking relationships. A Workspace-Control manifest and local `INBOX.md` alone do not make a project part of a PCAC group.
+At the start of this skill, determine whether the project is a WPAC participant. WPAC is active only when `.gald3r/linking/link_topology.md` declares at least one parent/child/sibling relationship, or `.gald3r/PROJECT.md` explicitly declares WPAC project linking relationships. A Workspace-Control manifest and local `INBOX.md` alone do not make a project part of a WPAC group.
 
-Only when PCAC is active, call `g-hk-pcac-inbox-check.ps1 -BlockOnConflict` when present. `INBOX CONFLICT GATE` blocks status work until `@g-pcac-read` resolves conflicts. `g-medic` L1 uses its own non-blocking health gate before blocking higher-risk work. Non-conflict requests, broadcasts, and syncs remain advisory and should be surfaced in output. If PCAC is not active, skip the hook and report `PCAC: not configured / skipped`.
+Only when WPAC is active, call `g-hk-wpac-inbox-check.py -BlockOnConflict` when present. `INBOX CONFLICT GATE` blocks status work until `@g-wpac-read` resolves conflicts. `g-medic` L1 uses its own non-blocking health gate before blocking higher-risk work. Non-conflict requests, broadcasts, and syncs remain advisory and should be surfaced in output. If WPAC is not active, skip the hook and report `WPAC: not configured / skipped`.
 
 ## Steps
 
@@ -70,8 +81,16 @@ Only when PCAC is active, call `g-hk-pcac-inbox-check.ps1 -BlockOnConflict` when
 
    - If absent: omit the Workspace-Control section unless the user explicitly asks for workspace status.
    - If present: reuse `g-skl-workspace STATUS` / `VALIDATE` behavior and include a compact section.
-   - Do not infer workspace members from sibling folders, `template_*` folders, remotes, or PCAC topology.
-   - Keep PCAC separate: PCAC reports topology, INBOX, orders, requests, and peer snapshots; Workspace-Control reports manifest-backed local member scope.
+   - Do not infer workspace members from sibling folders, `template_*` folders, remotes, or WPAC topology.
+   - Keep WPAC separate: WPAC reports topology, INBOX, orders, requests, and peer snapshots; Workspace-Control reports manifest-backed local member scope.
+   - **Composed-capability preflight (BUG-515)**: `gald3r workspace status --json` / `gald3r workspace validate --json` are `server_bridge`-backed verbs that only work through the COMPOSED console entrypoint (`gald3r_core.entry:main`). A stale bare-PATH `gald3r` executable — one built before this capability existed, or one that resolves to the deliberate uncomposed `gald3r_core.cli.main:main` fallback — exits 2 with the opaque `no composed server_bridge capability for this verb in this process` message and gives the operator no reason why. Before running the probe, check whether cwd is at or inside a gald3r_core SOURCE checkout (a directory carrying its own `pyproject.toml` + `src/gald3r_core/platform/pipeline/neutral_source/` — the same checkout marker `cli/_build_fingerprint.py`'s `_find_checkout_root` uses for the `--version` build-drift warning):
+     - **Inside a checkout**: run the probe as `uv run gald3r workspace status --json` (and `uv run gald3r workspace validate --json` when VALIDATE also runs) instead of a bare `gald3r` invocation — `uv run` always resolves the checkout's own current, composed build regardless of what stale executable shadows it on PATH.
+     - **If `uv` is unavailable** and a bare `gald3r` call is unavoidable: run `gald3r --version` and `uv run gald3r --version` first and compare the trailing `(build <hash>)` fingerprints BEFORE calling the capability-dependent probe. A mismatch means the bare PATH binary is stale relative to this checkout — stop and report a direct diagnosis instead of invoking the probe:
+       ```text
+       ⚠️ Stale installed gald3r binary detected (build <bare_hash>) vs current source checkout (build <source_hash>).
+       Workspace-Control status was not collected — rerun via `uv run gald3r workspace status --json`, or reinstall gald3r from this checkout.
+       ```
+     - **Outside a checkout** (the normal case for every installed/consumer project): invoke `gald3r workspace status --json` as before — there is no dual-build ambiguity to guard against there.
 
    Suggested compact output:
 
@@ -101,11 +120,116 @@ Only when PCAC is active, call `g-hk-pcac-inbox-check.ps1 -BlockOnConflict` when
      ❌ Blocked: task105_deploy (waiting on task103)
    ```
 
+4a. **Release Pipeline block (T419)** — rendered **only when `tasks/awaiting-verification/` has content** (the awaiting state folder; the spec's `tasks/awaiting/` is the awaiting-verification status). Read each awaiting task's `release_hold` frontmatter field and group:
+
+   ```
+   🚀 Release Pipeline
+      awaiting-verification/ (ready for staging):  2
+         T1273 - copilot-instructions from template rules
+         T1278 - gald3r_install graph init offer
+      Held - manual:         1
+         T1055 - plugin lifecycle hooks
+      Held - sync_required:  1
+         T0890 - API contract (sync: gald3r_agent/T890)
+   ```
+
+   - "ready for staging" = `release_hold: none` (or field omitted). "Held" = `manual` / `sync_required`.
+   - **Nudge (required)**: whenever ≥1 awaiting task has `release_hold: none`, append:
+     ```
+     💡 {N} task(s) ready to ship (release_hold: none) — run @g-ship to stage them.
+     ```
+   - Omit the entire block when `tasks/awaiting-verification/` is empty (keeps the report clean).
+   - Read-only — never mutates `release_hold`. Set/clear via `@g-task set-release-hold` / `clear-release-hold`.
+
+4b. **Severity / Value Breakdown (ALWAYS INCLUDED — not optional)**: run `gald3r bug list`
+   and `gald3r task list` and surface their subtotal histograms verbatim, **including the
+   legend line each prints**. This makes the backlog legible at a glance ("a few real fires
+   vs. a pile of nitpicks") and is high-value enough that it appears on EVERY status — never
+   behind a flag.
+
+   **NON-SUBSTITUTABLE (BUG-394).** These two commands MUST actually be EXECUTED and their
+   band-chart header blocks (bars + counts + legend) pasted into the report **verbatim** —
+   the charts are engine-drawn output, not derivable data. Hand-rebuilt tables, your own
+   histogram math, or a summary sentence are NOT acceptable substitutes; a status report
+   without BOTH charts is an incomplete report. g-rl-37 script-collapse does NOT exempt
+   these calls — if you collapse the status sweep into one script, invoke both verbs from
+   INSIDE it (`subprocess.run(["gald3r","task","list"], ...)` etc.) and capture their
+   stdout. The charts cost zero agent tokens to draw (Python renders them at the user's
+   terminal); the only way to lose them is to skip the calls:
+
+   ```
+   🎯 Severity / Value Breakdown
+   Bugs by severity (damage):   9-10=0  7-8=10  5-6=25  1-4=60
+      9-10 data loss/leak/destruction · 7-8 crash/security · 5-6 real bug/token-waste · 1-4 nitpick/cosmetic
+   Tasks by value (if done):    9-10=12  7-8=127  5-6=148  1-4=150
+      9-10 release/demo-critical (the moat) · 7-8 major feature · 5-6 useful/user-docs · 1-4 minor/busywork
+   ```
+
+   Numbers come from the numeric 1-10 triage scale (`severity_scale.py`: SEVERITY_RUBRIC for
+   bugs, TASK_VALUE_RUBRIC for tasks). A record with no numeric score derives one from its
+   `severity`/`priority` word, so legacy items still bucket correctly.
+
+   **`gald3r status`'s own score-band charts (T508 — a single-call alternative for this
+   breakdown alone).** `gald3r status --json` (T494) now ALSO returns two DB-backed 1-10
+   histograms, computed at zero extra query cost inside that same command (no separate round
+   trip beyond the `status` call itself):
+   - `tasks.open_by_value` — open tasks (excludes completed/verified/closed/cancelled)
+     bucketed 1-10 by their resolved value score.
+   - `bugs.open_by_severity_score` — open bugs (respecting `--min-severity`, same set
+     `bugs.open_by_severity` already reports) bucketed 1-10 by their resolved damage score.
+
+   Each histogram carries `bins` (the raw 1-10 counts), `total`, and the **derived-vs-stored
+   split**: `scored_directly` (rows whose DB `priority_score`/`severity_score` column was
+   already populated) vs. `derived_from_enum` (rows that had to fall back to the
+   `priority`/`severity` word via `resolve_score`) — surfacing when a backlog is
+   score-flattening (e.g. every open task landing in one band purely because none carry a
+   stored numeric score) instead of hiding it inside an aggregate count. `bugs.
+   open_by_severity_score.min_severity_floor` records the active `--min-severity` floor
+   (`null` when unset) — bands below an active floor legitimately read 0 because `open_bugs`
+   was already floor-filtered before the histogram was built.
+
+   `gald3r status` (non-JSON/text mode) renders BOTH histograms as the SAME 4-band ASCII
+   chart shape shown above (`9-10 (crit)` / `7-8 (high)` / `5-6 (med)` / `1-4 (low|nit)`),
+   reusing the identical `_task_bug_shared._render_band_chart` renderer `task list`/`bug
+   list` use (g-rl-04 — one chart shape, not a second one) — automatically, whenever the
+   corresponding open count is non-zero. An active `--min-severity` floor marks the band it
+   falls in with a trailing `*` (a longer inline label would break the shared renderer's
+   fixed-width column alignment) plus a legend line spelling the floor out.
+
+   Prefer `gald3r status --json`/`gald3r status` for this breakdown specifically when the
+   report ALSO needs `gald3r status`'s other single-call sections (task/bug counts,
+   awaiting-verification groups, dependency-blocked list, active milestone, WPAC gate) — one
+   command instead of several. The `gald3r bug list`/`gald3r task list` calls documented below
+   remain the retrieval path when this skill needs their PER-ROW data too (step 5's active-bug
+   rows reuse `gald3r bug list`'s captured rows, which `gald3r status` does not return) — both
+   commands' band charts are equivalent in shape and score source, so either is safe to paste
+   verbatim per the NON-SUBSTITUTABLE rule above.
+
+   **Single-snapshot discipline (BUG-516).** The `gald3r bug list` invocation above is the
+   ONE and ONLY bug-state read for this entire report. Capture its FULL stdout — both the
+   band-chart block (headline `{N} bug(s) by severity...` line + bars + legend) AND the
+   per-bug rows that follow it (`{bug_id}  {severity:<8} {status:<10} {title}`) — into a
+   held variable/buffer, and reuse that single capture for every other bug-related number
+   in the report: the headline total, the severity breakdown, and step 5's active-bug
+   count/breakdown (tally the already-captured rows' `status` column; do not re-derive it
+   from anywhere else). Do NOT invoke `gald3r bug list` a second time (with `--all`,
+   `--json`, or any other flags) later in the same sweep, and do NOT independently re-count
+   from BUGS.md for step 5 — a bug created, resolved, or reassigned between two separate
+   reads produces a self-contradictory report where the headline total and an active-state
+   breakdown disagree even though each read was individually correct at its own instant
+   (BUG-516's exact reproduction: 95 vs. 96 from two time-separated calls in the same
+   sweep). If this skill's steps are ever collapsed into one script per g-rl-37, the bug
+   fetch still happens exactly once — store its parsed result and pass it to every section
+   that needs a bug number, never re-invoke the CLI mid-script.
+
 5. **Health indicators**:
    - Any tasks in `[🔄]` for > 8 hours → flag as stale
    - Any tasks in `[🔍]` for > 4 hours → flag for verification timeout
    - Phase completion: any phase where all tasks are `[✅]` but not archived
-   - Active bugs: count from BUGS.md
+   - Active bugs: reuse the row count and per-row `status` values already captured from
+     step 4b's single `gald3r bug list` snapshot (BUG-516) — do NOT re-read BUGS.md and do
+     NOT re-invoke `gald3r bug list`/`gald3r bug list --all --json` here; a second,
+     later-in-time read is exactly the non-atomic-snapshot defect BUG-516 fixed.
 
 6. **Experiment status** (if `.gald3r/experiments/EXPERIMENTS.md` exists):
    ```

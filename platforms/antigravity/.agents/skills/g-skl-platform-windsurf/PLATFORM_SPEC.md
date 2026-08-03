@@ -2,41 +2,76 @@
 subsystem_memberships: [PLATFORM_INTEGRATION]
 platform: windsurf
 authoring_path: update
-docs_url: https://docs.windsurf.com
+docs_url: https://docs.devin.ai/desktop/getting-started
 docs_url_secondary:
-  - https://docs.windsurf.com/windsurf/cascade/skills
-  - https://docs.windsurf.com/windsurf/cascade/hooks
-  - https://docs.windsurf.com/windsurf/cascade/workflows
-  - https://docs.windsurf.com/windsurf/cascade/memories
-  - https://docs.windsurf.com/windsurf/cascade/mcp
-  - https://docs.windsurf.com/windsurf/cascade/cascade
+  - https://docs.devin.ai/desktop/cascade/skills
+  - https://docs.devin.ai/desktop/cascade/hooks
+  - https://docs.devin.ai/desktop/cascade/workflows
+  - https://docs.devin.ai/desktop/cascade/memories
+  - https://docs.devin.ai/desktop/cascade/mcp
+  - https://docs.devin.ai/desktop/cascade/cascade
+  - https://docs.devin.ai/desktop/devin-desktop-faq
 crawl_max_age_days: 14
 vault_doc_path: research/platforms/windsurf/
-last_doc_scan: 2026-06-02
+last_doc_scan: 2026-07-18
 reference: g-skl-platform-cursor
 status: ✅
 task: T1466
+rename_task: T388
 ---
 
-# PLATFORM_SPEC.md — Windsurf (Cascade, by Cognition / Windsurf)
+# PLATFORM_SPEC.md — Devin Desktop (formerly Windsurf; Cascade, by Cognition)
 
-Windsurf is a VS Code-based AI-first IDE built around the **Cascade** agentic assistant. As of
-mid-2026 Cascade natively supports **five** of the six gald3r-relevant extension primitives —
-**Workflows (slash commands), Rules + Memories, Agent Skills (`SKILL.md`), Cascade Hooks, and
-MCP** — with only **named user-defined sub-agents** absent (Cascade provides modes, Plan Mode, a
-background planning agent, and Wave 13 parallel agents instead). Critically for gald3r, Cascade
-discovers `SKILL.md` skills from **`.claude/skills/` and `.agents/skills/`** in addition to
-`.windsurf/skills/`, and reads **`AGENTS.md`** as location-scoped rules, so gald3r's Claude-Code /
-agents skill artifacts are **largely drop-in reusable** on Windsurf.
+## 0. Rebrand Notice (verified 2026-07-18, T388)
 
-**Authoring path**: UPDATE. **Verified 2026-06-02** against https://docs.windsurf.com (see
-Verification Evidence). This **supersedes** the prior spec (`last_doc_scan: never`) which
-incorrectly marked hooks/skills/commands as unsupported — Skills, Hooks, and Workflows are now all
-NATIVE in Cascade. The only honest gap vs. a Claude-Code-style platform is the **named sub-agent
-primitive** (AGENTS = ⚠️).
+Cognition acquired Windsurf and renamed the standalone editor **Devin Desktop**, effective
+**2026-06-02**. Live verification performed 2026-07-18:
 
-> **Instruction-file convention:** Windsurf reads **`AGENTS.md`** (and legacy `.windsurfrules`) as
-> Rules-engine input — it does **NOT** read `CLAUDE.md` as a primary instruction file the way the
+- `https://windsurf.com` → 200 at `https://devin.ai/desktop` (redirect chain followed via `curl -L`).
+- `https://docs.windsurf.com` → two `308 Permanent Redirect` hops → final 200 at
+  `https://docs.devin.ai/desktop/getting-started`. `curl -I` on the root shows
+  `Location: /windsurf/getting-started`; that intermediate page itself then 308s to
+  `https://docs.devin.ai/desktop/getting-started` (confirmed via the page's embedded
+  `NEXT_REDIRECT` digest and by following with `-L`).
+- Page `<title>` at the resolved URL: "Welcome to Devin Desktop - Devin Docs"; meta description:
+  "Download and install Devin Desktop IDE for Mac, Windows, or Linux...".
+- `https://docs.devin.ai/desktop/devin-desktop-faq` ("Frequently asked questions about the
+  transition from Windsurf to Devin Desktop") independently confirms the **2026-06-02** cutover
+  date: "Before June 2, 2026, add Devin to the allowlist in your device management ... policies."
+- The doc site's URL structure moved from `/windsurf/cascade/*` (404s directly on docs.devin.ai) to
+  **`/desktop/cascade/*`** for the standalone-app docs; confirmed against `docs.devin.ai/llms.txt`
+  (the site's own current-content manifest) and by a 200 on every `/desktop/cascade/*` page tested.
+- **Important disambiguation found during research**: `docs.devin.ai/windsurf/plugins/*` is a
+  **different, still-actively-branded product** — "Windsurf Plugins" (the JetBrains / VS Code / other-IDE
+  *extension*, e.g. `docs.devin.ai/windsurf/plugins/compatibility` lists JetBrains, Visual Studio,
+  NeoVim, Vim, Emacs, Xcode, Sublime Text, Eclipse). It is NOT the standalone Devin Desktop IDE this
+  skill documents, and must not be confused with it when re-scanning docs.
+- **gald3r decision**: keep the internal platform id **`windsurf`** (registry/roster stability —
+  no `PLATFORM_REGISTRY.yaml` or other `display_name:` field exists in this repo to update
+  separately; branding is carried in this spec's prose/frontmatter instead), update all
+  user-facing text to **Devin Desktop (formerly Windsurf)**, and repoint every `docs.windsurf.com`
+  URL to its verified `docs.devin.ai` equivalent.
+
+---
+
+Devin Desktop (formerly Windsurf) is a VS Code-based AI-first IDE built around the **Cascade**
+agentic assistant. As of mid-2026 Cascade natively supports **five** of the six gald3r-relevant
+extension primitives — **Workflows (slash commands), Rules + Memories, Agent Skills (`SKILL.md`),
+Cascade Hooks, and MCP** — with only **named user-defined sub-agents** absent (Cascade provides
+modes, Plan Mode, a background planning agent, and Wave 13 parallel agents instead). Critically for
+gald3r, Cascade discovers `SKILL.md` skills from **`.claude/skills/` and `.agents/skills/`** in
+addition to `.windsurf/skills/`, and reads **`AGENTS.md`** as location-scoped rules, so gald3r's
+Claude-Code / agents skill artifacts are **largely drop-in reusable** on Devin Desktop.
+
+**Authoring path**: UPDATE. **Verified 2026-07-18** against https://docs.devin.ai (see
+Verification Evidence and the Rebrand Notice above). This **supersedes** the prior spec
+(`last_doc_scan: 2026-06-02`) which still carried the pre-rebrand `docs.windsurf.com` URLs — Skills,
+Hooks, and Workflows remain all NATIVE in Cascade; only the branding and doc URLs changed. The only
+honest capability gap vs. a Claude-Code-style platform is still the **named sub-agent primitive**
+(AGENTS = ⚠️).
+
+> **Instruction-file convention:** Devin Desktop reads **`AGENTS.md`** (and legacy `.windsurfrules`)
+> as Rules-engine input — it does **NOT** read `CLAUDE.md` as a primary instruction file the way the
 > Claude-convention platforms do. Root-level `AGENTS.md` = always-on; subdirectory `AGENTS.md` =
 > auto-glob. Durable shareable context belongs in `AGENTS.md` / `.windsurf/rules/`, NOT in the
 > auto-generated, machine-local Memories store.
@@ -72,9 +107,10 @@ with system overriding workspace/global for governance.
 **gald3r writes**: `AGENTS.md` / `.windsurfrules`, `.windsurf/rules/*.md`, `.windsurf/workflows/*.md`,
 `.windsurf/skills/<name>/SKILL.md`, `.windsurf/hooks.json` — or simply reuse the gald3r `.claude/skills/`
 tree, which Cascade loads as-is.
-**Windsurf owns**: the `.windsurf/` namespace, the rule activation-mode schema, the Cascade-managed
-**Memories** store under `~/.codeium/windsurf/memories/` (machine-local, workspace-specific, does
-**not** sync — not a gald3r-writable surface), and the workflow `/`-invocation mechanism.
+**Devin Desktop owns**: the `.windsurf/` namespace (unchanged post-rename), the rule activation-mode
+schema, the Cascade-managed **Memories** store under `~/.codeium/windsurf/memories/` (machine-local,
+workspace-specific, does **not** sync — not a gald3r-writable surface), and the workflow
+`/`-invocation mechanism.
 
 ---
 
@@ -106,7 +142,7 @@ No `CLAUDE.md` is consumed. Docs explicitly recommend writing durable knowledge 
 - gald3r `g-agnt-*` personas therefore collapse to **Skill / Rule content**, not a selectable agent.
   This is the one true gap vs. the Cursor reference → rated **⚠️ partial** (real multi-agent
   capability, no named-persona config surface).
-- Source: https://docs.windsurf.com/windsurf/cascade/cascade
+- Source: https://docs.devin.ai/desktop/cascade/cascade
 
 ## 4. Skills Support — ✅ NATIVE
 
@@ -118,7 +154,7 @@ No `CLAUDE.md` is consumed. Docs explicitly recommend writing durable knowledge 
   paths, **and** `.claude/skills/`, `~/.claude/skills/`, `.agents/skills/`, `~/.agents/skills/` — the
   **same `SKILL.md` packs that work in Claude Code and Cursor load unmodified**.
 - gald3r `g-skl-*/SKILL.md` load natively — including straight from `.claude/skills/`.
-- Source: https://docs.windsurf.com/windsurf/cascade/skills
+- Source: https://docs.devin.ai/desktop/cascade/skills
 
 ## 5. Commands / Workflows — ✅ NATIVE
 
@@ -130,7 +166,7 @@ No `CLAUDE.md` is consumed. Docs explicitly recommend writing durable knowledge 
 - gald3r's `@g-*` / `/g-*` command catalog maps to workflow files (`/<name>` slash-invoked). Note the
   Workflows-vs-Skills split: **Workflows = manual `/`-invoked scripts; Skills = auto-invokable
   multi-step capabilities** — pick the surface per command's intended trigger.
-- Source: https://docs.windsurf.com/windsurf/cascade/workflows
+- Source: https://docs.devin.ai/desktop/cascade/workflows
 
 ## 6. Hooks System — ✅ NATIVE
 
@@ -142,10 +178,14 @@ No `CLAUDE.md` is consumed. Docs explicitly recommend writing durable knowledge 
   `post_cascade_response_with_transcript`, `post_setup_worktree`.
 - Hooks receive **JSON context on stdin**; **pre-hooks can BLOCK** an action by exiting with **exit
   code 2**. Each hook supports a **`command`** (bash) key **and** a **`powershell`** key, plus
-  `show_output` / `working_directory` — so gald3r `g-hk-*.ps1` PowerShell hooks wire **natively**
+  `show_output` / `working_directory` — so gald3r `g-hk-*.py` hooks wire **natively** via the
+  `bash` key running `python <path>`
   (session/prompt context injection via `pre_user_prompt`, `.gald3r/` write guards via
   `pre_write_code`, command guards via `pre_run_command`, worktree setup via `post_setup_worktree`).
-- Source: https://docs.windsurf.com/windsurf/cascade/hooks
+- Source: https://docs.devin.ai/desktop/cascade/hooks — this page explicitly disambiguates by
+  product for the *user-level* hooks path: **Devin Desktop IDE**: `~/.codeium/windsurf/hooks.json`
+  (unchanged) vs. **JetBrains Plugin** (a separate "Windsurf Plugins" product): the flattened
+  `~/.codeium/hooks.json`. Do not conflate the two when re-scanning.
 
 ## 7. Rules / Memory — ✅ NATIVE
 
@@ -155,13 +195,14 @@ No `CLAUDE.md` is consumed. Docs explicitly recommend writing durable knowledge 
   reads `AGENTS.md` (§2) through the same Rules engine.
 - **Four activation modes**: `always_on`, `model_decision`, `glob`, `manual` (`@rule-name`). The
   extension is **`.md`** (vs. Cursor's `.mdc`) — the parity sync maps the extension. These modes are the
-  Windsurf analog of Cursor's `alwaysApply:` / `globs:` / `description:`.
+  Devin Desktop analog of Cursor's `alwaysApply:` / `globs:` / `description:`.
 - **Memories** are auto-generated, **machine-local, workspace-specific, and do NOT sync**; for durable
   shareable context the docs recommend Rules or `AGENTS.md` instead. Memories are Cascade-managed, not
   gald3r-authored.
 - gald3r `g-rl-*` map to `always_on` (for `alwaysApply: true`), `glob` (for `globs:`-scoped), or
   `model_decision` (for `description:`-scoped) rule files.
-- Source: https://docs.windsurf.com/windsurf/cascade/memories
+- Source: https://docs.devin.ai/desktop/cascade/memories — confirms the global rules file is
+  still **`~/.codeium/windsurf/memories/global_rules.md`** (unchanged post-rename).
 
 ## 8. MCP Support — ✅ NATIVE
 
@@ -171,16 +212,30 @@ No `CLAUDE.md` is consumed. Docs explicitly recommend writing durable knowledge 
   tools; **hard limit of 100 active tools** in Cascade's MCP panel.
 - Config file name/location (`mcp_config.json` under `~/.codeium/windsurf/`) **differs** from Cursor's
   `.cursor/mcp.json` — MCP is fully supported but **not single-path portable**; gald3r cannot ship one
-  `mcp.json` that both Cursor and Windsurf read.
-- Source: https://docs.windsurf.com/windsurf/cascade/mcp
+  `mcp.json` that both Cursor and Devin Desktop read.
+- Source: https://docs.devin.ai/desktop/cascade/mcp (body text, verified 2026-07-18) states the
+  path unchanged: `~/.codeium/windsurf/mcp_config.json`.
+- **Discrepancy found and documented (2026-07-18), not resolved by this task**: the migration FAQ's
+  summary table (https://docs.devin.ai/desktop/devin-desktop-faq, "Per-user configuration
+  directory") lists `MCP config: ~/.codeium/mcp_config.json` — the *flattened* path, without a
+  Desktop/JetBrains split — while the dedicated `desktop/cascade/mcp` reference page AND the
+  dedicated `desktop/cascade/hooks` reference page (which explicitly disambiguates "Devin Desktop
+  IDE" vs. "JetBrains Plugin" for the analogous `hooks.json` path and keeps `/windsurf/` for
+  Desktop) both point to `~/.codeium/windsurf/mcp_config.json` for the Desktop app. Two
+  product-specific, self-consistent sources vs. one ambiguous summary table → this spec keeps the
+  **unchanged** path (`~/.codeium/windsurf/mcp_config.json`) as the documented value, flags the FAQ
+  table entry as a likely doc inconsistency (it may be conflating the JetBrains Plugin's confirmed
+  flattened path), and recommends re-verifying on the next `@g-platform-scan-docs windsurf` pass.
 
 ## 9. Other Extensibility / Notable
 
-- **VS Code / Cursor extension compatibility**: Windsurf imports VS Code / Cursor extensions (AI
-  code-complete and certain proprietary extensions excluded).
+- **VS Code / Cursor extension compatibility**: Devin Desktop imports VS Code / Cursor extensions
+  (AI code-complete and certain proprietary extensions excluded).
 - **Enterprise system-level governance**: hooks, rules, workflows, and skills can be set at OS
   system paths (`C:\ProgramData\Windsurf\`, `/etc/windsurf/`, `/Library/Application Support/Windsurf/`)
-  with system overriding workspace/global.
+  with system overriding workspace/global. These OS-level paths still say "Windsurf" in the live
+  docs (confirmed on `desktop/cascade/hooks`, 2026-07-18) — Cognition has not renamed the
+  system-install directory names, only the product's marketing/display name.
 - **Workflows vs. Skills**: Workflows are the manual `/`-invoked complement; Skills are the
   auto-trigger complement. Cross-tool skill discovery in `.claude/skills` / `.agents/skills` makes
   gald3r `SKILL.md` packs drop-in compatible.
@@ -189,18 +244,18 @@ No `CLAUDE.md` is consumed. Docs explicitly recommend writing durable knowledge 
 
 ## Parity vs. Cursor Reference
 
-Windsurf now reaches **near-full parity** with the Cursor reference (`g-skl-platform-cursor`): native
-**commands (Workflows), rules, skills, hooks, and MCP**. The single caveat is **agents** — Cascade
-provides modes, Plan Mode, a planning agent, and Wave 13 parallel agents (up to 5) but **no
-user-definable named sub-agent file**, so gald3r `g-agnt-*` personas surface as Skill/Rule content
-(⚠️). The Cascade-managed **Memories** layer is a Windsurf-native bonus with no Cursor analog —
-machine-local recall, not a gald3r-writable store.
+Devin Desktop (formerly Windsurf) now reaches **near-full parity** with the Cursor reference
+(`g-skl-platform-cursor`): native **commands (Workflows), rules, skills, hooks, and MCP**. The
+single caveat is **agents** — Cascade provides modes, Plan Mode, a planning agent, and Wave 13
+parallel agents (up to 5) but **no user-definable named sub-agent file**, so gald3r `g-agnt-*`
+personas surface as Skill/Rule content (⚠️). The Cascade-managed **Memories** layer is a Devin
+Desktop-native bonus with no Cursor analog — machine-local recall, not a gald3r-writable store.
 
 **Reuse note (important):** because Cascade reads `AGENTS.md` and discovers `.claude/skills/` +
-`.agents/skills/` trees, gald3r's **Skill artifacts are largely reusable on Windsurf without a
-separate port** — the cheapest path to a high-parity Windsurf install is to ship the gald3r
+`.agents/skills/` trees, gald3r's **Skill artifacts are largely reusable on Devin Desktop without a
+separate port** — the cheapest path to a high-parity Devin Desktop install is to ship the gald3r
 `.claude/skills/` tree (+ `AGENTS.md`) and add `.windsurf/workflows/` + `.windsurf/hooks.json` for the
-command and hook surfaces. Note Windsurf reads `AGENTS.md`, **not** `CLAUDE.md`.
+command and hook surfaces. Note Devin Desktop reads `AGENTS.md`, **not** `CLAUDE.md`.
 
 ## Hook System
 
@@ -208,8 +263,8 @@ command and hook surfaces. Note Windsurf reads `AGENTS.md`, **not** `CLAUDE.md`.
 - **Config file**: `.windsurf/hooks.json` (workspace), `~/.codeium/windsurf/hooks.json` (user), system path (merged)
 - **Events available**: pre_read_code, post_read_code, pre_write_code, post_write_code, pre_run_command, post_run_command, pre_mcp_tool_use, post_mcp_tool_use, pre_user_prompt, post_cascade_response, post_cascade_response_with_transcript, post_setup_worktree (12 total)
 - **Event payload format**: JSON via stdin; pre-hooks BLOCK via exit code 2
-- **Command extensions**: `command` (bash) key **and** `powershell` key per hook (+ `show_output`, `working_directory`) — PowerShell supported
-- **gald3r hook files**: `g-hk-*.ps1` wire natively via the `powershell` key on the events above
+- **Command extensions**: `command` (bash) key **and** `powershell` key per hook (+ `show_output`, `working_directory`) — gald3r `g-hk-*.py` hooks wire via the `bash` key running `python <path>`
+- **gald3r hook files**: `g-hk-*.py` wire natively via the `bash` key running `python <path>` on the events above
 
 ## Atypical Handling
 
@@ -219,16 +274,18 @@ command and hook surfaces. Note Windsurf reads `AGENTS.md`, **not** `CLAUDE.md`.
   sync — never treat them as a shippable gald3r surface; use `AGENTS.md` / `.windsurf/rules/` instead.
 - **Workflows ≠ Skills**: Workflows are manual `/`-invoked; Skills auto-invoke. Map gald3r commands to
   Workflows and gald3r skills to Skills accordingly.
-- Rule files use `.md` (not Cursor's `.mdc`); MCP config path (`mcp_config.json`) is Windsurf-specific.
+- Rule files use `.md` (not Cursor's `.mdc`); MCP config path (`mcp_config.json`) is Devin
+  Desktop-specific.
 
 ## gald3r Integration Notes
 
 - Ship gald3r's `.claude/skills/` tree (Cascade discovers it) + `.windsurf/workflows/` for commands +
-  `.windsurf/hooks.json` (with `powershell` keys) for hooks; write instructions to `AGENTS.md`.
-- Hooks fire natively (`powershell` key supported) — no need to degrade session/pre-commit hooks to
+  `.windsurf/hooks.json` (gald3r `g-hk-*.py` hooks wire via the `bash` key running `python <path>`)
+  for hooks; write instructions to `AGENTS.md`.
+- Hooks fire natively (`bash` key runs `python <path>`) — no need to degrade session/pre-commit hooks to
   manual or to git `core.hooksPath`.
-- `g-agnt-*` personas have no native agent file — express them as Skills/Rules until Windsurf ships a
-  named sub-agent primitive.
+- `g-agnt-*` personas have no native agent file — express them as Skills/Rules until Devin Desktop
+  ships a named sub-agent primitive.
 - Re-verify on the next `@g-platform-scan-docs windsurf` (crawl_max_age_days: 14).
 
 ---
@@ -242,25 +299,27 @@ command and hook surfaces. Note Windsurf reads `AGENTS.md`, **not** `CLAUDE.md`.
 Legend: ✅ verified working · ⚠️ partial / Cursor-generic · ❌ not supported · ❓ untested.
 
 Rationale (agents tracked separately from the 5-column summary):
-- **Hooks ✅** — native `hooks.json`, 12 lifecycle events, `powershell` key fires gald3r `g-hk-*.ps1`; pre-hooks block via exit code 2.
+- **Hooks ✅** — native `hooks.json`, 12 lifecycle events, `bash` key runs gald3r `g-hk-*.py` via `python <path>`; pre-hooks block via exit code 2.
 - **Rules ✅** — `.windsurf/rules/*.md` (4 activation modes, 12,000-char) + `AGENTS.md` + legacy `.windsurfrules` + global_rules.md.
 - **Skills ✅** — Cascade Skills `SKILL.md`; discovers `.claude/skills/` + `.agents/skills/` → gald3r packs install verbatim.
 - **Commands ✅** — Workflows `.windsurf/workflows/*.md`, `/`-invoked (manual; 12,000-char); maps gald3r `g-*` commands.
-- **MCP ✅** — `~/.codeium/windsurf/mcp_config.json` + Marketplace; stdio + Streamable HTTP; 100-tool cap (Windsurf-specific path).
+- **MCP ✅** — `~/.codeium/windsurf/mcp_config.json` + Marketplace; stdio + Streamable HTTP; 100-tool cap (Devin Desktop-specific path, unchanged post-rename — see §8 discrepancy note).
 - **Agents ⚠️** — modes/Plan Mode/planning agent/Wave 13 parallel agents (up to 5), but no named sub-agent config file.
-- **Docs Fresh ✅** — re-crawled 2026-06-02 against https://docs.windsurf.com.
+- **Docs Fresh ✅** — re-crawled 2026-07-18 against https://docs.devin.ai (formerly https://docs.windsurf.com — see Rebrand Notice, §0).
 
 ---
 
-## Verification Evidence (docs crawl 2026-06-02, https://docs.windsurf.com)
+## Verification Evidence (docs crawl 2026-07-18, https://docs.devin.ai — product renamed from Windsurf to Devin Desktop 2026-06-02)
 
 | Capability | How verified |
 |---|---|
-| Instruction file | /windsurf/cascade/memories — Cascade reads `AGENTS.md` as Rules (root always-on, subdir auto-glob); legacy `.windsurfrules`; NOT `CLAUDE.md` |
-| Commands | /windsurf/cascade/workflows — Workflows `.windsurf/workflows/*.md`, `/[name]` slash-invoked, manual-only, 12,000-char; global `~/.codeium/windsurf/global_workflows/` |
-| Rules | /windsurf/cascade/memories — `.windsurf/rules/*.md` (always_on/model_decision/glob/manual, 12,000-char), `global_rules.md` (6,000-char); Memories are local-only |
-| Agents | /windsurf/cascade/cascade — Code/Chat modes, planning agent, Plan Mode, Wave 13 parallel agents (≤5 in worktrees); NO named sub-agent config primitive → partial |
-| Skills | /windsurf/cascade/skills — Cascade Skills `SKILL.md` (name+description); discovered in `.windsurf` / `.claude` / `.agents` skills dirs; progressive disclosure |
-| Hooks | /windsurf/cascade/hooks — `hooks.json` (workspace/user/system); 12 events; stdin JSON; pre-hooks block on exit code 2; `command` (bash) + `powershell` keys |
-| MCP | /windsurf/cascade/mcp — `~/.codeium/windsurf/mcp_config.json` + Marketplace; stdio + Streamable HTTP; 100-tool hard limit |
+| Rebrand | `windsurf.com` → 200 at `devin.ai/desktop`; `docs.windsurf.com` → two 308 hops → `docs.devin.ai/desktop/getting-started` (title "Welcome to Devin Desktop - Devin Docs"); `docs.devin.ai/desktop/devin-desktop-faq` confirms 2026-06-02 cutover date |
+| Instruction file | /desktop/cascade/memories — Cascade reads `AGENTS.md` as Rules (root always-on, subdir auto-glob); legacy `.windsurfrules`; NOT `CLAUDE.md` |
+| Commands | /desktop/cascade/workflows — Workflows `.windsurf/workflows/*.md`, `/[name]` slash-invoked, manual-only, 12,000-char; global `~/.codeium/windsurf/global_workflows/` |
+| Rules | /desktop/cascade/memories — `.windsurf/rules/*.md` (always_on/model_decision/glob/manual, 12,000-char), `global_rules.md` (6,000-char) at `~/.codeium/windsurf/memories/global_rules.md`; Memories are local-only |
+| Agents | /desktop/cascade/cascade — Code/Chat modes, planning agent, Plan Mode, Wave 13 parallel agents (≤5 in worktrees); NO named sub-agent config primitive → partial |
+| Skills | /desktop/cascade/skills — Cascade Skills `SKILL.md` (name+description); discovered in `.windsurf` / `.claude` / `.agents` skills dirs; progressive disclosure |
+| Hooks | /desktop/cascade/hooks — `hooks.json` (workspace/user/system); 12 events; stdin JSON; pre-hooks block on exit code 2; `command` (bash) + `powershell` keys; explicitly disambiguates Devin Desktop IDE (`~/.codeium/windsurf/hooks.json`) vs. JetBrains Plugin (`~/.codeium/hooks.json`) |
+| MCP | /desktop/cascade/mcp — `~/.codeium/windsurf/mcp_config.json` + Marketplace; stdio + Streamable HTTP; 100-tool hard limit. **Caveat**: `/desktop/devin-desktop-faq`'s config-directory table lists the flattened `~/.codeium/mcp_config.json` without a Desktop/JetBrains split — likely conflating the JetBrains Plugin path; treated as a doc inconsistency (see §8) |
 | Cross-compat | Cascade discovers `.claude/skills/` + `.agents/skills/` and reads `AGENTS.md` → gald3r Skill artifacts reusable (path differs from Cursor `.cursor/mcp.json`) |
+| Product disambiguation | `docs.devin.ai/windsurf/plugins/*` is a **separate** product ("Windsurf Plugins" — JetBrains/VS Code/other-IDE extension), not this skill's subject (the standalone Devin Desktop IDE, documented at `/desktop/*`) |

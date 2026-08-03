@@ -1,5 +1,7 @@
 ---
+description: 'Activate g-skl-cli-copilot to generate .github/copilot-instructions.md and run gh copilot commands.'
 subsystem_memberships: [PLATFORM_INTEGRATION]
+execution_tier: prompt_only
 ---
 # g-cli-copilot — GitHub Copilot CLI
 
@@ -14,7 +16,7 @@ Use when:
 
 ## Actions
 
-- **Generate instructions**: run `python .gald3r_sys/skills/g-skl-platform-copilot/scripts/generate_copilot_instructions.py`
+- **Generate instructions**: run `python .claude/skills/g-skl-platform-copilot/scripts/generate_copilot_instructions.py` (path relative to the installed skills root -- `.cursor/skills/...` etc. on other platforms)
 - **Suggest command**: `gh copilot suggest --target {shell|git|gh} "{description}"`
 - **Explain command**: `gh copilot explain "{command}"`
 - **Status**: confirm `gh auth status` + Copilot subscription active

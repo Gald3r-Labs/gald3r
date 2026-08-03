@@ -97,8 +97,43 @@ def say(msg: str, color: Optional[str] = None) -> None:
         print(msg)
 
 
-def find_project_root() -> Path:
-    """Resolve project root (walk up from cwd to find .gald3r/)."""
+def _is_gitignored(path: Path) -> "bool | None":
+    """T516: cheap, authoritative gitignore check (same guard shape as T512's
+    `find_gald3r_root` fix, commit 3682aa64). `None` (check could not run)
+    is treated as fail-open by the caller."""
+    try:
+        result = subprocess.run(  # noqa: S603 -- fixed argv, no shell
+            ["git", "check-ignore", "-v", str(path)],
+            cwd=str(path.parent),
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if result.returncode == 0:
+        return True
+    if result.returncode == 1:
+        return False
+    return None
+
+
+def find_project_root(*, ambiguous_candidates: "List[Path] | None" = None) -> Path:
+    """Resolve project root (walk up from cwd to find .gald3r/).
+
+    T516 (T512 inventory row 23 -- SPLIT RULING): when the compiled `gald3r`
+    engine package is importable, this delegates entirely to
+    `gald3r.utils.paths.gald3r_root()`, an EXTERNAL installed package not
+    present in this source tree -- out-of-scope-external, cannot be
+    guarded or tested from this repo. The pure-Python fallback path below
+    (no engine installed) IS in-scope and applies the shared T512
+    gitignore-refusal + ambiguity-warning walk-up guard: a candidate whose
+    `.gald3r/` is gitignored is refused (never adopted -- the walk
+    continues upward for the real, tracked root). A second, non-gitignored
+    candidate further up than the nearest one is appended to
+    `ambiguous_candidates` (when supplied) but the NEAREST candidate still
+    wins -- no behavior change for the ordinary single-`.gald3r/` case.
+    """
     if _HAS_ENGINE:
         from gald3r.utils import paths
 
@@ -107,11 +142,18 @@ def find_project_root() -> Path:
         except FileNotFoundError:
             return Path.cwd()
     d = Path.cwd()
+    resolved: Optional[Path] = None
     while d != d.parent:
-        if (d / ".gald3r").exists():
-            return d
+        marker = d / ".gald3r"
+        if marker.exists():
+            if _is_gitignored(marker):
+                pass  # T516: refuse -- never silently adopt a decoy.
+            elif resolved is None:
+                resolved = d
+            elif ambiguous_candidates is not None:
+                ambiguous_candidates.append(d)
         d = d.parent
-    return Path.cwd()
+    return resolved if resolved is not None else Path.cwd()
 
 
 def invoke_muninn_impact(project_root: Path, rel_file: str, depth: int) -> Optional[Dict[str, Any]]:

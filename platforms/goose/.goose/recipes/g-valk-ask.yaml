@@ -1,0 +1,29 @@
+version: 1.0.0
+title: g-valk-ask
+description: 'Ask another project a realtime peer-to-peer question via Valkyrie: $ARGUMENTS'
+instructions: "Ask another project a realtime peer-to-peer question via Valkyrie:\
+  \ $ARGUMENTS\n\n## What This Command Does\n\nRuns `gald3r valk ask` (`POST /api/v1/ask`)\
+  \ to get a grounded answer — with citations — from\nanother project's own state\
+  \ (task/bug status, PROJECT.md/PLAN.md, constraints, vault snippets)\nwithout creating\
+  \ a WPAC request/task record. Write-ahead queued: if world_tree is unreachable,\n\
+  the question is queued and retried on the next `@g-valk-sync`. Uses `g-skl-valk`.\n\
+  \n## Workflow\n\n### 1. Collect the Question\n- **Question**: the natural-language\
+  \ question (required)\n- **Target project** (`--project-id`): which project's context\
+  \ to ground the answer in\n  (default: the answering server's own default project)\n\
+  - **Context budget** (`--context-budget`): optional token cap on assembled context\n\
+  \n### 2. Run\n```bash\ngald3r valk ask \"<question>\" [--project-id <id>] [--context-budget\
+  \ <n>] [--json]\n```\n\n### 3. Report\nPrint the answer and its citations. If the\
+  \ call queued instead of delivering (offline), say so\nexplicitly and note it will\
+  \ retry via `@g-valk-sync` / `gald3r workspace outbox flush`. If the\nresponse is\
+  \ HTTP 409 `no_provider_available`, this is the known BUG-235 account-side\nprovider/entitlement\
+  \ gap — do not treat it as a transport failure.\n\n## Usage Examples\n\n```\n@g-valk-ask\
+  \ \"Is the auth endpoint task still blocked?\" --project-id gald3r_agent_dev\n```\n\
+  \n## Delegates To\n`g-skl-valk`"
+prompt: Run the gald3r `g-valk-ask` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-valk-ask, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

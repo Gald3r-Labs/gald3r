@@ -17,6 +17,17 @@ everywhere policy-as-code doesn't apply: free/retail installs (no org tier),
 platforms with no hook surface (never invoked), engine not installed, and any
 parse/lookup error (fail-open — a broken policy bundle must never brick a
 session).
+
+BUG-638 (actionability -- the deny reason must also reach stderr): Claude
+Code's PreToolUse hook contract treats exit code 2 as a "blocking error" and
+reads STDERR for the human-readable reason shown back to the calling agent.
+This hook used to print only its ``{permission: deny, ...}`` JSON body to
+stdout on a deny, so the real org-policy reason never reached stderr -- the
+exact defect class BUG-179 fixed for g-hk-pre-tool-call-gald3r-guard.py,
+BUG-625 fixed for g-hk-validate-shell.py, and BUG-633 fixed for
+g-hk-pre-tool-call-prd-freeze.py / g-hk-pre-tool-call-member-gald3r-guard.py.
+Mirrors that additive-only shape: stdout stays byte-for-byte unchanged, and
+the deny reason is also written to stderr.
 """
 # @subsystems: SECURITY_AND_COMPLIANCE
 from __future__ import annotations
@@ -39,7 +50,6 @@ if _g3ct_env not in ("", "0", "off", "false", "no") or _g3ct_os.path.isfile(
         pass
 # --- end gald3r calltrace bootstrap ---
 
-import importlib.util
 import json
 import subprocess
 import sys
@@ -50,24 +60,18 @@ import _hook_common  # noqa: E402
 
 
 def _resolve_engine_cmd(project_root: Path):
-    """Resolve the gald3r engine command prefix via the zero-IP resolver.
+    """Resolve the gald3r engine command prefix (P3 Tier-0, T179/T191).
 
-    Returns the command prefix (e.g. ``["gald3r"]``) or ``None`` when the
-    resolver is not shipped or no engine can be found — the hook then no-ops
-    (allow), exactly like the old "skill not installed" path.
+    Delegates to the shared `_hook_common.resolve_engine_argv` (env var ->
+    PATH -> legacy loose resolver -> loud degrade) so PATH resolution works
+    even when the loose `.gald3r_sys/scripts/gald3r_bin.py` IP script is not
+    shipped. Returns the command prefix (e.g. ``["gald3r"]``) or ``None``
+    when no engine can be found — the hook then no-ops (allow), exactly like
+    the old "skill not installed" path.
     """
-    resolver = project_root / ".gald3r_sys" / "scripts" / "gald3r_bin.py"
-    if not resolver.is_file():
-        return None
-    try:
-        spec = importlib.util.spec_from_file_location("gald3r_bin_policy", str(resolver))
-        if not spec or not spec.loader:
-            return None
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)  # type: ignore[union-attr]
-        return mod.resolve_engine_cmd(project_root)
-    except Exception:
-        return None
+    return _hook_common.resolve_engine_argv(
+        project_root, hook_name="g-hk-policy-check"
+    )
 
 
 def emit(payload: dict) -> None:
@@ -78,12 +82,17 @@ def _resolve_project_root() -> Path:
     """Prefer the invoking process's cwd (the actual project being worked on)
     walked up to its `.gald3r/` ancestor; fall back to `_hook_common`'s
     hook-file-relative resolution (correct when a test imports the hook
-    in-place inside the canonical repo tree, which has its own `.gald3r/`)."""
+    in-place inside the canonical repo tree, which has its own `.gald3r/`).
+
+    T516 (T512 inventory row 12 -- policy-as-code enforcement gate): applies
+    the shared T512 gitignore-refusal + ambiguity-warning walk-up guard
+    (`_hook_common.guarded_walk_up`).
+    """
     d = Path.cwd()
-    for candidate in [d] + list(d.parents):
-        if (candidate / ".gald3r").is_dir():
-            return candidate
-    return _hook_common.project_root()
+    root = _hook_common.guarded_walk_up(
+        d, exclude=_hook_common.resolved_global_gald3r_home()
+    )
+    return root if root is not None else _hook_common.project_root()
 
 
 def main(argv: list) -> int:
@@ -124,6 +133,13 @@ def main(argv: list) -> int:
             "reason": reason,
             "decision": "block",
         })
+        # BUG-638: exit 2 is Claude Code's "blocking error" contract -- the reason
+        # MUST also reach STDERR (stdout-only was silently discarded, surfacing as
+        # "No stderr output" to the calling agent). Purely additive: stdout is left
+        # byte-for-byte unchanged. Mirrors BUG-179/BUG-625/BUG-633's fix for the
+        # sibling PreToolUse guard hooks.
+        sys.stderr.write(reason + "\n")
+        sys.stderr.flush()
         return 2
 
     if result.get("verdict") == "warn" and result.get("message"):

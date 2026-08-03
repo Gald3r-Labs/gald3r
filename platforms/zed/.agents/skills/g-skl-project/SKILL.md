@@ -1,9 +1,20 @@
-﻿---
+---
 name: g-skl-project
 description: Own and manage PROJECT.md (mission, goals, project linking). Single source of truth for project identity. Constraints operations delegated to g-skl-constraints.
 token_budget: medium
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 # g-project
 
 **Files Owned**: `.gald3r/PROJECT.md`  
@@ -23,7 +34,7 @@ subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 3. `project_type=` in `.gald3r/.identity` (the primary switch),
 4. `freeform` (final fallback).
 
-Canonical profile filenames equal the `project_type` value: `software_development` (default), `content_creation`, `3d_modeling`, `research_analysis`, `freeform` — stored as `.gald3r/config/workflow_profiles/<project_type>.yaml` (schema B). Drop additional profiles there to extend. The `g-skl-project` skill reads/writes `project_type=` in `.identity` (set during `g-setup`); `g-skl-tasks` § Workflow Profiles documents the schema; `g-skl-project-types` `load_profile.ps1` resolves the chain. (The legacy T1238 `software_dev`/`research` files were archived to `.gald3r/archive/superseded/workflow_profiles/`.)
+Canonical profile filenames equal the `project_type` value: `software_development` (default), `content_creation`, `3d_modeling`, `research_analysis`, `freeform` — stored as `.gald3r/config/workflow_profiles/<project_type>.yaml` (schema B). Drop additional profiles there to extend. The `g-skl-project` skill reads/writes `project_type=` in `.identity` (set during `g-setup`); `g-skl-tasks` § Workflow Profiles documents the schema; `g-skl-project-types` `gald3r project-type resolve` resolves the chain. (The legacy T1238 `software_dev`/`research` files were archived to `.gald3r/archive/superseded/workflow_profiles/`.)
 
 ```markdown
 ---

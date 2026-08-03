@@ -1,5 +1,7 @@
-﻿---
+---
+description: 'Sync-check subsystems against SUBSYSTEMS.md, or list active/all subsystems with --status.'
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
+execution_tier: orchestration
 ---
 List and check the subsystem registry. Activates **g-skl-subsystems**.
 

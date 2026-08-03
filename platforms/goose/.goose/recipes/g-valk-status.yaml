@@ -1,0 +1,30 @@
+version: 1.0.0
+title: g-valk-status
+description: '@g-valk-status — Check the Valkyrie world_tree connector''s status'
+instructions: "# @g-valk-status — Check the Valkyrie world_tree connector's status\n\
+  \nRun **`gald3r valk status`** to check whether the Valkyrie connector — the resident\
+  \ world_tree\nsync connector, the online coordination backbone — is currently running\
+  \ for this project.\n\n---\n\n## Usage (PowerShell)\n\n```powershell\ngald3r valk\
+  \ status\ngald3r valk status --root <path>   # project root containing .gald3r/\
+  \ (default: discovered from cwd)\ngald3r valk status --json          # machine-readable\
+  \ output\n```\n\n## What it does\n\nRead-only: reads the project's connector lock\
+  \ (never writes) and reports:\n\n- **Lock state** — `running` if the recorded pid\
+  \ is alive, `stale (pid dead — reclaimable on\n  next start)` if the pid is dead,\
+  \ or \"no connector lock found\" if there is no lock at all.\n- `pid`, `started_at`,\
+  \ `project_id`, and the resolved `lock_path`.\n\nWith `--json`, the same fields\
+  \ are emitted as a structured object instead of human-readable\nlines: `found`,\
+  \ `running`, `pid`, `started_at`, `project_id`, `lock_path`.\n\n## Flags\n\n| Flag\
+  \ | Meaning |\n|------|---------|\n| `--root PATH` | Project root containing `.gald3r/`\
+  \ (default: discovered by walking up from cwd). |\n| `--json` | Emit the status\
+  \ as structured JSON instead of human-readable lines. |\n\n## See also\n\n- `@g-valk-start`\
+  \ — start the connector (`--detach` for the resident, world_tree-synced process)\n\
+  - `@g-valk-stop` — stop the running connector\n- `@g-valk-list` — list every registered\
+  \ connector on this machine"
+prompt: Run the gald3r `g-valk-status` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-valk-status, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

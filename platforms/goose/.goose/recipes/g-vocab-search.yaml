@@ -1,0 +1,20 @@
+version: 1.0.0
+title: g-vocab-search
+description: g-vocab-search
+instructions: "# g-vocab-search\n\nFind matching abbreviations or conventions in `.gald3r/vocab.md`.\n\
+  \n## Usage\n\n```\n@g-vocab-search \"term\"\n@g-vocab-search \"platform\"   # matches\
+  \ CRASH (expansion mentions platform folders)\n```\n\n## What It Does\n\n1. Reads\
+  \ `.gald3r/vocab.md`\n2. Case-insensitive substring match of `term` against each\
+  \ row's Abbreviation, Expansion,\n   and Context columns (both the `## Active Vocabulary`\
+  \ and the convention tables)\n3. Prints matching rows; if none match, reports `No\
+  \ vocab entry matches \"term\"`\n\n## Behavior Rules\n\n- Read-only — never modifies\
+  \ `vocab.md` (use `@g-vocab-add` to add/update)\n- Matching is case-insensitive\n\
+  - The vocab file `.gald3r/vocab.md` is always the source of truth"
+prompt: Run the gald3r `g-vocab-search` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-vocab-search, e.g. quoted text or --flag
+    values, exactly as you would type them after the command name.

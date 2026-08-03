@@ -25,6 +25,16 @@ token_budget: low
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
 
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 # g-skl-platform-cursor
 
 Activate for: setting up gald3r with Cursor IDE (or the Cursor CLI / SDK), authoring
@@ -103,7 +113,7 @@ Test-Path AGENTS.md              # primary instruction file (root)
 
 | Feature | Status | Notes |
 |---|---|---|
-| Hooks (`g-hk-*.ps1`) | ✅ | `.cursor/hooks.json`; stdio JSON bidirectional; large event surface (sessionStart…afterAgentThought + Tab/workspaceOpen); Cursor 1.7 |
+| Hooks (`g-hk-*.py`) | ✅ | `.cursor/hooks.json`; stdio JSON bidirectional; large event surface (sessionStart…afterAgentThought + Tab/workspaceOpen); Cursor 1.7 |
 | Skills (`g-skl-*/SKILL.md`) | ✅ | folder-per-skill auto-load in `.cursor/skills/` + `.agents/skills/`; `/skill-name` or `@skill-name`; Cursor 2.4 |
 | Agents (`g-agnt-*.md`) | ✅ | native subagents `.cursor/agents/` (md + YAML, parallel); also reads `.claude/agents/` + `.codex/agents/`; Cursor 2.4 |
 | Commands (`@g-*`) | ✅ | `.cursor/commands/*.md` (filename = slash command); Cursor 1.6 |

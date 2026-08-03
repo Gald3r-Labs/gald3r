@@ -1,8 +1,8 @@
 {
-  "model": "deepseek/deepseek-v4",
-  "skills_path": ".deepcode/skills",
-  "mcp": {
-    "servers": {}
-  },
-  "theme": "dark"
+  "mcpServers": {
+    "gald3r": {
+      "command": "gald3r",
+      "args": ["mcp", "serve"]
+    }
+  }
 }

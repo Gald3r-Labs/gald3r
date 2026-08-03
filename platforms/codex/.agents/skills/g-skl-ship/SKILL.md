@@ -11,6 +11,16 @@ token_budget: medium
 subsystem_memberships: [RELEASE_AND_VERSIONING]
 ---
 
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 # g-skl-ship — Release Management Skill
 
 ## When to Use
@@ -57,6 +67,7 @@ Invoked by `@g-ship [major|minor|patch]`.
 1. Read current version from `VERSION` file (fallback: latest `## [X.Y.Z]` header in CHANGELOG.md)
 2. Calculate new version based on bump type
 3. Show the `[Unreleased]` section preview and new version to user — confirm before proceeding
+3.5. **Run the RELEASE SWEEP** (see operation below) — report which awaiting-verification tasks ship vs. are held, BEFORE tagging. Held (`manual` / `sync_required`) tasks are skipped, not included in the release.
 4. Run `gald3r ship`
    - Promotes `## [Unreleased]` → `## [X.Y.Z] - YYYY-MM-DD (Theme)`
    - Writes new empty `## [Unreleased]` at top
@@ -69,8 +80,8 @@ Invoked by `@g-ship [major|minor|patch]`.
 6. Ask: "Create GitHub release? (yes/no)"
    - If yes: extract the new `[X.Y.Z]` section from CHANGELOG.md, pass to `gh release create`
 
-**PowerShell (agent calls this):**
-```powershell
+**Command (agent calls this):**
+```bash
 gald3r ship
 git push origin main --tags
 gh release create vX.Y.Z --title "vX.Y.Z -- Bug Fix Sprint" --notes-file <temp_notes_file>
@@ -85,6 +96,46 @@ gh release create vX.Y.Z --title "vX.Y.Z -- Bug Fix Sprint" --notes-file <temp_n
   5. Update README badge line
   6. `git add CHANGELOG.md VERSION README.md && git commit -m "release: vX.Y.Z"`
   7. `git tag -a vX.Y.Z -m "Release vX.Y.Z"`
+
+---
+
+### RELEASE SWEEP — release_hold gate before tagging (T419)
+
+Runs as BUMP step 3.5, **before** the git tag is created. Scans tasks in
+`tasks/awaiting-verification/` (the awaiting state folder — the spec's `tasks/awaiting/` is
+the awaiting-verification status) and partitions them by their `release_hold` frontmatter field:
+
+| `release_hold` value | Sweep result |
+|---|---|
+| `none` (or field omitted) | **Shipping** — included in this release |
+| `manual` | **Skipped** — listed with its `release_hold_reason` |
+| `sync_required` | **Skipped** — listed with its `sync_with` partner (`project/task`) |
+
+**Report format (always printed before tagging):**
+
+```
+Release sweep (tasks/awaiting-verification/):
+   Shipping:  4 tasks (T1271, T1273, T1277, T1278)
+   Skipped:   1 task  [T1055 - release_hold: sync_required -> gald3r_agent/T890]
+```
+
+**PowerShell scan (reads frontmatter only — no writes):**
+```powershell
+$awaiting = Get-ChildItem ".gald3r/tasks/awaiting-verification" -Filter "task*.md" -ErrorAction SilentlyContinue
+$shipping = @(); $skipped = @()
+foreach ($f in $awaiting) {
+    $raw = Get-Content $f.FullName -Raw
+    $hold = if ($raw -match '(?m)^release_hold:\s*(\S+)') { $Matches[1] } else { 'none' }
+    if ($hold -eq 'none') { $shipping += $f.BaseName } else { $skipped += "$($f.BaseName) [$hold]" }
+}
+"Shipping: $($shipping.Count) | Skipped: $($skipped.Count)"
+```
+
+- The sweep is **report-only** — it does not change task status or `release_hold`. To release a
+  held task, clear the hold first via `@g-task clear-release-hold <id>` (or `set-release-hold <id> none`).
+- A task with `release_hold: none` in awaiting-verification is "ready for staging" — `g-status`
+  surfaces a nudge when any exist (see g-skl-status Release Pipeline block).
+- `release_hold` is set/cleared by `g-skl-tasks` (engine `set_release_hold` / `clear_release_hold`).
 
 ---
 
@@ -330,5 +381,5 @@ Pick **one** mode per repo — do not run both against the same `CHANGELOG.md`.
 - `@g-git-push` — prompts for version bump if [Unreleased] is non-empty
 - `g-skl-tasks` COMPLETE — calls CHANGELOG-ENTRY for user-facing tasks
 - `g-skl-bugs` FIX — calls CHANGELOG-ENTRY for bug closures
-- `gald3r ship` — Python engine (gald3r projects)
+- `gald3r ship` -- Python release/semver engine (gald3r projects)
 - `gald3r_release.py` — maintainer tool for gald3r's own release; moved to the maintainer tree, not shipped (T1652 D9)

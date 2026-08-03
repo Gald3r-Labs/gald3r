@@ -1,9 +1,20 @@
-﻿---
+---
 name: g-skl-recon-repo
 description: Capture a GitHub repository into the vault as a structured summary note. Produces research/repos/ notes and _index.yaml. Optional --deep flag triggers full g-skl-res-deep analysis pass.
 token_budget: medium
 subsystem_memberships: [VAULT_AND_RESEARCH]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 # g-recon-repo
 
 **Activate for**: "capture this repo", "save repo to vault", "summarize this GitHub project", "recon repo", "add repository to knowledge base", `@g-recon-repo`
@@ -14,7 +25,7 @@ subsystem_memberships: [VAULT_AND_RESEARCH]
 
 Quickly capture a GitHub repository as an Obsidian-compatible vault note in `research/repos/`. Unlike `g-skl-res-deep` (which runs a full 5-pass analysis), this skill produces a lightweight summary note optimized for vault browsing and quick reference.
 
-Optionally, pass `--deep` to run `g-skl-res-deep` after capture and produce a full recon report in `vault/research/recon/{slug}/`.
+Optionally, pass `--deep` to run `g-skl-res-deep` after capture and produce a full recon report in `vault/research/CRR_FunctionalSpecs/{slug}/`.
 
 ---
 

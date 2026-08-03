@@ -1,5 +1,7 @@
-﻿---
+---
+description: 'Capture a URL into vault research/articles/ as a one-time snapshot via g-skl-recon-url (--deep for analysis)'
 subsystem_memberships: [VAULT_AND_RESEARCH]
+execution_tier: guarded_prompt
 ---
 # g-recon-url
 
@@ -28,7 +30,7 @@ Activates **g-skl-recon-url** → CAPTURE or CAPTURE_BATCH operation.
 
 ## --deep flag
 
-After capturing, runs deep analysis and writes a recon report to `vault/research/recon/{slug}/`.
+After capturing, runs deep analysis and writes a recon report to `vault/research/CRR_FunctionalSpecs/{slug}/`.
 Equivalent to running `@g-res-deep` on the captured content.
 
 ## Clean Room Boundary

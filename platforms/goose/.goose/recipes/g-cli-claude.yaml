@@ -1,0 +1,16 @@
+version: 1.0.0
+title: g-cli-claude
+description: "\uFEFF---"
+instructions: "\uFEFF---\ndescription: Claude Code CLI quick reference — headless\
+  \ flags, session continuation, MCP config, permissions, overnight use.\nsubsystem_memberships:\
+  \ [PLATFORM_INTEGRATION]\nexecution_tier: prompt_only\n---\n# /g-cli-claude\n\n\
+  Activates `g-skl-cli-claude`. Use when running Claude Code from the terminal.\n\n\
+  ```\n/g-cli-claude    → load g-skl-cli-claude context\n```"
+prompt: Run the gald3r `g-cli-claude` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-cli-claude, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

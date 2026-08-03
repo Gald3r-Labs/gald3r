@@ -4,6 +4,17 @@ description: Create well-structured git commits following gald3r conventions, wi
 token_budget: medium
 subsystem_memberships: [RELEASE_AND_VERSIONING]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 # gald3r-git-commit
 
 ## When to Use
@@ -96,7 +107,7 @@ git tag phase-N-complete
 
 ## Pre-Commit Checklist
 
-Before every commit, run through these checks. An optional `pre-commit` hook (`g-hk-pre-commit.ps1`) automates the block/warn items.
+Before every commit, run through these checks. An optional `pre-commit` hook (`g-hk-pre-commit.py`) automates the block/warn items.
 
 ### Block (fix before committing)
 
@@ -240,11 +251,19 @@ git diff --cached --name-only | ForEach-Object { (Get-Item $_).Length / 1MB } | 
 
 ### Hook (Optional)
 
-An **opt-in** pre-commit hook script is available at `.cursor/hooks/g-hk-pre-commit.ps1`.
+An **opt-in** pre-commit hook script (`g-hk-pre-commit.py`) ships at
+`.claude/hooks/g-hk-pre-commit.py` / `.cursor/hooks/g-hk-pre-commit.py`, but git's
+`core.hooksPath` mechanism only ever invokes a file literally named `pre-commit`
+(no extension) -- neither of those directories ships one. The `.githooks/`
+directory (T293) is the one that does; **`.githooks/pre-commit`** is a POSIX
+dispatcher that runs encoding-normalize, component-tag-check, golden-fixture-
+baseline-freshness, and (BUG-401) this pre-commit sanity hook in sequence,
+picking up `.claude/hooks/g-hk-pre-commit.py` or `.cursor/hooks/g-hk-pre-commit.py`
+whichever exists.
 
 To enable in your local repo:
 ```powershell
-git config core.hooksPath .cursor/hooks
+git config core.hooksPath .githooks
 ```
 
 To disable:
@@ -278,11 +297,30 @@ gald3r push-gate -DryRun           # verify wiring; always exit 0
 
 ### Optional pre-push hook
 
-`.cursor/hooks/g-hk-pre-push.ps1` — same opt-in `core.hooksPath` as pre-commit. In hook mode, **release** checks run only when `GALD3R_RELEASE_PUSH=1`.
+An **opt-in** pre-push hook script (`g-hk-pre-push.py`) ships at
+`.claude/hooks/g-hk-pre-push.py` / `.cursor/hooks/g-hk-pre-push.py`, but git's
+`core.hooksPath` mechanism only ever invokes a file literally named `pre-push`
+(no extension) — neither of those directories ships one. **`.githooks/pre-push`**
+(BUG-403) is the POSIX dispatcher that does: it resolves and runs whichever of
+`.claude/hooks/g-hk-pre-push.py` or `.cursor/hooks/g-hk-pre-push.py` exists,
+propagating its exit code. `g-hk-pre-push.py` itself delegates to
+`gald3r push-gate --hook-mode`; in hook mode, **release** checks run only when
+`GALD3R_RELEASE_PUSH=1`.
+
+To enable in your local repo (one setting activates both dispatchers — git
+resolves each stage by its literal filename inside `.githooks/`):
+```powershell
+git config core.hooksPath .githooks
+```
+
+To disable:
+```powershell
+git config --unset core.hooksPath
+```
 
 ### Shared script (DRY)
 
-`.claude/skills/g-skl-git-commit/scripts/gald3r_git_sanity_common.ps1` supplies secret patterns for **`g-hk-pre-commit.ps1`**; push gate lives in **`gald3r push-gate`**.
+`.claude/skills/g-skl-git-commit/scripts/gald3r_git_sanity_common.py` supplies secret patterns for **`g-hk-pre-commit.py`**; push gate lives in **`gald3r push-gate`**.
 ---
 
 ## Push Modes
@@ -320,8 +358,8 @@ Release checklist:
 ### Push Hook (Optional)
 
 ```powershell
-git config core.hooksPath .cursor/hooks   # Enable (also activates pre-commit hook)
-git config --unset core.hooksPath         # Disable
+git config core.hooksPath .githooks   # Enable -- also activates .githooks/pre-commit (BUG-401)
+git config --unset core.hooksPath     # Disable
 ```
 ---
 

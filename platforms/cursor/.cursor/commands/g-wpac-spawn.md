@@ -1,5 +1,8 @@
-﻿---
+---
+description: 'Spawn a new gald3r project seeded from this one, with full setup and bidirectional WPAC topology linking.'
+argument-hint: '<new-project-name> --sibling|--child|--parent [options]'
 subsystem_memberships: [WORKSPACE_COORDINATION]
+execution_tier: guarded_prompt
 ---
 Spawn a new gald3r project from this project with full setup and WPAC topology linking: $ARGUMENTS
 
@@ -51,6 +54,29 @@ Delegates to `g-skl-wpac-spawn`.
 8. Initializes WPAC topology in both projects (bidirectional)
 9. Creates initial git commit in new project
 10. Asks about source cleanup (keeps originals until confirmed)
+
+## Completion Gate (Step 9.5)
+
+Before the initial commit (step 9 above), the underlying `g-skl-wpac-spawn` skill runs a
+deterministic completion check instead of trusting a hand-read of the new project's folder
+tree — the Step 9.5 **Completion Gate** (BUG-223). It shells out to the CLI verb directly:
+
+```powershell
+gald3r workspace member verify-spawn --target "<new_project_path>" --source "<current_project_path>"
+```
+
+Exit code `0` means the canonical `.gald3r/` shape plus Steps 4/7/8(/9) artifacts are all
+present; a non-zero exit prints every missing item by name and blocks the commit until each
+one is fixed (add `--json` for machine-readable output). See `g-skl-wpac-spawn/SKILL.md`
+Step 9.5 for the full manual checklist and the BUG-223 incident this gate exists to prevent.
+
+**Step 7 verification note (T379)**: the `verify-spawn` Step 7 check is existence-only (does
+`.gald3r/subsystems/` exist + does `SUBSYSTEMS.md` exist), not content-based. This is
+deliberate — a legitimate spawn of an empty/code-free sibling project has an empty
+`subsystems/` by design, and a naive "must be non-empty" rule would false-fail it. See the
+`_check_step7` comment in
+`src/gald3r_core/coordination/workspace_member/verify_spawn.py` for the full rationale on
+why content-based verification was considered and explicitly declined.
 
 ## Companion Commands
 

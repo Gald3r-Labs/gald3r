@@ -1,8 +1,17 @@
 {
-    "$schema":  "https://opencode.ai/config.json",
-    "instructions":  [
-                         "AGENTS.md",
-                         "GUARDRAILS.md",
-                         ".opencode/rules/*.md"
-                     ]
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    "AGENTS.md"
+  ],
+  "mcp": {
+    "gald3r": {
+      "type": "local",
+      "command": [
+        "gald3r",
+        "mcp",
+        "serve"
+      ]
+    }
+  },
+  "plugin": []
 }

@@ -31,7 +31,7 @@ import os
 import re
 import subprocess
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 try:
@@ -224,7 +224,8 @@ analysis_depth: full_text
 
 def append_log(vault_path: str, out_path: str):
     log_path = Path(vault_path) / "log.md"
-    timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    # BUG-260 resolved: datetime.utcnow() replaced with timezone-aware datetime.now(timezone.utc)
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     rel = os.path.relpath(out_path, vault_path)
     with open(log_path, "a", encoding="utf-8") as f:
         f.write(f"\n## {timestamp} | ingest | {rel}\n")

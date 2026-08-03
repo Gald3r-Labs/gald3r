@@ -24,6 +24,17 @@ token_budget: low
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
 
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
+
 # g-skl-platform-junie
 
 Activate for: setting up gald3r with JetBrains Junie (IDE plugin or Junie CLI), authoring commands/agents/skills + `AGENTS.md` guidelines + MCP, or verifying the Junie gald3r install.
@@ -93,7 +104,7 @@ Test-Path .junie/mcp/mcp.json                          # MCP servers
 
 | Feature | Status | Notes |
 |---|---|---|
-| Hooks (`g-hk-*.ps1`) | ⚠️ | `config.json` `hooks` **SessionStart-only**, **Early Access**; personal `~/.junie/config.json` (project hooks ignored); no pre-tool/pre-commit/file-watch; JUNIE-1961 tracks more |
+| Hooks (`g-hk-*.py`) | ⚠️ | `config.json` `hooks` **SessionStart-only**, **Early Access**; personal `~/.junie/config.json` (project hooks ignored); no pre-tool/pre-commit/file-watch; JUNIE-1961 tracks more |
 | Skills (`g-skl-*/SKILL.md`) | ✅ | agentskills.io Agent Skills; `.junie/skills/` user+project; progressive disclosure; JetBrains IDEs + CLI |
 | Agents (`g-agnt-*.md`) | ✅ | native subagents `.junie/agents/` (md + YAML); auto-delegated by name/description (CLI) |
 | Commands (`@g-*`) | ✅ | custom slash commands `.junie/commands/*.md` (`/name`, `$arg` named args) (CLI) |

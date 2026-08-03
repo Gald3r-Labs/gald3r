@@ -15,7 +15,7 @@ docs_url_secondary:
   - https://developers.openai.com/codex/plugins
 last_doc_scan: 2026-06-02
 capability_status:
-  hooks: "✅ native lifecycle hooks via hooks.json / [hooks] in config.toml (10 events: SessionStart…Stop; .ps1 via command handlers)"
+  hooks: "✅ native lifecycle hooks via hooks.json / [hooks] in config.toml (10 events: SessionStart…Stop; g-hk-*.py via python <path> command handlers)"
   rules: "✅ AGENTS.md instruction hierarchy + Memories (~/.codex/memories/) + execpolicy hard allow/block"
   skills: "✅ Agent Skills (open SKILL.md standard) in .agents/skills + $HOME/.agents/skills"
   commands: "✅ ~40 built-in slash commands; user-defined via skills (Custom Prompts deprecated)"
@@ -24,6 +24,16 @@ capability_status:
 token_budget: low
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
 
 # g-skl-platform-codex
 
@@ -72,7 +82,7 @@ root over global) → **gald3r's open-standard `.agents/skills/` tree works as-i
 
 **Cheapest full-parity install: ship gald3r's `.agents/skills/g-skl-*/SKILL.md` (open standard) +
 an `AGENTS.md`** — Codex loads both natively. Map `g-agnt-*` to `.codex/agents/*.toml`, wire
-`g-hk-*.ps1` via `hooks.json`/`[hooks]` (10 events), declare MCP under `[mcp_servers.*]`, and fold
+`g-hk-*.py` via `hooks.json`/`[hooks]` (10 events), declare MCP under `[mcp_servers.*]`, and fold
 `g-rl-*` always-apply rules into `AGENTS.md` (hard guards optionally as `execpolicy` rules /
 `PreToolUse` hooks). For user-defined `@g-*` workflows prefer **skills** (Custom Prompts are
 deprecated). Bundle/distribute via **Codex Plugins** (`/plugins`).
@@ -91,14 +101,15 @@ codex --version                     # CLI installed
 - Instruction file is **`AGENTS.md`, not `CLAUDE.md`** — Codex does not read `CLAUDE.md`. Author the `AGENTS.md` form (override/fallbacks: `AGENTS.override.md`, `TEAM_GUIDE.md`, `.agents.md`).
 - Subagents are **TOML** (`.codex/agents/*.toml`, keys `name`/`description`/`developer_instructions`), **not** markdown+YAML, and are **explicit-spawn only** (`/agent` or natural language) — never auto-spawned.
 - **Custom Prompts (`~/.codex/prompts/`) are DEPRECATED** — use **skills** for reusable invocable workflows; built-in slash commands cover the rest.
-- Hooks + MCP are **config-driven** (`hooks.json` / `[hooks]` and `[mcp_servers.*]` in `config.toml`), not standalone discovery folders. For `.ps1` handlers, shell `pwsh`/`powershell` in the hook `command`.
+- Hooks + MCP are **config-driven** (`hooks.json` / `[hooks]` and `[mcp_servers.*]` in `config.toml`), not standalone discovery folders. For `.py` handlers, shell `python <path>` in the hook `command`
+(post-T1584 Python port; no PowerShell involved).
 - Config is `.codex/config.toml` (TOML, schema-validated); project merges below `~/.codex/config.toml` most-specific-wins. The legacy `codex.config.json` + `suggest`/`auto-edit`/`full-auto` form is superseded.
 
 ## 5. Capability Summary
 
 | Feature | Status | Notes |
 |---|---|---|
-| Hooks (`g-hk-*.ps1`) | ✅ | `hooks.json` / `[hooks]` in config.toml; 10 events (SessionStart, SubagentStart, PreToolUse, PermissionRequest, PostToolUse, PreCompact, PostCompact, UserPromptSubmit, SubagentStop, Stop) |
+| Hooks (`g-hk-*.py`) | ✅ | `hooks.json` / `[hooks]` in config.toml; 10 events (SessionStart, SubagentStart, PreToolUse, PermissionRequest, PostToolUse, PreCompact, PostCompact, UserPromptSubmit, SubagentStop, Stop) |
 | Skills (`g-skl-*/SKILL.md`) | ✅ | open Agent Skills standard; discovered in `.agents/skills/` + `$HOME/.agents/skills/`; `/skills` or `$`-mention |
 | Agents (`g-agnt-*`) | ✅ | native subagents `.codex/agents/*.toml` (parallel; explicit-spawn only; `/agent`) |
 | Commands (`@g-*`) | ✅ | ~40 built-in slash commands; user-defined via skills (Custom Prompts deprecated) |

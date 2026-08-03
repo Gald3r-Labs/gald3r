@@ -149,7 +149,7 @@ of subdirectory files.
 - **Interop caveat:** the `warpdotdev/claude-code-warp` plugin implements hooks via **Claude Code's
   own `hooks.json`** (SessionStart/Stop/Notification) — i.e. it *consumes* Claude Code's hook system
   rather than providing a native Warp one.
-- Consequence for gald3r: the PowerShell session-start / inbox-check / pre-commit `g-hk-*.ps1` hooks
+- Consequence for gald3r: the session-start / inbox-check / pre-commit `g-hk-*.py` hooks
   that auto-fire on Cursor and Claude Code **do not fire on Warp**. They must be run manually in the
   terminal, referenced from rules text, or wired through git `core.hooksPath` (pre-commit/pre-push).
 - Source: https://github.com/warpdotdev/warp/issues/7834
@@ -225,8 +225,8 @@ agents map to Agent Profiles; commands map to manual Warp Drive Workflows; hooks
 - **Events available**: none — no `sessionStart`/`stop`/`preToolUse`/`postToolUse`/`beforeShellExecution`. Agent **lifecycle hooks** are an OPEN feature request (warpdotdev/warp **#7834**); custom slash commands + hook-like mechanisms are OPEN RFC **#6857**. Neither is shipped.
 - **Event payload format**: none
 - **OS limits**: n/a — there is no native hook surface on any OS (Warp is macOS/Linux/Windows, but the gap is platform-wide, not OS-specific).
-- **Limitations**: nearest event-driven concept is **Oz Cloud Triggers & Schedules** (event-triggered cloud agent runs) — an agent-execution trigger, NOT a hook bus for local `.ps1`. The `warpdotdev/claude-code-warp` plugin reuses Claude Code's own `hooks.json`, not a native Warp hook system.
-- **gald3r hook files**: none auto-fire — a gald3r `g-hk-*.ps1` hook can only be run manually in the terminal, referenced from `AGENTS.md`/`WARP.md` rules text, or wired via git `core.hooksPath` (pre-commit/pre-push only).
+- **Limitations**: nearest event-driven concept is **Oz Cloud Triggers & Schedules** (event-triggered cloud agent runs) — an agent-execution trigger, NOT a hook bus for local `g-hk-*.py` scripts. The `warpdotdev/claude-code-warp` plugin reuses Claude Code's own `hooks.json`, not a native Warp hook system.
+- **gald3r hook files**: none auto-fire — a gald3r `g-hk-*.py` hook can only be run manually in the terminal, referenced from `AGENTS.md`/`WARP.md` rules text, or wired via git `core.hooksPath` (pre-commit/pre-push only).
 
 ## Atypical Handling
 

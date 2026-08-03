@@ -43,9 +43,9 @@ not install-tested — the crawl assessment confirms all six primitives are NATI
 
 > **Hooks caveat:** OpenCode's lifecycle hooks are **in-process JS/TS plugins** (event handlers),
 > not drop-in shell scripts and not a JSON wiring file. Lifecycle coverage is broad, but there is
-> **no first-class git pre-commit / pre-push event** and gald3r PowerShell `.ps1` hooks must be
-> shelled out from a JS/TS wrapper rather than registered directly. This is the single largest
-> friction point (see §6 + §9).
+> **no first-class git pre-commit / pre-push event** and gald3r's Python `g-hk-*.py` hooks (T1584
+> port; NOT PowerShell) must be shelled out from a JS/TS wrapper rather than registered directly.
+> This is the single largest friction point (see §6 + §9).
 
 ---
 
@@ -155,14 +155,28 @@ Source: https://opencode.ai/docs/rules/
   `tui.toast.show`, `server.connected`, `installation.updated`.
 - **Mapping**: `tool.execute.before`/`after` gives pre-tool gating (PreToolUse-equivalent);
   `file.edited` / `file.watcher.updated` covers file-watch; `session.created` covers session-start.
+- **Two dispatch surfaces, not one uniform key set (BUG-367 correction).** Live-verified against
+  OpenCode's real, on-disk TypeScript source (`packages/plugin/src/index.ts`'s
+  `export interface Hooks {...}`, https://github.com/sst/opencode/blob/dev/packages/plugin/src/index.ts):
+  only `tool.execute.before` / `tool.execute.after` (and a handful of chat/permission/experimental
+  events not relevant to gald3r) are real top-level `Hooks` object keys, each called with TWO
+  positional arguments `(input, output)`. The remaining events in the 20-event list above —
+  including `session.created` / `session.deleted` / `session.idle` — are NOT `Hooks` keys at all;
+  they are variants of the generic bus `Event` union (`packages/sdk/js/src/gen/types.gen.ts`)
+  delivered exclusively through a single `event?: (input: {event: Event}) => Promise<void>` hook,
+  discriminated by `event.type`. A plugin object key literally named `"session.created"` is never
+  invoked by OpenCode's real plugin loader.
 - **gald3r friction (largest gap)**: hooks are **event-driven JS/TS plugins**, not drop-in shell
-  scripts and not a JSON wiring file. gald3r ships hooks as **PowerShell `.ps1`** scripts, which do
-  **not** run natively as OpenCode plugins. A thin JS/TS plugin must shell out to
-  `powershell.exe -File …` on `session.created` / `tool.execute.before` / `tool.execute.after`.
-  Additionally there is **no first-class git pre-commit / pre-push event** — commit-gate enforcement
-  must be wired via `command.executed` or external git hooks. ✅ for native lifecycle coverage;
-  gald3r's hook payload is not portable as-is (see §9).
-- Source: https://opencode.ai/docs/plugins/
+  scripts and not a JSON wiring file. gald3r ships hooks as **Python `g-hk-*.py`** scripts (T1584
+  port), which do **not** run natively as OpenCode plugins. A thin JS/TS plugin (T418 / BUG-360,
+  corrected BUG-367: `gald3r-hooks-plugin.ts`, `spawnSync("python", …)`) shells out to the six
+  canonical `g-hk-on-<event>.py` entrypoints — `tool.execute.before` / `tool.execute.after`
+  registered directly (real `Hooks` keys), `session.created` / `session.deleted` / `session.idle`
+  routed through the single generic `event` hook's `switch (event.type)` (they are not `Hooks`
+  keys). Additionally there is **no first-class git pre-commit /
+  pre-push event** — commit-gate enforcement must be wired via `command.executed` or external git
+  hooks. ✅ for native lifecycle coverage; gald3r's hook payload is not portable as-is (see §9).
+- Source: https://opencode.ai/docs/plugins/, https://github.com/sst/opencode/blob/dev/packages/plugin/src/index.ts
 
 ## 7. Rules / Memory — ✅ NATIVE
 
@@ -199,9 +213,10 @@ Source: https://opencode.ai/docs/rules/
   via API/SDK (2026 update).
 
 **Gaps / friction vs. Cursor reference:**
-1. **Hooks are JS/TS plugins, not PowerShell** (✅ native, but not portable). gald3r `g-hk-*.ps1`
-   require a JS/TS plugin shim that shells out via the plugin context's Bun shell API. **No
-   first-class git pre-commit / pre-push event** — wire via `command.executed` or external git hooks.
+1. **Hooks are JS/TS plugins, not Python-native** (✅ native, but not portable). gald3r `g-hk-*.py`
+   (T1584 port) require a JS/TS plugin shim (T418 / BUG-360: `gald3r-hooks-plugin.ts`) that shells
+   out via Node's `child_process.spawnSync("python", …)`. **No first-class git pre-commit / pre-push
+   event** — wire via `command.executed` or external git hooks.
 2. **No `.mdc` glob-scoped rule engine** (rule content transfers via `AGENTS.md`/`CLAUDE.md`; per-rule
    `alwaysApply`/`globs` scoping does not).
 3. **No separately named memory store** distinct from the `AGENTS.md`/`CLAUDE.md` instruction file
@@ -229,11 +244,52 @@ gald3r `.claude/skills/` tree + `AGENTS.md`, then add a thin JS/TS plugin shim o
   `tui.toast.show`, `server.connected`, `installation.updated`
 - **Event payload format**: JS/TS context object (project info, cwd, git worktree path, SDK client,
   Bun shell API); a plugin exports a function returning a hooks object
-- **Limitations**: plugin language is JavaScript/TypeScript (npm supported) — gald3r PowerShell
-  `.ps1` hooks must be shelled out from a JS/TS wrapper; **no first-class git pre-commit / pre-push
-  event** (wire via `command.executed` or external git hooks)
-- **gald3r hook files**: `g-hk-*.ps1` wire via a thin TS plugin that calls
-  `powershell.exe -File …` on `session.created` / `tool.execute.before` / `tool.execute.after`
+- **Limitations**: plugin language is JavaScript/TypeScript (npm supported) — gald3r's Python
+  `g-hk-*.py` hooks (T1584 port; NOT PowerShell) must be shelled out from a JS/TS wrapper; **no
+  first-class git pre-commit / pre-push event** (wire via `command.executed` or external git hooks)
+- **gald3r hook files** (T418 / BUG-360, corrected BUG-367): `gald3r-hooks-plugin.ts` wires
+  gald3r's five relevant native events to six canonical `g-hk-on-<event>.py` entrypoints via
+  `spawnSync("python", …)`, per `neutral_source/hooks/g_hk_core.py`'s
+  `PLATFORM_EVENT_MAP["opencode"]` — but across TWO real dispatch mechanisms, not one uniform key
+  set: `tool.execute.before` / `tool.execute.after` are registered directly as real top-level
+  `Hooks` keys, each marshaling its actual `(input, output)` argument pair into a `{tool_name,
+  tool_input}` dict; `session.created` / `session.deleted` / `session.idle` are NOT `Hooks` keys
+  (live-verified against `packages/plugin/src/index.ts`) and are instead routed through the
+  single generic `event` hook's `switch (event.type)`, each case marshaling that `Event` variant's
+  real fields (`properties.info.id` for created/deleted, `properties.sessionID` for idle,
+  per `packages/sdk/js/src/gen/types.gen.ts`) into a `{session_id}` dict. Each entrypoint fans out
+  to the full per-event concern chain (`g_hk_core.dispatch(...)`); no OpenCode event maps to
+  canonical `user-prompt-submit` today.
+- **Tool-id/path-key normalization (BUG-368, fixed T423).** OpenCode's real builtin tool ids are
+  lowercase (`edit`, `write`, `apply_patch`, `read`, live-verified against
+  `packages/opencode/src/tool/*.ts`'s `Tool.define(...)` calls) and its tool-argument path field
+  is camelCase (`filePath`), neither of which matched gald3r's Claude/Cursor-centric `WRITE_TOOLS`
+  (`Edit`, `Write`, ...) / `PATH_KEYS` (`file_path`, ...) conventions used by
+  `g-hk-pre-tool-call-gald3r-guard.py` and its sibling `tool-start` concern hooks
+  (`g-hk-pre-tool-call-prd-freeze.py`, `g-hk-pre-tool-call-member-gald3r-guard.py`) — so even with
+  the corrected dict payload shape (BUG-367), those guard hooks did not fire on a real OpenCode
+  install. Fixed by a `normalizeToolPayload` marshaling step inside `gald3r-hooks-plugin.ts`
+  itself (`_OPENCODE_WRITE_TOOL_ID_MAP` in `generate.py`): `edit`/`write`/`apply_patch` are
+  renamed to `Edit`/`Write`/`ApplyPatch` and gain an additional `file_path` key (alongside the
+  original `filePath`, never removed) when their args carry one — keeping the shared,
+  platform-agnostic Python concern hooks free of OpenCode-specific vocabulary. Live/executable
+  end-to-end regression: `tests/platform/test_opencode_plugin_hooks_shape.py`'s
+  `test_opencode_gald3r_guard_blocks_real_generated_plugin_write_end_to_end` /
+  `test_opencode_prd_freeze_blocks_real_generated_plugin_write_end_to_end`. **`apply_patch` gap
+  closed (BUG-369, fixed T424).** `apply_patch`'s sole real argument is `patchText` (a unified-diff
+  body with per-hunk target paths embedded in `*** {Add,Delete,Update} File:` / `*** Move to:`
+  header lines, live-verified against `packages/opencode/src/patch/index.ts`'s real
+  `parsePatchHeader()`) — it has no top-level path field of its own to copy the way `edit`/`write`'s
+  `filePath` is copied. `normalizeToolPayload` now also extracts every recognized header path out of
+  `patchText`; when a patch touches multiple files, whichever extracted path resolves under
+  `.gald3r/` is surfaced as `file_path` (never just the first one), and a malformed/unrecognized
+  `patchText` still catches a literal `.gald3r/`-containing path token elsewhere in the body via a
+  narrower fallback scan, so an unparseable patch can never silently allow a real `.gald3r/` target.
+  Live/executable end-to-end regression:
+  `test_opencode_gald3r_guard_blocks_real_generated_apply_patch_write_end_to_end` (blocks a
+  `.gald3r/`-targeting `apply_patch` call, including one where the `.gald3r/` header is not the
+  first in a multi-file patch, and the fail-safe malformed-patchText case; allows an ordinary-path
+  call and a patchText with no `.gald3r/` mention at all).
 
 ## Atypical Handling
 
@@ -241,17 +297,21 @@ gald3r `.claude/skills/` tree + `AGENTS.md`, then add a thin JS/TS plugin shim o
   is used** — unlike Claude Code, which reads `CLAUDE.md`.
 - Skills are discovered from `.opencode/skills/`, **`.claude/skills/`**, and **`.agents/skills/`**
   (shared Agent-Skills locations), loaded on-demand via the native `skill` tool.
-- Hooks are JS/TS plugins exporting a function, not a JSON wiring file and not `.ps1` scripts — a
-  format mismatch with gald3r hooks; no first-class git pre-commit event.
+- Hooks are JS/TS plugins exporting a function, not a JSON wiring file and not bare `.py` scripts —
+  a format mismatch with gald3r's Python hooks, bridged by a generated `gald3r-hooks-plugin.ts`
+  shim (T418 / BUG-360, corrected BUG-367); no first-class git pre-commit event.
 - Config is `opencode.json` (root, NOT inside `.opencode/`); MCP lives under its `mcp` field.
 
 ## gald3r Integration Notes
 
 - Cheapest high-parity install: ship gald3r's `.claude/skills/` tree + `AGENTS.md`/`CLAUDE.md` —
   OpenCode loads them natively. Put commands in `.opencode/commands/`, agents in `.opencode/agents/`.
-- gald3r `g-hk-*.ps1` hooks do NOT run natively — author a thin TS plugin in `.opencode/plugins/`
-  that shells out to `powershell.exe -File …` on `session.created` / `tool.execute.before` /
-  `tool.execute.after`. Re-verify the plugin context fields + event list before authoring the shim.
+- gald3r `g-hk-*.py` hooks do NOT run natively — `gald3r platform install opencode` (T418 / BUG-360,
+  corrected BUG-367) authors a thin `gald3r-hooks-plugin.ts` in `.opencode/plugins/` that shells
+  out to `spawnSync("python", …)`: `tool.execute.before` / `tool.execute.after` registered
+  directly (real `Hooks` keys), `session.created` / `session.deleted` / `session.idle` routed
+  through the generic `event` hook (they are bus `Event` variants, not `Hooks` keys). Re-verify
+  the plugin context fields + `Hooks` interface + `Event` union before changing the shim.
 - Re-verify on the next `@g-platform-scan-docs opencode` (crawl_max_age_days: 7).
 
 ---
@@ -264,8 +324,9 @@ gald3r `.claude/skills/` tree + `AGENTS.md`, then add a thin JS/TS plugin shim o
 
 Legend: ✅ verified working · ⚠️ partial / Cursor-generic · ❌ not supported · ❓ untested.
 
-- **Hooks ✅**: native lifecycle hooks via JS/TS plugins (20 events); gald3r `.ps1` need a JS/TS
-  shim and there is no first-class git pre-commit event.
+- **Hooks ✅**: native lifecycle hooks via JS/TS plugins (20 events); gald3r's Python `g-hk-*.py`
+  hooks need a JS/TS shim (T418 / BUG-360: `gald3r-hooks-plugin.ts`) and there is no first-class
+  git pre-commit event.
 - **Rules ✅**: `AGENTS.md` (CLAUDE.md fallback) + `instructions` array; no `.mdc` glob scoping.
 - **Skills ✅**: native `skill` tool; discovered in `.opencode/skills/` + `.claude/skills/` +
   `.agents/skills/` → gald3r SKILL.md drop-in.
@@ -284,7 +345,7 @@ Legend: ✅ verified working · ⚠️ partial / Cursor-generic · ❌ not suppo
 | Rules | /docs/rules/ — `AGENTS.md` primary (CLAUDE.md fallback; AGENTS.md wins if both local) + global `~/.config/opencode/AGENTS.md` + `~/.claude/CLAUDE.md`; `instructions` array; `/init` |
 | Agents | /docs/agents/ — primary (Build/Plan) + subagents (General/Explore/Scout); markdown agent files or opencode.json; `@mention` + Task tool; `opencode agent create` |
 | Skills | /docs/skills/ — `SKILL.md` loaded on-demand via native `skill` tool; discovered in `.opencode/skills/`, `.claude/skills/`, `.agents/skills/` (+ home); name+description frontmatter |
-| Hooks | /docs/plugins/ — JS/TS plugins in `.opencode/plugins/` (+ npm via opencode.json `plugin`); 20 lifecycle events; no first-class git pre-commit; `.ps1` needs a JS/TS shim |
+| Hooks | /docs/plugins/ — JS/TS plugins in `.opencode/plugins/` (+ npm via opencode.json `plugin`); 20 lifecycle events; no first-class git pre-commit; gald3r's Python `g-hk-*.py` hooks need a JS/TS shim (T418 / BUG-360) |
 | MCP | /docs/mcp-servers/ — `mcp` field in opencode.json; type local (command) + remote (URL); 2026 OAuth callback-port + scoped client metadata; `{env:}`/`{file:}` substitution |
 | Other | /docs/custom-tools/ — Custom Tools; built-in Plan/Build modes; `@opencode-ai/sdk` + in-process HTTP server with session metadata |
-| Cross-compat | OpenCode reads `AGENTS.md`/`CLAUDE.md` + discovers `.claude/` + `.agents/` skills → gald3r Claude-Code SKILL.md/instruction artifacts reusable; hooks need a JS/TS `.ps1` shim |
+| Cross-compat | OpenCode reads `AGENTS.md`/`CLAUDE.md` + discovers `.claude/` + `.agents/` skills → gald3r Claude-Code SKILL.md/instruction artifacts reusable; hooks need a JS/TS shim (`gald3r-hooks-plugin.ts`) over Python `g-hk-*.py`, not `.ps1` |

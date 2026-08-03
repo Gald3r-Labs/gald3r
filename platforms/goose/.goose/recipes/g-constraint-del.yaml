@@ -1,0 +1,27 @@
+version: 1.0.0
+title: g-constraint-del
+description: Deprecate a constraint. Activates **g-skl-constraints** → DEPRECATE operation.
+instructions: 'Deprecate a constraint. Activates **g-skl-constraints** → DEPRECATE
+  operation.
+
+
+  ```
+
+  @g-constraint-del C-NNN
+
+  @g-constraint-del C-NNN --reason "Superseded by C-NNN"
+
+  ```
+
+
+  Marks constraint as `status: deprecated` in the Constraint Index and definition
+  block. Does NOT remove the constraint definition (audit trail preserved). Appends
+  to Change Log. Requires explicit user approval.'
+prompt: Run the gald3r `g-constraint-del` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-constraint-del, e.g. quoted text or --flag
+    values, exactly as you would type them after the command name.

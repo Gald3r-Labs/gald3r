@@ -1,16 +1,19 @@
-﻿---
+---
+description: 'Show full WPAC status -- topology role, linked project health, INBOX summary, and constraint overlap.'
+argument-hint: '[none]'
 subsystem_memberships: [WORKSPACE_COORDINATION]
+execution_tier: orchestration
 ---
 Show cross-project coordination status: $ARGUMENTS
 
 ## What This Command Does
 
-Displays the full PCAC (Project Command and Control) status: this project's topology role, linked project health, open INBOX summary, and constraint overlap with peers. Delegates to `g-agnt-pcac-coordinator`.
+Displays the full WPAC (Project Command and Control) status: this project's topology role, linked project health, open INBOX summary, and constraint overlap with peers. Delegates to `g-agnt-wpac-coordinator`.
 
 ## Output Format
 
 ```
-PCAC STATUS — {project_name}
+WPAC STATUS — {project_name}
 ────────────────────────────────────────
 Role: {parent | child | sibling | standalone}
 Project: {project_path}
@@ -34,7 +37,7 @@ INBOX: {N open items}
 LOCAL CAPABILITIES
   Responsibilities: {N ready}
   Capabilities: {N ready}, {N planned}, {N deprecated}
-  (Full manifest: .gald3r/workspace/capabilities.md)
+  (Full manifest: .gald3r/linking/capabilities.md)
 
 PEER CAPABILITIES (last received snapshots)
   {peer_name}: {N ready capabilities} — last updated {date}
@@ -65,7 +68,7 @@ CONSTRAINT OVERLAP
 ## Workflow
 
 ### 1. Load Topology
-Read `.gald3r/workspace/topology.md`.
+Read `.gald3r/linking/link_topology.md`.
 
 If missing → "Topology not configured. Complete task007 to set up the linking/ directory."
 
@@ -73,19 +76,19 @@ If missing → "Topology not configured. Complete task007 to set up the linking/
 For each linked project, check if path is accessible on the current machine.
 
 ### 3. Read INBOX
-Read `.gald3r/workspace/inbox.md` and count items by type.
+Read `.gald3r/linking/INBOX.md` and count items by type.
 
 ### 4. Read Local Capabilities
-Read `.gald3r/workspace/capabilities.md` if it exists. Count ready responsibilities, ready/planned/deprecated capabilities.
+Read `.gald3r/linking/capabilities.md` if it exists. Count ready responsibilities, ready/planned/deprecated capabilities.
 If missing → "(capabilities.md not found — run @g-wpac-read or create it)"
 
 ### 5. Read Peer Capability Snapshots
-Read all files matching `.gald3r/workspace/peers/*_capabilities.md`. For each: extract project slug, count ready capabilities, get last_updated date.
+Read all files matching `.gald3r/linking/_peers/*_capabilities.md`. For each: extract project slug, count ready capabilities, get last_updated date.
 
 ### 6. Cross-Project Dependencies Check
 
 **Awaiting** (this project has dispatched orders to children/peers):
-1. List `.gald3r/workspace/sent_orders/order_*.md`
+1. List `.gald3r/linking/sent_orders/order_*.md`
 2. For each: read frontmatter — extract `order_id`, `sent_to`, `remote_task_title`, `status`, `sent_at`, `last_sync`
 3. Filter to records where `status` ∈ {`sent`, `acknowledged`, `in-progress`, `blocked`} (i.e., not `completed` or `timed-out`)
 4. Compute `days_out` = today − `sent_at`
@@ -116,4 +119,4 @@ Display the full status block above. If CONFLICTs exist, recommend running `@g-w
 ```
 
 ## Delegates To
-`g-agnt-pcac-coordinator`
+`g-agnt-wpac-coordinator`

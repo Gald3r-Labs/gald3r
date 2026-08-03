@@ -149,6 +149,7 @@ attempts: N
 | g-verifier | Manual level triggers existing verification workflow |
 | Heartbeat | Verification results feed into KPI metrics |
 | WAKEUP_QUEUE | Failed thorough/high tasks create wakeup entries |
+| `g-go-review` Phase 2 (T539) | A SEPARATE consumer of this SAME `minimal`/`standard`/`thorough` level vocabulary: `gald3r task review-depth` / `gald3r bug review-depth` (`project/verify/review_depth.py`) score a queued item's blast radius (files touched, subsystem criticality, severity/value score, test delta) and scale REVIEW depth to the result — `minimal` skips the deep adversarial checks (workspace-boundary/OWASP-STRIDE/two-phase security scan/UI-test), `thorough` is today's full-depth review, unchanged. This is Phase-2 REVIEWER-side tiering, distinct from the task-COMPLETION self-check this skill's own levels above describe; see `g-go-review.md` Step 2c / 3A for the review-side behavior and `.gald3r/config/AGENT_CONFIG.md`'s `review_min_level:` for the owner floor knob. |
 
 ## Workflow for Agents
 

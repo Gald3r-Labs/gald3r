@@ -1,16 +1,36 @@
-﻿---
+---
 name: g-skl-res-deep
-description: Analyze any external repository and produce a structured FEATURES.md harvest report. Writes to {vault}/research/recon/{slug}/ when a shared vault is configured, else falls back to local research/harvests/{slug}/. Performs cross-project dedup via _recon_index.yaml. Agents are reporters — humans are editors. No .gald3r/ writes until human approves APPLY.
+description: Analyze any external repository and produce a whole-system, consumer-neutral functional specification (FEATURES.md + supporting notes). Centralizes output in the shared vault at {vault}/research/CRR_FunctionalSpecs/{slug}/ so a run from any project/workspace lands in one place reusable across projects; falls back to local research/CRR_FunctionalSpecs/{slug}/ only when no shared vault is configured. Documents the ENTIRE source system regardless of relevance to any one consumer project. Performs cross-project dedup via _recon_index.yaml. Agents are reporters — humans are editors. No .gald3r/ writes until human approves APPLY.
 token_budget: very_high
 subsystem_memberships: [VAULT_AND_RESEARCH]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 # g-skl-res-deep (reverse-spec)
 
 **Activate for**: "reverse spec", "analyze this repo", "harvest this project", "what features does X have", "extract features from", "what can we adopt from".
 
-**Files Written** (vault-aware): `{vault}/research/recon/{slug}/` when `vault_location` ≠ `{LOCAL}`, else `research/harvests/{slug}/`. Never writes to `.gald3r/` directly — that happens only via `g-skl-res-apply`.
+**Files Written** (vault-first): the shared vault at `{vault}/research/CRR_FunctionalSpecs/{slug}/` whenever `vault_location` ≠ `{LOCAL}` (the strongly-preferred default — centralized so every project on the vault reuses one spec); only `research/CRR_FunctionalSpecs/{slug}/` when no shared vault is configured. Never writes to `.gald3r/` directly — that happens only via `g-skl-res-apply`.
 
-**Core Principle**: Agents are **reporters**. Humans are **editors**. Document everything visible. Never filter by "gald3r already has this" or "not relevant." The human decides relevance.
+**Core Principle**: Agents are **reporters**. Humans are **editors**. Document the **entire source system** — every capability, subsystem, interface, data model, and workflow — as a **consumer-neutral functional specification**. Never filter by "gald3r already has this," "not relevant to this project," or "we'd never adopt this." Relevance and adoption are downstream decisions made by a human (or by the CRR pipeline's later phases), NOT capture-time filters. A finding being irrelevant to the current project is not a reason to omit it.
+
+## Whole-System, Consumer-Neutral Capture (HARD RULE)
+
+The deliverable is a functional specification of the source system that an independent team could build from — NOT an "should we adopt this?" memo for one consumer project.
+
+- **Capture the whole system.** Do not scope the report to the parts that overlap the current project. Enumerate every distinct capability, even ones with no conceivable use here.
+- **No consumer coupling.** Do NOT editorialize about whether/how a specific framework (gald3r or any other) should adopt a feature. No "adoption angle for…", no "conceptually adjacent to our own…", no "worth a side-by-side during review." The spec must be usable by any reader, not just this project.
+- **No adoption-triage columns in the spec body.** Effort/ROI/"should we build this" judgments are decision-maker triage, not builder requirements — keep them out of the functional spec. (The `similarity_risk` field stays: it is a clean-room/legal-safety signal consumed by `g-skl-res-apply`, not adoption triage.)
+- **Legal posture lives in a separate note.** Put license analysis / clean-room legal commentary in a standalone `LEGAL_REVIEW.md` next to the spec, not woven through the feature body, so it can be updated independently.
 
 ---
 
@@ -32,17 +52,17 @@ Every operation resolves the output base path before doing anything else.
 1. Read .gald3r/.identity (key=value, no quotes)
 2. Extract vault_location=
 3. If vault_location is {LOCAL} or missing:
-     recon_base  = "research/harvests/"
-     index_path  = "research/harvests/_recon_index.yaml"
+     recon_base  = "research/CRR_FunctionalSpecs/"
+     index_path  = "research/CRR_FunctionalSpecs/_recon_index.yaml"
      vault_mode  = "local"
 4. Else (vault_location is a real path):
-     recon_base  = f"{vault_location}/research/recon/"
-     index_path  = f"{vault_location}/research/recon/_recon_index.yaml"
+     recon_base  = f"{vault_location}/research/CRR_FunctionalSpecs/"
+     index_path  = f"{vault_location}/research/CRR_FunctionalSpecs/_recon_index.yaml"
      vault_mode  = "shared"
 5. output_dir = f"{recon_base}{slug}/"
 ```
 
-**Rationale**: When `vault_location` points at a shared vault, any recon written locally duplicates effort already done (or queued) by another project on that vault. Moving the output to `{vault}/research/recon/` means every project sharing the vault benefits from the prior analysis. Local fallback preserves the existing behavior for projects with `vault_location={LOCAL}`.
+**Rationale**: When `vault_location` points at a shared vault, any recon written locally duplicates effort already done (or queued) by another project on that vault. Moving the output to `{vault}/research/CRR_FunctionalSpecs/` means every project sharing the vault benefits from the prior analysis. Local fallback preserves the existing behavior for projects with `vault_location={LOCAL}`.
 
 **Constraint compliance**:
 - C-001 file-first: path resolution is plain filesystem, no MCP required
@@ -71,15 +91,15 @@ entries:
     title: "Repo Title"
     last_run: YYYY-MM-DD
     status: complete | partial | stale
-    output_path: research/recon/user__repo/   # relative to vault root (shared) or project root (local)
+    output_path: research/CRR_FunctionalSpecs/user__repo/   # relative to vault root (shared) or project root (local)
 ```
 
 ### Location
 
 | Mode | Path |
 |------|------|
-| `shared` (vault) | `{vault_location}/research/recon/_recon_index.yaml` |
-| `local` | `research/harvests/_recon_index.yaml` |
+| `shared` (vault) | `{vault_location}/research/CRR_FunctionalSpecs/_recon_index.yaml` |
+| `local` | `research/CRR_FunctionalSpecs/_recon_index.yaml` |
 
 ### Dedup check (pre-flight)
 
@@ -200,7 +220,7 @@ completed: {YYYY-MM-DD}
 
 **Goal**: Read the most important files in each module and catalog every distinct feature.
 
-**Reporter Rule**: Document every distinct capability observed in original wording. Do NOT skip features because "the target project already has this." The human decides what to adopt. Do NOT copy source implementation, docs prose, prompts, tests, or unique strings.
+**Reporter Rule**: Document every distinct capability observed in original wording — the **entire** system, not just the parts that resemble the current project. Do NOT skip features because "the target project already has this" or "we'd never use this here." The human (and the pipeline's later phases) decide what to adopt; capture is comprehensive and consumer-neutral. Do NOT copy source implementation, docs prose, prompts, tests, or unique strings.
 
 **Write** → `{output_dir}/03_feature_scan.md`.
 
@@ -247,9 +267,11 @@ verbatim_excerpt_policy: tiny_attributed_excerpts_only
 
 ## Feature Catalog
 
-| ID | Feature | Effort | Sim. Risk | Status | Notes |
-|----|---------|--------|-----------|--------|-------|
-| F-001 | Feature Name | S | medium | [ ] pending | brief note |
+| ID | Feature | Category | Sim. Risk | Status | Notes |
+|----|---------|----------|-----------|--------|-------|
+| F-001 | Feature Name | {subsystem/capability} | medium | [ ] pending | brief note |
+
+> **Column note:** `Category` groups by the source system's own subsystem/capability (spec organization), NOT by adoption effort. There is deliberately **no** Effort/ROI column — that is decision-maker triage, not a builder requirement. `Sim. Risk` is retained as a clean-room legal-safety signal (consumed by `g-skl-res-apply`), not an adoption judgment.
 
 ---
 
@@ -316,7 +338,7 @@ STATUS user__repo
 Prints:
 ```
 Harvest: user__repo (github.com/user/repo)
-Mode: shared (vault={vault_location}/research/recon/)
+Mode: shared (vault={vault_location}/research/CRR_FunctionalSpecs/)
 Passes: [1✅, 2✅, 3✅, 4⬜, 5⬜]
 Features found: 23 (Pass 3)
 Last updated: 2026-04-10
@@ -335,7 +357,8 @@ Status: Pass 4 pending — run ANALYZE to continue
 ├── 02_module_map.md        # Pass 2 output
 ├── 03_feature_scan.md      # Pass 3 output
 ├── 04_deep_dives.md        # Pass 4 output (if needed)
-└── FEATURES.md             # Pass 5 synthesis (review target)
+├── FEATURES.md             # Pass 5 synthesis — consumer-neutral functional spec (review target)
+└── LEGAL_REVIEW.md         # license/clean-room legal posture (kept OUT of the spec body)
 
 {recon_base}_recon_index.yaml  # dedup manifest (shared by all slugs)
 ```

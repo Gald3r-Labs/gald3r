@@ -1,5 +1,7 @@
 ---
+description: 'Run gald3r environment health checks (identity, tasks, MCP, vault, platform parity, skills quality) with safe auto-fixes.'
 subsystem_memberships: [BUG_AND_QUALITY]
+execution_tier: orchestration
 ---
 # @g-doctor — Environment Health Check
 

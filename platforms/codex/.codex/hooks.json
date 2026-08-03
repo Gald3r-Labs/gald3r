@@ -1,17 +1,11 @@
 {
-  "version": 1,
-  "_doc": {
-    "t510_canonical_core": "T510: This is Codex's REAL native hook config (replaces the prior Claude-format clone). Codex reads `.codex/hooks.json` (or inline `[hooks]` in config.toml). Each native event below routes to a thin canonical entrypoint `python .codex/hooks/g-hk-on-<event>.py`, which calls `g_hk_core.dispatch(\"<event>\")`. The shared core `.codex/hooks/g_hk_core.py` is byte-identical across every platform overlay and runs the per-event CONCERN_CHAIN (the concern hooks self-gate on payload, so routing a coarse event through the full chain is safe). Native->canonical map (g_hk_core.PLATFORM_EVENT_MAP['codex']): SessionStart->session-start, UserPromptSubmit->user-prompt-submit, PreToolUse->tool-start, PostToolUse->tool-end, Stop->stop. Codex has no SessionEnd event, so session-end is not wired here (graceful degradation). Schema verified against https://developers.openai.com/codex/hooks (Claude-style matcher+hooks; type=command; only command handlers run today)."
-  },
   "hooks": {
     "SessionStart": [
       {
-        "matcher": ".*",
         "hooks": [
           {
             "type": "command",
-            "command": "python .codex/hooks/g-hk-on-session-start.py",
-            "statusMessage": "gald3r session-start"
+            "command": "python \"$(git rev-parse --show-toplevel)/.codex/hooks/g-hk-on-session-start.py\""
           }
         ]
       }
@@ -21,30 +15,27 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .codex/hooks/g-hk-on-user-prompt-submit.py"
+            "command": "python \"$(git rev-parse --show-toplevel)/.codex/hooks/g-hk-on-user-prompt-submit.py\""
           }
         ]
       }
     ],
     "PreToolUse": [
       {
-        "matcher": ".*",
         "hooks": [
           {
             "type": "command",
-            "command": "python .codex/hooks/g-hk-on-tool-start.py",
-            "statusMessage": "gald3r tool-start guard"
+            "command": "python \"$(git rev-parse --show-toplevel)/.codex/hooks/g-hk-on-tool-start.py\""
           }
         ]
       }
     ],
     "PostToolUse": [
       {
-        "matcher": ".*",
         "hooks": [
           {
             "type": "command",
-            "command": "python .codex/hooks/g-hk-on-tool-end.py"
+            "command": "python \"$(git rev-parse --show-toplevel)/.codex/hooks/g-hk-on-tool-end.py\""
           }
         ]
       }
@@ -54,8 +45,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .codex/hooks/g-hk-on-stop.py",
-            "timeout": 60
+            "command": "python \"$(git rev-parse --show-toplevel)/.codex/hooks/g-hk-on-stop.py\""
           }
         ]
       }

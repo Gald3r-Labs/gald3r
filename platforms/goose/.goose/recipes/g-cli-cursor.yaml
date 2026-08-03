@@ -1,0 +1,16 @@
+version: 1.0.0
+title: g-cli-cursor
+description: "\uFEFF---"
+instructions: "\uFEFF---\ndescription: Cursor CLI quick reference — Agent/Plan/Ask/Debug\
+  \ modes, Cloud Agent handoff, session management.\nsubsystem_memberships: [PLATFORM_INTEGRATION]\n\
+  execution_tier: prompt_only\n---\n# /g-cli-cursor\n\nActivates `g-skl-cli-cursor`.\
+  \ Use when running Cursor agents from the terminal.\n\n```\n/g-cli-cursor    → load\
+  \ g-skl-cli-cursor context\n```"
+prompt: Run the gald3r `g-cli-cursor` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-cli-cursor, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

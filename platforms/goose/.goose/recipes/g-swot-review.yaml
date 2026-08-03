@@ -1,0 +1,29 @@
+version: 1.0.0
+title: g-swot-review
+description: 'Run SWOT analysis on current project phase: $ARGUMENTS'
+instructions: 'Run SWOT analysis on current project phase: $ARGUMENTS
+
+
+
+
+  Run a structured SWOT analysis on the current project phase.
+
+
+  ## Behavior
+
+
+  1. Read the `g-swot-review` skill at `.cursor/skills/g-swot-review/SKILL.md`
+
+  2. Execute all 5 analysis passes as described in the skill
+
+  3. Write report to `.gald3r/logs/swot/YYYY-MM-DD_swot_review.md`
+
+  4. Display summary to user'
+prompt: Run the gald3r `g-swot-review` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-swot-review, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

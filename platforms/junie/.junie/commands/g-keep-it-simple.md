@@ -1,5 +1,8 @@
 ---
+description: 'Toggle terse mode (suppress persona, structure, footer) on, off, or report status via g-skl-keep-it-simple.'
+argument-hint: '[on|off|status]'
 subsystem_memberships: [MEMORY_AND_KNOWLEDGE]
+execution_tier: orchestration
 ---
 Toggle terse mode on or off: $ARGUMENTS
 
@@ -38,7 +41,7 @@ The agent acknowledges with a single line — for example:
 - **Per-conversation**: in multi-window setups, terse mode is per
   conversation, not global.
 - **Tool calls unaffected**: terse mode changes output presentation only.
-  Tool calls, hooks, PCAC checks, and gald3r system gates execute
+  Tool calls, hooks, WPAC checks, and gald3r system gates execute
   unchanged.
 
 ## Safety
@@ -49,7 +52,7 @@ All gald3r safety gates continue to fire in terse mode:
 - Todo-completion gate (`g-rl-34`)
 - Code-change-requires-task gate (`g-rl-33`)
 - Member-marker invariant (`g-rl-36`)
-- PCAC inbox gate, Clean Controller Gate, secrets detection
+- WPAC inbox gate, Clean Controller Gate, secrets detection
 
 Terse mode reduces ceremony, not safety.
 

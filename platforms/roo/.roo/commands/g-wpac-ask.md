@@ -1,5 +1,8 @@
-﻿---
+---
+description: 'Send a WPAC REQUEST to the parent project''s INBOX and mark the blocked local task.'
+argument-hint: '<request-description>'
 subsystem_memberships: [WORKSPACE_COORDINATION]
+execution_tier: guarded_prompt
 ---
 Send a request to the parent project: $ARGUMENTS
 
@@ -10,7 +13,7 @@ Writes a REQUEST entry to the parent project's INBOX and marks the specified loc
 ## Workflow
 
 ### 1. Load Topology
-Read `.gald3r/workspace/topology.md` to get parent path.
+Read `.gald3r/linking/link_topology.md` to get parent path.
 
 ### 2. Collect Request Details
 - **What is needed**: specific action or decision from parent
@@ -18,7 +21,7 @@ Read `.gald3r/workspace/topology.md` to get parent path.
 - **Why**: reasoning for the request
 
 ### 3. Write to Parent INBOX
-Append a `[REQUEST]` entry to `{parent}/.gald3r/workspace/inbox.md`:
+Append a `[REQUEST]` entry to `{parent}/.gald3r/linking/INBOX.md`:
 ```markdown
 ## [REQUEST] {date} — {this_project_name}
 **Needs**: {what is needed}

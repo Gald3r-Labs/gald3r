@@ -1,0 +1,24 @@
+version: 1.0.0
+title: g-medkit
+description: '⚠️ DEPRECATED**: `@g-medkit` has been renamed to `@g-medic`.'
+instructions: '**⚠️ DEPRECATED**: `@g-medkit` has been renamed to `@g-medic`.
+
+
+  This alias delegates to `@g-medic` automatically.
+
+
+  Please update any references from `@g-medkit` to `@g-medic`.
+
+
+  > Activating g-medic (delegated from deprecated g-medkit)...
+
+
+  Activate the **g-medic** skill with no additional arguments.'
+prompt: Run the gald3r `g-medkit` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-medkit, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

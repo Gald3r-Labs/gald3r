@@ -1,5 +1,8 @@
-﻿---
+---
+description: 'Display the most recent compliance scan verdict and findings via g-skl-compliance REPORT.'
+argument-hint: '[none]'
 subsystem_memberships: [SECURITY_AND_COMPLIANCE]
+execution_tier: orchestration
 ---
 Activate the g-skl-compliance skill and run a REPORT operation: $ARGUMENTS
 

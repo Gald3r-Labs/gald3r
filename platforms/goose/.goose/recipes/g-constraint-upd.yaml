@@ -1,0 +1,28 @@
+version: 1.0.0
+title: g-constraint-upd
+description: Update an existing constraint. Activates **g-skl-constraints** → UPDATE
+  operation.
+instructions: 'Update an existing constraint. Activates **g-skl-constraints** → UPDATE
+  operation.
+
+
+  ```
+
+  @g-constraint-upd C-NNN
+
+  @g-constraint-upd C-NNN --field enforcement --value "Enforced by g-go-code AC gate
+  step b2"
+
+  ```
+
+
+  Edits a constraint definition block in CONSTRAINTS.md. Appends to Change Log. Requires
+  a clear rationale for any modification.'
+prompt: Run the gald3r `g-constraint-upd` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-constraint-upd, e.g. quoted text or --flag
+    values, exactly as you would type them after the command name.

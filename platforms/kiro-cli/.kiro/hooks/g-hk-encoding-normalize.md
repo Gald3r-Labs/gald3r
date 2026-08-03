@@ -48,6 +48,26 @@ contain NULs and are detected by their BOM, so they still normalize correctly.)
 - Prints a one-line summary per file changed (suppressed with `-Quiet`). Never
   blocks the turn.
 
+## Setup (git pre-commit dispatcher)
+
+This hook's `-PreCommit` mode is **stage 1** of the single shared
+`.githooks/pre-commit` dispatcher (T293), installed via:
+
+```powershell
+git config core.hooksPath .githooks
+```
+
+(T274: the prior `install_git_hooks.py` installer script no longer exists in
+the shipped payload -- `.gald3r_sys/` is purged from every project -- and was
+never more than this one `git config` call.)
+
+which points `core.hooksPath` at the tracked `.githooks/` directory. Stage 2
+of the same dispatcher runs `g-hk-component-tag-check` immediately after (see
+that hook's own doc for its Setup section). Both stages live in one tracked,
+portable directory -- there is no separate `git-hooks/` directory to install
+(T293 retired it; it used to duplicate this same mechanism for
+`g-hk-component-tag-check` alone).
+
 ## Related Tasks
 
 - T1428: Encoding Intercept Hook -- UTF-8 no-BOM + LF normalization (this hook).

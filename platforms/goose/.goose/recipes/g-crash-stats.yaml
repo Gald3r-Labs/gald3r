@@ -1,0 +1,58 @@
+version: 1.0.0
+title: g-crash-stats
+description: 'Show CRASH activation stats (Commands / Rules / Agents / Skills / Hooks):
+  $ARGUMENTS'
+instructions: "Show CRASH activation stats (Commands / Rules / Agents / Skills / Hooks):\
+  \ $ARGUMENTS\n\n## What This Command Does\n\nDisplays the **CRASH activation tracking**\
+  \ report (T433) — datetime invocation statistics for the\nfive gald3r extension-point\
+  \ types: **C**ommands, **R**ules, **A**gents, **S**kills, **H**ooks.\nIt answers:\
+  \ what is actually being invoked, what is never called, and what *should* be called\n\
+  (declares intent) but isn't.\n\nThe data lives in `.gald3r/logs/crash_activations.jsonl`\
+  \ — one JSON line per activation:\n`{component_type, component_name, activated_at,\
+  \ session_id, trigger_source, elapsed_ms}`.\n\n## Operations\n\n| Invocation | Effect\
+  \ |\n|---|---|\n| `@g-crash-stats` | Render the current stats report (Most Active\
+  \ / Least Active / Never Activated / Should Be Called But Isn't). |\n| `@g-crash-stats\
+  \ --write-report` | Also write the dated `.gald3r/logs/crash_stats_YYYYMMDD.md`.\
+  \ |\n| `@g-crash-stats --reset` | Archive `crash_activations.jsonl` → `crash_activations_YYYYMMDD_HHMMSS.jsonl`\
+  \ and start fresh. |\n| `@g-crash-stats --json` | Machine-readable stats payload.\
+  \ |\n\nEngine equivalents (the command is a thin wrapper over the native `gald3r\
+  \ crash-stats` verb,\n`gald3r_core.crash.activation` + `cli/commands/crash_stats_cmd.py`,\
+  \ T301):\n\n```bash\ngald3r crash-stats                        # report\ngald3r\
+  \ crash-stats --write-report         # report + dated .md\ngald3r crash-stats --reset\
+  \                # archive + fresh start\ngald3r crash-stats --json            \
+  \     # JSON\ngald3r crash-stats --root PATH            # target a project other\
+  \ than cwd\n```\n\n## Output Modes (session signature)\n\nSet `GALD3R_CRASH_STATS`\
+  \ to surface a compact 3-5 line stats summary automatically:\n\n| Value | Effect\
+  \ |\n|---|---|\n| `show_in_response` | Append the compact summary to the agent response\
+  \ (signature mode). |\n| `show_in_log` | Write the summary to `.gald3r/logs/crash_stats_signature.log`\
+  \ only. |\n| `show_in_terminal` | Print the summary table to stdout at session/dispatch\
+  \ end. |\n| (unset / `off`) | **Disabled — zero overhead.** No recording, no signature.\
+  \ |\n\n## Recording Activations (honest scope, T301 update)\n\n**gald3r_core's own\
+  \ CLI dispatch (`cli/main.py`) does not yet auto-record every Command it\nruns**\
+  \ — porting that producer (the donor's `CrashTracker` debug-tracer bridge) is out\
+  \ of T301's\nscope (reader/reporter + thin verb only; see the filed follow-up task).\
+  \ Until that producer\nlands, every activation in `.gald3r/logs/crash_activations.jsonl`\
+  \ comes from the\n**manual/heuristic path**: the `g-hk-crash-record` hook (wired\
+  \ to the IDE's `stop` event, T1624)\nor an explicit `record_activation(...)` call\
+  \ from a hook/agent/script. This means\n`gald3r crash-stats` on a project where\
+  \ `GALD3R_CRASH_STATS` was never enabled and no hook has\nfired honestly reports\
+  \ `total_activations: 0` — never fabricated numbers (g-rl-35) — rather than\nimplying\
+  \ command-level coverage that does not exist yet.\n\nFrom a hook or script:\n\n\
+  ```bash\nuv run python -c \"from gald3r_core.crash import activation; activation.record_activation('skill','g-skl-tasks',trigger_source='@g-status',force=True)\"\
+  \n```\n\nThe **Never Activated** and **Should Be Called But Isn't** sections turn\
+  \ the gap into a positive\nsignal: any registered component (scanned from `.claude/`/`.cursor/`\
+  \ skills, rules, commands,\nagents, hooks) with zero records is surfaced — rather\
+  \ than silently assumed-active. Rules/skills\nthat declare intent (`fires_on:` /\
+  \ `activate_for:`) but have 0 activations are flagged with ⚠️.\n\n## Integration\n\
+  \n- Complements **T432 debug mode** (`@g-... --debug`): debug shows the live call\
+  \ stack; CRASH stats\n  store historical usage. When both are active, a command\
+  \ dispatch writes both in the same event.\n- The compact signature is designed to\
+  \ drop into the standard `---` footer added by `g-rl-00`."
+prompt: Run the gald3r `g-crash-stats` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-crash-stats, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

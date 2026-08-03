@@ -1,0 +1,52 @@
+version: 1.0.0
+title: g-marketing-content
+description: '@g-marketing-content'
+instructions: '# @g-marketing-content
+
+
+  Generate content that compounds over time — blog posts, tutorials, comparisons.
+
+
+  ## Usage
+
+  ```
+
+  @g-marketing-content                         # Generate content ideas based on product
+
+  @g-marketing-content --type tutorial         # Write a tutorial post
+
+  @g-marketing-content --type comparison       # Write a competitor comparison post
+
+  @g-marketing-content --type casestudy        # Write a case study format
+
+  @g-marketing-content --type faq              # Generate FAQ page (good for GEO)
+
+  @g-marketing-content --calendar              # Build a 30-day content calendar
+
+  @g-marketing-content --repurpose <url>       # Repurpose an existing post into social
+
+  ```
+
+
+  ## What it does
+
+  1. Reads PROJECT.md to understand product and target audience
+
+  2. Generates SEO-optimized content that targets search intent
+
+  3. All posts include: title, meta description, H2 structure, CTAs
+
+  4. Writes to `.gald3r/reports/marketing/YYYY-MM-DD_content.md`
+
+
+  ## Invoke
+
+  Activate `g-agnt-marketing` and run `g-skl-marketing` in CONTENT mode.'
+prompt: Run the gald3r `g-marketing-content` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-marketing-content, e.g. quoted text or --flag
+    values, exactly as you would type them after the command name.

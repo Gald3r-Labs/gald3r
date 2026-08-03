@@ -479,10 +479,10 @@ Healthy (≥80) | Degraded (50-79) | Critical (<50)
 | `[🟡]` | Medium | Open |
 | `[⚪]` | Low | Open |
 | `[✅]` | Any | Resolved |
-| `[🔄]` | Any | In Progress |
-| `[🔍]` | Any | Awaiting Verification |
-| `[🕵️]` | Any | Verification In Progress |
-| `[🚨]` | Any | Requires User Attention |
+| `[🔄]` | Any | In-Progress |
+| `[🔍]` | Any | Awaiting-Verification |
+| `[🕵️]` | Any | Verification-In-Progress |
+| `[🚨]` | Any | Requires-User-Attention |
 
 ---
 

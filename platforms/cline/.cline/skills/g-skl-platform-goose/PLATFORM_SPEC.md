@@ -137,8 +137,18 @@ one tailored to the repo (Goose's own repo ships an `AGENTS.md`). Goose does **n
 - **gald3r mapping**: gald3r `@g-*` / `/g-*` workflows map to **Recipes** surfaced as custom slash
   commands. Unlike markdown command files on other platforms, the durable form on Goose is recipe
   YAML.
+- **Implemented (T383, follow-up to BUG-295):** the installer's overlay generator
+  (`platform/pipeline/generate.py`) now carries a real Recipe-YAML CONTENT TRANSFORM
+  (`_emit_recipe_yaml_commands`/`_render_recipe_yaml`, opted into via `layout_map.yaml`'s
+  `transform: "recipe_yaml"`), so each neutral `g-*` command lands at project-relative
+  `.goose/recipes/<name>.yaml` as a real Recipe (`instructions`/`prompt`/`extensions`/typed
+  `parameters`) instead of the flat, uninvokable `.md` drop BUG-295 correctly refused to fake.
+  Placement verified against https://block.github.io/goose/docs/guides/recipes/storing-recipes/
+  (project-relative `./.goose/recipes/`, also the CWD Goose searches by default).
 - Source: https://block.github.io/goose/docs/guides/recipes/ ·
-  https://block.github.io/goose/docs/guides/recipes/sub-recipes/
+  https://block.github.io/goose/docs/guides/recipes/sub-recipes/ ·
+  https://block.github.io/goose/docs/guides/recipes/recipe-reference/ ·
+  https://block.github.io/goose/docs/guides/recipes/storing-recipes/
 
 ## 6. Hooks System — ✅ NATIVE (recent — announced 2026-05-14)
 
@@ -149,10 +159,10 @@ one tailored to the repo (Goose's own repo ships an `AGENTS.md`). Goose does **n
 - **Events** (11): `SessionStart`, `SessionEnd`, `Stop`, `UserPromptSubmit`, `PreToolUse`,
   `PostToolUse`, `PostToolUseFailure`, `BeforeReadFile`, `AfterFileEdit`, `BeforeShellExecution`,
   `AfterShellExecution`.
-- **gald3r mapping**: gald3r `g-hk-*` behaviors (SessionStart context injection, PreToolUse `.gald3r/`
-  guards, pre-commit/shell guards) wire natively. Hooks run **shell scripts** — on Windows ensure the
-  hook command invokes PowerShell explicitly (e.g. `pwsh -File g-hk-*.ps1`); a bare `.ps1` is not a
-  POSIX shell script.
+- **gald3r mapping**: gald3r `g-hk-*.py` behaviors (SessionStart context injection, PreToolUse `.gald3r/`
+  guards, pre-commit/shell guards) wire natively. Hooks run **shell commands** — gald3r hooks are
+  invoked via `python <path>` (post-T1584 Python port; no PowerShell involved), which runs
+  identically on Windows and POSIX.
 - **Recency caveat**: this feature was **announced 2026-05-14**, ~3 weeks before this assessment.
   Treat the event list and `hooks.json` schema as fresh-but-young; re-verify on the next crawl.
 - Source: https://goose-docs.ai/blog/2026/05/14/goose-hooks/
@@ -202,7 +212,7 @@ Goose now reaches **full parity** with the Cursor reference (`g-skl-platform-cur
 **commands (recipes), rules (`.goosehints` + Memory Extension), agents (subagents/subrecipes), skills
 (`SKILL.md`), hooks, and MCP**. Caveats: it is **global-config-first** (`~/.config/goose/`, not the
 repo); rules are a single always-on `.goosehints` blob with **no glob-scoped activation**; **hooks
-are new** (2026-05-14) and run **shell scripts** (invoke PowerShell explicitly on Windows); and
+are new** (2026-05-14) and run **shell scripts** (gald3r hooks invoke `python <path>`, cross-platform); and
 Recipes (not markdown command files) are the durable command/workflow form. MCP is Goose's strongest,
 oldest surface.
 
@@ -219,8 +229,8 @@ bundle + an MCP extension entry.
 - **Events available**: SessionStart, SessionEnd, Stop, UserPromptSubmit, PreToolUse, PostToolUse,
   PostToolUseFailure, BeforeReadFile, AfterFileEdit, BeforeShellExecution, AfterShellExecution
 - **Event payload / mechanism**: hooks run **shell scripts** on the above events
-- **gald3r hook files**: `g-hk-*` wire natively — on Windows invoke PowerShell explicitly
-  (`pwsh -File ...`) since hooks are shell scripts, not bare `.ps1` handlers
+- **gald3r hook files**: `g-hk-*.py` wire natively — invoked via `python <path>` (post-T1584 Python
+  port; no PowerShell involved), which runs identically on Windows and POSIX
 
 ## Atypical Handling
 
@@ -240,8 +250,8 @@ bundle + an MCP extension entry.
   gald3r `g-skl-*` load natively.
 - Ship `.goosehints` (rules), recipe YAML (commands/workflows), and an MCP `extensions:` entry in
   `~/.config/goose/config.yaml`.
-- Hooks now fire natively — wire `g-hk-*` via a `hooks.json` plugin (invoke PowerShell explicitly on
-  Windows). Re-verify the young hook surface on the next `@g-platform-scan-docs goose`
+- Hooks now fire natively — wire `g-hk-*.py` via a `hooks.json` plugin (`python <path>`, cross-
+  platform, no PowerShell involved). Re-verify the young hook surface on the next `@g-platform-scan-docs goose`
   (crawl_max_age_days: 14).
 
 ---

@@ -177,6 +177,71 @@ Structural lint checks for:
 
 Log lint passes in `log.md`.
 
+`gald3r vault lint` (native CLI, `VaultSystem.lint()`, T185) runs the
+deterministic subset of the above today:
+
+- required-frontmatter presence (`date`/`type`/`ingestion_type`/`source`/`title`)
+- empty/legacy `tags:`
+- unknown `type:`
+- **wikilink resolution** — every `[[target]]` referenced in a note's frontmatter
+  or body must resolve to another note in the vault. Resolution is slug-tolerant:
+  `[[world_tree]]` resolves to a note filed at `world-tree.md` (the
+  `ingest()`/`slugify()` naming convention always normalizes to lowercase-hyphen),
+  and a bare target (`[[gald3r]]`) resolves against any note's basename, not just
+  a full vault-relative path (`[[knowledge/entities/gald3r]]` also works).
+- **OKF-conformance** (Open Knowledge Format amendment, T185) — folded into the
+  same lint pass rather than a separate command, since both operate over the same
+  note-scan:
+  - frontmatter **parses** (a well-formed `---`-fenced YAML block is present)
+  - `type:` is **non-empty** (already covered by the required-frontmatter check
+    above — no separate rule needed)
+  - the file is **UTF-8 without a BOM** (a BOM silently breaks Obsidian's YAML
+    frontmatter parser — see `VAULT_OBSIDIAN_STANDARD.md` §"Encoding Rule")
+
+  Per the OKF spec's own caveat that reference parsers are often stricter than
+  the spec text, `title`/`description`/`timestamp` stay **recommended, not
+  gating** — the vault's own stricter schema already requires `title`/`date`
+  independently (as `high`/`medium` severity findings, same as every other lint
+  finding here), but nothing in `gald3r vault lint`'s output format treats
+  `severity` as a pass/fail gate; every issue is reported, none silently blocks.
+
+## 5. Promotion (`research/` → `knowledge/`)
+
+`research/` is the raw intake layer (crawled docs, articles, session captures,
+harvests) — high volume, low individual value, disposable. `knowledge/` is the
+compiled wiki layer (`entities/`, `concepts/`, `comparisons/`, `cards/`) — curated,
+durable, cross-linked. A `research/` note is promoted into `knowledge/` (as a new
+or updated `entity`/`concept`/`comparison`/`card` note, per **Full Ingest** above)
+when **any** of the following hold:
+
+1. **Referenced by name from elsewhere.** A wikilink like `[[world_tree]]` or
+   `[[monetization-strategy]]` appears in another note before the target exists —
+   that is a promotion signal, not just a lint failure. Seed the missing
+   `knowledge/` target rather than deleting the link.
+2. **Durable, not disposable.** The content answers "what is X" / "how does X
+   compare to Y" / "what do we know about X" in a way that will still be true
+   after the source `research/` note goes stale — facts about a system, a
+   decision rationale, a comparison table, a standing definition.
+3. **Referenced by more than one `research/` note**, or is likely to be — a
+   compiled `knowledge/` page becomes the single hub every future `research/`
+   note wikilinks back to, instead of each source note re-deriving the same facts.
+4. **Survives a `refresh_policy` cycle without invalidation.** If a `research/`
+   note keeps getting re-crawled/re-ingested and its extracted facts do not
+   change, that stability itself is the promotion signal — freeze the durable
+   part into `knowledge/`, let `research/` keep the disposable/volatile part.
+
+**Promotion is additive, never destructive**: the source `research/` note is kept
+(it is the traceability/provenance record — `source:`, `ingestion_type:`,
+`refresh_policy:` all live there), and the compiled `knowledge/` note backlinks to
+it (see **Full Ingest** step 4). Do not delete or gut a `research/` note just
+because its content was promoted.
+
+**Not every `research/` note gets promoted.** Most never do — that is by design
+(3,900+ `research/` notes vs. a handful of compiled `knowledge/` pages is a
+healthy ratio, not a gap to close by force-promoting everything). Promote when a
+lint-detected broken wikilink or a repeated cross-reference asks for it, not on
+a schedule.
+
 ---
 
 ## Note Types

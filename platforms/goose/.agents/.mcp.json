@@ -1,14 +1,8 @@
 {
   "mcpServers": {
     "gald3r": {
-      "command": "uv",
-      "args": [
-        "run",
-        "--project",
-        ".gald3r_sys/engine",
-        "gald3r",
-        "mcp"
-      ]
+      "command": "gald3r",
+      "args": ["mcp", "serve"]
     }
   }
 }

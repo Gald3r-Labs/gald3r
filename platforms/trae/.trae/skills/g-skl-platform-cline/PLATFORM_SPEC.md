@@ -128,7 +128,8 @@ a supported source.)
   **JSON via stdin** and returns **JSON** with `cancel` + `contextModification` fields. Lifecycle
   hooks can also be registered programmatically via the **SDK plugin system**.
 - **⚠️ OS LIMIT — macOS/Linux only at time of research; Windows NOT yet supported.** gald3r's
-  PowerShell `g-hk-*.ps1` hooks therefore do **not** wire natively on Windows Cline. On Windows, hook
+  `g-hk-*.py` hooks therefore do **not** wire natively on Windows Cline regardless of invocation
+  (`python <path>`) — the limit is Cline's own OS support, not the hook's script language. On Windows, hook
   behaviors (SessionStart context injection, PreToolUse `.gald3r/` guards, pre-commit gates) must run
   out-of-band (git `core.hooksPath`, manual invocation) until Windows hook support lands.
 - Source: https://cline.bot/blog/cline-v3-36-hooks
@@ -184,7 +185,7 @@ skills → `.cline/skills/SKILL.md`, hooks → `.clinerules/hooks/` (non-Windows
 - **Events available**: PreToolUse, PostToolUse, UserPromptSubmit, TaskStart, TaskResume, TaskCancel
 - **Event payload format**: JSON via stdin; result JSON with `cancel` + `contextModification` fields
 - **Script form**: executable, no extension, named after the hook type; SDK plugins may register hooks programmatically
-- **gald3r hook files**: `g-hk-*.ps1` do **NOT** wire natively on Windows; on macOS/Linux, adapt to the executable-script-named-after-event convention
+- **gald3r hook files**: `g-hk-*.py` do **NOT** wire natively on Windows (Cline hook system is macOS/Linux only, independent of script language); on macOS/Linux, adapt `g-hk-*.py` to the executable-script-named-after-event convention
 
 ## Atypical Handling
 

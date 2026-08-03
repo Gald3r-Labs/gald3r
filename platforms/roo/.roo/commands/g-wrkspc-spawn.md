@@ -1,11 +1,14 @@
-﻿---
+---
+description: 'Spawn a new local Workspace-Control member project and register it via g-skl-workspace SPAWN_PLAN/APPLY'
+argument-hint: '<project_name> --id <repo_id> --path <path> [--description "..."] [--template none|slim|full|adv] [--dry-run|--apply]'
 subsystem_memberships: [WORKSPACE_COORDINATION]
+execution_tier: guarded_prompt
 ---
 Spawn a new local Workspace-Control member project: $ARGUMENTS
 
 ## What This Command Does
 
-Creates a brand-new local workspace member project and registers it in `.gald3r/linking/workspace_manifest.yaml`. This mirrors the simple shape of `@g-pcac-spawn`, but it is Workspace-Control membership only: no PCAC topology, no INBOX writes, no task delegation, and no history import.
+Creates a brand-new local workspace member project and registers it in `.gald3r/linking/workspace_manifest.yaml`. This mirrors the simple shape of `@g-wpac-spawn`, but it is Workspace-Control membership only: no WPAC topology, no INBOX writes, no task delegation, and no history import.
 
 Delegates to `g-skl-workspace` operation `SPAWN_PLAN` by default, or `SPAWN_APPLY` only when `$ARGUMENTS` includes `--apply`.
 
@@ -40,7 +43,7 @@ Use `@g-wrkspc-adopt` instead for an existing gald3r project with `.gald3r/` his
 
 - Dry-run is default.
 - Apply creates only a minimal independent git root and manifest entry.
-- Apply does not install gald3r, create member `.gald3r/` files, scaffold app/runtime source, set remotes, create commits, create worktrees, write PCAC topology, or import existing task/bug history.
+- Apply does not install gald3r, create member `.gald3r/` files, scaffold app/runtime source, set remotes, create commits, create worktrees, write WPAC topology, or import existing task/bug history.
 - If the target already contains a git repo, stop and use `@g-wrkspc-member-add` or `@g-wrkspc-adopt`.
 
 ## Usage Examples

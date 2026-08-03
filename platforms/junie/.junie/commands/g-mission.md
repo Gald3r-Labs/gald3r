@@ -1,5 +1,8 @@
-﻿---
+---
+description: 'Run an autonomous g-go-go loop until a stated condition is met, optionally draining the queue.'
+argument-hint: '<condition> [--budget N] [--until-empty] | status | clear | resume | --from-task T<id>'
 subsystem_memberships: [TASK_MANAGEMENT]
+execution_tier: orchestration
 ---
 # g-mission
 
@@ -46,7 +49,7 @@ For unattended runs (overnight, meetings, AFK), use the wrapper script instead o
 The script loops the `claude` CLI invocation automatically:
 - `CONTEXT_GATE` and `BUDGET_EXHAUSTED` → **transparent auto-resume** (no human input, 5-second gap between sessions)
 - `QUEUE_EMPTY`, `CONDITION_MET` → loop ends (success)
-- Any blocking code (`AI_SAFE_BLOCKED`, `BLAST_RADIUS_HIGH`, `PCAC_CONFLICT`, etc.) → loop ends, human review required
+- Any blocking code (`AI_SAFE_BLOCKED`, `BLAST_RADIUS_HIGH`, `WPAC_CONFLICT`, etc.) → loop ends, human review required
 
 A 12-hour overnight run at 20-30 min per session = up to 36 sessions × 3-10 tasks = 100-360 tasks while you sleep.
 
@@ -93,7 +96,7 @@ Write `mode: until-empty` in `ACTIVE_MISSION.md` when this flag is active so the
 **Only these items remain as true pauses even in `--until-empty` mode:**
 
 - `ai_safe: false` — hard stop, always
-- PCAC `[ORDER]` or `[CONFLICT]` inbox items — hard stop, always
+- WPAC `[ORDER]` or `[CONFLICT]` inbox items — hard stop, always
 - Budget exhausted — hard stop, always
 
 Everything else: **skip and continue.** The deferred questions file is the skip ledger. The mission loop does NOT stop because a task is hard, complex, or touches other repos.
@@ -117,7 +120,7 @@ Before writing a session checkpoint and stopping, the agent MUST be able to answ
    This is the **deterministic** proxy for context pressure (mirrors the T1547 fix in `g-go-go.md`).
    Do NOT use self-reported context fill percentage — it is unreliable (BUG-107).
 2. Budget exhausted
-3. Hard stop condition hit (`ai_safe: false` or PCAC conflict)
+3. Hard stop condition hit (`ai_safe: false` or WPAC conflict)
 4. **Every single task in `open/`, `in-progress/`, and `paused/` has been individually read and individually either claimed, completed, or logged as a named skip in `_deferred_questions.md`**
 
 A global queue assessment does not satisfy condition 4. If the agent has not read every task file, it has not finished the loop.
@@ -314,16 +317,16 @@ The mission loop respects per-task safety metadata:
 | `blast_radius: high` | **Pause mission**; surface: "Task T{id} has `blast_radius: high` — confirm before proceeding" |
 | `requires_verification: true` | Task must go through `[🔍]` → independent verifier before mission counts it as done; mission loop does NOT self-verify these |
 
-### PCAC inbox re-check cadence during long missions
+### WPAC inbox re-check cadence during long missions
 
-PCAC inbox is checked:
+WPAC inbox is checked:
 - At mission start (standard session-start check)
-- Every 30 minutes of elapsed mission time (coordinator re-runs `g-hk-pcac-inbox-check.ps1 -BlockOnConflict`)
+- Every 30 minutes of elapsed mission time (coordinator re-runs `g-hk-wpac-inbox-check.py -BlockOnConflict`)
 - Before any coordinator shared write (TASKS.md, BUGS.md, CHANGELOG)
 
 If the inbox check returns `INBOX CONFLICT GATE` (exit code 2) at any point mid-mission:
 - **Pause the loop immediately** — do not start the next iteration
-- Surface: `⚠️ PCAC conflict detected mid-mission. Run @g-pcac-read to resolve before mission continues.`
+- Surface: `⚠️ WPAC conflict detected mid-mission. Run @g-wpac-read to resolve before mission continues.`
 - Preserve `ACTIVE_MISSION.md` with `status: paused` (not abandoned) so the mission can resume after resolution
 
 ### Resuming a paused mission
@@ -334,7 +337,7 @@ If the inbox check returns `INBOX CONFLICT GATE` (exit code 2) at any point mid-
 ```
 
 1. Read `ACTIVE_MISSION.md` — confirm `status: paused` OR `status: active` (session checkpoint, not true pause)
-2. Re-run PCAC inbox check; confirm clean
+2. Re-run WPAC inbox check; confirm clean
 3. Re-run Clean Controller Gate on all repos in `touch_repos:`
 4. Resume the loop from where it left off (condition not yet met, budget not exhausted)
 5. If `--budget N` supplied on resume, update `turn_budget:` in `ACTIVE_MISSION.md` and reset `turns_consumed: 0` for this session only (accumulated prior turns are preserved in Evaluator Notes)
@@ -397,7 +400,7 @@ Run @g-mission resume to continue.
 | `BUDGET_EXHAUSTED` | `turns_consumed` ≥ `turn_budget` | Turn budget from `--budget N` consumed; resume resets counter |
 | `QUEUE_EMPTY` | No claimable `ai_safe: true` tasks remain | Drain phase complete; all open ai_safe tasks claimed or skipped |
 | `CONDITION_MET` | Evaluator check passes | Mission condition provably achieved; final summary follows |
-| `PCAC_CONFLICT` | `g-hk-pcac-inbox-check.ps1` exits 2 | INBOX conflict gate fired mid-mission; run `@g-pcac-read` to resolve |
+| `WPAC_CONFLICT` | `g-hk-wpac-inbox-check.py` exits 2 | INBOX conflict gate fired mid-mission; run `@g-wpac-read` to resolve |
 | `AI_SAFE_BLOCKED` | Next task has `ai_safe: false` | Human review required before next task can be claimed autonomously |
 | `BLAST_RADIUS_HIGH` | Next task has `blast_radius: high` | Explicit user approval required before proceeding |
 | `CLEAN_GATE_BLOCKED` | Dirty unrelated paths in touch-set | Unrelated uncommitted changes in orchestration root or a member repo; commit/stash them first |
@@ -423,7 +426,7 @@ Status: paused-partial — substantive progress, queue not fully empty
 
 - Tasks with `ai_safe: false`
 - Tasks with `blast_radius: high`
-- PCAC `[ORDER]` or `[CONFLICT]` inbox items arriving mid-mission
+- WPAC `[ORDER]` or `[CONFLICT]` inbox items arriving mid-mission
 - Any dirty unrelated paths in the member touch-set that aren't owned by this mission
 - Schema migrations or destructive DDL in example_app
 - Removals from git (`git rm`) of non-scratch files
@@ -496,12 +499,12 @@ step. The reasons are structural:
 If a future change makes g-mission run many `@g-go-go` calls inside a *single* session without a
 wrapper relaunch, revisit this and add a compression step analogous to the g-go-go LOOP
 `[INTER-ITERATION COMPRESSION]` step. Under the current architecture that step would be redundant.
-Everything else — safety gates, gald3r housekeeping commits, PCAC inbox checks, review checkpoints, member marker invariants — applies without modification.
+Everything else — safety gates, gald3r housekeeping commits, WPAC inbox checks, review checkpoints, member marker invariants — applies without modification.
 
 ## Safety rules
 
 - Never auto-extend a turn budget — always pause and surface the reason when budget is exhausted
-- Never skip the PCAC INBOX gate — even in mission mode, inbox conflicts stop the loop
+- Never skip the WPAC INBOX gate — even in mission mode, inbox conflicts stop the loop
 - Never mark mission `achieved` without running the verification check (`tsc`, `vitest`, `git status`, etc.) — evaluator must see actual command output
 - Coordinator-owned gald3r writes still happen after each g-go iteration (housekeeping commit gate applies)
 - Mission does not suppress the bug-discovery gate, todo-completion gate, or code-change-requires-task gate

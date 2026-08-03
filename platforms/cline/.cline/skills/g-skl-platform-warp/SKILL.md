@@ -14,7 +14,7 @@ docs_url_secondary:
   - https://github.com/warpdotdev/warp/issues/7834
 last_doc_scan: 2026-06-02
 capability_status:
-  hooks: "❌ no lifecycle-hook system; agent lifecycle hooks are open RFCs (warpdotdev/warp #7834, #6857). Oz Cloud Triggers fire agent runs, not local .ps1 hooks"
+  hooks: "❌ no lifecycle-hook system; agent lifecycle hooks are open RFCs (warpdotdev/warp #7834, #6857). Oz Cloud Triggers fire agent runs, not local g-hk-*.py hooks"
   rules: "✅ native Global + Project Rules (AGENTS.md/WARP.md, ALL-CAPS, WARP.md wins if both) + Agent Memory (cross-harness); single-file md, no .mdc/glob"
   skills: "✅ native Agent Skills (SKILL.md); discovers .agents/.warp/.claude/.cursor/… skills dirs (cross-vendor) — .claude/skills/ reusable"
   commands: "⚠️ built-in slash commands + cloud Warp Drive Workflows; NO user-defined custom slash commands (open RFC #6857); not installed from repo commands/"
@@ -23,6 +23,16 @@ capability_status:
 token_budget: low
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
 
 # g-skl-platform-warp
 
@@ -103,9 +113,11 @@ Per-profile access rules + env-var/OAuth auth; shared context across local and O
 Custom slash commands are **not** supported (open RFC #6857). Warp Drive Workflows (parameterized,
 repo/user-scoped) are the closest user-authorable command primitive but are **cloud-backed**, not
 installed from on-disk `commands/g-*.md`. Recreate gald3r operations manually if desired:
-- `gald3r status` — show active tasks
-- `gald3r commit T{id}` — commit with task reference
-- `gald3r new-task` — launch task creation
+- `gald3r task ready` — show ready tasks
+- `gald3r task add` — create a new task
+
+gald3r has no `commit` verb — git commits are made with git itself; see the `g-skl-git-commit`
+skill for gald3r's commit-message conventions if recreating a commit-with-task-reference Workflow.
 
 ### Verify
 ```powershell
@@ -125,15 +137,15 @@ Test-Path .claude/skills ; Test-Path .agents/skills   # discoverable SKILL.md tr
 - Agents are **app-managed Agent Profiles** (+ Oz orchestration), not on-disk `g-agnt-*.md` files.
 - **Custom slash commands are NOT supported** (open RFC #6857) — Warp Drive Workflows are cloud-only
   and not installed from the repo. Recreate them manually if you want gald3r ops as Workflows.
-- **No lifecycle hooks fire on Warp** (session-start/inbox/pre-commit `.ps1` don't run); agent
-  lifecycle hooks are open RFCs (#7834 / #6857). Run gald3r hook scripts manually, reference them
-  from rules text, or wire pre-commit/pre-push via git `core.hooksPath`.
+- **No lifecycle hooks fire on Warp** (session-start/inbox/pre-commit `g-hk-*.py` scripts don't
+  run); agent lifecycle hooks are open RFCs (#7834 / #6857). Run gald3r hook scripts manually,
+  reference them from rules text, or wire pre-commit/pre-push via git `core.hooksPath`.
 
 ## 5. Capability Summary
 
 | Feature | Status | Notes |
 |---|---|---|
-| Hooks (`g-hk-*.ps1`) | ❌ | No lifecycle-hook system; agent hooks open RFCs (#7834 / #6857). Oz Cloud Triggers fire agent runs, not local `.ps1`. Run manually or via git `core.hooksPath`. |
+| Hooks (`g-hk-*.py`) | ❌ | No lifecycle-hook system; agent hooks open RFCs (#7834 / #6857). Oz Cloud Triggers fire agent runs, not local `.py` hooks. Run manually or via git `core.hooksPath`. |
 | Skills (`g-skl-*/SKILL.md`) | ✅ | Native Agent Skills (`SKILL.md`); discovers `.agents`/`.warp`/`.claude`/`.cursor`/… skills dirs (cross-vendor). `.claude/skills/` reusable. |
 | Agents (`g-agnt-*.md`) | ✅ | Agent Profiles & permissions (base model, autonomy, tool/MCP allow-deny) + Oz subagent orchestration (Warp Agent / Claude Code / Codex). App-managed, not on-disk files. |
 | Commands (`@g-*`) | ⚠️ | Built-in slash commands + cloud Warp Drive Workflows (parameterized, repo/user-scoped). NO custom slash commands (open RFC #6857); not installed from `commands/g-*.md`. |
@@ -141,7 +153,7 @@ Test-Path .claude/skills ; Test-Path .agents/skills   # discoverable SKILL.md tr
 | MCP | ✅ | Settings > Agents > MCP servers (CLI + HTTP/SSE); per-profile access; env-var/OAuth; shared local + Oz. |
 
 > **Ground-truth hook events (T1538/T1554):** warp has **no native lifecycle hook system** for gald3r
-> `g-hk-*.ps1` (Type: `none`). The authoritative, machine-readable statement of this — including the
+> `g-hk-*.py` (Type: `none`). The authoritative, machine-readable statement of this — including the
 > honest `none` event list (open RFCs #7834 / #6857) and how gald3r hook behaviors must instead run
 > (manually, via rules text, or via git `core.hooksPath`) — lives in
 > [`PLATFORM_SPEC.md` -> `## Hook System`](./PLATFORM_SPEC.md). Reference that block rather than

@@ -1,4 +1,4 @@
-﻿---
+---
 name: g-skl-curator
 description: >
   Autonomous skill library curator — grades every SKILL.md against a structured rubric
@@ -20,6 +20,16 @@ triggers:
 token_budget: high
 subsystem_memberships: [AGENT_ORCHESTRATION]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
 
 # g-skl-curator
 
@@ -150,7 +160,7 @@ The Curator never performs the merge. It only records the proposal.
 
 The Curator reads `.gald3r/config/CURATOR_PROTECTED_SKILLS.md` at the start of every
 run. Each `-` bullet under `## Protected (do not modify or merge)` is a protected
-skill name. Pattern entries (e.g. `g-skl-pcac-*`) match all matching skill names.
+skill name. Pattern entries (e.g. `g-skl-wpac-*`) match all matching skill names.
 
 Protected skills:
 

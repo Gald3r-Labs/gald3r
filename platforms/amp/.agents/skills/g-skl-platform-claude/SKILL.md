@@ -14,7 +14,7 @@ docs_url_secondary:
   - https://code.claude.com/docs/en/plugins
 last_doc_scan: 2026-06-02
 capability_status:
-  hooks: "✅ native lifecycle hooks in settings.json '\"hooks\"' (PascalCase: SessionStart/PreToolUse/PostToolUse/Stop/…; PreToolUse blocks; .ps1 supported) — NOT lowercase hooks.json"
+  hooks: "✅ native lifecycle hooks in settings.json '\"hooks\"' (PascalCase: SessionStart/PreToolUse/PostToolUse/Stop/…; PreToolUse blocks; python <path> invocation) — NOT lowercase hooks.json"
   rules: "✅ CLAUDE.md persistent instructions + .claude/rules/*.md (paths: glob) + auto memory MEMORY.md — advisory, use PreToolUse hook for hard enforcement"
   skills: "✅ Agent Skills (agentskills.io SKILL.md) in .claude/skills/<name>/SKILL.md — progressive disclosure"
   commands: "✅ native slash commands .claude/commands/*.md (legacy) OR .claude/skills/<name>/SKILL.md → /<name> (merged into Skills)"
@@ -23,6 +23,16 @@ capability_status:
 token_budget: low
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
 
 # g-skl-platform-claude
 
@@ -58,7 +68,7 @@ continuation (`--continue`/`--resume`), and the Agent SDK (TS/Python) cover scri
     ├── commands/ *.md             ← custom slash commands (legacy; merged into Skills)
     ├── agents/   *.md             ← subagents (markdown + YAML)
     ├── skills/   <name>/SKILL.md  ← Agent Skills (agentskills.io standard) → /<name>
-    └── hooks/    *.ps1            ← hook scripts referenced from settings.json
+    └── hooks/    *.py             ← hook scripts referenced from settings.json (python <path>)
 ```
 
 User-global tree at `~/.claude/` (CLAUDE.md, settings.json, agents/skills/commands); auto memory at
@@ -99,7 +109,7 @@ Test-Path .mcp.json                                          # if using project-
 
 | Feature | Status | Notes |
 |---|---|---|
-| Hooks (`g-hk-*.ps1`) | ✅ | `settings.json` `"hooks"`; PascalCase events (SessionStart/PreToolUse/PostToolUse/Stop/…); `PreToolUse` blocks; `.ps1` supported |
+| Hooks (`g-hk-*.py`) | ✅ | `settings.json` `"hooks"`; PascalCase events (SessionStart/PreToolUse/PostToolUse/Stop/…); `PreToolUse` blocks; `python <path>` invocation |
 | Skills (`g-skl-*/SKILL.md`) | ✅ | agentskills.io; `.claude/skills/<name>/SKILL.md`; progressive disclosure; also read by OpenCode/Copilot |
 | Agents (`g-agnt-*.md`) | ✅ | native subagents `.claude/agents/` (md + YAML); built-in Explore/Plan/general-purpose; ~7 parallel |
 | Commands (`@g-*`) | ✅ | `.claude/commands/*.md` (legacy) OR `.claude/skills/<name>/SKILL.md` → `/<name>` |

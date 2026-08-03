@@ -1,0 +1,21 @@
+version: 1.0.0
+title: g-learn
+description: "\uFEFF---"
+instructions: "\uFEFF---\ndescription: Capture session learning — write insights to\
+  \ .gald3r/learned-facts.md and optionally to the global vault memory note. No JSONL\
+  \ scanning. Safe for all session modes.\nsubsystem_memberships: [MEMORY_AND_KNOWLEDGE]\n\
+  execution_tier: guarded_prompt\n---\n# /g-learn\n\nContinual learning — file-only,\
+  \ no scanner risk.\n\n## Usage\n\n```\n/g-learn                    → CAPTURE_SESSION\
+  \ (end-of-session summary, 3–5 facts)\n/g-learn insight            → CAPTURE_INSIGHT\
+  \ (single fact, immediate)\n/g-learn review             → REVIEW current facts (view\
+  \ + prune)\n/g-learn global             → GLOBAL_SYNC selected facts to vault memory\
+  \ note\n```\n\n## Skill\n\nRead and follow: `g-skl-learn`\n\n## Memory files\n\n\
+  - **Project**: `.gald3r/learned-facts.md`\n- **Global**: `{vault_location}/projects/{project_name}/memory.md`"
+prompt: Run the gald3r `g-learn` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-learn, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

@@ -24,6 +24,17 @@ token_budget: low
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
 
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
+
 # g-skl-platform-goose
 
 Activate for: setting up gald3r with Goose (goose CLI / goose Desktop), authoring
@@ -74,6 +85,13 @@ YAML surfaced as custom slash commands (commands/workflows), a `hooks.json` plug
 MCP `extensions:` entry in `~/.config/goose/config.yaml`. Map `g-agnt-*` to **Subrecipes** (typed,
 reusable). Goose Desktop / CLI also support scheduled/headless task execution for unattended runs.
 
+**Commands (T383):** the installer's overlay generator projects each neutral `g-*` command into a
+real Goose Recipe (`instructions`/`prompt`/`extensions`/typed `parameters`) at project-relative
+`.goose/recipes/<name>.yaml` — Goose's documented local-project recipe convention (it also searches
+the current working directory by default) — rather than dropping the raw `.md` file, which Goose has
+no way to invoke. Register any of them as a custom slash command via `goose configure`, or run one
+directly: `goose run --recipe .goose/recipes/g-status.yaml`.
+
 ### config.yaml MCP extension example
 ```yaml
 extensions:
@@ -91,6 +109,7 @@ Test-Path $HOME/.config/goose/config.yaml        # provider + MCP extensions
 Test-Path $HOME/.config/goose/skills ; Test-Path $HOME/.claude/skills   # skill discovery dirs
 Test-Path .goosehints                            # project rules
 Test-Path .agents/plugins                        # lifecycle hook plugins
+Test-Path .goose/recipes                         # commands (Recipe YAML, T383)
 ```
 
 ## 4. Common Pitfalls
@@ -103,9 +122,9 @@ Test-Path .agents/plugins                        # lifecycle hook plugins
 - **Rules are a single always-on `.goosehints` blob** — no `.mdc`, no `alwaysApply:`/`globs:`
   per-file scoping. Concatenate `g-rl-*` into `.goosehints`; use the Memory Extension for dynamic
   recall.
-- **Hooks are new (announced 2026-05-14)** and run **shell scripts** — on Windows invoke PowerShell
-  explicitly (`pwsh -File g-hk-*.ps1`); a bare `.ps1` is not a POSIX shell script. Re-verify the
-  young hook surface on the next crawl.
+- **Hooks are new (announced 2026-05-14)** and run **shell scripts** — gald3r hooks are
+  `g-hk-*.py`, invoked via `python <path>` (post-T1584 Python port; no PowerShell involved), which
+  runs identically on Windows and POSIX. Re-verify the young hook surface on the next crawl.
 - **Two reusable-workflow primitives** overlap: Recipes (YAML → slash commands) and Subrecipes
   (typed, parallelizable) vs one-off natural-language subagents — pick the right one per gald3r need.
 
@@ -113,7 +132,7 @@ Test-Path .agents/plugins                        # lifecycle hook plugins
 
 | Feature | Status | Notes |
 |---|---|---|
-| Hooks (`g-hk-*`) | ✅ | `hooks.json` in `.agents/plugins/<name>/hooks/`; 11 events; shell scripts (invoke `pwsh` on Windows); announced 2026-05-14 |
+| Hooks (`g-hk-*.py`) | ✅ | `hooks.json` in `.agents/plugins/<name>/hooks/`; 11 events; shell scripts (`python <path>`, cross-platform); announced 2026-05-14 |
 | Skills (`g-skl-*/SKILL.md`) | ✅ | auto-discovered from `~/.config/goose/skills/` **or `~/.claude/skills/`** (shared w/ Claude); Skills Marketplace |
 | Agents (`g-agnt-*`) | ✅ | native subagents (auto-spawned, parallel up to 10) + **Subrecipes** (typed reusable recipe files) |
 | Commands (`@g-*`) | ✅ | custom slash commands for **Recipes** (Desktop + CLI) + built-in `/plan`,`/mode`,`/prompts`,`/builtin`,`/clear` |

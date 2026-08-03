@@ -1,5 +1,8 @@
-﻿---
+---
+description: 'Two-way sync gald3r tasks with GitHub Issues via g-skl-github-pr (pull, push, or update per task).'
+argument-hint: '[pull|push|update <task-id>] [--dry-run] [--repo <owner/name>] [--label-filter <label>] [--no-create]'
 subsystem_memberships: [VAULT_AND_RESEARCH]
+execution_tier: orchestration
 ---
 Two-way sync between gald3r tasks and GitHub Issues: $ARGUMENTS
 
@@ -47,7 +50,7 @@ or `gh` missing → **no-op** with a friendly message.
 
 ## Notes
 
-- New PCAC/issue-derived tasks follow normal `g-skl-tasks` CREATE rules; populate
+- New WPAC/issue-derived tasks follow normal `g-skl-tasks` CREATE rules; populate
   `issue_ref`, `integration_scope: github`, and `last_synced_at`.
 - Edge cases to handle: issue closed externally while task is `[🔄]`; task cancelled
   while issue still open; issue reopened. Surface, don't silently diverge.

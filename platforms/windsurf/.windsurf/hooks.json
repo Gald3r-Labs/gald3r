@@ -1,5 +1,4 @@
 {
-  "_doc": "T510: Windsurf Cascade reads `.windsurf/hooks.json` (workspace level; merged with user/system). Each hook object carries a `command` (bash) AND a `powershell` key; pre-hooks BLOCK via exit code 2; payload is JSON on stdin. Each native event routes to a thin canonical entrypoint `g-hk-on-<event>.py` which calls `g_hk_core.dispatch(\"<event>\")`. The shared core `.windsurf/hooks/g_hk_core.py` is byte-identical across every platform overlay and runs the per-event CONCERN_CHAIN (concern hooks self-gate on payload). Native->canonical map (g_hk_core.PLATFORM_EVENT_MAP['windsurf']): pre_user_prompt->user-prompt-submit, pre_run_command->tool-start, pre_write_code->tool-start, post_run_command->tool-end, post_write_code->tool-end, post_cascade_response->stop. Windsurf has no session-start/session-end events (graceful degradation). Schema verified against https://docs.windsurf.com/windsurf/cascade/hooks .",
   "hooks": {
     "pre_user_prompt": [
       {

@@ -2,24 +2,38 @@
 """Python port of g-hk-session-start.ps1 (T1584).
 
 Session-initialization hook (fires when a new composer conversation is
-created). Ensures platform dirs are populated via setup_gald3r_project,
-guards against double-application per session, reads and auto-heals
-.gald3r/.identity (user_id fallback from the per-user appdata config,
-project_id UUID regeneration), then assembles the additional_context
-banner: first-time-setup notice, previous-session reflection reminder,
-vault context (note count, recent activity, vault structure verification,
-stale documentation and raw-inbox counts), TASKS.md archive gate,
-HEARTBEAT no_agent watchdog output (T968), cross-project WPAC inbox
-summary, and GUARDRAILS.md. Emits a compact JSON response
-{"continue": true, "additional_context": ...} and always exits 0.
+created). Ensures platform dirs are populated via the engine's
+`gald3r platform install` CLI verb (BUG-131 follow-up, T248 -- repoints the
+former dead `setup_gald3r_project.py` subprocess call, which never shipped
+as a file), guards against double-application per session, reads and
+auto-heals .gald3r/.identity (user_id fallback from the per-user appdata
+config, project_id UUID regeneration), then assembles the
+additional_context banner: first-time-setup notice, previous-session
+reflection reminder, vault context (note count, recent activity, vault
+structure verification, stale documentation and raw-inbox counts),
+TASKS.md archive gate, HEARTBEAT no_agent watchdog output (T968), an open
+bugs count (T526 -- Hearth-first, cold-spawn-fallback thin client, see
+`_get_open_bugs_thin`), a next-runnable-task banner (T536 -- same
+Hearth-first/cold-spawn-fallback pattern applied to T523's `/v1/tasks/next`
+route, see `_get_next_task_thin`), cross-project WPAC inbox summary, and
+GUARDRAILS.md. Emits a compact JSON response {"continue": true,
+"additional_context": ...} and always exits 0.
 
 Vault path resolution is a native port of the retired g-hk-vault-resolve.ps1
 (the PS1 dot-sources that helper); the vault status banner is a native port
 of the retired g-hk-vault-verify.ps1's Get-Gald3rVaultStatusBanner. The WPAC
-inbox check is invoked as a .py sibling; the TASKS.md archive gate was absorbed
-into the engine `gald3r task archive-gate` verb (T1665) and is dispatched via
-the zero-IP gald3r_bin.py resolver (degrades to no banner when no engine is
-installed).
+inbox check is invoked as a .py sibling; the TASKS.md archive gate and the
+platform-dirs bootstrap above are both dispatched via the same zero-IP
+`_hook_common.resolve_engine_argv` resolver (degrades to a silent no-op
+when no engine is installed). The open-bugs banner (T526) is a separate,
+standalone thin-client copy of `server_bridge/resident_service
+/reference_hook_thin_client.py`'s `get_open_bugs_thin` pattern (T506): try
+the resident Hearth over loopback HTTP first, fall back to the existing
+cold-spawn `gald3r bug list --json` path on any failure -- duplicated, not
+imported, because this hook must stay zero-`gald3r_core`-import standalone.
+The next-runnable-task banner (T536, a T523 follow-up) copies that same
+shape onto T523's `/v1/tasks/next` route, falling back to a cold-spawn of
+`gald3r task next --json` on any failure -- see `_get_next_task_thin`.
 """
 # @subsystems: LOGGING_SYSTEM
 from __future__ import annotations
@@ -43,13 +57,15 @@ if _g3ct_env not in ("", "0", "off", "false", "no") or _g3ct_os.path.isfile(
 # --- end gald3r calltrace bootstrap ---
 
 import argparse
-import importlib.util
 import json
 import os
 import re
 import shutil
 import subprocess
 import sys
+import urllib.error
+import urllib.parse
+import urllib.request
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -86,6 +102,161 @@ IDENTITY_KEYS = (
 #: Its presence (whatever the content) permanently suppresses the nudge.
 INSTALL_NUDGE_MARKER_NAME = ".install_nudge_shown"
 
+#: Hearth resident-service coordinates (T506/T526). Duplicated (not imported)
+#: from ``server_bridge/resident_service/reference_hook_thin_client.py`` --
+#: this hook is deliberately standalone/stdlib-only (zero ``gald3r_core``
+#: imports), same rationale as that module's own docstring, so its constants
+#: and ~10-line thin-client shape are copied verbatim rather than shared via
+#: an import.
+HEARTH_HOST = "127.0.0.1"
+HEARTH_PORT = 49215
+HEARTH_TIMEOUT_SECONDS = 0.5
+
+
+def _get_open_bugs_thin(root, min_severity=0):
+    """Thin-client query for open bugs (T506 follow-up, T526): try the
+    resident Hearth over loopback HTTP first, falling back to the existing
+    cold-spawn ``gald3r bug list --json`` path (T487) on ANY failure --
+    Hearth not running, port refused, timeout, or a bad response. Mirrors
+    ``reference_hook_thin_client.py``'s ``get_open_bugs_thin`` reference
+    pattern exactly (that module's own docstring says every real hook should
+    copy this ~10-line shape once wired to prefer the Hearth); duplicated
+    rather than imported for the same standalone-hooks reason documented on
+    the ``HEARTH_HOST`` constant above.
+
+    Returns ``(parsed_json_or_None, source)`` where ``source`` is
+    ``"resident_service"`` (dict shape: ``{"count": N, "bugs": [...]}``),
+    ``"cold_spawn"`` (bare JSON array shape, matching ``gald3r bug list
+    --json``'s own output), or ``"unavailable"``.
+    """
+    query = urllib.parse.urlencode({"root": str(root), "min_severity": min_severity})
+    url = "http://%s:%s/v1/bugs/open?%s" % (HEARTH_HOST, HEARTH_PORT, query)
+    try:
+        with urllib.request.urlopen(url, timeout=HEARTH_TIMEOUT_SECONDS) as resp:  # noqa: S310
+            return json.loads(resp.read()), "resident_service"
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+        pass  # Hearth not running/reachable -- fall through to the cold spawn.
+
+    try:
+        proc = subprocess.run(
+            ["gald3r", "bug", "list", "--json", "--min-severity", str(min_severity)],
+            capture_output=True,
+            text=True,
+            cwd=str(root),
+            timeout=15,
+            # BUG-495: a console-subsystem child spawned from a windowless
+            # host still pops a visible console on Windows unless
+            # CREATE_NO_WINDOW is set explicitly.
+            creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
+        )
+        return json.loads(proc.stdout or "[]"), "cold_spawn"
+    except Exception:  # noqa: BLE001 - a hook must never crash the host session.
+        return None, "unavailable"
+
+
+def _open_bugs_banner(project_root):
+    """Best-effort "N open bug(s)" one-line banner (T526), built on
+    :func:`_get_open_bugs_thin`. Silent (empty string) whenever there is
+    nothing to report -- no Hearth AND no resolvable cold-spawn engine, an
+    empty/missing project database, or genuinely zero open bugs -- matching
+    every other optional banner in this hook (e.g. the raw-inbox and
+    stale-docs banners above): never block or noise up session start over an
+    informational count.
+    """
+    try:
+        data, source = _get_open_bugs_thin(project_root)
+        if data is None:
+            return ""
+        if isinstance(data, dict):
+            count = int(data.get("count") or 0)
+        elif isinstance(data, list):
+            count = len(data)
+        else:
+            count = 0
+        if count <= 0:
+            return ""
+        return (
+            "- \U0001F41B %d open bug(s) (source: %s) -- run `gald3r bug "
+            "list` for details\n---\n" % (count, source)
+        )
+    except Exception:
+        return ""
+
+
+def _get_next_task_thin(root, min_value=None):
+    """Thin-client query for the next runnable task (T523 follow-up, T536):
+    try the resident Hearth over loopback HTTP first, falling back to the
+    existing cold-spawn ``gald3r task next --json`` path on ANY failure --
+    Hearth not running, port refused, timeout, or a bad response. Mirrors
+    :func:`_get_open_bugs_thin`'s shape exactly (T526), swapped onto T523's
+    ``/v1/tasks/next`` route and its matching ``gald3r task next --json``
+    cold-spawn fallback (T536 -- the ``reference_hook_thin_client.py``
+    pattern applied to a second, genuinely new real-hook consumer rather
+    than reusing the bugs-only site T526 already converted).
+
+    Returns ``(parsed_json_or_None, source)`` where ``source`` is
+    ``"resident_service"`` (dict shape: ``{"task": {...}_or_None, ...}``),
+    ``"cold_spawn"`` (bare task dict or ``None``, matching ``gald3r task
+    next --json``'s own output), or ``"unavailable"``.
+    """
+    params = {"root": str(root), "active_milestone": ""}
+    if min_value is not None:
+        params["min_value"] = min_value
+    query = urllib.parse.urlencode(params)
+    url = "http://%s:%s/v1/tasks/next?%s" % (HEARTH_HOST, HEARTH_PORT, query)
+    try:
+        with urllib.request.urlopen(url, timeout=HEARTH_TIMEOUT_SECONDS) as resp:  # noqa: S310
+            return json.loads(resp.read()), "resident_service"
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+        pass  # Hearth not running/reachable -- fall through to the cold spawn.
+
+    try:
+        argv = ["gald3r", "task", "next", "--json"]
+        if min_value is not None:
+            argv += ["--min-value", str(min_value)]
+        proc = subprocess.run(
+            argv,
+            capture_output=True,
+            text=True,
+            cwd=str(root),
+            timeout=15,
+            # BUG-495: a console-subsystem child spawned from a windowless
+            # host still pops a visible console on Windows unless
+            # CREATE_NO_WINDOW is set explicitly.
+            creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
+        )
+        return json.loads(proc.stdout or "null"), "cold_spawn"
+    except Exception:  # noqa: BLE001 - a hook must never crash the host session.
+        return None, "unavailable"
+
+
+def _next_task_banner(project_root):
+    """Best-effort "Next task: ..." one-line banner (T536), built on
+    :func:`_get_next_task_thin`. Silent (empty string) whenever there is
+    nothing to report -- no Hearth AND no resolvable cold-spawn engine, an
+    empty/missing project database, or genuinely no runnable task queued --
+    matching every other optional banner in this hook (e.g. the open-bugs
+    banner above): never block or noise up session start over an
+    informational pointer.
+    """
+    try:
+        data, source = _get_next_task_thin(project_root)
+        if data is None:
+            return ""
+        # resident_service wraps the task under a "task" key; cold_spawn's
+        # `gald3r task next --json` prints the bare task dict (or `null`).
+        task = data.get("task") if isinstance(data, dict) and "task" in data else data
+        if not task:
+            return ""
+        display_id = task.get("display_id") or "?"
+        title = task.get("title") or ""
+        return (
+            "- \U0001F4CC Next task: T%s %s (source: %s) -- run `gald3r "
+            "task next` for details\n---\n" % (display_id, title, source)
+        )
+    except Exception:
+        return ""
+
 
 def _powershell_exe():
     """Locate a PowerShell executable to run a user-configured HEARTBEAT
@@ -116,27 +287,19 @@ def _run_script_pair(py_path, args, cwd=None):
 
 
 def _resolve_engine_cmd(project_root):
-    """Resolve the gald3r engine command prefix via the zero-IP resolver.
+    """Resolve the gald3r engine command prefix (P3 Tier-0, T179/T191).
 
     The TASKS.md archive gate was absorbed (T1665) into the engine
-    `gald3r task archive-gate` verb. Returns the command prefix (e.g.
-    ``["gald3r"]``) or ``None`` when the resolver is not shipped (old install)
-    or no engine can be found — the caller then degrades to no banner.
+    `gald3r task archive-gate` verb. Delegates to the shared
+    `_hook_common.resolve_engine_argv` (env var -> PATH -> legacy loose
+    resolver -> loud degrade) so PATH resolution works even when the loose
+    `.gald3r_sys/scripts/gald3r_bin.py` IP script is not shipped. Returns the
+    command prefix (e.g. ``["gald3r"]``) or ``None`` when no engine can be
+    found — the caller then degrades to no banner.
     """
-    root = Path(project_root)
-    resolver_path = root / ".gald3r_sys" / "scripts" / "gald3r_bin.py"
-    if not resolver_path.is_file():
-        return None
-    try:
-        spec = importlib.util.spec_from_file_location(
-            "g_hk_ss_gald3r_bin", str(resolver_path))
-        if not spec or not spec.loader:
-            return None
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        return mod.resolve_engine_cmd(root)
-    except Exception:
-        return None
+    return _hook_common.resolve_engine_argv(
+        Path(project_root), hook_name="g-hk-session-start"
+    )
 
 
 def _run_engine(engine_cmd, args, cwd=None):
@@ -152,6 +315,30 @@ def _run_engine(engine_cmd, args, cwd=None):
         )
     except (OSError, subprocess.SubprocessError):
         return None
+
+
+def _ensure_platform_dirs_populated(root):
+    """Populate the platform IDE overlay dirs via the engine's self-contained
+    ``gald3r platform install`` CLI verb (BUG-131 follow-up, Python scope —
+    T248).
+
+    Repoints what used to be a dead ``subprocess.run([sys.executable,
+    root / "setup_gald3r_project.py", "-Platform", "cursor", "-Quiet"])``
+    call at the real engine verb. That old call was always a harmless
+    no-op — ``setup_gald3r_project.py`` has never shipped as a file here —
+    but it was dead/stale logic pointing at a script that will never exist.
+    Uses the SAME zero-IP `_resolve_engine_cmd` / `_run_engine` resolver
+    pattern as the TASKS.md archive gate below: when no engine can be
+    resolved, `_resolve_engine_cmd` returns ``None`` and this silently
+    no-ops — the hook must never crash or block session start.
+    """
+    engine = _resolve_engine_cmd(root)
+    if engine is None:
+        return
+    _run_engine(
+        engine,
+        ["platform", "install", "cursor", "--into", str(root), "--generated"],
+    )
 
 
 def parse_identity_file(path, extra_keys=()):
@@ -383,13 +570,21 @@ def _run_watchdogs(project_root):
         if not re.search(r"(?m)^\s*no_agent:\s*true\s*$", block):
             continue
 
-        m = re.search(r"(?m)^\s*script:\s*[\"']?([^\"'\r\n]+?)[\"']?\s*$", block)
+        # [ \t] not \s after the colon -- BUG-486/T510 severity-10 class: \s
+        # crosses newlines, so a blank script:/output: value would capture
+        # the NEXT watchdog-block line's text instead of reading as absent.
+        # `\r?` before `$` -- T510 Phase-2 review FAIL: `heartbeat_file
+        # .read_text()` above is the default (normalizing) mode, so this
+        # site is not reachable with a literal \r today -- hardened anyway
+        # (both restrictive char classes) for defense-in-depth per the
+        # swept fix shape.
+        m = re.search(r"(?m)^[ \t]*script:[ \t]*[\"']?([^\"'\r\n]+?)[\"']?[ \t]*\r?$", block)
         script_rel = m.group(1).strip() if m else None
         if not script_rel:
             continue
 
         output_channel = "terminal"
-        m = re.search(r"(?m)^\s*output:\s*[\"']?(\w+)[\"']?\s*$", block)
+        m = re.search(r"(?m)^[ \t]*output:[ \t]*[\"']?(\w+)[\"']?[ \t]*\r?$", block)
         if m:
             output_channel = m.group(1).strip().lower()
 
@@ -484,31 +679,22 @@ def _throne_present():
 
 
 def _engine_missing(project_root):
-    """True only on a REAL gald3r_bin.py resolver miss (EngineNotFoundError).
+    """True only when the gald3r engine cannot be resolved at all (P3 Tier-0, T179/T191).
 
-    Delegates to the shipped zero-IP resolver so the nudge can never drift
-    from the actual resolution order (GALD3R_BIN env var -> PATH -> bundled
-    binary -> dev source). Any probe failure — resolver not shipped (old
-    install), import error — returns False: silence over noise.
+    Delegates to the shared `_hook_common.resolve_engine_argv` (env var ->
+    PATH -> legacy loose resolver back-compat -> None) so the nudge can
+    never drift from the actual resolution order AND fires correctly on a
+    fresh self-contained install: previously this probe checked ONLY the
+    loose `.gald3r_sys/scripts/gald3r_bin.py` IP script directly and
+    returned False (silent) whenever that script was absent — but an absent
+    loose script is now the *normal* state for a self-contained install
+    (compiled binary on PATH, no loose script on disk), not just an old
+    one, so the old guard suppressed this exact nudge on the installs that
+    need it most.
     """
-    resolver_path = project_root / ".gald3r_sys" / "scripts" / "gald3r_bin.py"
-    if not resolver_path.is_file():
-        return False
-    try:
-        spec = importlib.util.spec_from_file_location(
-            "g_hk_nudge_gald3r_bin", str(resolver_path))
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        not_found = getattr(mod, "EngineNotFoundError", None)
-        if not_found is None:
-            return False
-        try:
-            mod.resolve_engine_cmd(project_root)
-            return False
-        except not_found:
-            return True
-    except Exception:
-        return False
+    return _hook_common.resolve_engine_argv(
+        project_root, hook_name="g-hk-session-start-nudge"
+    ) is None
 
 
 def _install_nudge_banner(project_root):
@@ -530,12 +716,16 @@ def _install_nudge_banner(project_root):
     except OSError:
         return ""
 
-    # Pre-T1642 installs do not ship the resolver (and may not carry the
-    # g-install-* commands the nudge points at) — stay silent entirely.
-    resolver_path = project_root / ".gald3r_sys" / "scripts" / "gald3r_bin.py"
-    if not resolver_path.is_file():
-        return ""
-
+    # NOTE (P3 Tier-0, T179/T191): this used to bail out entirely whenever
+    # the loose `.gald3r_sys/scripts/gald3r_bin.py` IP script was absent, on
+    # the assumption that meant a very old pre-T1642 install missing the
+    # g-install-* commands too. That assumption is now backwards: a fresh
+    # self-contained install is EXACTLY the case that never carries the
+    # loose script and DOES have g-install-agent/g-install-throne — the old
+    # guard silenced the nudge precisely where it is most needed.
+    # `_engine_missing` below already resolves the full PATH-first order via
+    # `_hook_common.resolve_engine_argv`, so no separate presence check is
+    # needed here.
     engine_missing = _engine_missing(project_root)
     throne_missing = not _throne_present()
     if not engine_missing and not throne_missing:
@@ -585,10 +775,7 @@ def main():
     # ── Ensure platform dirs are populated from canonical root ──────────────
     try:
         root = SCRIPT_DIR.parent.parent
-        _run_script_pair(
-            root / "setup_gald3r_project.py",
-            ["-Platform", "cursor", "-Quiet"],
-        )
+        _ensure_platform_dirs_populated(root)
     except Exception:
         pass
 
@@ -794,6 +981,20 @@ def main():
     except Exception:
         watchdog_banner = ""
 
+    # ── Open bugs banner (T506 Hearth thin-client pattern, T526 follow-up) ──
+    open_bugs_banner = ""
+    try:
+        open_bugs_banner = _open_bugs_banner(project_root)
+    except Exception:
+        open_bugs_banner = ""
+
+    # ── Next task banner (T523 route, T536 Hearth thin-client follow-up) ────
+    next_task_banner = ""
+    try:
+        next_task_banner = _next_task_banner(project_root)
+    except Exception:
+        next_task_banner = ""
+
     # ── Cross-project INBOX check ────────────────────────────────────────────
     inbox_banner = ""
     try:
@@ -814,7 +1015,8 @@ def main():
 
     additional_context = (
         setup_banner + reflection_banner + vault_banner
-        + archive_gate_banner + watchdog_banner + inbox_banner + nudge_banner
+        + archive_gate_banner + watchdog_banner + open_bugs_banner
+        + next_task_banner + inbox_banner + nudge_banner
         + "gald3r task management system is active. Check .gald3r/TASKS.md "
           "for current tasks."
     )

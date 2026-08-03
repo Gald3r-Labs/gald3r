@@ -1,9 +1,20 @@
-﻿---
+---
 name: g-skl-platform-monitor
 description: Cross-platform health and freshness monitor for the registry-driven gald3r platform roster (PLATFORM_REGISTRY.yaml — single source of truth, T516). Checks per-platform capability gaps against the Cursor reference, scans official docs for breaking changes, validates platform-specific config, and generates the PLATFORM_STATUS / PLATFORM_CAPABILITY_MATRIX living indexes. Owned by g-agnt-platformer.
 token_budget: low
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 
 # g-skl-platform-monitor
 
@@ -67,7 +78,7 @@ Compare one platform's declared capability support against the Cursor reference.
    `NO SKILL — create via T1465` and mark all cells `❓`.
 
 Delegates the read/report mechanics to the engine: `gald3r platform status --platform <name>`
-(falls back to `scripts/check_platform_status.ps1 -Platform <name>` where the engine is unavailable).
+(falls back to `scripts/check_platform_status.py -Platform <name>` where the engine is unavailable).
 
 ### SCAN_DOCS `<platform>`
 
@@ -154,8 +165,14 @@ Given a `SCAN_DOCS` result, propose specific config changes to gald3r's platform
 
 - Agent owner: `g-agnt-platformer`.
 - Commands: `@g-platform-check`, `@g-platform-scan-docs`, `@g-platform-status`.
-- Engine: `gald3r platform status [--platform <name>]` (CHECK entry point); fallback `scripts/check_platform_status.ps1`.
+- Engine: `gald3r platform status [--platform <name>]` (CHECK entry point); fallback `scripts/check_platform_status.py`.
 - Freshness loop (T513): `gald3r platform refresh`/`.ps1` (T514 — crawled docs → `PLATFORM_SPEC.md` proposals) and `gald3r platform status`/`.ps1` (T515 — specs + crawl ledger → `PLATFORM_STATUS.md`). Shared spec/ledger parsing in `scripts/platform_spec_io.py`. Both run host-side (C-001), need no DB connection or migration, and are dry-run by default (proposals, not blind writes).
+- **End-to-end command (T647):** `@g-platform-scan-docs <platform>` is the single operator entry
+  point that drives the whole freshness loop — `scripts/platform_crawl.py` (T646 crawl-export) →
+  `gald3r platform refresh` proposal (dry-run) → **mandatory human-accept gate** → `gald3r platform refresh --apply`
+  (mechanical `last_doc_scan` stamp only) → `gald3r platform status --apply` (STATUS regen) →
+  `check_platform_status.py --generate-matrix` cross-check warning count (expect 0). Authored for
+  both the `.claude/` and `.cursor/` command trees; never blind-writes a curated capability cell.
 - Roster source of truth: `gald3r_templates/gald3r_core/platforms/PLATFORM_REGISTRY.yaml` (T516), read via `scripts/platform_registry.py`.
 - Roster-parity gate: `g-skl-medic/scripts/check_roster_parity.py`, wired into `g-medic` L1-J — fails loudly when overlays / registry / specs / STATUS rows disagree.
 - Medic: g-medic L2 calls `g-skl-platform-monitor CHECK <current-platform>` for platform health.

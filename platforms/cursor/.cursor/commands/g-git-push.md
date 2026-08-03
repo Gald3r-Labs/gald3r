@@ -1,5 +1,7 @@
 ---
+description: 'Run gald3r push-gate before git push, gating regular vs release pushes on a versioned CHANGELOG entry'
 subsystem_memberships: [SECURITY_AND_COMPLIANCE]
+execution_tier: orchestration
 ---
 # @g-git-push — Pre-push gate (regular vs release)
 
@@ -71,7 +73,7 @@ Set `enabled: true` in `.gald3r/config/COMPLIANCE_GATE.md`. When enabled, `gald3
 
 ### Gate Behavior
 
-The compliance check runs `.claude/skills/g-skl-compliance/scripts/run_compliance_scan.py --gate-mode` and interprets exit codes:
+The compliance check runs `python .claude/skills/g-skl-compliance/scripts/run_compliance_scan.py -Strict` and interprets exit codes:
 
 | Exit Code | Meaning | Push Behavior |
 |-----------|---------|---------------|
@@ -101,7 +103,7 @@ Run @g-compliance-scan for details, or set GALD3R_PUSH_GATE_OVERRIDE=1 to overri
 
 ### Stub Detection
 
-If `.claude/skills/g-skl-compliance/scripts/run_compliance_scan.py` is a stub (T906 not yet complete), the gate detects it and skips gracefully:
+If `.claude/skills/g-skl-compliance/scripts/run_compliance_scan.py` cannot locate a configured scanner, the gate detects it and skips gracefully:
 ```
 ⚠️ Compliance scanner not yet configured — skipping gate.
    See @g-compliance-scan to set up.

@@ -1,0 +1,36 @@
+version: 1.0.0
+title: g-vault-status
+description: 'Show vault status: $ARGUMENTS'
+instructions: 'Show vault status: $ARGUMENTS
+
+
+  ## What This Command Does
+
+
+  Summarizes vault health, scale, and recent activity.
+
+
+  ## Report
+
+
+  - active vault path
+
+  - active repos mirror path
+
+  - total note count
+
+  - counts by note type
+
+  - recent `log.md` entries
+
+  - migration candidate warning if local fallback notes exist
+
+  - next recommended actions'
+prompt: Run the gald3r `g-vault-status` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-vault-status, e.g. quoted text or --flag
+    values, exactly as you would type them after the command name.

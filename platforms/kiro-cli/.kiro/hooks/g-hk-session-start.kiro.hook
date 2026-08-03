@@ -1,0 +1,13 @@
+{
+  "version": "1.0.0",
+  "enabled": true,
+  "name": "g-hk-session-start",
+  "description": "Runs the gald3r g-hk-session-start hook script (manually triggered via the Kiro Agent Hooks panel).",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "python .kiro/hooks/g-hk-session-start.py"
+  }
+}

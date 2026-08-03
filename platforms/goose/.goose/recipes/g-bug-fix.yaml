@@ -1,0 +1,18 @@
+version: 1.0.0
+title: g-bug-fix
+description: Fix a bug. Activates **g-bugs** → FIX BUG operation.
+instructions: 'Fix a bug. Activates **g-bugs** → FIX BUG operation.
+
+
+  Activate the **g-bugs** skill, FIX BUG operation.
+
+
+  Provide: BUG-NNN identifier.'
+prompt: Run the gald3r `g-bug-fix` command as described in the instructions.
+extensions: []
+parameters:
+- key: args
+  input_type: string
+  requirement: optional
+  description: Free-form arguments for g-bug-fix, e.g. quoted text or --flag values,
+    exactly as you would type them after the command name.

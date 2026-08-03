@@ -1,11 +1,11 @@
-﻿---
+---
 name: g-skl-res-apply
 version: 1.4
 description: >
   Convert a reverse-spec FEATURES.md (produced by g-skl-res-deep) into gald3r
   artifacts: project goals, PRDs, subsystem specs (merge or create), and tasks.
-  Vault-aware — reads from {vault}/research/recon/{slug}/FEATURES.md when a
-  shared vault is configured, else falls back to local research/harvests/{slug}/FEATURES.md.
+  Vault-aware — reads from {vault}/research/CRR_FunctionalSpecs/{slug}/FEATURES.md when a
+  shared vault is configured, else falls back to local research/CRR_FunctionalSpecs/{slug}/FEATURES.md.
   This is the "Execute" layer in the Discover → Curate → Execute harvest pipeline.
 triggers:
   - g-res-apply
@@ -27,6 +27,16 @@ outputs:
 token_budget: very_high
 subsystem_memberships: [PROJECT_IDENTITY_SETUP, VAULT_AND_RESEARCH]
 ---
+
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
 
 # g-skl-res-apply (harvest-intake)
 
@@ -52,11 +62,11 @@ Like `g-skl-res-deep` and `g-skl-res-review`, this skill resolves the recon base
 1. Read .gald3r/.identity (key=value, no quotes)
 2. Extract vault_location=
 3. If vault_location is {LOCAL} or missing:
-     recon_base  = "research/harvests/"
-     index_path  = "research/harvests/_recon_index.yaml"
+     recon_base  = "research/CRR_FunctionalSpecs/"
+     index_path  = "research/CRR_FunctionalSpecs/_recon_index.yaml"
 4. Else:
-     recon_base  = f"{vault_location}/research/recon/"
-     index_path  = f"{vault_location}/research/recon/_recon_index.yaml"
+     recon_base  = f"{vault_location}/research/CRR_FunctionalSpecs/"
+     index_path  = f"{vault_location}/research/CRR_FunctionalSpecs/_recon_index.yaml"
 5. input_path = f"{recon_base}{slug}/FEATURES.md"
 ```
 
@@ -94,7 +104,7 @@ After APPLY completes, update the existing `_recon_index.yaml` entry with `statu
 5. **PRD per category** — create one PRD file per feature category.
 6. **Respect approval scope** — if a feature is approved, intake its behavior-level intent after clean-room transformation; do not copy source wording or implementation details.
 7. **Source references** — every task file must include the `source_files:` from the feature's `FEATURES.md` entry as provenance only, not as implementation instructions.
-8. **Vault-first reads** (T081) — respect `vault_location`; never hardcode `research/harvests/` when a shared vault is configured.
+8. **Vault-first reads** (T081) — respect `vault_location`; never hardcode `research/CRR_FunctionalSpecs/` when a shared vault is configured.
 9. **Clean-room confirmation** — require human confirmation before APPLY unless the recon report already records clean_room_boundary: true and reviewed approvals.
 
 ---
@@ -128,7 +138,7 @@ artifact-routing commands should follow.
 
 ### Resolution algorithm (run once per artifact before any `.gald3r/` write)
 
-1. **Topology gate (hard first check):** if `.gald3r/workspace/topology.md` does NOT exist →
+1. **Topology gate (hard first check):** if `.gald3r/linking/link_topology.md` does NOT exist →
    route `local`, **ignore** any `target_repo:` value. An unlinked project never dispatches.
 2. Read `target_repo:` from the IDEA_BOARD entry (default `local` when absent).
 3. Resolve the destination per the routing table below, using `topology.md` (parent/sibling
@@ -572,7 +582,7 @@ g-res-apply APPLY {slug} --target example_app --mode=approved
 1. **Resolve target project path** from `.gald3r/linking/link_topology.md`:
    - Search `children[]` for matching `project_name`
    - If not found: error: `"Unknown target '{slug}' — not in link_topology.md children"`
-   - If found but path not accessible: fall back to PCAC INFO notification (see below)
+   - If found but path not accessible: fall back to WPAC INFO notification (see below)
 
 2. **Check target's CONSTRAINTS.md** — read `{target_path}/.gald3r/CONSTRAINTS.md`:
    - If any constraint explicitly prohibits the feature's subsystem → flag as violation: `"⚠️ AC would violate {target_slug} constraint C-{id}: {title}"`
@@ -587,7 +597,7 @@ g-res-apply APPLY {slug} --target example_app --mode=approved
    - `{target_path}/.gald3r/SUBSYSTEMS.md`
    - `{target_path}/.gald3r/subsystems/`
 
-4. **Send PCAC INFO notification** to target project INBOX (`{target_path}/.gald3r/linking/INBOX.md`):
+4. **Send WPAC INFO notification** to target project INBOX (`{target_path}/.gald3r/linking/INBOX.md`):
    ```
    [INFO] g-res-apply APPLY from <gald3r_source>: {N} features applied from {slug} harvest.
    Review: {target_path}/.gald3r/tasks/ for new task files.
@@ -626,9 +636,9 @@ Interactive routing mode. For each feature group from the harvest:
 
 If the target project path doesn't exist on disk:
 
-1. Queue the APPLY as a **pending PCAC order** in `.gald3r/linking/pending_orders/`
+1. Queue the APPLY as a **pending WPAC order** in `.gald3r/linking/pending_orders/`
 2. Create `pending_orders/order_{timestamp}_{target_slug}.md` with the full feature list
-3. Print: `"⏳ {target_slug} not accessible locally — queued as pending order. Deliver via @g-pcac-order when target is reachable."`
+3. Print: `"⏳ {target_slug} not accessible locally — queued as pending order. Deliver via @g-wpac-order when target is reachable."`
 
 ### Examples
 

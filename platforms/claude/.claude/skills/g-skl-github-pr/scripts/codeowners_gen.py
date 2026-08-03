@@ -34,28 +34,25 @@ if _g3ct_env not in ("", "0", "off", "false", "no") or _g3ct_os.path.isfile(
 
 import argparse
 import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence
 
 
 def _bootstrap_engine_utils() -> bool:
-    """Make gald3r.utils importable: installed package, else walk up to .gald3r_sys/engine/src."""
+    """Make gald3r.utils importable via the installed package.
+
+    T274 (P5-E blocker): the pre-retirement ".gald3r_sys/engine/src" fallback
+    walk is removed -- ".gald3r_sys/" is actively purged from every project
+    by the deploy pipeline (T335) and never exists in a fresh install, so
+    that branch was permanently dead code, not a real fallback.
+    """
     try:
         import gald3r.utils  # noqa: F401
         return True
     except ImportError:
-        pass
-    for parent in Path(__file__).resolve().parents:
-        cand = parent / ".gald3r_sys" / "engine" / "src"
-        if (cand / "gald3r" / "utils" / "__init__.py").is_file():
-            sys.path.insert(0, str(cand))
-            try:
-                import gald3r.utils  # noqa: F401
-                return True
-            except ImportError:
-                return False
-    return False
+        return False
 
 
 _HAS_UTILS = _bootstrap_engine_utils()
@@ -63,15 +60,58 @@ _HAS_UTILS = _bootstrap_engine_utils()
 CUSTOM_MARKER = "# CUSTOM ENTRIES BELOW"
 
 
-def find_project_root(start: Optional[str] = None) -> str:
-    """Walk up (max 12 levels) from start/script dir to the .gald3r marker; else cwd."""
+def _is_gitignored(path: Path) -> "bool | None":
+    """T516: cheap, authoritative gitignore check (same guard shape as T512's
+    `find_gald3r_root` fix, commit 3682aa64) -- delegates to `git
+    check-ignore -v` rather than reimplementing `.gitignore` pattern
+    matching. `None` (check could not run at all) is treated as fail-open
+    by the caller."""
+    try:
+        result = subprocess.run(  # noqa: S603 -- fixed argv, no shell
+            ["git", "check-ignore", "-v", str(path)],
+            cwd=str(path.parent),
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if result.returncode == 0:
+        return True
+    if result.returncode == 1:
+        return False
+    return None
+
+
+def find_project_root(
+    start: Optional[str] = None, *, ambiguous_candidates: "List[Path] | None" = None
+) -> str:
+    """Walk up (max 12 levels) from start/script dir to the .gald3r marker; else cwd.
+
+    T516 (T512 inventory row 20): a candidate whose `.gald3r/` is gitignored
+    is refused (never adopted -- the walk continues upward for the real,
+    tracked root), same guard shape as `find_gald3r_root`'s T512 fix. A
+    second, non-gitignored candidate further up than the nearest one is
+    appended to `ambiguous_candidates` (when supplied) but the NEAREST
+    candidate still wins -- no behavior change for the ordinary
+    single-`.gald3r/` case.
+    """
     d = Path(start).resolve() if start else Path(__file__).resolve().parent
+    resolved: Optional[Path] = None
     for _ in range(12):
-        if (d / ".gald3r").exists():
-            return str(d)
+        marker = d / ".gald3r"
+        if marker.exists():
+            if _is_gitignored(marker):
+                pass  # T516: refuse -- never silently adopt a decoy.
+            elif resolved is None:
+                resolved = d
+            elif ambiguous_candidates is not None:
+                ambiguous_candidates.append(d)
         if d.parent == d:
             break
         d = d.parent
+    if resolved is not None:
+        return str(resolved)
     return str(Path.cwd())
 
 

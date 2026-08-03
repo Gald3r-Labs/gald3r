@@ -1,5 +1,7 @@
-﻿---
+---
+description: 'Capture a GitHub repo into the vault as a structured note via g-skl-recon-repo (--deep for full analysis)'
 subsystem_memberships: [VAULT_AND_RESEARCH]
+execution_tier: guarded_prompt
 ---
 # g-recon-repo
 
@@ -25,7 +27,7 @@ Activates **g-skl-recon-repo** → CAPTURE operation.
 ## --deep flag
 
 After capturing, runs a deep analysis pass (5-pass strategy from `g-res-deep`) and writes a
-full recon report to `vault/research/recon/{slug}/04_FEATURES.md` and supporting docs.
+full recon report to `vault/research/CRR_FunctionalSpecs/{slug}/04_FEATURES.md` and supporting docs.
 Equivalent to running `@g-res-deep` after capture.
 
 ## Clean Room Boundary

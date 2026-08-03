@@ -1,6 +1,6 @@
-﻿---
+---
 name: g-skl-crr
-description: Clean-Room Rewrite pipeline. Orchestrates 4 phases via independent background subagents — harvest a source repo, write all findings to IDEA_BOARD (mandatory), triage tasks, and produce a gald3r-native clean-room implementation spec.
+description: Clean-Room Rewrite pipeline. Orchestrates 4 phases via independent background subagents — capture a source repo as a whole-system, consumer-neutral functional spec centralized in the shared vault (research/CRR_FunctionalSpecs/), write all findings to IDEA_BOARD (mandatory), triage tasks, and produce a gald3r-native clean-room implementation spec.
 triggers:
   - "@g-crr"
   - "clean room rewrite"
@@ -11,6 +11,16 @@ token_budget: high
 subsystem_memberships: [VAULT_AND_RESEARCH, AGENT_ORCHESTRATION]
 ---
 
+## HELP CONTRACT (T442 — cross-platform, non-substitutable)
+
+If the invoking command's arguments are EXACTLY `-h`, `--help`, or `help` (one
+token, nothing else): do NOT run any operation of this skill. Respond ONLY with a
+compact usage card — the command's name, its one-line purpose, each documented
+argument/option on its own line (or "none"), and the path to its command file —
+then STOP. Read-only: no `.gald3r/` writes, no state changes, no task/bug
+creation. This block lives in the SKILL (not a rule) because skills are the
+execution layer on every supported platform; rules are optional context on most.
+
 # SKILL: g-skl-crr — Clean-Room Rewrite Pipeline
 
 ## PURPOSE
@@ -20,7 +30,7 @@ Replaces the cumbersome manual workflow of: analyze repo → write ideas → cre
 
 **What it does:**
 
-1. **Phase 1** — Deep 5-pass harvest of the source repo (background subagent)
+1. **Phase 1** — Deep 5-pass, whole-system consumer-neutral functional-spec capture of the source repo, centralized in the shared vault (background subagent)
 2. **Phase 2** — Mandatory IDEA_BOARD write of ALL findings (coordinator-owned)
 3. **Phase 3** — Task triage + task file creation for immediate candidates (background subagent)
 4. **Phase 4** — Clean-room implementation spec task (background subagent)
@@ -42,6 +52,7 @@ Each phase is a separate agent. The coordinator never implements — it routes w
 | Exact non-generic source function/method/class names | Equivalent role with a new name — `generate_mesh()` not `hunyuan3d_generate()` |
 | Source library/package names used as identifiers | Generic role names — `mesh_backend`, `diffusion_engine`, `local_3d_provider` |
 | Source-named constants, enums, or config keys | Descriptive gald3r-native keys |
+| Source-named environment variables (e.g. `PROJECTNAME_EVENT`, `PROJECTNAME_SESSION_ID`) transcribed verbatim in recon/deep-dive prose | Describe the *shape* generically — "a namespaced-prefix env var set covering event/tool/session/cwd" — never the literal source-branded names, even in `research/` recon files (BUG-004) |
 | Source project/org name in commit message **subject or body** | Descriptive language; source URL goes in `Source:` trailer only |
 | Source project name in IDEA_BOARD **Title** or **Summary** | Descriptive title; URL in `**Source**:` field only |
 | Source project name in task file **title** or **Implementation Notes** | Descriptive; source goes in `## Background` and `## License Note` only |
@@ -49,7 +60,7 @@ Each phase is a separate agent. The coordinator never implements — it routes w
 **Where source names ARE allowed (provenance fields only):**
 - `source:` YAML frontmatter field in task files and vault notes
 - `**Source**:` field in IDEA_BOARD entries
-- Recon vault paths and slugs (e.g., `research/recon/owner__repo/`)
+- Recon vault paths and slugs (e.g., `research/CRR_FunctionalSpecs/owner__repo/`)
 - `## Background` prose: *"the source project implements a diffusion-based pipeline..."* (describe the pattern, not the name)
 - `## License Note` section
 - Commit message **trailer** line only: `Source: https://github.com/...`
@@ -106,7 +117,7 @@ Extract:
 Before spawning any subagents:
 
 1. **Resolve vault location**: read `.gald3r/.identity`, extract `vault_location=`
-2. **Check for existing recon**: if `{vault}/research/recon/{slug}/05_synthesis.md` exists → prompt `[CRR] Recon already exists for {slug}. Using cached synthesis — skip to Phase 2? (or pass RESUME to re-analyze)`
+2. **Check for existing recon**: if `{vault}/research/CRR_FunctionalSpecs/{slug}/05_synthesis.md` exists → prompt `[CRR] Recon already exists for {slug}. Using cached synthesis — skip to Phase 2? (or pass RESUME to re-analyze)`
 3. **Get current IDEA-HARVEST-NNN**: run `Select-String -Path ".gald3r/IDEA_BOARD.md" -Pattern "IDEA-HARVEST-(\d+)"` → take max → store as `idea_start_num`
 4. **Get current task count**: scan `tasks/` for highest id → store as `task_start_id`
 5. **Load target subsystem** (if provided): read `.gald3r/subsystems/{target_subsystem}.md`
@@ -132,7 +143,19 @@ This is a 5-pass deep analysis. Complete all 5 passes:
   04_FEATURES.md — structured feature list (adoption-ready)
   05_synthesis.md — adoption recommendations + cost/benefit
 
-Write all output to: {vault}/research/recon/{slug}/
+Write all output to: {vault}/research/CRR_FunctionalSpecs/{slug}/
+
+WHOLE-SYSTEM, CONSUMER-NEUTRAL CAPTURE (HARD RULE):
+Document the ENTIRE source system as a consumer-neutral functional spec. Do NOT
+scope the harvest to "what gald3r could adopt" or filter out capabilities that
+seem irrelevant to this project — capture every subsystem, interface, data
+model, CLI/UI surface, and workflow, even ones with no conceivable use here.
+Relevance and adoption are DOWNSTREAM decisions (Phase 2+ / human), never
+capture-time filters. Do NOT editorialize about adoption ("adoption angle
+for…", "conceptually adjacent to our own…") in the spec body. Keep license /
+clean-room legal commentary in a separate LEGAL_REVIEW.md, not woven through
+FEATURES.md. Omit Effort/ROI adoption-triage columns (keep similarity_risk —
+it is a legal-safety signal, not adoption triage).
 
 Clean-room boundary: observe and summarize source behavior, interfaces,
 workflows, data shapes, and architectural patterns only. Never copy source
@@ -150,7 +173,7 @@ Return a JSON summary when complete:
 {
   "status": "complete" | "partial" | "error",
   "slug": "{slug}",
-  "recon_path": "{vault}/research/recon/{slug}/",
+  "recon_path": "{vault}/research/CRR_FunctionalSpecs/{slug}/",
   "passes_complete": ["01", "02", "03", "04", "05"],
   "feature_count": N,
   "top_findings": ["...", "...", "..."],
@@ -171,7 +194,7 @@ If Phase 1 returns `status: error`, log and stop: `[CRR] BLOCKED — Phase 1 har
 
 ### 2a. Read the synthesis
 
-Read `{vault}/research/recon/{slug}/04_FEATURES.md` and `05_synthesis.md`.
+Read `{vault}/research/CRR_FunctionalSpecs/{slug}/04_FEATURES.md` and `05_synthesis.md`.
 
 Extract ALL findings:
 - Features worth adopting (high/medium/low priority)
@@ -235,7 +258,7 @@ You are the Phase 3 Task Triage agent for g-crr.
 
 Source repo: {url}
 Slug: {slug}
-Recon path: {vault}/research/recon/{slug}/
+Recon path: {vault}/research/CRR_FunctionalSpecs/{slug}/
 IDEA_BOARD candidates: IDEA-HARVEST-{idea_batch_start} through {idea_batch_end}
 
 Read and follow the skill at: .claude/skills/g-skl-tasks/SKILL.md
@@ -261,7 +284,7 @@ Your job:
 > `target_repo:` through from each IDEA-HARVEST entry onto the created task's frontmatter. Actual
 > routing (parent direct-write / sibling INBOX send-to / multi-repo decomposition / controller
 > `requires_decomposition`) is performed by `g-skl-res-apply` per its routing table, OR — for a
-> controller — by the standard WPAC dispatch commands. If `.gald3r/workspace/topology.md` is
+> controller — by the standard WPAC dispatch commands. If `.gald3r/linking/link_topology.md` is
 > absent, `target_repo:` is forced to `local` and tasks are created in the local repo only.
 
 Return a JSON summary:
@@ -282,7 +305,7 @@ Coordinator writes: collect task IDs from subagent output. Do NOT let the subage
 
 ## PHASE 4 — CLEAN-ROOM SPEC TASK (background subagent)
 
-> The master deliverable. Produces one comprehensive task that specs out HOW to implement the core patterns from the source repo in gald3r's architecture — without copying code.
+> The master deliverable. Produces one comprehensive task that specs out HOW to implement the core patterns from the source repo in gald3r's architecture — without copying code. Phase 4 also emits a companion clean-room FUNCTIONAL SPEC package with a requirements-discipline layer (T352): stable FR-/NFR- IDs, MUST/SHOULD/MAY, mandatory VERIFIED-vs-ASSUMPTION flagging, named design principles, a post-write sanitize pass, and — when a prior attempt exists — a critique deliverable. This layer is additive: the STRICT CLEAN-ROOM NAMING ENFORCEMENT table above still governs every artifact this phase writes and is unchanged by it.
 
 Spawn a **background `generalPurpose` subagent** with this prompt:
 
@@ -291,12 +314,17 @@ You are the Phase 4 Clean-Room Spec agent for g-crr.
 
 Source repo: {url} ({license})
 Slug: {slug}
-Synthesis: {vault}/research/recon/{slug}/05_synthesis.md
-Feature list: {vault}/research/recon/{slug}/04_FEATURES.md
+Synthesis: {vault}/research/CRR_FunctionalSpecs/{slug}/05_synthesis.md
+Feature list: {vault}/research/CRR_FunctionalSpecs/{slug}/04_FEATURES.md
 Target subsystem hint: {target_subsystem or "auto-detect from synthesis"}
 Tasks already created in Phase 3: {tasks_created_ids}
 
-Your job: produce ONE master task file that specs a gald3r-native clean-room rewrite/integration.
+Your job: produce TWO deliverables.
+  (A) ONE master task file that specs a gald3r-native clean-room rewrite/integration
+      (the implementation plan — see "Task file MUST include" below).
+  (B) A companion clean-room FUNCTIONAL SPEC package with requirements discipline
+      (see "REQUIREMENTS-DISCIPLINE SPEC PACKAGE" below), written to
+      {vault}/research/CRR_FunctionalSpecs/{slug}/clean_room_spec/.
 
 This is NOT a copy of the source repo. This is a NEW gald3r implementation that adopts the
 PATTERNS and ARCHITECTURE from the source, using gald3r's existing subsystems and conventions.
@@ -322,25 +350,106 @@ Steps:
    - What the new component's interface looks like (class/function signatures)
    - Acceptance criteria as a checklist
 5. Write the task file to .gald3r/tasks/task{next_id}_crr_{slug}.md
+6. Write the REQUIREMENTS-DISCIPLINE SPEC PACKAGE (below) to the clean_room_spec/ path.
 
 Task file MUST include:
   - YAML frontmatter (id, title, type: feature, status: pending, priority, subsystems, source, workspace_repos)
   - ## Objective — one paragraph explaining what we're building and why (cost savings, quality, etc.)
-  - ## Background — key patterns from the source repo and how they map to gald3r
+  - ## Background — key patterns from the source repo and how they map to gald3r; link the
+    companion spec package (spec_package_path) for full requirement-level detail
   - ## gald3r Hook Point — where exactly this plugs into the existing architecture
   - ## Acceptance Criteria — specific, testable checklist items
   - ## Implementation Notes — class names, file paths, method signatures (gald3r-native naming)
   - ## Files to Create/Modify — table with repo, file path, action
-  - ## License Note — brief note on the source license and clean-room compliance
+  - ## License Note — brief note on the source license and clean-room compliance (the FULL
+    legal analysis lives in the spec package's LEGAL_REVIEW.md, not here)
   - ## Cost/Benefit — quantified if possible (e.g. "$250/month saved")
   - ## Status History — initial pending row
 
 Add to .gald3r/TASKS.md as [📋] entry.
 
-Return the task ID and file path.
+REQUIREMENTS-DISCIPLINE SPEC PACKAGE (T352 — mandatory, in addition to the task file):
+Write to {vault}/research/CRR_FunctionalSpecs/{slug}/clean_room_spec/:
+  - README.md — index, reading order, requirement-keyword conventions (FR-/NFR-, MUST/SHOULD/MAY,
+    VERIFIED/ASSUMPTION), actors, glossary.
+  - 00_system_overview.md — purpose, scope, actors, capability map, and a short list of named
+    DESIGN PRINCIPLES (P1, P2, P3, ...) that every later requirement in this package cites by ID.
+  - One file per subsystem covered by the source (derive the breakdown from Phase 1's
+    02_module_map.md and 04_FEATURES.md). Complete coverage — do not omit or footnote whole areas.
+  - LEGAL_REVIEW.md — a SEPARATE file. State license/IP facts only; defer judgment to a human.
+    Never blend legal commentary into the spec body or the task file's ## License Note.
+  - CRITIQUE_of_existing_attempt.md — ONLY when a prior spec/analysis of this source already
+    exists in the vault or workspace (e.g. an earlier CRR_FunctionalSpecs run, a hand-written
+    analysis doc). Evaluate it AS a functional spec: genre fit, presence of testable requirements
+    with stable IDs, naming/clean-room discipline, consumer coupling, duplication, completeness,
+    legal-content placement, and verified-vs-guessed rigor. Be fair, cite files/lines, end with a
+    scorecard table and a recommendation. Skip cleanly (do not create the file) when no prior
+    attempt exists.
+
+REQUIREMENTS FORM (mandatory, applies to every requirement written in the spec package):
+  - Every behavior is a numbered, testable requirement using MUST/SHOULD/MAY.
+  - Stable IDs: FR-<AREA>-<n> for functional requirements, NFR-<n> for non-functional
+    requirements. IDs are permanent anchors a test plan can trace to — never renumber, only append.
+  - Explicitly NO effort/risk/adoption columns on these requirements (that is consumer coupling —
+    adoption triage stays in Phase 1's 05_synthesis.md, not in the spec package).
+  - External standards are referenced by CATEGORY, not product name (e.g. "a language-server
+    protocol", "a model-context/tool-server protocol", "an OAuth flow"), so a reader is not
+    steered into re-adopting the source's exact dependency graph.
+  - Data models are specified as enumerated fields with types/constraints, not prose.
+  - Contract literals (exit codes, precedence orders, wire fields) MAY be stated when genuinely
+    part of an interface contract — but abstract each into a requirement explaining WHY it
+    matters, never transcribed as bare source trivia.
+  - Keep the spec package CONSUMER-NEUTRAL: no adoption commentary, no portability notes, no
+    editorializing about whether gald3r should adopt a given capability — that judgment lives in
+    Phase 1's 05_synthesis.md and Phase 2's IDEA_BOARD entries, never in the spec package.
+
+VERIFIED vs ASSUMPTION (mandatory, structural — not optional prose):
+Every requirement and every claim about source behavior in the spec package MUST be tagged
+VERIFIED (confirmed by reading the source directly) or ASSUMPTION (inferred, not confirmed).
+Never blend a guess into a requirement silently — an unflagged assumption becomes a fabricated
+requirement for whoever implements from this spec. When in doubt, tag ASSUMPTION.
+
+FINAL SANITIZE PASS (mandatory, post-write — in addition to the pre-write self-check above):
+Before returning, grep your own spec-package output for residual proper nouns, brand names, and
+CamelCase/snake_case source identifiers. Genericize anything that is not a justified contract
+literal. This is a mechanical sweep of what you actually wrote, run LAST after every file in the
+package is written — it does not replace the pre-write self-check, it catches what that check missed.
+
+Return a JSON summary when complete:
+{
+  "task_id": N,
+  "task_path": ".gald3r/tasks/task{N}_crr_{slug}.md",
+  "spec_package_path": "{vault}/research/CRR_FunctionalSpecs/{slug}/clean_room_spec/",
+  "requirement_count": {"functional": N, "non_functional": N},
+  "assumption_count": N,
+  "critique_written": true|false,
+  "sanitize_pass": "clean" | "flagged: [...]"
+}
 ```
 
 **Wait for Phase 4 subagent to complete.**
+
+### Framework-Isolation / Personality-Suppression Ruling (T352)
+
+A related field-tested prompt for this same task genre opens with an instruction to ignore all
+project/agent framework rules, personas, and task-system conventions in the workspace. That
+instruction is correct for a **fresh session pointed at a foreign repo with no framework of its
+own** — its intent is to stop harness personas, rule-file idioms, or task-system vocabulary
+contaminating a vendor-neutral spec deliverable. It is **not** ported verbatim here, because it
+is self-contradictory inside a gald3r skill: the skill IS the framework instructing the agent.
+
+**Ruling**: the Phase 4 (and Phase 1) subagent dispatch prompts suppress *voice*, not
+*governance*:
+- The `gald3r_personality.md` persona overlay does NOT apply to spec-package deliverables
+  (README.md, 00_system_overview.md, subsystem files, LEGAL_REVIEW.md,
+  CRITIQUE_of_existing_attempt.md) — these are written for an audience with no knowledge of
+  gald3r, in neutral technical register, with no persona voice, no Norse framing, no gald3r
+  commit-message conventions, and no task-system vocabulary bleeding into the prose.
+- This does NOT suspend gald3r's own operating rules for the *agent* (task/bug logging, naming
+  enforcement, commit discipline, `.gald3r/` write gates) — those still govern how the subagent
+  behaves. Only the *written voice of the spec artifacts* is suppressed.
+- The STRICT CLEAN-ROOM NAMING ENFORCEMENT table above is unaffected by this ruling and remains
+  in force for all artifacts.
 
 ---
 
@@ -370,7 +479,7 @@ git commit -m $msg
 Phase 1 — Harvest
   Passes complete: 01 02 03 04 05
   Features found: {N}
-  Recon: {vault}/research/recon/{slug}/
+  Recon: {vault}/research/CRR_FunctionalSpecs/{slug}/
 
 Phase 2 — IDEA_BOARD
   Entries written: IDEA-HARVEST-{start} → {end} ({count} entries)
@@ -387,7 +496,7 @@ Phase 4 — CRR spec task
 Commit: {sha}
 
 Next steps:
-  • Review recon: {vault}/research/recon/{slug}/05_synthesis.md
+  • Review recon: {vault}/research/CRR_FunctionalSpecs/{slug}/05_synthesis.md
   • Implement: @g-go tasks {crr_task_id}
   • Review IDEA_BOARD: @g-idea-review
 ```
@@ -400,7 +509,7 @@ Next steps:
 
 ```
 [CRR] Status for {slug}
-  Recon path: {vault}/research/recon/{slug}/
+  Recon path: {vault}/research/CRR_FunctionalSpecs/{slug}/
   Passes complete: {list}
   IDEA_BOARD entries: IDEA-HARVEST-{start}..{end} (or "none yet")
   Tasks created: T{ids} (or "none yet")
@@ -445,7 +554,7 @@ Source file paths in the spec are traceability references, NOT implementation in
 ```
 
 Produces (default — strict naming, source name NOT in artifacts):
-- Vault: `research/recon/Tencent-Hunyuan__Hunyuan3D-2/` (5 files — slug OK in path)
+- Vault: `research/CRR_FunctionalSpecs/Tencent-Hunyuan__Hunyuan3D-2/` (5 files — slug OK in path)
 - IDEA_BOARD: entries titled e.g. "Local-first open-source diffusion 3D mesh generator (zero API cost)"
   NOT: "Hunyuan3D-2 integration" — source name stays in `**Source**:` field only
 - Phase 4 task: T1187 — "Add local-first diffusion mesh provider as primary Mesh3DProvider"
@@ -466,3 +575,14 @@ With `--own-work` (source is user's own code):
 - Source repo files (recon is read-only observation)
 - `.gald3r/.identity`, `.gald3r/.project_id` (marker-only invariant)
 - Any file outside `.gald3r/`, `docs/`, `vault/` unless explicitly in a task's `workspace_repos:`
+
+---
+
+## Rescued-Artifact Convention (D019, T374)
+
+`skills/<skill>/reference/` is the **standing home for rescued cross-repo
+artifacts** (owner ruling 2026-07-21, `DECISIONS.md` D019). `research/` is
+gitignored and stays that way — a rescue instructed to land there must instead
+land in the consuming skill's `reference/` directory (precedent:
+`g-skl-crr/reference/clean_room_spec_prompt.md`). Future `g-skl-crr` /
+`g-skl-res-*` rescues point here, not at `research/harvests/`.

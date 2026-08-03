@@ -8,7 +8,10 @@ subsystem_memberships: [PLATFORM_INTEGRATION]
 
 ## What it does
 
-Authoritative reference for Windsurf IDE customization in gald3r projects. Covers .windsurfrules layout, Cascade agent integration, rules format, and gald3r install verification.
+Authoritative reference for Devin Desktop (formerly Windsurf — Cognition renamed the product
+2026-06-02 after acquiring it) IDE customization in gald3r projects. Covers .windsurfrules layout,
+Cascade agent integration, rules format, and gald3r install verification. The internal gald3r
+platform id and on-disk `.windsurf/` / `~/.codeium/windsurf/` layout are unchanged post-rename.
 
 ## When to use
 

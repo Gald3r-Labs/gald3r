@@ -1,5 +1,8 @@
-﻿---
+---
+description: 'List repositories declared in the Workspace-Control manifest via g-skl-workspace MEMBER_LIST'
+argument-hint: '[--role <role>]'
 subsystem_memberships: [WORKSPACE_COORDINATION]
+execution_tier: orchestration
 ---
 List Workspace-Control manifest members: $ARGUMENTS
 

@@ -49,14 +49,16 @@ import _hook_common  # noqa: E402
 
 
 def _find_project_root() -> str:
-    """Mirror the PS1: walk up from the script dir for a `.gald3r/` ancestor."""
-    d = Path(__file__).resolve().parent
-    while True:
-        if (d / ".gald3r").exists():
-            return str(d)
-        if d.parent == d:
-            return str(Path.cwd())
-        d = d.parent
+    """Mirror the PS1: walk up from the script dir for a `.gald3r/` ancestor.
+
+    T516 (T512 inventory row 18): applies the shared T512 gitignore-refusal
+    + ambiguity-warning walk-up guard (`_hook_common.guarded_walk_up`).
+    """
+    here = Path(__file__).resolve().parent
+    root = _hook_common.guarded_walk_up(
+        here, exclude=_hook_common.resolved_global_gald3r_home()
+    )
+    return str(root) if root is not None else str(Path.cwd())
 
 
 def main(argv=None) -> int:
