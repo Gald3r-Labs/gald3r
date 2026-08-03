@@ -7,7 +7,7 @@ schema_version: "BUGS-md-v1"
   EXAMPLE ONLY — illustrative BUGS.md in current schema format.
 
   This is NOT a reset/restore source. To reset or restore a real BUGS.md:
-    - run  uv run python .gald3r_sys/scripts/migrate_schemas.py -ProjectPath <proj> -RestoreMissing -Apply
+    - run  gald3r schema-migrate --root <proj> --restore-missing --apply
     - or copy  .gald3r_sys/template_verification/.gald3r/BUGS.md
   Never reconstruct BUGS.md from memory or from this example. See g-skl-bugs
   "Operation: RESET / RESTORE BUGS.md".

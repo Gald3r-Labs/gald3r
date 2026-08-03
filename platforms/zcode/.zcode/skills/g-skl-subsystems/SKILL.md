@@ -20,5 +20,5 @@ The engine owns ID allocation, file placement, status→folder moves, index rege
 validation. `.gald3r/` markdown stays the data source of truth.
 
 ## Manual fallback (engine not provisioned)
-Follow **`SKILL.full.md`** (full procedure) + the schema in `.gald3r_sys/schemas/` (`subsystem-file`).
+Follow **`SKILL.full.md`** (full procedure); the engine validates via its embedded schemas (`gald3r validate`; `subsystem-file`).
 Everything needed ships in the install — nothing external.

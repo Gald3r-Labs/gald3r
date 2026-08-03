@@ -1,63 +1,56 @@
 ---
 subsystem_memberships: [PLATFORM_INTEGRATION]
 ---
-# g-plugin-update — Update an installed plugin from a local source
+# g-plugin-update — Update an installed plugin
 
-Re-apply / move an installed plugin to a newer (or forced) version from a local source
-directory: compare the installed version against the source's manifest, check host
-compatibility (`gald3r_min_version`), and (unless `--dry-run`) re-materialize via the
-same install path (removes this plugin's stale files, copies the new ones, rewrites
-`installed.yaml`). (ADR-015, plugin-system / SS-007; engine-first per T663 — see
-`gald3r.systems.plugins.PluginSystem.update`, the Python successor to the historical
-`update_plugin.ps1`, retired T1601 / PS1-KILL epic T667.)
+Pull the latest commit for an already-installed plugin: `gald3r plugin update <name>`
+runs `git -C <plugins_dir>/<name> pull --ff-only` against the plugin's own clone.
+Nothing else — no manifest, no version comparison, no ledger.
 
 ## Usage
 
 ```
-gald3r plugin update <plugin-id>                    Update from the already-vendored source
-gald3r plugin update <plugin-id> --source <path>     Update from an explicit local source dir
-gald3r plugin update <plugin-id> --dry-run           Print the planned change; apply nothing
-gald3r plugin update <plugin-id> --force             Re-install even if already at that version
+gald3r plugin update <name>
 ```
+
+`<name>` is the plugin's local folder name under `<plugins_dir>/` (see `gald3r plugin
+list`) — not a git URL and not a registry slug.
 
 ## What it does
 
-1. Look up the plugin's installed entry in `installed.yaml`; fail if not installed.
-2. Resolve the source (`--source`, else the already-vendored `.gald3r_sys/plugins/<id>/`)
-   and read its `gald3r-plugin.yaml` manifest.
-3. Check compatibility (`gald3r_min_version` host floor); fail if incompatible.
-4. Compare source version against the installed version. Same version + no `--force`
-   -> `up_to_date`, nothing applied.
-5. `--dry-run`: return the planned `from_version -> to_version` and component inventory;
-   apply nothing.
-6. Otherwise, apply via the same path as `plugin install`: remove this plugin's stale
-   components, copy the new components into the canonical `.gald3r_sys/<type>/` dirs
-   (provenance-stamped, gald3r-core components never overwritten), and rewrite the
-   `installed.yaml` entry.
+1. Resolve `<plugins_dir>/<name>/` (default `<plugins_dir>` is `<GALD3R_HOME>/plugins`,
+   i.e. `~/.gald3r/plugins` unless `GALD3R_HOME` is overridden). Fail with
+   `FileNotFoundError` if that directory doesn't exist — the plugin isn't installed.
+2. Run `git -C <plugins_dir>/<name> pull --ff-only` (60s timeout).
+3. If the pull fails (diverged history, local edits conflicting, no network, etc.),
+   fail and surface git's stderr.
+4. On success, print git's stdout (or stderr, or the literal string `"Updated."` if
+   git produced no output) as the status line.
+
+There is no version check, no compatibility check, no `--dry-run`, no `--force`, no
+`--source` override, and no component copy — it is a plain fast-forward `git pull`,
+nothing more.
 
 ## Steps
 
-1. Run from the project root:
+1. Run from anywhere (no project-root argument needed — the plugin lives under
+   `<GALD3R_HOME>/plugins`, not the project tree):
    ```bash
-   uv run --project .gald3r_sys/engine gald3r plugin update <plugin-id> [--source <path>] [--dry-run] [--force]
+   uv run gald3r plugin update <name>
    ```
-2. Read the JSON-shaped result: `{ok, status, id, from_version, to_version, components, reasons, dry_run}`.
-   `status` is one of `not_installed`, `no_source`, `incompatible`, `up_to_date`,
-   `planned` (dry-run), `updated`, `forced`.
+2. Read the printed line: `plugin '<name>': <git output>`.
 
 ## Notes
 
-- **Scope narrowing from the historical `.ps1` (T1601)**: this is a **single-plugin,
-  local-source** operation. The old `update_plugin.ps1`'s bulk "check every installed
-  plugin against a remote HTTPS registry" loop, CHANGELOG excerpt printer, interactive
-  confirmation prompts, `upgrade.ps1` lifecycle execution, and versioned on-disk backup
-  directory were designed-but-not-carried-forward when the engine module absorbed this
-  op (matching `INSTALL`/`REMOVE`/`LIST`/`NEW`/`CHECK_COMPAT`, which were similarly
-  "designed but never ported" per the engine module's own docstring). Remote `https://`
-  registry sources are intentionally not fetched by this engine surface.
-- To enumerate installed plugins first: `gald3r plugin list`.
-- To check a candidate source's compatibility before updating: `gald3r plugin check-compat <path>`.
-- Lifecycle scripts (`upgrade.ps1` / `install.ps1` / `uninstall.ps1`) are data-declared
-  on a plugin but are **never** auto-run by this engine surface (ADR-015 D7).
-- Sibling ops on the same `gald3r plugin` CLI surface: `install`, `remove` (alias
-  `uninstall`), `list`, `new`, `check-compat`.
+- To find the correct `<name>` first: `gald3r plugin list` (or `gald3r plugin list
+  --json` for the full record).
+- If the pull fails because the local clone has diverged (e.g. someone edited files
+  inside `<plugins_dir>/<name>/` directly), resolve the clone manually (or
+  `gald3r plugin uninstall <name>` and re-`install`) — this verb only attempts a
+  fast-forward pull, it never force-resets or discards local changes.
+- Sibling verbs on the same `gald3r plugin` CLI surface: `install`, `uninstall`
+  (there is no `remove` alias), `list`, and (T287) `enable`/`disable` — the last two
+  don't update anything, they flip a per-project ON/OFF flag; see
+  `g-skl-plugins/SKILL.md`'s "Per-project enable/disable" section. There is no `new`
+  (scaffold) or `check-compat` verb — see `g-skl-plugins/SKILL.md` for the full,
+  ground-truth reference and for how to author a plugin by hand.

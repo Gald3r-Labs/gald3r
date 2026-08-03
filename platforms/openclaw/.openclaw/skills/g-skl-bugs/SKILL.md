@@ -30,5 +30,5 @@ agents can never collide on the next id. Idle → direct create, unchanged. **Ha
 `bugs/open/` + regenerate the index directly.**
 
 ## Manual fallback (engine not provisioned)
-Follow **`SKILL.full.md`** (full procedure) + the schema in `.gald3r_sys/schemas/` (`bug-file`).
+Follow **`SKILL.full.md`** (full procedure); the engine validates via its embedded schemas (`gald3r validate`; `bug-file`).
 Everything needed ships in the install — nothing external.

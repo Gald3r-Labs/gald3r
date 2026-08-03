@@ -31,5 +31,5 @@ direct create, unchanged. **Hand-writing agents (manual fallback) MUST drop new-
 `tasks/inbox/` during a run — never write `tasks/open/` + regenerate the index directly.**
 
 ## Manual fallback (engine not provisioned)
-Follow **`SKILL.full.md`** (full procedure) + the schema in `.gald3r_sys/schemas/` (`task-file`).
+Follow **`SKILL.full.md`** (full procedure); the engine validates via its embedded schemas (`gald3r validate`; `task-file`).
 Everything needed ships in the install — nothing external.
