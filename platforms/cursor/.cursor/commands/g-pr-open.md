@@ -1,6 +1,5 @@
 ---
 description: 'Open a Draft GitHub PR for the active task via g-skl-github-pr OPEN, with stacked-PR routing'
-argument-hint: '[--task <id>] [--ready] [--target <branch>] [--dry-run]'
 subsystem_memberships: [RELEASE_AND_VERSIONING]
 execution_tier: guarded_prompt
 ---

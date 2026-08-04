@@ -1,6 +1,5 @@
 ---
 description: 'Show read-only Workspace-Control status via g-skl-workspace STATUS; alias for g-wrkspc-status'
-argument-hint: '[none]'
 subsystem_memberships: [WORKSPACE_COORDINATION]
 execution_tier: orchestration
 ---

@@ -1,6 +1,5 @@
 ---
 description: 'Send files, features, specs, ideas, bugs, or code to a related WPAC project with INBOX notification.'
-argument-hint: '--parent|--sibling|--child <project-name> [options]'
 subsystem_memberships: [WORKSPACE_COORDINATION]
 execution_tier: guarded_prompt
 ---

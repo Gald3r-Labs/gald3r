@@ -1,6 +1,5 @@
 ---
 description: 'Print a read-only summary of PLATFORM_STATUS.md capability rollup counts per platform.'
-argument-hint: '[platform]'
 subsystem_memberships: [PLATFORM_INTEGRATION]
 execution_tier: orchestration
 ---

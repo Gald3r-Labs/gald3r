@@ -1,6 +1,5 @@
 ---
 description: 'List all active abbreviations from .gald3r/vocab.md, or show one term''s definition'
-argument-hint: '[term]'
 subsystem_memberships: [MEMORY_AND_KNOWLEDGE]
 execution_tier: orchestration
 ---

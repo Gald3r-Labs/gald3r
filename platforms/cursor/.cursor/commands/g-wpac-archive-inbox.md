@@ -1,6 +1,5 @@
 ---
 description: 'Archive stale [DONE]/[RESOLVED] WPAC inbox messages older than a day threshold and prune INBOX.md.'
-argument-hint: '[threshold-days]'
 subsystem_memberships: [WORKSPACE_COORDINATION]
 execution_tier: orchestration
 ---

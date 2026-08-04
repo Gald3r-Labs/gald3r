@@ -1,6 +1,5 @@
 ---
 description: 'Report whether an active g-go-go autopilot run is ALIVE, IDLE-WAIT, STALLED, or STOPPED (read-only).'
-argument-hint: '[--json]'
 subsystem_memberships: [AGENT_ORCHESTRATION]
 execution_tier: orchestration
 ---

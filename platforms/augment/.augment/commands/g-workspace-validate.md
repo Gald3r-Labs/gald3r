@@ -1,6 +1,5 @@
 ---
 description: 'Validate the Workspace-Control manifest and task/bug routing metadata via g-skl-workspace VALIDATE.'
-argument-hint: '[task-or-bug-file-path]'
 subsystem_memberships: [WORKSPACE_COORDINATION]
 execution_tier: orchestration
 ---
