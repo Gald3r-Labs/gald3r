@@ -1,7 +1,6 @@
 ---
 description: 'Run g-go-review verification in parallel across M reviewer agents on the review queue (round-robin).'
 subsystem_memberships: [TASK_MANAGEMENT]
-execution_tier: orchestration
 ---
 
 Run: `gald3r worktree create`

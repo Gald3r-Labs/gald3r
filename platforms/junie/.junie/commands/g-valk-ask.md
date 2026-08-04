@@ -1,7 +1,6 @@
 ---
 description: 'Ask another project a grounded, cited question via Valkyrie (gald3r valk ask), queuing if offline'
 subsystem_memberships: [WORKSPACE_COORDINATION]
-execution_tier: guarded_prompt
 ---
 
 Provisioned by `gald3r platform install`.

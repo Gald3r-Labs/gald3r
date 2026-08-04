@@ -1,7 +1,6 @@
 ---
 description: 'Generate marketing content (tutorials, comparisons, case studies, FAQ, calendar) via g-skl-marketing.'
 subsystem_memberships: [AGENT_ORCHESTRATION]
-execution_tier: prompt_only
 ---
 
 Provisioned by `gald3r platform install`.

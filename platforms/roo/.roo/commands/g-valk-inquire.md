@@ -1,7 +1,6 @@
 ---
 description: 'Stream a grounded, cited answer from a project''s context via Valkyrie SSE ask/stream route'
 subsystem_memberships: [WORKSPACE_COORDINATION]
-execution_tier: guarded_prompt
 ---
 
 Run: `gald3r valk inquire`

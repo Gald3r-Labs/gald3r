@@ -1,7 +1,6 @@
 ---
 description: 'Convert approved recon-report features into gald3r goals, features, subsystems, and tasks (g-skl-res-apply)'
 subsystem_memberships: [VAULT_AND_RESEARCH]
-execution_tier: guarded_prompt
 ---
 
 Provisioned by `gald3r platform install`.

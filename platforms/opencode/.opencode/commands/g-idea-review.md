@@ -1,7 +1,6 @@
 ---
 description: 'List active IDEA_BOARD.md ideas and prompt to promote, shelve, or keep each via g-ideas REVIEW.'
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
-execution_tier: guarded_prompt
 ---
 
 Provisioned by `gald3r platform install`.

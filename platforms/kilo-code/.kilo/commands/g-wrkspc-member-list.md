@@ -1,7 +1,6 @@
 ---
 description: 'List repositories declared in the Workspace-Control manifest via g-skl-workspace MEMBER_LIST'
 subsystem_memberships: [WORKSPACE_COORDINATION]
-execution_tier: orchestration
 ---
 
 Provisioned by `gald3r platform install`.

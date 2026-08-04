@@ -1,7 +1,6 @@
 ---
 description: 'Find authentic Reddit conversations to join and draft genuine, non-salesy replies via g-skl-marketing.'
 subsystem_memberships: [AGENT_ORCHESTRATION]
-execution_tier: prompt_only
 ---
 
 Provisioned by `gald3r platform install`.

@@ -1,7 +1,6 @@
 ---
 description: 'Dry-run plan a Workspace-Control export of manifest members via g-skl-workspace EXPORT_PLAN'
 subsystem_memberships: [WORKSPACE_COORDINATION]
-execution_tier: orchestration
 ---
 
 Provisioned by `gald3r platform install`.
