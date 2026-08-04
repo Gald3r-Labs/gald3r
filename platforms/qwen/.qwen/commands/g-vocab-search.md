@@ -1,6 +1,5 @@
 ---
 description: 'Case-insensitive search of .gald3r/vocab.md abbreviations, expansions, and context for a term'
-argument-hint: '<term>'
 subsystem_memberships: [MEMORY_AND_KNOWLEDGE]
 execution_tier: orchestration
 ---

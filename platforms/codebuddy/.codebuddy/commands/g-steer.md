@@ -1,6 +1,5 @@
 ---
 description: 'Inject a one-shot steering prompt into a running g-go-code worktree session via steer.md.'
-argument-hint: '<task-id> "<prompt>" [--role <role>] [--owner <owner>]'
 subsystem_memberships: [TASK_MANAGEMENT]
 execution_tier: orchestration
 ---

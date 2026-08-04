@@ -1,6 +1,5 @@
 ---
 description: 'Run a dependency/license compliance scan and write a PASS/WARN/FAIL verdict report via g-skl-compliance SCAN.'
-argument-hint: '[--scanner <name>] [--path <dir>]'
 subsystem_memberships: [SECURITY_AND_COMPLIANCE]
 execution_tier: orchestration
 ---

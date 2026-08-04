@@ -1,6 +1,5 @@
 ---
 description: 'Dry-run plan of a Workspace-Control export via g-skl-workspace EXPORT PLAN; alias for g-wrkspc-export'
-argument-hint: '[--dry-run]'
 subsystem_memberships: [WORKSPACE_COORDINATION]
 execution_tier: orchestration
 ---
