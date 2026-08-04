@@ -1,7 +1,6 @@
 ---
 description: 'Generate a backlog status report: last commit, available/in-progress/blocked tasks, recommendations'
 subsystem_memberships: [TASK_MANAGEMENT]
-execution_tier: orchestration
 ---
 
 Provisioned by `gald3r platform install`.

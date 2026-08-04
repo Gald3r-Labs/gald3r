@@ -1,7 +1,6 @@
 ---
 description: 'Regenerate ROADMAP.md from all planned/in-progress/released release files (g-skl-release PUBLISH)'
 subsystem_memberships: [RELEASE_AND_VERSIONING]
-execution_tier: orchestration
 ---
 
 Provisioned by `gald3r platform install`.

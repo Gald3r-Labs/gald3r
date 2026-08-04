@@ -1,7 +1,6 @@
 ---
 description: 'Send a WPAC REQUEST to the parent project''s INBOX and mark the blocked local task.'
 subsystem_memberships: [WORKSPACE_COORDINATION]
-execution_tier: guarded_prompt
 ---
 
 Provisioned by `gald3r platform install`.

@@ -1,7 +1,6 @@
 ---
 description: 'Autopilot loop: rolling g-go-code-swarm + g-go-review-swarm cycles across the workspace until a hard stop'
 subsystem_memberships: [TASK_MANAGEMENT]
-execution_tier: orchestration
 ---
 
 Run: `gald3r autopilot loop`

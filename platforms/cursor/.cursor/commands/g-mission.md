@@ -1,7 +1,6 @@
 ---
 description: 'Run an autonomous g-go-go loop until a stated condition is met, optionally draining the queue.'
 subsystem_memberships: [TASK_MANAGEMENT]
-execution_tier: orchestration
 ---
 
 Provisioned by `gald3r platform install`.

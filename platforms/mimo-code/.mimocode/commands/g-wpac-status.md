@@ -1,7 +1,6 @@
 ---
 description: 'Show full WPAC status -- topology role, linked project health, INBOX summary, and constraint overlap.'
 subsystem_memberships: [WORKSPACE_COORDINATION]
-execution_tier: orchestration
 ---
 
 Provisioned by `gald3r platform install`.
