@@ -1,24 +1,9 @@
 version: 1.0.0
 title: g-pers-pick
 description: g-pers-pick — Switch to a personality pack
-instructions: "# g-pers-pick — Switch to a personality pack\n\nSwitch the active personality\
-  \ pack. Removes the currently active pack (if any),\ninstalls the chosen pack, and\
-  \ updates `.gald3r/.identity`.\n\n## Usage\n\n```\ng-pers-pick <pack-name>   Install\
-  \ <pack-name> as the active personality\ng-pers-pick none          Uninstall current\
-  \ personality pack (no active personality)\n```\n\n## Steps\n\n1. Read current pack\
-  \ from `.gald3r/.identity` `personality=` key\n2. If current pack exists (and is\
-  \ not `none`):\n   - Run `.gald3r_sys/personality_packs/<current>/install.ps1 -Uninstall\
-  \ -ProjectRoot .`\n3. If `<pack-name>` is `none`:\n   - Remove `personality=` line\
-  \ from `.identity`\n   - Print: \"Personality pack removed. No active personality.\"\
-  \n   - Remind user to restart IDE session\n   - Exit\n4. Validate `<pack-name>`\
-  \ exists in `.gald3r_sys/personality_packs/`\n5. Run `.gald3r_sys/personality_packs/<pack-name>/install.ps1\
-  \ -ProjectRoot .`\n6. Write `personality=<pack-name>` to `.gald3r/.identity`\n7.\
-  \ Confirm and remind user to restart IDE session\n\n## Notes\n- All personality\
-  \ packs are fully swappable — including `gald3r_personality`\n- `fandom-skills`\
-  \ is skills-only; it does not conflict with a personality pack. Use `g-skill-pack-add`\
-  \ for it\n- `.codex`, `.opencode` and other rule-free platforms only get skill files\
-  \ if the pack includes them\n- Restart your IDE session after switching for the\
-  \ new personality to load into context"
+instructions: |
+  Provisioned by `gald3r platform install`.
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-pers-pick` command as described in the instructions.
 extensions: []
 parameters:

@@ -1,17 +1,9 @@
 version: 1.0.0
 title: g-constraint-check
 description: g-constraint-check
-instructions: "# g-constraint-check\n\nValidate the current task or implementation\
-  \ against all active constraints in `.gald3r/CONSTRAINTS.md`.\n\n## When to use\n\
-  \n- During `g-go-code` AC gate (step b2) — before marking any item `[\U0001F50D\
-  ]`\n- Before claiming a task — confirm no constraint violations in the planned implementation\n\
-  - When unsure if a proposed change conflicts with project rules\n\n## Steps\n\n\
-  1. Read `g-skl-constraints` skill\n2. Run the **CHECK** operation\n\n## Output\n\
-  \n```\nCONSTRAINT CHECK:\n  C-001 [file-first vault]: ✅ PASS\n  C-002 [obsidian-markdown]:\
-  \ ✅ PASS\n  C-009 [10-target-propagation]: ⚠️ POSSIBLE — new skill; confirm all\
-  \ 10 targets created\n  ...\n```\n\n- `✅ PASS` — no conflict\n- `⚠️ POSSIBLE` —\
-  \ touches the area; needs explicit confirmation\n- `\U0001F6AB VIOLATION` — blocks\
-  \ task completion\n\n## Usage\n\n```\n@g-constraint-check\n```"
+instructions: |
+  Provisioned by `gald3r platform install`.
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-constraint-check` command as described in the instructions.
 extensions: []
 parameters:

@@ -5,10 +5,6 @@ replaced_by: g-skl-medic
 token_budget: medium
 subsystem_memberships: [PROJECT_IDENTITY_SETUP, AGENT_ORCHESTRATION]
 ---
-# g-medic (DEPRECATED)
 
-**This skill has been renamed to g-medic.** Use `@g-medic` instead.
-
-This stub delegates to g-skl-medic automatically.
-
-Activate **g-skl-medic** skill.
+Provisioned by `gald3r platform install`.
+Documentation: https://docs.gald3r.ai

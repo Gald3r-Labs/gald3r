@@ -1,27 +1,9 @@
 version: 1.0.0
 title: g-release-assign
 description: Assign tasks to a release. Activates **g-skl-release** → ASSIGN operation.
-instructions: 'Assign tasks to a release. Activates **g-skl-release** → ASSIGN operation.
-
-
-  ```
-
-  @g-release-assign 002 42
-
-  @g-release-assign 002 42,55,61
-
-  @g-release-assign "Spring Drop" 42,55
-
-  ```
-
-
-  Merges the provided task IDs into the release''s `tasks:` frontmatter list (de-duplicated,
-  sorted), refreshes the `## Included Tasks` body bullets, and updates the `Tasks`
-  column in `RELEASES.md`.
-
-
-  When Task 052-4 ships, also writes `release_id: {NNN}` back into each task file''s
-  frontmatter.'
+instructions: |
+  Provisioned by `gald3r platform install`.
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-release-assign` command as described in the instructions.
 extensions: []
 parameters:

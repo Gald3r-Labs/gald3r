@@ -5,29 +5,5 @@ token_budget: low
 subsystem_memberships: [RELEASE_AND_VERSIONING]
 ---
 
-<!-- gald3r-thinned-shim -->
-# g-skl-release — thinned shim (engine-backed)
-
-> **Handled by the bundled gald3r engine** (`.gald3r_sys/engine`, pure Mode-A, no LLM). Full original
-> procedure retained in **`SKILL.full.md`** so an install without the engine still works.
-
-**What it does:** release records (RELEASES.md + releases/).
-
-## Preferred — invoke the engine
-- **CLI:** `gald3r release …`  (or the installed `gald3r`)
-- **MCP tools:** `gald3r_release_*`   ·   facade `Gald3r(...).release`
-
-The engine owns ID allocation, file placement, status→folder moves, index regeneration, and
-validation. `.gald3r/` markdown stays the data source of truth.
-
-## Manual fallback (engine not provisioned)
-Follow **`SKILL.full.md`** (full procedure); the engine validates via its embedded schemas (`gald3r validate`; `generic`).
-Everything needed ships in the install — nothing external.
-
-## Public-publish history mode (T423)
-Publishing/graduating to a **public** repo chooses how git history is handled:
-`carry` (default — keep history, safe) vs `scrub` (Mode A — zero-history publish for IP
-protection, DESTRUCTIVE). `scrub` is OFF by default, opted in at `@g-setup`
-(`publish_history_mode` in `.gald3r/.identity`), and at publish time **requires an explicit
-`-ConfirmScrub`**. Full contract + the current-architecture caveat are in **`SKILL.full.md`**
--> "Public-Publish History Mode (T423)".
+Provisioned by `gald3r platform install`.
+Documentation: https://docs.gald3r.ai

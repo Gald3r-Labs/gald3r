@@ -1,42 +1,9 @@
 version: 1.0.0
 title: g-pr-open
 description: 'Open a Draft GitHub PR for the active task: $ARGUMENTS'
-instructions: "Open a Draft GitHub PR for the active task: $ARGUMENTS\n\nThin wrapper\
-  \ over **`g-skl-github-pr OPEN`** (T1288). Part of the optional GitHub\nIntegration\
-  \ Bundle — gated on `project_type=software_development` + `github_integration`.\n\
-  \n## Gate (first)\n\nRun the `g-skl-github-pr` gate. If `github_integration: disabled`\
-  \ (default), or\n`project_type` is not `software_development`, or `gh` is not installed\
-  \ → **no-op**\nwith a friendly message; do not push or call the network.\n\n## Behavior\n\
-  \n1. Resolve the task ID:\n   - `--task <id>` flag if given, else\n   - read the\
-  \ active worktree's `.gald3r-worktree.json` (`task_id`), else\n   - infer from the\
-  \ current branch name (`gald3r/{task_id}/...`).\n2. Push the current branch to `origin`\
-  \ if not already pushed (`git push -u origin <branch>`).\n3. Call `g-skl-github-pr\
-  \ OPEN`:\n   - PR title from `github_config.md` `pr_title_format` (default `{type}(T{id}):\
-  \ {title}`).\n   - PR body from `## Objective`, `## Acceptance Criteria`, `## Handoff\
-  \ Report` of the task file.\n   - Labels: one from `task.type` (feature→enhancement,\
-  \ bug_fix→bug, …) plus `gald3r/auto`.\n   - Open as Draft unless `--ready`.\n4.\
-  \ Write back `pr_url:` and `pr_status: draft` (or `ready`) + `integration_scope:\
-  \ github`\n   to the task frontmatter.\n\n## Stacked PR routing via task dependencies\
-  \ (T1303)\n\ngald3r task `dependencies:` already encode stack order. Before choosing\
-  \ the PR base branch:\n\n1. Read `dependencies:` from the task frontmatter.\n2.\
-  \ For each dependency, check whether it has an **open PR** (`pr_url` set **and**\n\
-  \   `pr_status` ∈ {`draft`, `ready`}).\n3. Route the base branch:\n   - **Exactly\
-  \ one** dependency has an open PR → target **that PR's head branch** (stack on it).\n\
-  \   - **Multiple** dependencies have open PRs → **error** with a diagnostic listing\
-  \ them:\n     `Ambiguous stack base: deps T<a>, T<b> both have open PRs. Re-run\
-  \ with --target <branch>.`\n   - **Zero** → target `main` / `github_default_branch`\
-  \ (default behavior).\n4. `--target <branch>` always overrides this routing.\n5.\
-  \ Print the resolved stack chain at open time, e.g. `task1303 → task1288 → main`.\n\
-  \nThis converts the existing dependency graph into automatic stacked PRs with no\
-  \ extra metadata.\n\n## Flags\n\n| Flag | Effect |\n|---|---|\n| `--task <id>` |\
-  \ Explicit task ID instead of worktree-detected |\n| `--ready` | Open as Ready for\
-  \ review instead of Draft |\n| `--target <branch>` | Override base branch (overrides\
-  \ stacked-PR routing, T1303) |\n| `--dry-run` | Print the plan (title, body, labels,\
-  \ base, stack chain) without pushing or creating |\n\n## Notes\n\n- Auto-invoked\
-  \ by the `g-go` PR-open hook (T1291) on `[\U0001F504]→[\U0001F50D]` when\n  `github_integration:\
-  \ enabled` and `github_pr_hooks: enabled`.\n- Honors the Autonomous Push Gate (g-rl-33):\
-  \ the push/PR-create is outward-facing —\n  surface and confirm per pipeline policy;\
-  \ never push silently.\n- See `g-skl-github-pr` for the full operation contract."
+instructions: |
+  Provisioned by `gald3r platform install`.
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-pr-open` command as described in the instructions.
 extensions: []
 parameters:

@@ -3,8 +3,6 @@ description: 'Validate TASKS.md matches the tasks/ files, catching phantom or or
 subsystem_memberships: [TASK_MANAGEMENT]
 execution_tier: orchestration
 ---
-Validate TASKS.md matches tasks/ files. Activates **g-tasks** → SYNC CHECK operation.
 
-Activate the **g-tasks** skill, SYNC CHECK operation.
-
-Run at session start or when phantom/orphan issues are suspected.
+Provisioned by `gald3r platform install`.
+Documentation: https://docs.gald3r.ai

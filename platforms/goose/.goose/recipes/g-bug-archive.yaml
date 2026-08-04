@@ -2,35 +2,9 @@ version: 1.0.0
 title: g-bug-archive
 description: Archive terminal bug history into `.gald3r/archive/` while keeping `BUGS.md`
   as an active quality index.
-instructions: "Archive terminal bug history into `.gald3r/archive/` while keeping\
-  \ `BUGS.md` as an active quality index.\n\n```\n@g-bug-archive\n@g-bug-archive --apply\n\
-  @g-bug-archive --include-recent\n@g-bug-archive --apply --include-recent --recent-window-days\
-  \ 7\n```\n\n## What This Command Does\n\nRuns the compiled **`gald3r bug archive`**\
-  \ verb (T497 -- backs g-rl-33's Active Index Archive\nGate, which previously had\
-  \ no deterministic implementation).\n\nThe verb moves resolved/closed/wontfix bug\
-  \ history out of the active index and into count-based\narchive buckets:\n\n- Index\
-  \ files: `.gald3r/archive/archive_bugs_0000_0999.md`, `.gald3r/archive/archive_bugs_1000_1999.md`,\
-  \ ...\n- Bug files: `.gald3r/archive/bugs/bugs_0000_0999/`, `.gald3r/archive/bugs/bugs_1000_1999/`,\
-  \ ...\n\nBuckets hold at most 1000 archive entries/files and are assigned by archive\
-  \ entry ordinal, not by\nBUG-NNN. Each archived file's frontmatter gains an `archive:`\
-  \ provenance block (slot, index\npath, archived-at date, source project, original\
-  \ bug id).\n\n## Flags\n\n| Flag | Effect |\n|---|---|\n| (none) | Dry-run preview\
-  \ -- classifies every candidate, writes nothing. |\n| `--apply` | Actually move\
-  \ files, update the DB, and rewrite `BUGS.md`. |\n| `--include-recent` | Also archive\
-  \ terminal bugs resolved within the recency window (default: excluded). |\n| `--recent-window-days\
-  \ N` | Override the default 14-day recency window. |\n| `--json` | Machine-readable\
-  \ report (candidates, held-back-as-recent). |\n\n## Safety\n\n- Dry-run is the default\
-  \ -- `--apply` is required to write anything.\n- Recently resolved bugs stay active\
-  \ unless `--include-recent` is supplied.\n- Never deletes history: files move, they\
-  \ are not removed. The bug row in `gald3r.db` is\n  relocated out of the live `bugs`\
-  \ table (so `gald3r db verify` never reports an `orphan_row`)\n  -- `status_history`\
-  \ rows are preserved as permanent audit trail.\n- Apply leaves (and idempotently\
-  \ re-writes) an `## Archive Pointers` block in `BUGS.md`'s\n  hand-curated header,\
-  \ linking every archive index file -- it survives future\n  `gald3r db rebuild`/`bug\
-  \ archive` runs the same way the rest of that header does.\n- As with any `--apply`\
-  \ destructive verb, only run it when the active task explicitly\n  authorizes archival\
-  \ work -- the CLI itself has no session/task-authorization concept, so this\n  is\
-  \ an agent-level discipline, not something the verb enforces."
+instructions: |
+  Provisioned by `gald3r platform install`.
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-bug-archive` command as described in the instructions.
 extensions: []
 parameters:

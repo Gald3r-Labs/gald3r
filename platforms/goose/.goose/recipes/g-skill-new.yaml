@@ -1,30 +1,9 @@
 version: 1.0.0
 title: g-skill-new
 description: g-skill-new - Scaffold a new skill in YOUR project
-instructions: "# g-skill-new - Scaffold a new skill in YOUR project\n\nCreates a new\
-  \ skill for your own project. You choose where it lives - your AI platform folder\n\
-  (e.g. `.cursor/skills/`, `.claude/skills/`) or somewhere in your repo's own contents.\
-  \ This never\nwrites to `.gald3r_sys/` (the gald3r framework payload is read-only\
-  \ to your project).\n\n## Usage\n\n```\n@g-skill-new <name>\n@g-skill-new \"my-feature\"\
-  \n```\n\n- `<name>` - slug for the skill (e.g. `my-feature`).\n\n## Steps\n\n1.\
-  \ Ask **where** to create it:\n   - **(a) Platform folder** - your chosen IDE: `.cursor/skills/<name>/SKILL.md`,\n\
-  \     `.claude/skills/<name>/SKILL.md`, etc. (pick one or more installed platforms).\n\
-  \   - **(b) Repo contents** - a path inside your own project source you specify.\n\
-  2. Collect a one-line description and trigger phrases.\n3. Write `SKILL.md` from\
-  \ the template at the chosen location. The preamble - immediately\n   after the\
-  \ YAML frontmatter, before any other body content - MUST include the standard\n\
-  \   HELP CONTRACT block below, quoted verbatim (T442):\n\n   ```\n   ## HELP CONTRACT\
-  \ (T442 — cross-platform, non-substitutable)\n\n   If the invoking command's arguments\
-  \ are EXACTLY `-h`, `--help`, or `help` (one\n   token, nothing else): do NOT run\
-  \ any operation of this skill. Respond ONLY with a\n   compact usage card — the\
-  \ command's name, its one-line purpose, each documented\n   argument/option on its\
-  \ own line (or \"none\"), and the path to its command file —\n   then STOP. Read-only:\
-  \ no `.gald3r/` writes, no state changes, no task/bug\n   creation. This block lives\
-  \ in the SKILL (not a rule) because skills are the\n   execution layer on every\
-  \ supported platform; rules are optional context on most.\n   ```\n\n   Every newly\
-  \ scaffolded `SKILL.md` inherits this block so `-h`/`--help`/`help` interception\n\
-  \   works cross-platform without depending on a rules surface (not every platform\
-  \ has one).\n4. Offer a CHANGELOG entry if your project keeps one."
+instructions: |
+  Provisioned by `gald3r platform install`.
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-skill-new` command as described in the instructions.
 extensions: []
 parameters:

@@ -1,8 +1,6 @@
 ﻿---
 subsystem_memberships: [BUG_AND_QUALITY]
 ---
-Fix a bug. Activates **g-bugs** → FIX BUG operation.
 
-Activate the **g-bugs** skill, FIX BUG operation.
-
-Provide: BUG-NNN identifier.
+Provisioned by `gald3r platform install`.
+Documentation: https://docs.gald3r.ai

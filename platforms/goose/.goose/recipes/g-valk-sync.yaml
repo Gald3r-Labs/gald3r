@@ -2,75 +2,9 @@ version: 1.0.0
 title: g-valk-sync
 description: 'Reconcile-on-reconnect: flush every queued Valkyrie outbox entry to
   world_tree: $ARGUMENTS'
-instructions: 'Reconcile-on-reconnect: flush every queued Valkyrie outbox entry to
-  world_tree: $ARGUMENTS
-
-
-  ## What This Command Does
-
-
-  Runs `gald3r workspace outbox flush` to re-push every write-ahead-queued outbox
-  entry (asks,
-
-  orders, events, links that were queued while world_tree was unreachable/unauthenticated)
-  to the
-
-  live API. This is the up-sync counterpart to `@g-wpac-sync` (sibling contract sync)
-  — it drains
-
-  the **transport queue**, not project contract state. Uses `g-skl-valk`.
-
-
-  ## Workflow
-
-
-  ### 1. Check Outbox State First
-
-  ```bash
-
-  gald3r workspace outbox --json   # counts: queued / fallback / delivered
-
-  ```
-
-  If the queue is empty, report `(nothing to flush)` and stop.
-
-
-  ### 2. Flush
-
-  ```bash
-
-  gald3r workspace outbox flush
-
-  ```
-
-
-  ### 3. Report
-
-  Summarize per-entry outcome: delivered vs. still-queued (with reason, e.g. `auth_required`,
-
-  `no_provider_available` per BUG-235, or `offline`). A queued `ask` entry stuck on
-  HTTP 409
-
-  `no_provider_available` will **not** clear on repeated flushes until the account-side
-  provider
-
-  gap is resolved — do not loop `@g-valk-sync` expecting a different outcome for that
-  entry.
-
-
-  ## Usage Examples
-
-
-  ```
-
-  @g-valk-sync
-
-  ```
-
-
-  ## Delegates To
-
-  `g-skl-valk`'
+instructions: |
+  Run: `gald3r workspace outbox flush`
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-valk-sync` command as described in the instructions.
 extensions: []
 parameters:

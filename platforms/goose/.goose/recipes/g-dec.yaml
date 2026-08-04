@@ -1,52 +1,9 @@
 version: 1.0.0
 title: g-dec
 description: 'Outstanding owner-decision stack: $ARGUMENTS'
-instructions: "Outstanding owner-decision stack: $ARGUMENTS\n\n## What This Command\
-  \ Does\n\nAggregates every decision currently **waiting on the owner** from across\
-  \ the\nproject's coordination state and presents them as one numbered stack the\
-  \ owner\ncan answer in a single reply. This exists because agent sessions repeatedly\n\
-  rediscover and re-summarize the same pending decisions by hand (T548 filed it\n\
-  as a command after the owner asked for exactly this brief twice in one day).\n\n\
-  This is a **read-only presentation command**: no `.gald3r/` writes, no status\n\
-  changes, no task creation. Acting on the owner's answers afterwards routes\nthrough\
-  \ the normal agents/verbs (`g-task-upd`, `gald3r bug resolve`,\nDECISIONS.md via\
-  \ `g-infrastructure`, etc.).\n\n## Sources to Scan (all deterministic; skip any\
-  \ that don't exist)\n\n1. **`.gald3r/DECISIONS.md`** — any ruling row whose text\
-  \ contains\n   `PENDING OWNER RATIFICATION`, `pending ratification`, or an explicitly\n\
-  \   unanswered question.\n2. **Owner-gated tasks and bugs** — every open/pending\
-  \ task or bug whose\n   frontmatter, Description, Note, or deferral text matches\
-  \ (case-insensitive):\n   `owner-gated`, `owner ratification`, `needs owner`, `owner\
-  \ decision`,\n   `maintainer decision`, `human review`, `supervised`, `GATED`, or\
-  \ names a\n   decision the owner must make. Query the DB (`gald3r task ready --json`,\n\
-  \   `gald3r bug list --json`) and read only the matching records' files.\n3. **The\
-  \ autopilot run-state marker** (`.gald3r/logs/ggo_run_state.json`) —\n   `deferred_task_reasons`\
-  \ entries whose reason text matches the same markers.\n4. **The newest shift-handover\
-  \ doc** (`docs/*SHIFT_HANDOVER*.md`, newest by\n   filename timestamp) — its open-decision\
-  \ / \"owner conversation\" section, when\n   one exists.\n5. **Session knowledge**\
-  \ — decisions raised in the current conversation that are\n   not yet filed anywhere\
-  \ (flag these `[unfiled]` so the owner knows they have\n   no durable record yet).\n\
-  \nDeduplicate across sources (the same decision often appears in 2-3 of them);\n\
-  cite every ID it appears under.\n\n## Output Format\n\nGroup by the owner's cost\
-  \ to answer, in this order:\n\n```markdown\n# \U0001F5F3️ Outstanding Owner Decisions\
-  \ — {date}\n\n## \U0001F534 One-word confirmations (answer inline)\n1. **{ID(s)}\
-  \ — {title}** — {1-2 sentence context}\n   → Recommend: **{rec}**. Reply `1 yes`\
-  \ / `1 no`.\n\n## \U0001F7E1 Decision bundles (a few minutes each)\n2. **{ID(s)}\
-  \ — {title}**\n   {2-4 sentence context; why it is stuck on the owner}\n   Options:\
-  \ (a) {...} (b) {...} (c) {...}\n   → Recommend: **{letter}** — {one-line why}.\
-  \ Reply `2a`/`2b`/...\n\n## \U0001F7E2 Needs a scheduled session with you\n3. **{ID}\
-  \ — {title}** — {what the session is and rough duration}\n\n## \U0001F535 Needs\
-  \ a read first\n4. **{ID} — {title}** — {the doc to read, then what to answer}\n\
-  ```\n\nEnd with: `Answer in one reply, e.g.: \"1 yes, 2a, 3 saturday, 4 later\"\
-  ` — and\nafter the owner answers, ACT on each answer through the proper agent/verb\
-  \ and\nrecord ratifications in DECISIONS.md.\n\n## Arguments\n\n- *(none)* / `all`\
-  \ — the full stack (default)\n- `quick` — only the \U0001F534 one-word group\n-\
-  \ any other token — filter: only decisions whose title/context matches it\n  (e.g.\
-  \ `/g-dec release`)\n\n## Notes\n\n- Never manufacture a decision: if a task is\
-  \ merely hard, it is not\n  owner-gated. Only include items whose OWN text or ruling\
-  \ genuinely requires\n  the owner.\n- A compiled retrieval verb for this data is\
-  \ the natural follow-up once this\n  command's shape settles — the same compiled-retrieval\
-  \ pattern `gald3r status`\n  gives `g-status` (T494). No such verb exists yet; see\
-  \ T548."
+instructions: |
+  Provisioned by `gald3r platform install`.
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-dec` command as described in the instructions.
 extensions: []
 parameters:

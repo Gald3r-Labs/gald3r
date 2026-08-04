@@ -1,10 +1,9 @@
 version: 1.0.0
 title: g-review
 description: Deprecated — use **@g-code-review** instead.
-instructions: 'Deprecated — use **@g-code-review** instead.
-
-
-  @g-code-review activates the g-skl-code-review skill for full code review functionality.'
+instructions: |
+  Provisioned by `gald3r platform install`.
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-review` command as described in the instructions.
 extensions: []
 parameters:

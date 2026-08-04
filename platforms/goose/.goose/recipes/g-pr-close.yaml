@@ -2,43 +2,9 @@ version: 1.0.0
 title: g-pr-close
 description: 'Finalize a GitHub PR after review (merge on PASS / keep Draft on FAIL):
   $ARGUMENTS'
-instructions: "Finalize a GitHub PR after review (merge on PASS / keep Draft on FAIL):\
-  \ $ARGUMENTS\n\nThin wrapper over **`g-skl-github-pr` READY/COMMENT/CLOSE** (T1289).\
-  \ Part of the\noptional GitHub Integration Bundle.\n\n## Gate (first)\n\nRun the\
-  \ `g-skl-github-pr` gate. If `github_integration: disabled`, wrong `project_type`,\n\
-  or `gh` missing → **no-op** with a friendly message.\n\n## Behavior\n\n1. Resolve\
-  \ task ID (`--task <id>` or active worktree / branch).\n2. Read the review verdict\
-  \ from the most recent `## Status History` row of the task file:\n   - `[✅]` / `verification-in-progress\
-  \ → completed` ⇒ **PASS**\n   - `FAIL:` / back-to-`pending` ⇒ **FAIL**\n3. **Detect\
-  \ fork PRs first (T1309):** `gh pr view <n> --json headRepositoryOwner,isCrossRepository`.\n\
-  \   If `isCrossRepository: true`, set `is_fork=1` and **skip** any head-branch write\n\
-  \   (head-ref label edits, pushes to the fork) — we lack write on a contributor's\
-  \ fork.\n   Base-repo operations (comment, PR labels, merge) still proceed normally.\n\
-  4. **On PASS:**\n   - `g-skl-github-pr READY` (Draft → Ready). *(fork: skip if Ready\
-  \ requires head-branch write; comment instead.)*\n   - `g-skl-github-pr COMMENT`\
-  \ — post the review summary (verdict + reviewer agent identity + review-result commit\
-  \ SHA).\n   - `g-skl-github-pr CLOSE` — merge using `merge_strategy` (default `squash`);\
-  \ `--delete-branch` when configured.\n     - **Merge queue (T1312):** when `merge_queue:\
-  \ enabled`, merge with `gh pr merge --auto <strategy-flag>`\n       (queue the PR;\
-  \ GitHub merges when checks pass and the queue front is reached) instead of an\n\
-  \       immediate merge. If `gh` reports auto-merge/queue is unavailable on the\
-  \ repo plan, surface the\n       error — do not silently fall back to an immediate\
-  \ merge.\n   - Write `pr_status: merged` (or `pr_status: ready` while queued); auto-close\
-  \ the linked `issue_ref` when `auto_close_issue_on_merge: true`.\n5. **On FAIL:**\n\
-  \   - `g-skl-github-pr COMMENT` — post the FAIL summary explaining the unmet criteria.\n\
-  \   - Leave the PR open as Draft (do **not** merge); keep `pr_status: draft`.\n\
-  6. **Fork PRs (T1309) summary:** merge is allowed (base-repo permission); head-branch\
-  \ writes are\n   skipped; comments/labels on the PR work. See `github_config.md`\
-  \ § \"Forking workflow\" and\n   `branch_protection.md` § \"For external contributors\"\
-  .\n\n## Flags\n\n| Flag | Effect |\n|---|---|\n| `--task <id>` | Explicit task ID\
-  \ |\n| `--no-merge` | Comment + flip to Ready but skip the merge (manual merge desired)\
-  \ |\n| `--strategy <squash\\|rebase\\|merge>` | Override the configured merge strategy\
-  \ |\n| `--dry-run` | Print the plan without commenting/merging |\n\n## Notes\n\n\
-  - Auto-invoked by the `g-go-review` PR-close hook (T1292) after PASS/FAIL status\
-  \ writes,\n  when `github_integration: enabled` and `github_pr_hooks: enabled`.\n\
-  - Honors the Autonomous Push Gate (g-rl-33): a merge is outward-facing — confirm\
-  \ per\n  pipeline policy; never merge silently.\n- See `g-skl-github-pr` for the\
-  \ full operation contract."
+instructions: |
+  Provisioned by `gald3r platform install`.
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-pr-close` command as described in the instructions.
 extensions: []
 parameters:

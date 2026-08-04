@@ -1,26 +1,9 @@
 version: 1.0.0
 title: g-skill-pack-save
 description: g-skill-pack-save — Save an evolved skill back to the skill pack registry
-instructions: "# g-skill-pack-save — Save an evolved skill back to the skill pack\
-  \ registry\n\nWhen you have customized a skill and want to preserve that customization\
-  \ in the pack\nregistry (so it survives `g-skill-pack-add` updates), save it with\
-  \ this command.\n\n## Usage\n\n```\ng-skill-pack-save <skill-name>             \
-  \        Find skill, save to its pack\ng-skill-pack-save <skill-name> --pack <pack-name>\
-  \  Specify pack explicitly\n```\n\n## Steps\n\n1. Search all active IDE folders\
-  \ for `<skill-name>/SKILL.md` (check `.cursor/skills/`, `.claude/skills/`, etc.)\n\
-  2. Determine which pack owns this skill (read `installed_skill_packs:` from `.identity`)\n\
-  \   - If `--pack` given, use that\n   - If not found, ask user which pack it belongs\
-  \ to\n3. Copy the skill folder to:\n   `.gald3r_sys/skill_packs/<pack-name>/source/skills/<skill-name>_evolved/`\n\
-  4. Mark in the pack's source index that an evolved version exists:\n   - Update\
-  \ `PACK.md` with a note: `evolved: true` for that skill entry\n5. Update `.gald3r/.identity`\
-  \ installed_skill_packs entry: add `evolved: true` for the skill\n6. Confirm: \"\
-  Skill saved as <skill-name>_evolved in <pack-name>. Future g-skill-pack-add will\
-  \ install the evolved version.\"\n\n## Notes\n- The `_evolved` suffix signals to\
-  \ installers and `g-skill-pack-del` that this is user-customized\n- The original\
-  \ non-evolved version is preserved alongside the evolved one in the registry\n-\
-  \ `g-skill-pack-add --update` will show a diff before overwriting an evolved skill\n\
-  - Evolved skills are not overwritten by gald3r updates (version bump does not touch\
-  \ `_evolved` folders)"
+instructions: |
+  Provisioned by `gald3r platform install`.
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-skill-pack-save` command as described in the instructions.
 extensions: []
 parameters:

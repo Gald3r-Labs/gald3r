@@ -1,33 +1,9 @@
 version: 1.0.0
 title: g-subsystem-audit
 description: '@g-subsystem-audit'
-instructions: "# @g-subsystem-audit\n\nAudit subsystem and skill tagging compliance\
-  \ against the L1 group hierarchy defined in\n`PRODUCT_SYSTEMS.md`. Surfaces ungrouped\
-  \ subsystems, unknown group values, and untagged skills.\nActivates **g-skl-subsystems**\
-  \ → AUDIT operation.\n\n## What This Does\n\n1. Reads `PRODUCT_SYSTEMS.md` frontmatter\
-  \ `defined_groups:` for the authoritative group list\n2. Scans all `.gald3r/subsystems/*.md`\
-  \ — checks `parent_system:` field\n3. Scans all `SKILL.md` files — checks `subsystem_memberships:`\
-  \ field\n4. Reports: ungrouped files, unknown group names (typos), empty groups,\
-  \ UNCATEGORIZED skills\n\n## When This Fires Automatically\n\n- `g-medic` L2-F2\
-  \ triage: when subsystem count > 20 and no PRODUCT_SYSTEMS.md exists\n- `g-medic`\
-  \ L2-F2 triage: when >25% of subsystem specs lack `parent_system:`\n- Session start\
-  \ (g-rl-25): when subsystem count > 25 and PRODUCT_SYSTEMS.md is absent\n\n## Steps\n\
-  \n1. Activate `g-skl-subsystems` AUDIT operation (see SKILL.md for algorithm)\n\
-  2. Read `PRODUCT_SYSTEMS.md` (from `.gald3r/PRODUCT_SYSTEMS.md`) for `defined_groups:`\
-  \ list.\n   If missing, use default group list.\n3. Scan `.gald3r/subsystems/*.md`\
-  \ for `parent_system:` compliance\n4. Scan `skills/**/SKILL.md` for `subsystem_memberships:`\
-  \ compliance\n5. Output structured report:\n   - Compliant: N subsystems, M skills\
-  \ tagged\n   - Ungrouped subsystems: [list]\n   - Unknown group refs: [list] (likely\
-  \ typos -- fix before running @g-system-rebuild)\n   - UNCATEGORIZED skills: [list]\
-  \ (need manual classification)\n   - Empty groups: [list] (informational)\n6. If\
-  \ unknown group refs > 0: stop and ask user to correct them\n7. If ungrouped subsystems\
-  \ > 0: offer to run fix interactively (ask which group each belongs to)\n8. After\
-  \ fixing, recommend: `@g-system-rebuild` to regenerate PRODUCT_SYSTEMS.md\n\n##\
-  \ Related\n\n- `@g-system-rebuild` — regenerate PRODUCT_SYSTEMS.md from tags\n-\
-  \ `add_subsystem_tags.ps1` — bulk-tag SKILL.md files\n- `gald3r subsystem aggregate`\
-  \ — generates PRODUCT_SYSTEMS.md (BUG-196; replaces the\n  never-authored/lost `aggregate_subsystems.ps1`)\n\
-  - `g-skl-subsystems` AUDIT operation — the underlying implementation\n- C-026 —\
-  \ constraint requiring `parent_system:` on all new subsystem specs"
+instructions: |
+  Provisioned by `gald3r platform install`.
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-subsystem-audit` command as described in the instructions.
 extensions: []
 parameters:

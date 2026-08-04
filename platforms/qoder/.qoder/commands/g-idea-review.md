@@ -3,8 +3,6 @@ description: 'List active IDEA_BOARD.md ideas and prompt to promote, shelve, or 
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 execution_tier: guarded_prompt
 ---
-Review IDEA_BOARD. Activates **g-ideas** → REVIEW operation.
 
-Activate the **g-ideas** skill, REVIEW operation.
-
-Show all active ideas and prompt for decisions: promote, shelve, or keep.
+Provisioned by `gald3r platform install`.
+Documentation: https://docs.gald3r.ai

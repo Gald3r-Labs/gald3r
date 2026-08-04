@@ -56,7 +56,7 @@ Legend: ✅ verified · ⚠️ partial · ❌ not supported · ❓ untested.
 | Skills | `g-skl-*/SKILL.md` discovery + invocation |
 | Commands | `@g-*` slash commands / workflow equivalents |
 | MCP | Model Context Protocol server support |
-| **Engine tier** | how the bundled gald3r engine reaches the platform — **L2 MCP** (the 37 tools, 32/34 platforms), **L1 CLI** (`uv run … gald3r`), **L0 files-only** (`SKILL.full.md` fallback) |
+| **Engine tier** | how the bundled gald3r engine reaches the platform — **L2 MCP** (the 37 tools, 32/34 platforms), **L1 CLI** (`uv run … gald3r`), **L0 files-only** (no MCP/CLI reachability; T617 stub floor means the shipped `.md` files alone no longer carry actionable procedure text for this tier — see docs.gald3r.ai) |
 | Rules ext | per-platform rule file extension (`.md` / `.mdc` / single-file), from `_platform_capabilities.json` |
 
 The engine tier is the new column: even where a native capability is ❌/⚠️, the engine supplies that

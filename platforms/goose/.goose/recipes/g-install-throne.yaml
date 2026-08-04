@@ -2,57 +2,9 @@ version: 1.0.0
 title: g-install-throne
 description: 'Install the Gald3r Throne desktop app from the latest public GitHub
   Release: $ARGUMENTS'
-instructions: "Install the Gald3r Throne desktop app from the latest public GitHub\
-  \ Release: $ARGUMENTS\n\n## What This Command Does\n\nRuns gald3r_core's own **native**\
-  \ `gald3r install throne` verb (T302; `cli/commands/install.py`\n+ `core.install.github_release`)\
-  \ to download the precompiled, signed **Gald3r Throne**\ninstaller from the public\
-  \ `Gald3r-Labs/gald3r_throne` releases, verify it (minisign `.sig`,\nkey `F110B9BD6FF00BA2`),\
-  \ and stage it for the user to run. This repoints the earlier version\nof this doc,\
-  \ which referenced a `gald3r install throne` \"engine verb (T1615)\" — T1615 was\
-  \ a\ntask id in the donor `gald3r_agent_dev` repo, never one of gald3r_core's own\
-  \ (`gald3r task\nshow T1615` finds nothing here); T302 is gald3r_core's native implementation\
-  \ of the same\nverb, and closes the **fallback gap this doc previously had no answer\
-  \ for** (a `gald3r`\nbinary is needed to run this verb at all — see \"Zero-binary\
-  \ fallback\" below).\n\n**Confirmed live** (verified against the real GitHub API\
-  \ while building this verb):\n`Gald3r-Labs/gald3r_throne` is a real, actively-releasing\
-  \ repo (latest `v0.2.0`) publishing\nsigned Windows/Linux assets with minisign `.sig`\
-  \ sidecars — this is a real, cryptographically\nverified download, not a stub. **macOS\
-  \ is the one honest gap**: no `.dmg`/`.app` asset has\nbeen published for Throne\
-  \ yet, so `gald3r install throne` on macOS reports that plainly\n(`artifact_present:\
-  \ false`) instead of failing with a confusing \"no asset found\" error.\n\n## Steps\n\
-  \n1. Resolve how to invoke `gald3r` for this machine: an already-installed `gald3r`/`gald3r.exe`\n\
-  \   on PATH (MSI, npm, winget, homebrew, ...), or `uv run gald3r` from a gald3r_core\
-  \ dev\n   checkout. **If nothing resolves at all**, run `/g-install-update` first\
-  \ (its own \"Zero-binary\n   fallback\" section gets a real `gald3r` binary on PATH),\
-  \ then return here — Throne's\n   installer is separate from, and does not require,\
-  \ any other gald3r product once a `gald3r`\n   executable exists to invoke this\
-  \ verb.\n2. Run the verb in dry-run first to show the plan (fully offline — no network\
-  \ call at plan\n   time), then for real:\n   ```powershell\n   gald3r install throne\
-  \ --dry-run\n   gald3r install throne\n   ```\n3. Pass through any user flags from\
-  \ `$ARGUMENTS` (e.g. `--release vX.Y.Z`,\n   `--require-verification`, `--allow-unsigned`,\
-  \ `--token`, `--json`).\n4. After install, report the resolved version and the path\
-  \ to the downloaded installer\n   (`<gald3r home>/downloads/throne/<asset>`) — the\
-  \ verb does **not** auto-launch or\n   auto-elevate it; tell the user to run it\
-  \ themselves:\n   - **Windows**: launch the `.exe` (NSIS) or `.msi`.\n   - **Linux**:\
-  \ run the `.AppImage` (already `chmod +x`'d) or `sudo dpkg -i` the `.deb`.\n   -\
-  \ **macOS**: not available yet (see above) — no fallback exists; report this honestly.\n\
-  \n## Zero-binary fallback (no `gald3r` reachable at all)\n\nSame shape as `/g-install-update`'s\
-  \ fallback: if no `gald3r` executable exists yet to run this\nverb, either (a) run\
-  \ `/g-install-update`'s zero-binary fallback first (fastest — a `gald3r`\nbinary\
-  \ can then run this verb natively), or (b) download the Throne installer directly\
-  \ from\nthe latest `Gald3r-Labs/gald3r_throne` release by hand and verify its `.sig`\
-  \ independently\nwith [minisign](https://jedisct1.github.io/minisign/) against key\
-  \ `F110B9BD6FF00BA2`\n(`minisign -Vm <asset> -P RWSiC/BvvbkQ8b7JpjwjDG4YUbyjBECa/t9EX/CKRe15yBuIQpV81rwA`)\
-  \ before\nrunning it.\n\n## Notes\n\n- `--release vX.Y.Z` pins a specific release;\
-  \ default is latest.\n- `--require-verification` fails closed if the minisign `.sig`\
-  \ is missing or invalid (BUG-198).\n- `--allow-unsigned` proceeds past a missing/uncheckable\
-  \ `.sig` (not recommended); overridden\n  by `--require-verification` when both\
-  \ are passed (fail-closed wins) — the update path's\n  `.sha256` path (`/g-install-update`)\
-  \ shares this identical formula (BUG-456).\n- Throne ships an OS installer (NSIS\
-  \ `.exe` / MSI / AppImage / deb), not a bare binary — this\n  command stages it\
-  \ for the user to launch, never auto-elevates.\n- On network failure / 404 (no release\
-  \ at that repo/tag) / missing asset the verb degrades\n  gracefully with an honest,\
-  \ specific message — surface it, do not retry blindly."
+instructions: |
+  Run: `gald3r install throne`
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-install-throne` command as described in the instructions.
 extensions: []
 parameters:

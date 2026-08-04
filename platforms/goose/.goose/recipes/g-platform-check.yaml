@@ -1,22 +1,9 @@
 version: 1.0.0
 title: g-platform-check
 description: 'Check platform capability gaps vs. the Cursor reference: $ARGUMENTS'
-instructions: "Check platform capability gaps vs. the Cursor reference: $ARGUMENTS\n\
-  \n## What This Command Does\n\nReports the current capability state of one platform\
-  \ (or the full roster if no argument) by comparing\nits declared support against\
-  \ the Cursor reference implementation. Delegates to\n`g-skl-platform-monitor` operation\
-  \ `CHECK` and the `check_platform_status.py` script.\n\n## Delegates To\n\n- Engine:\
-  \ `gald3r platform status --platform <name>` (default: all); fallback `skills/g-skl-platform-monitor/scripts/check_platform_status.py`.\n\
-  - Skill: `g-skl-platform-monitor` → `CHECK`\n- Agent: `g-agnt-platformer`\n\n##\
-  \ Workflow\n\n1. Activate `g-agnt-platformer`.\n2. Run `check_platform_status.py\
-  \ -Platform $ARGUMENTS` to read `.gald3r/PLATFORM_STATUS.md`\n   and report the\
-  \ current state.\n3. For a deeper gap analysis, run `g-skl-platform-monitor CHECK\
-  \ <platform>` which compares the\n   platform's `g-skl-platform-<name>/SKILL.md`\
-  \ against `g-skl-platform-cursor`.\n4. Surface gaps: \"cursor has X; <platform>\
-  \ has no equivalent\".\n\n## Usage Examples\n\n```\n@g-platform-check          \
-  \      # every roster platform\n@g-platform-check windsurf       # one platform\n\
-  ```\n\n> **Status (T1460):** scaffolding. The script reads/reports PLATFORM_STATUS.md;\
-  \ deep per-platform\n> gap heuristics are fleshed out by T1461–T1483."
+instructions: |
+  Provisioned by `gald3r platform install`.
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-platform-check` command as described in the instructions.
 extensions: []
 parameters:

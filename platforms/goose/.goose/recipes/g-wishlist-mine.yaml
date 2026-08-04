@@ -1,33 +1,9 @@
 version: 1.0.0
 title: g-wishlist-mine
 description: g-wishlist-mine - Mine a human-prose wishlist/intent doc into tasks (READ-ONLY)
-instructions: "# g-wishlist-mine - Mine a human-prose wishlist/intent doc into tasks\
-  \ (READ-ONLY)\n\nReads a free-form, human-prose intent/wishlist document (the user's\
-  \ own words, no schema) and\nmines READY, concrete wants into formal gald3r tasks\
-  \ — deduping against existing tasks, routing\nvision to epics, and reporting unsure\
-  \ items as backlog candidates. The prose doc is **never\nmodified**. Activates **g-skl-wishlist-mine**\
-  \ → MINE operation.\n\n## Usage\n\n```\n@g-wishlist-mine [doc-path] [--dry-run]\
-  \ [--target-repo <repo_id>] [--cascade]\n```\n\n- `doc-path` (optional) — path to\
-  \ the prose doc. Defaults: configured `wishlist_doc:`, else\n  `.gald3r/DELIVERABLES.md`,\
-  \ else `.gald3r/WISHLIST.md`. Asks if none found.\n- `--dry-run` — propose tasks\
-  \ without creating them (review the table first).\n- `--target-repo <repo_id>` —\
-  \ WPAC controllers only: route mined tasks to a member repo\n  (cascade via `@g-wpac-order`).\
-  \ Default `local`.\n- `--cascade` (T465) — WPAC controllers only: auto-dispatch\
-  \ created tasks to their `target_repo:`\n  via `@g-wpac-order` at the end of the\
-  \ run. Controller-tier-gated — a non-controller never cascades.\n\nServer-backed\
-  \ (T465): `gald3r wishlist mine` (CLI) and the Throne `mineWishlist` bridge call\
-  \ the\nworld_tree route `POST /api/v1/planner/wishlist/mine` to run mining server-side\
-  \ (JWT-gated,\ntenant-safe). The route returns the proposed/backlog split + an agent-session\
-  \ dispatch (the JUDGMENT\nruns via `/agent/run`, never an inline LLM); the prose\
-  \ doc stays READ-ONLY (`doc_modified: false`).\n\n## Steps\n\n1. Activate the **g-skl-wishlist-mine**\
-  \ skill, MINE operation.\n2. The skill resolves + confirms the doc path, reads it\
-  \ READ-ONLY, extracts READY/VISION/UNSURE\n   wants, dedups against `.gald3r/TASKS.md`,\
-  \ creates READY tasks + epics via `g-skl-tasks`, and\n   emits the created-tasks\
-  \ table + backlog-candidates list.\n\n## After running\n\n- Review the **Backlog\
-  \ Candidates** list and run `@g-task-add` for any you want to promote.\n- The prose\
-  \ doc is left untouched — it is human-owned and read-only.\n\n## Related\n\n- Skill:\
-  \ `g-skl-wishlist-mine` (implementation), `g-skl-tasks` (task creation), `g-skl-wpac-order`\
-  \ (cascade)\n- Task: T453"
+instructions: |
+  Run: `gald3r wishlist mine`
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-wishlist-mine` command as described in the instructions.
 extensions: []
 parameters:

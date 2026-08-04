@@ -2,33 +2,9 @@ version: 1.0.0
 title: g-skill-review
 description: 'List and review auto-proposed skill drafts, then promote or discard:
   $ARGUMENTS'
-instructions: "List and review auto-proposed skill drafts, then promote or discard:\
-  \ $ARGUMENTS\n\nReviews the skill drafts written by `@g-go-review --propose-skill`\
-  \ (T992) into\n`.gald3r/proposed_skills/{task_id}_{slug}_draft.md`. **Human-gated**\
-  \ — drafts are never active\nuntil promoted here.\n\n## LIST (default, no args)\n\
-  \n1. Scan `.gald3r/proposed_skills/*_draft.md`.\n2. For each, show: `{task_id}`\
-  \ · proposed slug · one-line `description` · `proposed_date` · whether a\n   same-named\
-  \ skill already exists in `.claude/skills/`.\n3. If the directory is empty/absent\
-  \ → report \"No proposed skills.\" and exit.\n\n## REVIEW `<task_id|slug>`\n\n1.\
-  \ Display the full draft.\n2. Cross-check: does an existing skill already cover\
-  \ this? (overlap warning — defer to\n   `g-skl-curator` rubric if unsure).\n3. Prompt\
-  \ the human for a decision: **promote**, **revise**, **discard**, or **defer**.\n\
-  \n## PROMOTE `<task_id|slug>` (explicit, human-confirmed)\n\n1. Route the draft\
-  \ through the skill authoring flow (`create-skill` / `writing-skills`) for final\n\
-  \   polish (proper `name`/`description`, trigger lines, output format, ≤500-line\
-  \ budget).\n2. Write the polished SKILL.md to **`.claude/skills/{slug}/SKILL.md`**\
-  \ (canonical source).\n3. Run `custom_scripts/platform_parity_sync.ps1 -ApplyFromRoot\
-  \ -Sync` (or the bounded mirror sync)\n   so `.cursor/`/`.claude/` receive it —\
-  \ **never** hand-copy a draft directly into a platform dir.\n4. Move the draft to\
-  \ `.gald3r/proposed_skills/promoted/` (provenance) and mark the originating\n  \
-  \ IDEA_BOARD `IDEA-AUTOSKILL-{task_id}` entry as promoted.\n\n## DISCARD `<task_id|slug>`\n\
-  \nMove the draft to `.gald3r/proposed_skills/discarded/` (kept for audit, not deleted)\
-  \ and mark the\nIDEA_BOARD entry rejected with a one-line reason.\n\n## Rules\n\n\
-  - A `proposed_skills/` draft has `status: proposed` and is **inert** — it is not\
-  \ loaded as a skill\n  and is not synced anywhere until PROMOTE runs.\n- Promotion\
-  \ always goes through `.gald3r_sys/` (canonical) + parity sync, never a direct platform\n\
-  \  write (consistent with the canonical-source migration).\n- This command only\
-  \ ever writes under `.gald3r/proposed_skills/` and (on PROMOTE) `.claude/skills/`."
+instructions: |
+  Provisioned by `gald3r platform install`.
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-skill-review` command as described in the instructions.
 extensions: []
 parameters:

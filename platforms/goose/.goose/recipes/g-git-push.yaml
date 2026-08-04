@@ -1,57 +1,9 @@
 version: 1.0.0
 title: g-git-push
 description: '@g-git-push — Pre-push gate (regular vs release)'
-instructions: "# @g-git-push — Pre-push gate (regular vs release)\n\nRun **`gald3r\
-  \ push-gate`** before `git push` to distinguish **routine** pushes from **release**\
-  \ pushes. Complements `@g-git-sanity` / `g-hk-pre-commit.py` and shared `.claude/skills/g-skl-git-commit/scripts/gald3r_git_sanity_common.py`.\n\
-  \n---\n\n## Modes\n\n| Mode | How | Behavior |\n|------|-----|----------|\n| **regular**\
-  \ | Default (answer **N** at prompt, or no prompt in CI) | `git status`, unpushed\
-  \ commit summary, optional `.gald3r/` sync hint — **never blocks** |\n| **release**\
-  \ | `-Release`, or `GALD3R_RELEASE_PUSH=1`, or answer **Y** at prompt | Requires\
-  \ a **versioned** `## [x.y.z]` section in `CHANGELOG.md` (not only `[Unreleased]`).\
-  \ Prints README/version file hints. **Blocks** exit 1 unless overridden |\n\n---\n\
-  \n## Usage (PowerShell)\n\n```powershell\n# Interactive — prompts \"Is this a release\
-  \ push?\"\ngald3r push-gate\n\n# Explicit release checks\ngald3r push-gate -Release\n\
-  \n# CI / non-interactive release\n$env:GALD3R_RELEASE_PUSH = \"1\"\ngald3r push-gate\
-  \ -NonInteractive\n\n# Agent wiring check (always exit 0)\ngald3r push-gate -DryRun\n\
-  gald3r push-gate -Release -DryRun\n```\n\n**Override** when release gate fails but\
-  \ you intend to push anyway:\n\n```powershell\n$env:GALD3R_PUSH_GATE_OVERRIDE =\
-  \ \"1\"\ngald3r push-gate -Release -NonInteractive\n```\n\n---\n\n## Optional pre-push\
-  \ hook\n\nSame opt-in hooks folder as pre-commit:\n\n```powershell\ngit config core.hooksPath\
-  \ .cursor/hooks\n```\n\nHook file: `.cursor/hooks/g-hk-pre-push.py`\n\n- In **hook**\
-  \ mode, only **`GALD3R_RELEASE_PUSH=1`** selects release checks; otherwise the hook\
-  \ runs **regular** (informational, exit 0).\n\n---\n\n---\n\n## Optional Compliance\
-  \ Gate (opt-in, disabled by default)\n\nBefore `git push`, an optional SCA (Software\
-  \ Composition Analysis) compliance check can be run to catch license violations\
-  \ before code reaches the remote.\n\n**This gate is enabled by default.** The scanner\
-  \ auto-detects installed tools and skips gracefully if none are found. Disable in\
-  \ `.gald3r/config/COMPLIANCE_GATE.md`.\n\n### Enabling the Gate\n\nSet `enabled:\
-  \ true` in `.gald3r/config/COMPLIANCE_GATE.md`. When enabled, `gald3r push-gate`\
-  \ automatically adds `-ComplianceCheck` before the push proceeds.\n\n### Gate Behavior\n\
-  \nThe compliance check runs `python .claude/skills/g-skl-compliance/scripts/run_compliance_scan.py\
-  \ -Strict` and interprets exit codes:\n\n| Exit Code | Meaning | Push Behavior |\n\
-  |-----------|---------|---------------|\n| 0 | PASS — no violations | Push proceeds\
-  \ |\n| 1 | WARN — advisory issues | Advisory printed, push continues |\n| 2 | FAIL\
-  \ — blocking violations | Push blocked with structured error |\n\n### FAIL Block\
-  \ Message\n\nWhen FAIL blocks a push, the message includes:\n- Which scanner ran\
-  \ (ORT / FOSSA / Snyk / stub)\n- Number of packages flagged FAIL\n- Report file\
-  \ path for full detail\n- Command to review: `@g-compliance-report`\n\nExample:\n\
-  ```\n❌ COMPLIANCE GATE BLOCKED\nScanner: ORT\nPackages with FAIL-level violations:\
-  \ 3\nReport: .gald3r/reports/compliance_scan_2026-05-09.json\nReview with: @g-compliance-report\n\
-  \nViolations must be resolved or explicitly approved before pushing.\nRun @g-compliance-scan\
-  \ for details, or set GALD3R_PUSH_GATE_OVERRIDE=1 to override.\n```\n\n### Stub\
-  \ Detection\n\nIf `.claude/skills/g-skl-compliance/scripts/run_compliance_scan.py`\
-  \ cannot locate a configured scanner, the gate detects it and skips gracefully:\n\
-  ```\n⚠️ Compliance scanner not yet configured — skipping gate.\n   See @g-compliance-scan\
-  \ to set up.\n```\n\n### 30-Second Timeout\n\nThe compliance scan call has a 30-second\
-  \ timeout to prevent stalling CI pipelines.\n\n---\n\n## CI Gate (gald3r PR Review)\n\
-  \nEvery pull request automatically triggers the **gald3r CI review gate** via `.github/workflows/gald3r-review.yml`.\
-  \ The Claude Code GitHub Action runs `@g-go-review` on all changed files and posts\
-  \ a structured review comment on the PR.\n\n- **Critical/High** findings → FAIL\
-  \ verdict, blocks merge\n- **Medium/Low** findings → advisory comment, does not\
-  \ block\n\nRequires `ANTHROPIC_API_KEY` stored as a GitHub Actions repository secret.\n\
-  \n---\n\n## Docs\n\n- Skill: `g-skl-git-commit` (Pre-Push section)\n- Rule: `g-rl-02-git_workflow`\
-  \ (push modes + release doc gate)\n- Workflow: `.github/workflows/gald3r-review.yml`"
+instructions: |
+  Run: `gald3r push-gate`
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-git-push` command as described in the instructions.
 extensions: []
 parameters:

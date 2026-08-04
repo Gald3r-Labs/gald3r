@@ -3,10 +3,6 @@ description: OpenAI Codex CLI quick reference — approval modes, sandbox config
 subsystem_memberships: [PLATFORM_INTEGRATION]
 execution_tier: prompt_only
 ---
-# /g-cli-codex
 
-Activates `g-skl-cli-codex`. Use when running OpenAI Codex from the terminal.
-
-```
-/g-cli-codex    → load g-skl-cli-codex context
-```
+Provisioned by `gald3r platform install`.
+Documentation: https://docs.gald3r.ai

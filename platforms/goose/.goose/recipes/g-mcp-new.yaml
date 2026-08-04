@@ -2,41 +2,9 @@ version: 1.0.0
 title: g-mcp-new
 description: Scaffold a new gald3r MCP plugin from the `_template/` directory and
   stage a
-instructions: "Scaffold a new gald3r MCP plugin from the `_template/` directory and\
-  \ stage a\nmatching entry in `docker/gald3r/plugin_catalog.json`.\n\n```\n@g-mcp-new\
-  \ <plugin_name> [--category <cat>] [--credential-source <src>]\n```\n\nAliases:\
-  \ none.\n\n## Arguments\n\n- `<plugin_name>` — snake_case name. Must be unique across\
-  \ `docker/gald3r/tools/plugins/`.\n- `--category <cat>` — one of: `storage | memory\
-  \ | search | integration | ai | database | research | ingest | monitor | video |\
-  \ admin | util`. Default: `util`.\n- `--credential-source <src>` — one of: `none\
-  \ | env | per_call | vault_secret | docker_env`. Default: `none`.\n\n## What it\
-  \ does\n\n1. Validates `<plugin_name>` is unique under `docker/gald3r/tools/plugins/`.\n\
-  2. Copies `docker/gald3r/tools/plugins/_template/plugin_template.py` to\n   `docker/gald3r/tools/plugins/<plugin_name>.py`.\n\
-  3. Replaces placeholder tokens `{plugin_name}` and `{PLUGIN_NAME}` inside\n   the\
-  \ new file with the real name and a TITLE_CASE variant.\n4. Appends a new entry\
-  \ to `docker/gald3r/plugin_catalog.json` under\n   `plugins[]` with:\n   - `name`:\
-  \ `<plugin_name>`\n   - `description`: `\"TODO: one-line description of <plugin_name>\"\
-  `\n   - `category`: from `--category` (default `util`)\n   - `tags`: `[]` (fill\
-  \ in manually)\n   - `path`: `tools/plugins/<plugin_name>.py`\n   - `credential_source`:\
-  \ from `--credential-source` (default `none`)\n   - `version`: `\"0.1.0\"`\n   -\
-  \ `is_enabled`: `true`\n   - `is_coming_soon`: `false`\n5. Prints next steps:\n\
-  \   - Edit the `TOOL_DESCRIPTION` / `TOOL_PARAMS` constants in the plugin file\n\
-  \   - Fill the `execute(...)` body\n   - Update the catalog entry's description\
-  \ and tags\n   - Call the `config_reload` MCP tool, or restart the gald3r MCP container\n\
-  \n## Validation gates\n\n- BLOCK if `<plugin_name>` is empty or contains characters\
-  \ outside `[a-z0-9_]`.\n- BLOCK if a file at `docker/gald3r/tools/plugins/<plugin_name>.py`\
-  \ already exists.\n- BLOCK if a catalog entry with `name == <plugin_name>` already\
-  \ exists.\n- WARN if `--category` is not in the canonical category list (still proceeds,\
-  \ but\n  the plugin won't group cleanly in marketplace UIs).\n\n## Notes\n\n- The\
-  \ `_template/` directory is not loaded as a real plugin by the MCP server.\n- After\
-  \ the file is created, run `config_reload` to hot-load it without a Docker\n  rebuild.\
-  \ If that fails (e.g. on missing dependencies), restart the container.\n- The plugin's\
-  \ `execute(...)` signature must match `TOOL_PARAMS` exactly —\n  FastMCP introspects\
-  \ the signature.\n\n## Related\n\n- `docker/gald3r/tools/plugins/_template/README.md`\
-  \ — scaffold template docs\n- `docker/gald3r/plugin_catalog.json` — marketplace\
-  \ catalog\n- `docs/MCP_TOOLS.md` — current MCP tool reference\n- `g-skl-platform-claude`\
-  \ — covers Claude MCP integration\n- T972 — task that established this command and\
-  \ the catalog"
+instructions: |
+  Provisioned by `gald3r platform install`.
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-mcp-new` command as described in the instructions.
 extensions: []
 parameters:

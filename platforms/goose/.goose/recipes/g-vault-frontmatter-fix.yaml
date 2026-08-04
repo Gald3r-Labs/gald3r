@@ -1,30 +1,9 @@
 version: 1.0.0
 title: g-vault-frontmatter-fix
 description: 'Retrofit Obsidian frontmatter onto vault notes missing it: $ARGUMENTS'
-instructions: "Retrofit Obsidian frontmatter onto vault notes missing it: $ARGUMENTS\n\
-  \nDrives the T1334 retrofit helper. Adds VAULT_OBSIDIAN_STANDARD YAML frontmatter\n\
-  (`date`, `type`, `ingestion_type`, `source`, `title`, `topics`) to long-lived vault\n\
-  notes that lack it — `memory.md`, `sessions/*.md`, `decisions/*.md` (+ `decision_status`/\n\
-  `decided_on`), `knowledge/*.md`. **Backup-first, dry-run by default, idempotent.**\n\
-  \n## Behavior\n\nRuns `.claude/skills/g-skl-vault/scripts/frontmatter_fix.py`:\n\
-  \n1. Resolve the vault from `.gald3r/.identity` `vault_location=` (no-op when `{LOCAL}`/unset).\n\
-  2. Walk `projects/*/memory.md`, `projects/*/sessions/`, `projects/*/decisions/`,\
-  \ `knowledge/`.\n3. Skip files that already start with `---` (idempotent), and read-only\
-  \ / symlinked files (warned).\n4. **Dry-run (default)**: print the would-be frontmatter\
-  \ per non-conformant file.\n5. **`--apply`**: back up each file to `{vault}/.backups/{timestamp}/<relpath>`\
-  \ then prepend the\n   block (existing content preserved byte-for-byte). UTF-8 without\
-  \ BOM.\n\n```powershell\nuv run python .claude/skills/g-skl-vault/scripts/frontmatter_fix.py\
-  \            # dry-run\nuv run python .claude/skills/g-skl-vault/scripts/frontmatter_fix.py\
-  \ -Apply\nuv run python .claude/skills/g-skl-vault/scripts/frontmatter_fix.py -File\
-  \ \"<path>\" -Apply\n```\n\n## Flags\n\n| Flag | Effect |\n|---|---|\n| `--dry-run`\
-  \ (default) | Report + show planned frontmatter; no writes |\n| `--apply` | Write\
-  \ (with per-file backup); requires explicit confirmation |\n| `--file <path>` |\
-  \ Single-file mode |\n\n## Notes\n\n- Type inference: `memory.md`/`sessions/` →\
-  \ `session`; `decisions/` → `decision`;\n  `knowledge/` → `knowledge_card`. `title`\
-  \ comes from the leading `#` header (or filename).\n- Does **not** touch `.gald3r/learned-facts.md`\
-  \ (project-internal, not vault-stored).\n- `@g-vault-lint` flags missing frontmatter;\
-  \ `@g-vault-lint --auto-fix <file>` calls this on one file.\n- See `VAULT_OBSIDIAN_STANDARD.md`\
-  \ and `g-skl-vault` § Required Frontmatter."
+instructions: |
+  Provisioned by `gald3r platform install`.
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-vault-frontmatter-fix` command as described in the instructions.
 extensions: []
 parameters:

@@ -27,16 +27,5 @@ token_budget: low
 subsystem_memberships: [UI_AND_OUTPUT]
 ---
 
-<!-- gald3r-thinned-shim -->
-# g-skl-design — thinned shim (prompt-layer)
-
-> **Judgment served by the bundled prompt layer** (one canonical copy in `.gald3r_sys/engine`). Full
-> original text retained in **`SKILL.full.md`** for installs without the engine.
-
-**What it does:** design engineering — stunning-not-functional, anti-slop.
-
-## Preferred — fetch the centralized judgment
-`gald3r prompt get playbook.design`   ·   MCP `gald3r_prompt_get id=playbook.design`
-
-## Manual fallback (engine not provisioned)
-Follow **`SKILL.full.md`** in this directory, plus any `rules.md` / `reference/` / `examples/`.
+Run: `gald3r prompt get playbook.design`
+Documentation: https://docs.gald3r.ai

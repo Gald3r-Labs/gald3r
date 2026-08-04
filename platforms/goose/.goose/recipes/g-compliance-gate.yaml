@@ -1,22 +1,9 @@
 version: 1.0.0
 title: g-compliance-gate
 description: Activate the g-skl-compliance skill and run a GATE operation.
-instructions: "Activate the g-skl-compliance skill and run a GATE operation.\n\n##\
-  \ What This Command Does\n\nReturns a machine-readable compliance verdict suitable\
-  \ for pre-push hooks and CI/CD pipelines.\nReads the most recent `.gald3r/reports/compliance_*.md`\
-  \ report.\n\n## Exit Codes\n\n| Code | Verdict | Meaning |\n|------|---------|---------|\n\
-  | 0 | PASS | No compliance issues — all licenses are permissive |\n| 1 | WARN |\
-  \ Weak copyleft or unknown licenses — warn but allow by default |\n| 2 | FAIL |\
-  \ GPL/AGPL/strong copyleft or scan error — block by default |\n\n## Behavior\n\n\
-  - If no report exists: runs `SCAN` first, then evaluates verdict\n- If `COMPLIANCE_GATE_STRICT=1`\
-  \ env var is set: exit 1 (WARN) also blocks\n- Prints blocking packages to stderr\
-  \ on FAIL\n\n## Hook Integration (T907)\n\nThis command is consumed by `@g-git-push`\
-  \ pre-push compliance check:\n\n```bash\n# Pre-push compliance check\npython .claude/skills/g-skl-compliance/scripts/run_compliance_scan.py\
-  \ -Scanner auto\nif [ \"$?\" -eq 2 ]; then\n    echo \"COMPLIANCE FAIL — push blocked.\
-  \ Run @g-compliance-report for details.\" >&2\n    exit 1\nfi\n```\n\n## Strict\
-  \ Mode\n\n```powershell\n$env:COMPLIANCE_GATE_STRICT = \"1\"\n# Now WARN also blocks\
-  \ the push\n```\n\n## Related Commands\n\n- `@g-compliance-scan` — run a fresh scan\n\
-  - `@g-compliance-report` — display full report with findings"
+instructions: |
+  Provisioned by `gald3r platform install`.
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-compliance-gate` command as described in the instructions.
 extensions: []
 parameters:
