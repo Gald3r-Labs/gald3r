@@ -1,26 +1,9 @@
 version: 1.0.0
 title: g-pers-list
 description: g-pers-list — List available personality packs
-instructions: "# g-pers-list — List available personality packs\n\nList all available\
-  \ personality packs from `.gald3r_sys/personality_packs/` and show\nwhich pack is\
-  \ currently active.\n\n## Steps\n\n1. Read `.gald3r/.identity` for `personality=`\
-  \ key (current active pack)\n2. Scan `.gald3r_sys/personality_packs/` for all `PACK.md`\
-  \ files\n3. For each pack, read `name`, `display_name`, `default`, `description`\
-  \ from frontmatter\n4. Display table:\n\n```\nAvailable Personality Packs\n===========================\n\
-  \n  PACK                    DEFAULT   STATUS         DESCRIPTION\n  gald3r_personality\
-  \      yes       \U0001F7E2 active       Norse pantheon co-developers\n  personality-rules\
-  \       —         — available     BSG, Firefly, Hackers, SV, Star Trek, Star Wars\n\
-  \  fandom-skills           —         — available     7 megafan knowledge skills\n\
-  \  shoresy                 —         — available     Shoresy from Letterkenny\n\n\
-  Active pack: gald3r_personality\nUse: g-pers-pick <pack-name>   to switch personality\n\
-  Use: g-pers-pick none          to clear to no personality pack\n```\n\n5. If `personality=`\
-  \ key is absent from `.identity`, show `gald3r_personality` as active (installed\
-  \ by g-setup)\n6. If no pack is installed at all, say so and suggest `g-pers-pick\
-  \ gald3r_personality`\n\n## Notes\n- `gald3r_personality` is the default installed\
-  \ by `g-setup` but is fully replaceable\n- Only one personality pack is active at\
-  \ a time — they are swapped, not stacked\n- `fandom-skills` is a skills-only pack\
-  \ (no rule file) and can be installed alongside any personality\n- If `.gald3r_sys/personality_packs/`\
-  \ is missing, inform user and exit gracefully"
+instructions: |
+  Provisioned by `gald3r platform install`.
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-pers-list` command as described in the instructions.
 extensions: []
 parameters:

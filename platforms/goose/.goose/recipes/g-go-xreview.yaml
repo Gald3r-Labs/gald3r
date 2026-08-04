@@ -1,75 +1,9 @@
 version: 1.0.0
 title: g-go-xreview
 description: 'Cross-vendor verification review (A7 / T495): $ARGUMENTS'
-instructions: "Cross-vendor verification review (A7 / T495): $ARGUMENTS\n\n## Mode:\
-  \ CROSS-VENDOR REVIEW ONLY\n\n> ⚠️  **Run this in a NEW agent session** — different\
-  \ window, different invocation.\n> If you implemented any of these tasks in this\
-  \ session, **skip them** (leave `[\U0001F50D]`).\n> Self-review defeats the purpose\
-  \ of this gate.\n\nThis command is the **user-facing front door for cross-vendor\
-  \ review.** It is **not a parallel\nreview system** — it runs `@g-go-review` (and\
-  \ `@g-go-review --swarm` for parallel runs) and adds\nthe A7 constraints on top\
-  \ via **`g-skl-cross-review`**, which delegates to the already-built\n`gald3r_agent/src/review/`\
-  \ orchestrator (`CrossVendorReview`). Everything `@g-go-review` does —\npreflight,\
-  \ verifier claims, review isolation, PASS/FAIL writes, swarm partitioning, review-result\n\
-  commit — is **inherited unchanged**. A7 adds only: a different-vendor reviewer,\
-  \ diff-only reviewer\ncontext, deterministic gates first, and a never-merge guarantee.\n\
-  \nActivates **g-skl-cross-review**.\n\n---\n\n### Step 0 — Inherit the full g-go-review\
-  \ preflight (unchanged)\n\nRun the `@g-go-review` preflight stack as-is — do not\
-  \ re-document or fork it here:\nWorkspace Member Clean-Status Preflight (T1431),\
-  \ WPAC inbox Gate, Gald3r Housekeeping Commit Gate\n(T531), Clean Controller Gate\
-  \ + Pre-Reconciliation Clean Gate, Branch Pre-Flight (T1374), and the\nreview-queue\
-  \ build (`[\U0001F50D]` tasks **and** bugs; skip non-expired `[\U0001F575️]` claims).\
-  \ The fresh-session /\nnever-self-review guarantee is preserved. **See `@g-go-review`\
-  \ for the authoritative algorithm.**\n\n### Step 1 — Roster preflight (≥2 vendors\
-  \ or escalate)\n\nProbe the available harness roster. Delegate to `g-skl-cross-review`\
-  \ Step 1\n(`select_reviewer_harness(implementer_harness, probe_roster())` in `src/review/vendor.py`):\n\
-  \n- **≥2 distinct available vendors** → pick a reviewer harness of a **different\
-  \ vendor** than the\n  implementer (Claude → Codex/Pi, etc.). Continue.\n- **<2\
-  \ distinct vendors** (`NoCrossVendorReviewer`) → **STOP and escalate.** Do **not**\
-  \ silently\n  single-vendor. Report `Cross-vendor review unavailable — only {vendors}\
-  \ available; need ≥2`.\n  Offer the explicit, **warned** degrade to fresh-context\
-  \ single-vendor `@g-go-review`. Never\n  report a same-vendor pass as a cross-vendor\
-  \ pass.\n\n### Step 2 — Deterministic gates BEFORE review\n\nRun the project's existing\
-  \ test/lint/typecheck gates (the same invocations `@g-go-code` uses) on\nthe candidate.\
-  \ Red → **re-dispatch the SAME implementer** (reuse `agent` + `title` → same\nworktree/PR\
-  \ via A6) to green it **before any reviewer is involved**. This is the\n`CrossVendorReview`\
-  \ gates-to-green loop — pass the gates to the orchestrator; do not hand-roll it.\n\
-  \n### Step 3 — Cross-vendor, diff-only review\n\nFor each claimed `[\U0001F575️]`\
-  \ item, hand the **different-vendor** reviewer a context bundle built by\n`build_review_bundle(diff,\
-  \ acceptance_criteria, task_id)` — **the `git diff` + the task's\nAcceptance Criteria\
-  \ as text ONLY** (no worktree, no implementer transcript). The reviewer has\n**read-only**\
-  \ tools, **never edits**, and marks each finding **blocking** or non-blocking. A\n\
-  weak/empty acceptance contract is flagged. Score PASS/FAIL per criterion exactly\
-  \ as `@g-go-review`\nStep 3 does.\n\n### Step 4 — Blocking findings → re-dispatch\
-  \ the SAME implementer\n\nEach **blocking** finding re-dispatches a fix to the **same\
-  \ implementer** (reuse `agent` + `title`\n→ same worktree/PR), then loop back to\
-  \ Step 2 (gates) before re-reviewing (bounded by\n`max_fix_rounds`). **Non-blocking**\
-  \ findings become follow-up tasks — file them via\n`g-skl-tasks CREATE TASK` (named-but-not-filed\
-  \ follow-ups are a policy violation).\n\n### Step 5 — Never merge; write verdicts\
-  \ the g-go-review way\n\nThe orchestrator **never** runs `git merge` / `pr merge`\
-  \ (`ReviewOutcome.merged` is always\n`False`) — the PR / checkpoint is the deliverable;\
-  \ a **human merges**. PASS → `[✅]`, FAIL → back\nto `[\U0001F4CB]` (with the stuck-loop\
-  \ `[\U0001F6A8]` rule), docs check, auto-learn, and the review-result commit\nall\
-  \ follow the normal `@g-go-review` coordinator-owned write rules. In `--swarm`,\
-  \ only the\ncoordinator writes shared state.\n\n---\n\n## Swarm Mode (`--swarm`)\n\
-  \n`@g-go-xreview --swarm` runs the cross-vendor review over `@g-go-review --swarm`\
-  \ — the swarm engine\n(`src/swarm/`) partitions the `[\U0001F50D]` queue across\
-  \ parallel reviewers exactly as\n`@g-go-review-swarm` does; each bucket applies\
-  \ the A7 cross-vendor + diff-only + gates-first +\nnever-merge constraints from\
-  \ `g-skl-cross-review`. Review bucket agents return PASS/FAIL payloads,\nevidence,\
-  \ proposed Status History rows, and authorized fix-forward patches only; the coordinator\n\
-  owns all shared `.gald3r` writes, TASKS.md/BUGS.md updates, changelog/docs, and\
-  \ the review-result\ncommit. **See `@g-go-review` Swarm Mode for the authoritative\
-  \ coordinator algorithm.**\n\n## Usage\n\n```\n@g-go-xreview\n@g-go-xreview tasks\
-  \ 14 15 16\n@g-go-xreview tasks 14\n@g-go-xreview --swarm\n@g-go-xreview --swarm\
-  \ tasks 14 15 16 17 18\n```\n\nAll filter arguments pass through to `@g-go-review`.\
-  \ Use this command when you specifically want a\n**different-vendor** reviewer on\
-  \ the diff; use `@g-go-review` when same-vendor fresh-context review\nis sufficient.\n\
-  \n## Related\n\n- Skill: `g-skl-cross-review` (implementation; delegates to `src/review/`)\n\
-  - Base review machinery: `@g-go-review`, `@g-go-review-swarm`\n- Orchestrator: `gald3r_agent/src/review/`\
-  \ — `CrossVendorReview`, `build_review_bundle`, `select_reviewer_harness`\n- Design\
-  \ spec: `.gald3r/specifications_collection/SPEC-A7-cross-vendor-review.md` (T495,\
-  \ EPIC T488)\n\nReady to review."
+instructions: |
+  Provisioned by `gald3r platform install`.
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-go-xreview` command as described in the instructions.
 extensions: []
 parameters:

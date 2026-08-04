@@ -2,54 +2,9 @@ version: 1.0.0
 title: g-install-update
 description: 'Install the latest signed gald3r_core release from the latest public
   GitHub Release: $ARGUMENTS'
-instructions: "Install the latest signed gald3r_core release from the latest public\
-  \ GitHub Release: $ARGUMENTS\n\n## What This Command Does\n\nRuns gald3r_core's\
-  \ own **native** `gald3r install update` verb (T302/BUG-587;\n`cli/commands/install.py`\
-  \ + `core.install.github_release`) to download the precompiled,\nsigned **gald3r_core**\
-  \ binary from the public `Gald3r-Labs/gald3r_core` releases (the same\nrepo `gald3r\
-  \ release stage` publishes to, T550/D032), verify it (SHA-256 sidecar), and\ninstall\
-  \ it over whatever `gald3r`/`gald3r.exe` currently resolves to on PATH.\n\nThis\
-  \ replaces `/g-install-agent`, which used to download a SEPARATE \"Agent CLI binary\"\
-  \nproduct from `Gald3r-Labs/gald3r_agent` -- that product is RETIRED (BUG-587):\
-  \ it was combined\nwith the templates repo to become gald3r_core, which IS this\
-  \ binary. `/g-install-agent` is\nkept only as a deprecated alias that redirects\
-  \ here.\n\nThis verb is the download-based sibling of `gald3r install self` (`@g-install-self`,\
-  \ if\npresent) -- `install self` rebuilds THIS checkout from source (needs a gald3r_core\
-  \ dev\nenvironment); `install update` downloads an already-built, already-signed\
-  \ release (works with\nno gald3r source on disk at all, and is the fast path for\
-  \ the MSI/winget update story).\n\n## Steps\n\n1. Resolve how to invoke `gald3r`\
-  \ for this machine: an already-installed `gald3r`/`gald3r.exe`\n   on PATH (MSI,\
-  \ npm, winget, homebrew, ...), or `uv run gald3r` from a gald3r_core dev\n   checkout.\
-  \ If nothing resolves at all, see \"Zero-binary fallback\" below.\n2. Run the verb\
-  \ in dry-run first to show the plan (fully offline — no network call at plan\n \
-  \  time, shows exactly which file on PATH would be replaced), then for real:\n \
-  \  ```powershell\n   gald3r install update --dry-run\n   gald3r install update\n\
-  \   ```\n3. Pass through any user flags from `$ARGUMENTS` (e.g. `--release vX.Y.Z`,\n\
-  \   `--require-verification`, `--allow-unsigned`, `--token`, `--target <path>`,\
-  \ `--json`).\n4. After install, report the resolved version (`gald3r --version`\
-  \ against the refreshed\n   binary) and note that the previous binary was backed\
-  \ up alongside it\n   (`<target>.bak-<UTC timestamp>`) before being replaced.\n\n\
-  ## Zero-binary fallback (no `gald3r` reachable at all — the true first-run case)\n\
-  \nIf nothing resolves in step 1 (a brand-new machine with no gald3r install of any\
-  \ kind and no\ndev checkout), there is no verb to run yet — download the asset directly,\
-  \ by hand or script:\n- Asset: `gald3r.exe` (Windows) / `gald3r` (Linux/macOS) from\
-  \ the latest\n  `Gald3r-Labs/gald3r_core` release.\n- Also download the matching\
-  \ `.sha256` sidecar and verify the checksum before trusting the\n  binary (fail\
-  \ closed on mismatch; BUG-198).\n- Place it on PATH as `gald3r`, `chmod +x` on POSIX.\n\
-  - From that point on, `/g-install-update` (this command) handles every future update.\n\
-  \n## Notes\n\n- `--release vX.Y.Z` pins a specific release; default is latest.\n\
-  - `--require-verification` fails closed if the `.sha256` checksum is missing or\
-  \ mismatched (BUG-198).\n- `--allow-unsigned` proceeds past a missing `.sha256`\
-  \ sidecar (not recommended); overridden\n  by `--require-verification` when both\
-  \ are passed (fail-closed wins) — mirrors `install\n  throne`'s `.sig` behavior\
-  \ exactly (BUG-456).\n- `--target <path>` overrides the binary to refresh (default:\
-  \ `shutil.which('gald3r')` --\n  whatever the bare `gald3r` command currently resolves\
-  \ to on PATH).\n- If the target binary is locked by a running `gald3r` process (often\
-  \ the very process running\n  this command), the verb reports that plainly and suggests\
-  \ stopping other `gald3r` processes\n  or passing `--target` to a path nothing has\
-  \ open -- it never force-kills anything.\n- On network failure / 404 (no release\
-  \ at that repo/tag) / missing asset the verb degrades\n  gracefully with an honest,\
-  \ specific message — surface it, do not retry blindly."
+instructions: |
+  Provisioned by `gald3r platform install`.
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-install-update` command as described in the instructions.
 extensions: []
 parameters:

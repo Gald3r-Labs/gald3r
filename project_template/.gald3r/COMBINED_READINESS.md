@@ -10,8 +10,9 @@
 - **5/34 ship a full native tree** (skills+commands+agents); the rest are thin/MCP — the
   build-out target (they support more than they currently ship).
 - **The engine raises effective readiness everywhere:** where a native C.R.A.S.H. layer is ⚠️/❌, the
-  deterministic behavior is delivered as engine tools (MCP/CLI), independent of the host. Every platform
-  keeps a files-only `SKILL.full.md` floor.
+  deterministic behavior is delivered as engine tools (MCP/CLI), independent of the host. As of the
+  T617 public-payload stub floor, the shipped `.md`/recipe files no longer carry a files-only
+  procedure fallback — full behavior requires the installed engine; see docs.gald3r.ai.
 
 ## Per-platform readiness (sorted by engine tier)
 

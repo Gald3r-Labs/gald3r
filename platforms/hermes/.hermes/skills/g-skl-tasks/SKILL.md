@@ -6,30 +6,5 @@ token_budget: low
 subsystem_memberships: [TASK_MANAGEMENT]
 ---
 
-<!-- gald3r-thinned-shim -->
-# g-skl-tasks — thinned shim (engine-backed)
-
-> **Handled by the bundled gald3r engine** (`.gald3r_sys/engine`, pure Mode-A, no LLM). Full original
-> procedure retained in **`SKILL.full.md`** so an install without the engine still works.
-
-**What it does:** task lifecycle over TASKS.md + tasks/<status>/.
-
-## Preferred — invoke the engine
-- **CLI:** `gald3r task …`  (or the installed `gald3r`)
-- **MCP tools:** `gald3r_task_*`   ·   facade `Gald3r(...).tasks`
-
-The engine owns ID allocation, file placement, status→folder moves, index regeneration, and
-validation. `.gald3r/` markdown stays the data source of truth.
-
-## Active agent run → inbox routing (T585)
-During a multi-agent / autopilot run (marker `.gald3r/logs/ggo_run_state.json` `active: true`,
-or env `GALD3R_AGENT_RUN=1`), the engine `create()` **auto-routes** a new task to `tasks/inbox/`
-as an **id-less draft** (uuid-suffixed filename) instead of assigning an id directly. The
-hot-inbox **intake** (run at each iteration boundary) is the *single ID-assigning authority* and
-assigns ids atomically — so concurrent agents can never collide on the next id. Idle (no run) →
-direct create, unchanged. **Hand-writing agents (manual fallback) MUST drop new-task drafts in
-`tasks/inbox/` during a run — never write `tasks/open/` + regenerate the index directly.**
-
-## Manual fallback (engine not provisioned)
-Follow **`SKILL.full.md`** (full procedure); the engine validates via its embedded schemas (`gald3r validate`; `task-file`).
-Everything needed ships in the install — nothing external.
+Run: `gald3r task add`
+Documentation: https://docs.gald3r.ai

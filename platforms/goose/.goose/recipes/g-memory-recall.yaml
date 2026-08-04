@@ -1,20 +1,9 @@
 version: 1.0.0
 title: g-memory-recall
 description: 'Recall memory: $ARGUMENTS'
-instructions: "Recall memory: $ARGUMENTS\n\n## What This Command Does\n\nRuns `gald3r\
-  \ memory recall` -- a single, on-demand query over BOTH the\nfile-first vault (`.gald3r/vault/`)\
-  \ and the T557 scoped memory record store\n(`.gald3r/memory/records/**`), merged\
-  \ into one scope-ordered\n(most-specific-wins: user > project > workspace > team\
-  \ > company),\ntoken-budgeted result. `client` scope is never included unless explicitly\n\
-  requested.\n\n## Workflow\n\n1. Run `gald3r memory recall \"$ARGUMENTS\" --json`\
-  \ (omit `$ARGUMENTS` to\n   browse everything in scope instead of matching a keyword).\n\
-  2. Read the returned items: each carries `source` (`memory_record` or\n   `vault_note`),\
-  \ `scope`, `confidence`, `relevance`, and a body `preview`.\n3. Answer from the\
-  \ returned items directly.\n4. If the result reports `\"truncated\": true`, note\
-  \ that lower-ranked\n   matches exist but were dropped for the token budget -- rerun\
-  \ with\n   `--budget N` for a larger budget if more detail is needed.\n5. If a durable\
-  \ new fact emerges from this conversation, offer to save it\n   back via `gald3r\
-  \ memory` (once a write verb lands, T557 P2) or\n   `gald3r vault ingest`."
+instructions: |
+  Run: `gald3r memory recall`
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-memory-recall` command as described in the instructions.
 extensions: []
 parameters:

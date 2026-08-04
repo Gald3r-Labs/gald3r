@@ -3,6 +3,6 @@ description: 'Deprecated — redirects all cleanup, grooming, and upgrade operat
 subsystem_memberships: [PROJECT_IDENTITY_SETUP]
 execution_tier: guarded_prompt
 ---
-Deprecated — use **g-medic** instead.
 
-@g-medic handles all cleanup, grooming, and upgrade operations.
+Provisioned by `gald3r platform install`.
+Documentation: https://docs.gald3r.ai

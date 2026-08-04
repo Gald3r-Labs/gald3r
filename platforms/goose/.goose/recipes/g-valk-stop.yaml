@@ -1,27 +1,9 @@
 version: 1.0.0
 title: g-valk-stop
 description: '@g-valk-stop — Stop the Valkyrie world_tree connector'
-instructions: "# @g-valk-stop — Stop the Valkyrie world_tree connector\n\nRun **`gald3r\
-  \ valk stop`** to stop the running Valkyrie connector (the resident world_tree sync\n\
-  connector — the online coordination backbone) and clear its lock.\n\n---\n\n## Usage\
-  \ (PowerShell)\n\n```powershell\ngald3r valk stop\ngald3r valk stop --root <path>\
-  \       # project root containing .gald3r/ (default: discovered from cwd)\ngald3r\
-  \ valk stop --data-dir <path>   # machine-wide gald3r data dir the registry lives\
-  \ under (default: $GALD3R_DATA_DIR or ~/.gald3r)\n```\n\n## What it does\n\n1. Reads\
-  \ the connector lock for the project root. If no lock is found, reports there is\n\
-  \   nothing to stop and exits cleanly.\n2. If the recorded pid is already dead,\
-  \ clears the stale lock and exits.\n3. Otherwise sends a real termination signal\
-  \ (`SIGTERM`, which maps to `TerminateProcess` on\n   Windows) to the connector\
-  \ process.\n4. Force-releases the lock — a killed process's default `SIGTERM` handling\
-  \ does not guarantee\n   its own cleanup runs, so the lock is not assumed to self-clean\
-  \ — and best-effort\n   deregisters the project from the machine-wide connector\
-  \ registry.\n\n## Flags\n\n| Flag | Meaning |\n|------|---------|\n| `--root PATH`\
-  \ | Project root containing `.gald3r/` (default: discovered by walking up from cwd).\
-  \ |\n| `--data-dir PATH` | Machine-wide per-user gald3r data dir the connector registry\
-  \ lives under (default: `$GALD3R_DATA_DIR` or `~/.gald3r`). |\n\n## See also\n\n\
-  - `@g-valk-start` — start the connector (`--detach` for the resident, world_tree-synced\
-  \ process)\n- `@g-valk-status` — check whether the connector is running before/after\
-  \ stopping it\n- `@g-valk-list` — list every registered connector on this machine"
+instructions: |
+  Run: `gald3r valk stop`
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-valk-stop` command as described in the instructions.
 extensions: []
 parameters:

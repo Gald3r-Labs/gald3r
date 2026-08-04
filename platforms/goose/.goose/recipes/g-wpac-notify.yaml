@@ -1,16 +1,9 @@
 version: 1.0.0
 title: g-wpac-notify
 description: "\uFEFF---"
-instructions: "\uFEFF---\ndescription: Send a lightweight [INFO] notification to one\
-  \ or more project INBOXes — no task created, no approval needed.\nsubsystem_memberships:\
-  \ [WORKSPACE_COORDINATION]\nexecution_tier: guarded_prompt\n---\n# /g-wpac-notify\n\
-  \nSend a freeform FYI notification across project boundaries.\n\n## Usage\n\n```\n\
-  /g-wpac-notify --parent \"subject\"\n/g-wpac-notify --all-siblings \"subject\"\n\
-  /g-wpac-notify --all-children \"subject\"\n/g-wpac-notify --project /path/to/project\
-  \ \"subject\"\n```\n\n## Skill\n\nRead and follow: `g-skl-wpac-notify`\n\n## Key\
-  \ Points\n\n- No task created, no approval needed\n- Low priority in INBOX display\
-  \ (below CONFLICTS, requests, broadcasts)\n- Acknowledged by marking `[DONE]` in\
-  \ g-wpac-read\n- Staged to `pending_requests/info_[target].md` when target inaccessible"
+instructions: |
+  Provisioned by `gald3r platform install`.
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-wpac-notify` command as described in the instructions.
 extensions: []
 parameters:

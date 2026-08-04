@@ -1,24 +1,9 @@
 version: 1.0.0
 title: g-marketing-hn
 description: '@g-marketing-hn'
-instructions: "# @g-marketing-hn\n\nWrite a proper Hacker News Show HN post — title,\
-  \ framing, story, technical depth.\n\n## Usage\n```\n@g-marketing-hn           \
-  \   # Generate Show HN post (full)\n@g-marketing-hn --title      # Generate 5 title\
-  \ options (most important element)\n@g-marketing-hn --tellhn     # Write a \"Tell\
-  \ HN\" insight post instead\n@g-marketing-hn --timing     # Get optimal posting\
-  \ time advice\n```\n\n## What it does\n1. Reads PROJECT.md for product context and\
-  \ technical details\n2. Generates 3-5 title options (title is the make-or-break\
-  \ element)\n3. Writes the post body: problem → existing failures → your solution\
-  \ → technical decisions\n4. Includes advice on comment engagement strategy for launch\
-  \ day\n5. Writes to `.gald3r/reports/marketing/YYYY-MM-DD_hn_draft.md`\n\n## Show\
-  \ HN Formula\n```\nTitle: \"Show HN: [What it does] ([key differentiator])\"\nBody:\n\
-  \  - The problem (1-2 sentences, relatable)\n  - Why existing solutions failed you\n\
-  \  - What you built (clear, specific)\n  - Interesting technical decisions (HN loves\
-  \ this)\n  - Current stage\n  - Specific ask for feedback\n```\n\n## Best Practices\n\
-  - Post 7-9 AM US East Coast time\n- Respond to every comment in first 2 hours\n\
-  - Never ask for upvotes (instant credibility damage)\n- Answer technical questions\
-  \ with depth — show you know your stuff\n\n## Invoke\nActivate `g-agnt-marketing`\
-  \ and run `g-skl-marketing` in HN mode."
+instructions: |
+  Provisioned by `gald3r platform install`.
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-marketing-hn` command as described in the instructions.
 extensions: []
 parameters:

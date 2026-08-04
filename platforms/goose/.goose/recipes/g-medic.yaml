@@ -1,58 +1,9 @@
 version: 1.0.0
 title: g-medic
 description: WPAC Inbox Health Gate
-instructions: "### WPAC Inbox Health Gate\n\nBefore medic mode detection, determine\
-  \ whether this project is a WPAC participant. WPAC is configured only when `.gald3r/linking/link_topology.md`\
-  \ declares at least one parent/child/sibling relationship, or `.gald3r/PROJECT.md`\
-  \ explicitly declares WPAC project linking relationships. A Workspace-Control manifest\
-  \ and local `INBOX.md` alone do not make the project a WPAC group member.\n\nIf\
-  \ WPAC is configured, run the re-callable WPAC inbox check without `-BlockOnConflict`\
-  \ so L1 triage can still report health:\n\n```powershell\n$hook = @( \".cursor\\\
-  hooks\\g-hk-wpac-inbox-check.py\", \".claude\\hooks\\g-hk-wpac-inbox-check.py\"\
-  , \".agent\\hooks\\g-hk-wpac-inbox-check.py\", \".codex\\hooks\\g-hk-wpac-inbox-check.py\"\
-  , \".opencode\\hooks\\g-hk-wpac-inbox-check.py\" ) | Where-Object { Test-Path $_\
-  \ } | Select-Object -First 1\nif ($hook) { python $hook -ProjectRoot . }\n```\n\n\
-  If the output reports `INBOX CONFLICT GATE`, finish L1 triage and include a health\
-  \ severity/score impact, then stop before L2-L4 planning/apply work, task claiming,\
-  \ implementation, or verification. Require `@g-wpac-read` before continuing. Non-conflict\
-  \ requests, broadcasts, and syncs are advisory and should be surfaced in the medic\
-  \ summary. If WPAC is not configured, skip this gate and report `WPAC: not configured\
-  \ / skipped`.\n\nActivate the **g-medic** skill.\n\nTiered .gald3r/ health and intervention\
-  \ system. Detects project state and runs appropriate level:\n\n- L1 (default): Triage\
-  \ — structural integrity, file sync, health score, TTL resets. Auto-applies only\
-  \ when `--dry-run` is absent.\n- L2: Diagnosis — plan coherence, dependency DAG,\
-  \ feature/task linkage. Generates MEDIC_REPORT_L2.md.\n- L3: Surgery — cross-subsystem\
-  \ interface audit, capability gaps, constraint violations.\n- L4: Ecosystem — Workspace-Control\
-  \ diagnostics plus optional WPAC linked-project checks.\n\nUsage:\n  @g-medic  \
-  \                    → L1 triage (safe default)\n  @g-medic --level 2          \
-  \  → L1 + L2 (report only; add --apply to fix)\n  @g-medic --level 3 --apply   \
-  \ → L1 + L2 + L3 (apply all fixes)\n  @g-medic --ecosystem          → all 4 levels\
-  \ (Workspace-Control plus optional WPAC)\n  @g-medic --dry-run            → report\
-  \ only at any level\n  @g-medic --curate             → fragmentation dry-run with\
-  \ human-readable recommendations, `suggested_moves`, and `index_candidates` (default:\
-  \ writes gitignored reports under `.gald3r/reports/`; add `-NoReportFiles` on the\
-  \ script for stdout-only)\n  @g-medic --curate --apply -ProposalJson <path> → applies\
-  \ only top-level `moves` after approval; backup + git mv + path patch FEATURES/SUBSYSTEMS/tasks\
-  \ + regen diagrams\n  @g-medic --heal-c023 [--apply]      → backfill missing .gald3r/releases/\
-  \ files from CHANGELOG (T1436; dry-run default)\n  @g-medic --heal-version [--apply]\
-  \   → create root VERSION from latest CHANGELOG ## [X.Y.Z] if missing\n  @g-medic\
-  \ --heal-constraints [--apply] → report inheritable framework constraints missing\
-  \ locally (--apply appends adoption-pointer stub)\n  @g-medic --heal-all [--apply]\
-  \       → run every Phase 1 heal in dependency order (version → c023 → constraints)\n\
-  \nHeal paths map to `gald3r medic heal`.\nHeals are dry-run by default and log to\
-  \ `.gald3r/logs/medic_heal_YYYYMMDD.log` (only with `--apply`).\n\nDry-run/output\
-  \ rules:\n- `--dry-run` for L1-L4 is read-only: no status changes, no TTL resets,\
-  \ no identity/version writes, no backlog regeneration, no report files, and no member-repo\
-  \ changes.\n- Active task orphan/phantom counts must parse both supported `TASKS.md`\
-  \ row formats before comparing against direct child `.gald3r/tasks/task*.md` files:\
-  \ bullet rows like `- [✅] **Task 090**: ...` and table rows like `| [\U0001F4CB\
-  ] | [090](tasks/task090_*.md) | ... |`. Normalize Markdown links, optional `Task`/`T`\
-  \ prefixes, leading zeros, and subtask suffixes; dedupe by normalized task ID before\
-  \ counting. Archive, backup, imported, quarantine, and historical task folders are\
-  \ separate inventory, not active orphans.\n- Material findings must be shown to\
-  \ the user in full. Do not hide high counts, ID lists, blocker categories, or skipped\
-  \ checks behind a short summary.\n\n**Replaces**: @g-medic (now a deprecated alias\
-  \ for @g-medic)"
+instructions: |
+  Run: `gald3r medic heal`
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-medic` command as described in the instructions.
 extensions: []
 parameters:

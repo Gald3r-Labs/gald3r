@@ -1,34 +1,9 @@
 version: 1.0.0
 title: g-wpac-archive-inbox
 description: 'Archive stale [DONE] WPAC inbox messages and prune the index: $ARGUMENTS'
-instructions: "Archive stale [DONE] WPAC inbox messages and prune the index: $ARGUMENTS\n\
-  \n## What This Command Does\n\nMoves resolved (`[DONE]`/`[RESOLVED]`) WPAC inbox\
-  \ messages older than a threshold (default **30 days**) out of the active index\
-  \ and into `.gald3r/linking/messages/archive/`, then prunes their rows from `INBOX.md`.\
-  \ Keeps the active index lightweight (target: <= 50 active rows). Uses the shared\
-  \ script `gald3r workspace inbox` (or its `.py` twin).\n\nThe inbox is a lightweight\
-  \ INDEX table (`INBOX.md`) backed by one file per message under `.gald3r/linking/messages/`.\
-  \ Archiving never deletes data: messages are relocated, and an append-only `archive_index.md`\
-  \ records what was moved and when.\n\n## Workflow\n\n### 1. Migrate if needed\n\
-  If `INBOX.md` is still in the legacy flat-body format, the script auto-migrates\
-  \ it to the index layout first (idempotent — safe to re-run).\n\n### 2. Archive\
-  \ stale [DONE] items\nRun the archive operation:\n\n```powershell\n# Default 30-day\
-  \ threshold\ngald3r workspace inbox archive --project-root .\n\n# Custom threshold\
-  \ (e.g. 14 days)\ngald3r workspace inbox archive --threshold-days 14 --project-root\
-  \ .\n```\n\nOr, equivalently, via the inbox-check hook:\n\n```powershell\n.claude/hooks/g-hk-wpac-inbox-check.py\
-  \ -Archive -ThresholdDays 30 -ProjectRoot .\n```\n\nThe script:\n- Selects `[DONE]`/`[RESOLVED]`\
-  \ rows whose backing message file `created_at` is older than the threshold.\n- Moves\
-  \ those message files to `.gald3r/linking/messages/archive/`.\n- Appends a row per\
-  \ moved message to `.gald3r/linking/messages/archive/archive_index.md`.\n- Removes\
-  \ the archived rows from the active `INBOX.md`.\n\n### 3. Report\nConfirm how many\
-  \ messages were archived and the resulting active row count.\n\n## Usage Examples\n\
-  \n```\n@g-wpac-archive-inbox\n@g-wpac-archive-inbox 14        # archive [DONE] older\
-  \ than 14 days\n```\n\n## Notes\n\n- Idempotent: re-running with nothing eligible\
-  \ is a no-op.\n- The session-start inbox check prompts you to run this command when\
-  \ the active\n  index carries more than 50 `[DONE]` rows.\n- Open items (`[OPEN]`),\
-  \ pending `[ORDER]`/`[REQUEST]`, and `[CONFLICT]` rows are\n  never archived.\n\n\
-  ## Delegates To\n`gald3r workspace inbox` (Archive operation); `g-skl-wpac-read`\
-  \ for reviewing inbox items."
+instructions: |
+  Provisioned by `gald3r platform install`.
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-wpac-archive-inbox` command as described in the instructions.
 extensions: []
 parameters:

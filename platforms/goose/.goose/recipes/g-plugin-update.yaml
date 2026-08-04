@@ -1,36 +1,9 @@
 version: 1.0.0
 title: g-plugin-update
 description: g-plugin-update — Update an installed plugin
-instructions: "# g-plugin-update — Update an installed plugin\n\nPull the latest commit\
-  \ for an already-installed plugin: `gald3r plugin update <name>`\nruns `git -C <plugins_dir>/<name>\
-  \ pull --ff-only` against the plugin's own clone.\nNothing else — no manifest, no\
-  \ version comparison, no ledger.\n\n## Usage\n\n```\ngald3r plugin update <name>\n\
-  ```\n\n`<name>` is the plugin's local folder name under `<plugins_dir>/` (see `gald3r\
-  \ plugin\nlist`) — not a git URL and not a registry slug.\n\n## What it does\n\n\
-  1. Resolve `<plugins_dir>/<name>/` (default `<plugins_dir>` is `<GALD3R_HOME>/plugins`,\n\
-  \   i.e. `~/.gald3r/plugins` unless `GALD3R_HOME` is overridden). Fail with\n  \
-  \ `FileNotFoundError` if that directory doesn't exist — the plugin isn't installed.\n\
-  2. Run `git -C <plugins_dir>/<name> pull --ff-only` (60s timeout).\n3. If the pull\
-  \ fails (diverged history, local edits conflicting, no network, etc.),\n   fail\
-  \ and surface git's stderr.\n4. On success, print git's stdout (or stderr, or the\
-  \ literal string `\"Updated.\"` if\n   git produced no output) as the status line.\n\
-  \nThere is no version check, no compatibility check, no `--dry-run`, no `--force`,\
-  \ no\n`--source` override, and no component copy — it is a plain fast-forward `git\
-  \ pull`,\nnothing more.\n\n## Steps\n\n1. Run from anywhere (no project-root argument\
-  \ needed — the plugin lives under\n   `<GALD3R_HOME>/plugins`, not the project tree):\n\
-  \   ```bash\n   uv run gald3r plugin update <name>\n   ```\n2. Read the printed\
-  \ line: `plugin '<name>': <git output>`.\n\n## Notes\n\n- To find the correct `<name>`\
-  \ first: `gald3r plugin list` (or `gald3r plugin list\n  --json` for the full record).\n\
-  - If the pull fails because the local clone has diverged (e.g. someone edited files\n\
-  \  inside `<plugins_dir>/<name>/` directly), resolve the clone manually (or\n  `gald3r\
-  \ plugin uninstall <name>` and re-`install`) — this verb only attempts a\n  fast-forward\
-  \ pull, it never force-resets or discards local changes.\n- Sibling verbs on the\
-  \ same `gald3r plugin` CLI surface: `install`, `uninstall`\n  (there is no `remove`\
-  \ alias), `list`, and (T287) `enable`/`disable` — the last two\n  don't update anything,\
-  \ they flip a per-project ON/OFF flag; see\n  `g-skl-plugins/SKILL.md`'s \"Per-project\
-  \ enable/disable\" section. There is no `new`\n  (scaffold) or `check-compat` verb\
-  \ — see `g-skl-plugins/SKILL.md` for the full,\n  ground-truth reference and for\
-  \ how to author a plugin by hand."
+instructions: |
+  Provisioned by `gald3r platform install`.
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-plugin-update` command as described in the instructions.
 extensions: []
 parameters:

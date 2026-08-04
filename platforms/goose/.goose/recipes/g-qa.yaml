@@ -1,34 +1,9 @@
 version: 1.0.0
 title: g-qa
 description: 'Activate quality assurance system: $ARGUMENTS'
-instructions: "Activate quality assurance system: $ARGUMENTS\n\n## What This Command\
-  \ Does\n\nActivates the quality assurance system for bug tracking, quality management,\
-  \ and fix documentation.\n\n## QA Features\n\n### 1. Bug Tracking System\nI'll manage\
-  \ bugs in `.gald3r/BUGS.md` with:\n- **Bug Classification**:\n  - Critical: System\
-  \ crashes, data loss, security vulnerabilities\n  - High: Major feature failures,\
-  \ >50% performance loss\n  - Medium: Minor feature issues, usability problems\n\
-  \  - Low: Cosmetic issues, enhancement requests\n- **Source Attribution**: User\
-  \ Reported, Development, Testing, Production\n- **Status Tracking**: Open → Investigating\
-  \ → Fixing → Testing → Closed\n\n### 2. Bug-Task Integration\nWhen bugs are reported,\
-  \ I'll:\n- Create entry in BUGS.md\n- Create corresponding task file with `[BUG]`\
-  \ prefix\n- Set priority based on severity\n- Link bug to affected phases\n- Track\
-  \ resolution through task completion\n\n### 3. Retroactive Fix Documentation\nFor\
-  \ fixes completed during chat, I'll:\n- Assess if work merits task documentation\n\
-  - Generate retroactive task entry\n- Update TASKS.md with completed status\n- Capture\
-  \ lessons learned\n\n**Document as retroactive task if:**\n- ✅ Fix required >15\
-  \ minutes of work\n- ✅ Solution affects multiple files or subsystems\n- ✅ Fix provides\
-  \ value for future reference\n- ✅ Resolution required technical analysis\n\n###\
-  \ 4. Quality Metrics\nI track:\n- Bug Discovery Rate: Bugs found per development\
-  \ cycle\n- Bug Resolution Time: Average time from discovery to fix\n- Severity Distribution:\
-  \ Breakdown by severity level\n- Phase Impact: Which phases have most bugs\n- Regression\
-  \ Rate: Fixes that introduce new bugs\n\n### 5. Quality Gates\nI verify:\n- Code\
-  \ Review: All changes reviewed\n- Testing Requirements: Unit, integration, manual\
-  \ tests\n- Documentation: Code comments, API docs\n- Performance: No regression\
-  \ in benchmarks\n- Security: Vulnerability scanning\n\n## When to Use\n- Reporting\
-  \ bugs or issues\n- Documenting fixes completed in chat\n- Setting up quality processes\n\
-  - Managing bug lifecycle\n- Generating quality reports\n\n## What I Need From You\n\
-  - Bug description or quality concern\n- Severity assessment (if bug)\n- Affected\
-  \ areas or phases\n\nLet's ensure quality!"
+instructions: |
+  Provisioned by `gald3r platform install`.
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-qa` command as described in the instructions.
 extensions: []
 parameters:

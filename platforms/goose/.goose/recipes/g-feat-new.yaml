@@ -2,15 +2,9 @@ version: 1.0.0
 title: g-feat-new
 description: '> **Deprecated**: Use `@g-feat-add` instead. This alias is kept for
   backward compatibility.'
-instructions: '> **Deprecated**: Use `@g-feat-add` instead. This alias is kept for
-  backward compatibility.
-
-
-  Stage a new feature in the feature backlog. Activates **g-skl-features** → STAGE
-  operation.
-
-
-  Creates `features/featNNN_slug.md` with `status: staging`. Does NOT create tasks.'
+instructions: |
+  Provisioned by `gald3r platform install`.
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-feat-new` command as described in the instructions.
 extensions: []
 parameters:

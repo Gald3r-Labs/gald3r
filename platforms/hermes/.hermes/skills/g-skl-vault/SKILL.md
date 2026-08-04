@@ -5,27 +5,5 @@ token_budget: low
 subsystem_memberships: [MEMORY_AND_KNOWLEDGE, VAULT_AND_RESEARCH]
 ---
 
-<!-- gald3r-thinned-shim -->
-# g-skl-vault — thinned shim (engine-backed)
-
-> **Handled by the bundled gald3r engine** (`.gald3r_sys/engine`, pure Mode-A, no LLM). Full original
-> procedure retained in **`SKILL.full.md`** so an install without the engine still works.
-
-**What it does:** file-first knowledge vault (vault/).
-
-## Preferred — invoke the engine
-- **CLI:** `gald3r vault …`  (or the installed `gald3r`)
-- **MCP tools:** `gald3r_vault_*`   ·   facade `Gald3r(...).vault`
-
-The engine owns ID allocation, file placement, status→folder moves, index regeneration, and
-validation. `.gald3r/` markdown stays the data source of truth.
-
-## Manual fallback (engine not provisioned)
-Follow **`SKILL.full.md`** (full procedure); the engine validates via its embedded schemas (`gald3r validate`; `generic`).
-Everything needed ships in the install — nothing external.
-
----
-
-**Legacy `topics:` frontmatter**: the engine vault migrates `topics:` → `tags:`
-silently during ingest/lint (D021). The standalone `scripts/migrate_topics_to_tags.py`
-helper was retired (T1652 D7).
+Provisioned by `gald3r platform install`.
+Documentation: https://docs.gald3r.ai

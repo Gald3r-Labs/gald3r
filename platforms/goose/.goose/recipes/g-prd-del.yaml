@@ -1,25 +1,9 @@
 version: 1.0.0
 title: g-prd-del
 description: Archive a PRD (soft-delete). Activates **g-skl-prds** → ARCHIVE operation.
-instructions: 'Archive a PRD (soft-delete). Activates **g-skl-prds** → ARCHIVE operation.
-
-
-  ```
-
-  @g-prd-del prd-NNN
-
-  @g-prd-del prd-NNN --reason "Replaced by alternative compliance approach"
-
-  ```
-
-
-  Sets `status: archived`, populates `archived_date`, appends to `## Status History`,
-  and moves the file to `prds/archive/`. Updates `PRDS.md` row to the `### Archived`
-  section. PRD is preserved on disk — never hard-deletes.
-
-
-  If the PRD is in status `released`, prefer `@g-prd-revise` first to mark it superseded
-  with a documented replacement, then archive.'
+instructions: |
+  Provisioned by `gald3r platform install`.
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-prd-del` command as described in the instructions.
 extensions: []
 parameters:

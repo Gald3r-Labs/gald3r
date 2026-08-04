@@ -2,68 +2,9 @@ version: 1.0.0
 title: g-propose
 description: 'One-shot proposal generation: produces a complete proposal package from
   a short description.'
-instructions: "One-shot proposal generation: produces a complete proposal package\
-  \ from a short description.\n\n```\n@g-propose \"Add dark mode toggle to settings\
-  \ panel\"\n@g-propose \"Replace synchronous file writes with async queue\" --scope\
-  \ backend\n@g-propose \"Integrate Stripe payments\" --scope payments,auth --constraints\
-  \ \"no new deps\"\n```\n\n## What This Command Does\n\nAccepts a feature description\
-  \ and generates a self-contained **proposal document** at\n`docs/proposals/YYYYMMDD_HHMMSS_Cursor_PROPOSAL_<slug>.md`\
-  \ covering everything needed\nfor human approval before any `.gald3r/` writes occur.\n\
-  \nOne command, one file, full context.\n\n---\n\n## Workflow\n\n### Step 1 — Parse\
-  \ Input\n\nExtract from `$ARGUMENTS`:\n- **description** — required; the feature\
-  \ or change to propose\n- `--scope <areas>` — optional; comma-separated subsystems\
-  \ or areas in scope\n- `--constraints <text>` — optional; non-negotiable limits\
-  \ (budget, deps, API compat)\n\nIf description is missing or too vague (< 5 words),\
-  \ ask one clarifying question before continuing.\n\n### Step 2 — Generate Proposal\
-  \ Document\n\n**Filename**: `docs/proposals/YYYYMMDD_HHMMSS_Cursor_PROPOSAL_<slug>.md`\n\
-  - Slug: lowercase description, spaces→underscores, max 40 chars, strip special chars\n\
-  - Timestamp: use current UTC time (YYYYMMDD_HHMMSS format per g-rl-01 naming convention)\n\
-  \n**Document structure** (fill all sections, do not leave placeholders):\n\n```markdown\n\
-  # Proposal: <Title>\n\n> **Status**: draft | **Created**: YYYY-MM-DD | **Author**:\
-  \ g-propose\n\n## Executive Summary\n<!-- 3–5 sentences. What is being built, why\
-  \ now, and what success looks like. -->\n\n## Problem Statement\n<!-- Current pain\
-  \ point or gap. Why the status quo is insufficient. -->\n\n## Proposed Solution\n\
-  <!-- High-level solution description. What changes, at what layer. -->\n\n## Technical\
-  \ Design\n\n### Architecture\n<!-- Key components, interaction diagram (ASCII or\
-  \ description), data flow. -->\n\n### Data Model\n<!-- New tables / fields / schema\
-  \ changes. \"None\" if not applicable. -->\n\n### API Surface\n<!-- New endpoints,\
-  \ commands, events, or public interfaces. -->\n\n### Dependencies\n<!-- New packages\
-  \ or services required. \"None\" if not applicable. -->\n\n## Acceptance Criteria\n\
-  <!-- Ready to paste into a task spec. Phrase as \"Given / When / Then\" or checkbox\
-  \ list. -->\n- [ ] ...\n- [ ] ...\n- [ ] ...\n\n## PRD Draft\n<!-- Pre-filled content\
-  \ for @g-prd-add. Agent will paste this when user approves. -->\n\n**Title**: <same\
-  \ as proposal title>\n**Problem Statement**: <1 paragraph>\n**Scope**: <what is\
-  \ in>\n**Non-Scope**: <what is explicitly out>\n**Success Metrics**: <measurable\
-  \ outcomes>\n**Risk Assessment**: low | medium | high — <brief rationale>\n**Data\
-  \ Handling**: <PII / sensitive data implications, or \"None\">\n**Rollback Plan**:\
-  \ <how to revert if needed>\n\n## Task Breakdown\n<!-- 3–7 tasks, each ready for\
-  \ @g-task-add. Use dependency arrows where needed. -->\n\n| # | Title | Type | Deps\
-  \ | Notes |\n|---|-------|------|------|-------|\n| 1 | ... | feature | — | ...\
-  \ |\n| 2 | ... | feature | T1 | ... |\n\n## Risks & Alternatives\n\n### Risks\n\
-  | Risk | Likelihood | Impact | Mitigation |\n|------|-----------|--------|------------|\n\
-  | ... | low/med/high | low/med/high | ... |\n\n### Alternatives Considered\n- **Alt\
-  \ A**: <name> — <why rejected>\n- **Alt B**: <name> — <why rejected>\n\n## Open\
-  \ Questions\n<!-- List any unresolved decisions the human must answer before approval.\
-  \ -->\n- [ ] ...\n```\n\n### Step 3 — Write the File\n\n- Create `docs/proposals/`\
-  \ directory if it does not exist.\n- Write the completed proposal file.\n- Do **NOT**\
-  \ write to `.gald3r/` yet — all gald3r artifacts are created only after human approval.\n\
-  \n### Step 4 — Show Summary and Next-Step Menu\n\nAfter writing the file, output:\n\
-  \n```\n✅ Proposal generated: docs/proposals/<filename>.md\n\n\U0001F4CB Summary\n\
-  \  Feature : <title>\n  Scope   : <scope or \"not specified\">\n  Tasks   : <N>\
-  \ tasks in breakdown\n  Risks   : <N> identified\n\n\U0001F4CC Next steps — choose\
-  \ one:\n  A) Approve  → run @g-prd-add \"<title>\" then @g-task-add for each task\n\
-  \  B) Refine   → edit docs/proposals/<filename>.md then re-run @g-propose --from-file\n\
-  \  C) Discard  → delete docs/proposals/<filename>.md\n```\n\nWait for the user to\
-  \ choose. Do not auto-create PRD or tasks.\n\n---\n\n## Optional: `--from-file`\n\
-  \n```\n@g-propose --from-file docs/proposals/20260509_120000_Cursor_PROPOSAL_dark_mode.md\n\
-  ```\n\nRe-reads an existing proposal file and outputs the **Approve** next steps\
-  \ (PRD + task\ncreation commands) without regenerating. Use after refinement.\n\n\
-  ---\n\n## Constraints\n\n- Proposal file lives in `docs/` per g-rl-01 (not project\
-  \ root).\n- No `.gald3r/` writes until user explicitly approves.\n- Proposal is\
-  \ a **draft artifact** — it has no TASKS.md entry until approved.\n- Keep the generated\
-  \ document under 400 lines.\n- If `--scope` references subsystem names, cross-check\
-  \ against `.gald3r/SUBSYSTEMS.md`\n  and note any mismatches in the Open Questions\
-  \ section."
+instructions: |
+  Provisioned by `gald3r platform install`.
+  Documentation: https://docs.gald3r.ai
 prompt: Run the gald3r `g-propose` command as described in the instructions.
 extensions: []
 parameters:

@@ -3,10 +3,6 @@ description: Claude Code CLI quick reference — headless flags, session continu
 subsystem_memberships: [PLATFORM_INTEGRATION]
 execution_tier: prompt_only
 ---
-# /g-cli-claude
 
-Activates `g-skl-cli-claude`. Use when running Claude Code from the terminal.
-
-```
-/g-cli-claude    → load g-skl-cli-claude context
-```
+Provisioned by `gald3r platform install`.
+Documentation: https://docs.gald3r.ai
