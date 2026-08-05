@@ -31,9 +31,14 @@
 
 **The first three-platform signed release is out now (4.0.0-beta.3).**
 
-- **Windows** — Authenticode-signed `gald3r.exe` + `gald3rw.exe`, and a signed `.msi` installer
-- **macOS** — codesigned `gald3r` binary (Developer ID, Apple-notarized) and a `.pkg` installer
-- **Linux** — binary + install tarball (checksum-verified `install.sh`)
+| OS | Download |
+|---|---|
+| **Windows** | [**gald3r-windows-x86_64.msi**](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-windows-x86_64.msi) (signed installer) · [gald3r.exe](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-windows-x86_64.exe) · [gald3rw.exe](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3rw-windows-x86_64.exe) |
+| **macOS** | [**gald3r-macos-arm64.pkg**](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-macos-arm64.pkg) (signed installer) · [gald3r](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-macos-arm64) (bare binary) |
+| **Linux** | [**gald3r-linux-x86_64.tar.gz**](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-linux-x86_64.tar.gz) (with `install.sh`) · [gald3r](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-linux-x86_64) (bare binary) |
+
+<sub>Authenticode-signed on Windows, Developer-ID codesigned + Apple-notarized on macOS,
+sha256 sidecars on every asset. These links always resolve to the newest release.</sub>
 
 Everything — the framework, all 38 platform overlays, the task engine — ships in
 **one binary** and provisions from it. This repo is the product's front door; the
