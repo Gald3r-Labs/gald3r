@@ -21,8 +21,7 @@
 <p align="center">
   <a href="https://docs.gald3r.ai">Docs</a> ·
   <a href="CHANGELOG.md">Changelog</a> ·
-  <a href="ROADMAP.md">Roadmap</a> ·
-  <a href="PLATFORM_SUPPORT.html">All 38 platforms</a>
+  <a href="PLATFORM_SUPPORT.md">All 38 platforms</a>
 </p>
 
 ---
@@ -31,11 +30,11 @@
 
 **The first three-platform signed release is out now (4.0.0-beta.3).**
 
-| OS | Download |
-|---|---|
-| **Windows** | [**gald3r-windows-x86_64.msi**](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-windows-x86_64.msi) (signed installer) · [gald3r.exe](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-windows-x86_64.exe) · [gald3rw.exe](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3rw-windows-x86_64.exe) |
-| **macOS** | [**gald3r-macos-arm64.pkg**](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-macos-arm64.pkg) (signed installer) · [gald3r](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-macos-arm64) (bare binary) |
-| **Linux** | [**gald3r-linux-x86_64.tar.gz**](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-linux-x86_64.tar.gz) (with `install.sh`) · [gald3r](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-linux-x86_64) (bare binary) |
+| OS | Installers | Binaries |
+|---|---|---|
+| **Windows** | [**gald3r-windows-x86_64.msi**](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-windows-x86_64.msi) (signed) | [gald3r.exe](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-windows-x86_64.exe) · [gald3rw.exe](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3rw-windows-x86_64.exe) |
+| **macOS** | [**gald3r-macos-arm64.pkg**](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-macos-arm64.pkg) (signed) | [gald3r](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-macos-arm64) |
+| **Linux** | [**gald3r-linux-x86_64.tar.gz**](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-linux-x86_64.tar.gz) (with `install.sh`) | [gald3r](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-linux-x86_64) |
 
 <sub>Authenticode-signed on Windows, Developer-ID codesigned + Apple-notarized on macOS,
 sha256 sidecars on every asset. These links always resolve to the newest release.</sub>
@@ -95,6 +94,30 @@ the brain is live and every AI you point at the repo can see it.
 
 ---
 
+## The gald3r system — who does what
+
+One product family, five pieces. ● owns it · ◐ involved in it.
+
+| What you see | In plain terms | gald3r_core (engine) | gald3r_throne (desktop) | world_tree (cloud) | Framework (CRASH) | Longship (agent) | Docs |
+|---|---|---|---|---|---|---|---|
+| **Task, bug & plan tracking** | A file-based brain in your repo every AI reads and writes | ● owns the verbs + database | ◐ displays it | ◐ syncs it | ◐ defines the format | | [docs](https://docs.gald3r.ai) |
+| **Rules & constraint enforcement** | Always-on behavioral guardrails + your own per-project law | ● owns the checker + `constraint` verbs | | | ● ships the rule packs | | [docs](https://docs.gald3r.ai) |
+| **38 IDE/platform integrations** | Cursor, Claude Code, Codex, Copilot & 34 more, from one binary | ● generates every overlay | | | ● the content itself | | [matrix](PLATFORM_SUPPORT.md) |
+| **Autonomous pipelines** | `g-go` / `g-go-go` — claim, implement, verify, review, unattended | ● owns the orchestration | | | ◐ defines the playbooks | ◐ execution plane | [docs](https://docs.gald3r.ai) |
+| **Desktop workbench** | A native GUI over the same brain and engine | | ● owns it | | | | [throne](https://github.com/Gald3r-Labs/gald3r_throne) |
+| **Cross-project coordination** | Projects ask/order/sync with each other (WPAC) | ◐ the client | | ◐ the registry | ● the protocol | | [docs](https://docs.gald3r.ai) |
+| **Cloud sync & identity** | Multi-device sync and sign-in for teams | ◐ `gald3r valk` client | | ● owns it | | | [docs](https://docs.gald3r.ai) |
+| **Memory & knowledge vault** | Cross-session agent memory + an Obsidian-compatible vault | ● owns it | | | | | [docs](https://docs.gald3r.ai) |
+| **QA, review & security gates** | Deterministic validation that blocks bad state before it lands | ● owns the gates | | | ◐ the hooks that call them | | [docs](https://docs.gald3r.ai) |
+| **Release & code signing** | One tag → signed binaries for all three OSes | ● owns the pipeline | | | | | [docs](https://docs.gald3r.ai) |
+| **MCP server** | Other AI tools query your gald3r brain as MCP tools | ● owns it | | | | | [docs](https://docs.gald3r.ai) |
+
+`gald3r_core`, `gald3r_throne`, `world_tree`, and `gald3r_longship` ship as compiled
+binaries (the first two public, the rest private) — this repo carries the framework
+they all serve, plus everything below.
+
+---
+
 ## What's in this repo
 
 This repo is gald3r's **front door** — a landing page, not an install dependency:
@@ -102,8 +125,7 @@ This repo is gald3r's **front door** — a landing page, not an install dependen
 | Path | What it is |
 |---|---|
 | `README.md` | This page |
-| `PLATFORM_SUPPORT.html` | The full 38-platform support matrix |
-| `ROADMAP.md` | Where the product is going |
+| `PLATFORM_SUPPORT.md` | The full 38-platform support matrix — with the honest gaps marked |
 | `CHANGELOG.md` | Release history |
 | `LICENSE`, `NOTICE` | License (FSL-1.1-Apache-2.0) |
 | `VERSION` | Current version marker |
