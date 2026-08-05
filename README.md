@@ -146,6 +146,7 @@ This repo is gald3r's **front door** — a landing page, not an install dependen
 |---|---|
 | `README.md` | This page |
 | `PLATFORM_SUPPORT.md` | The full 38-platform support matrix — with the honest gaps marked |
+| `platforms/` | Per-platform reference docs — how each tool's project structure and extension surfaces actually work |
 | `CHANGELOG.md` | Release history |
 | `LICENSE`, `NOTICE` | License (FSL-1.1-Apache-2.0) |
 | `VERSION` | Current version marker |
