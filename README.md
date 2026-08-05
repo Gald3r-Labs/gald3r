@@ -106,8 +106,17 @@ One product family, five pieces. ● owns it · ◐ involved in it.
 | **Autonomous pipelines** | `g-go` / `g-go-go` — claim, implement, verify, review, unattended | ● owns the orchestration | | | ◐ defines the playbooks | ◐ execution plane | [docs](https://docs.gald3r.ai) |
 | **Desktop workbench** | A native GUI over the same brain and engine | | ● owns it | | | | [throne](https://github.com/Gald3r-Labs/gald3r_throne) |
 | **Cross-project coordination** | Projects ask/order/sync with each other (WPAC) | ◐ the client | | ◐ the registry | ● the protocol | | [docs](https://docs.gald3r.ai) |
+| **Live coordination backbone (Valkyrie)** | Agents message you and each other mid-run; the local brain syncs to the cloud | ◐ the `gald3r valk` connector | ◐ its inbox | ● the sync target | ◐ the ledger format | | [docs](https://docs.gald3r.ai) |
 | **Cloud sync & identity** | Multi-device sync and sign-in for teams | ◐ `gald3r valk` client | | ● owns it | | | [docs](https://docs.gald3r.ai) |
-| **Memory & knowledge vault** | Cross-session agent memory + an Obsidian-compatible vault | ● owns it | | | | | [docs](https://docs.gald3r.ai) |
+| **Memory & knowledge vault** | Scoped cross-session memory (project/user/client), stash & reload for long runs, Obsidian-compatible vault | ● owns it | | ◐ sync (roadmap) | | | [docs](https://docs.gald3r.ai) |
+| **Personality system** | A startup team of Norse gods voices your agents — Thor on performance, Sindri on craft, Loki on creative breakage | ◐ activation layer | ◐ shows it | | ● the persona packs | | [docs](https://docs.gald3r.ai) |
+| **Skill packs** | Curated capability bundles per project type — install a pack, get its skills locked to it | ● owns `skill-pack` / `skills-lock` | | | ● the bundles | | [docs](https://docs.gald3r.ai) |
+| **Third-party plugins** | Install plugins from any git repo; enable/disable per project | ● owns `gald3r plugin` | | | ◐ SKILL.md format | | [docs](https://docs.gald3r.ai) |
+| **Themed reports** | Status, review, and backlog reports rendered in your chosen theme | ● the render engine | ◐ displays it | | ● theme definitions | | [docs](https://docs.gald3r.ai) |
+| **Workspace-Control** | One control project governs many repos, with guarded member boundaries | ● owns it | | | ◐ the manifest format | | [docs](https://docs.gald3r.ai) |
+| **Experiments framework** | Hypotheses with measurable gates and failure autopsies, tracked like code | ● owns it | | | ◐ the experiment format | | [docs](https://docs.gald3r.ai) |
+| **Generated CRASH reference** | The full user-facing catalog of every command, skill, rule, agent, and hook shipped | ● generates it from source | | | ● the corpus | | [docs](https://docs.gald3r.ai) |
+| **Multi-format output** | The same reports as markdown, HTML, JSON, or TOON — for humans and agents | ● owns it | | | | | [docs](https://docs.gald3r.ai) |
 | **QA, review & security gates** | Deterministic validation that blocks bad state before it lands | ● owns the gates | | | ◐ the hooks that call them | | [docs](https://docs.gald3r.ai) |
 | **Release & code signing** | One tag → signed binaries for all three OSes | ● owns the pipeline | | | | | [docs](https://docs.gald3r.ai) |
 | **MCP server** | Other AI tools query your gald3r brain as MCP tools | ● owns it | | | | | [docs](https://docs.gald3r.ai) |
@@ -115,6 +124,17 @@ One product family, five pieces. ● owns it · ◐ involved in it.
 `gald3r_core`, `gald3r_throne`, `world_tree`, and `gald3r_longship` ship as compiled
 binaries (the first two public, the rest private) — this repo carries the framework
 they all serve, plus everything below.
+
+### In the forge — honestly unfinished
+
+Marketable, on the way, and labeled as such:
+
+| In the forge | What it becomes | Where it lives today |
+|---|---|---|
+| **Marketplace** | A curated, signed plugin registry on world_tree | Design (blocked on the cloud registry); git-installed plugins work today |
+| **Custom themes** | A visual editor for your own report themes | Theme definitions ship; editor in progress |
+| **Suite installer** | One manifest install: core + longship + throne together | Design complete; implementation next |
+| **Scoped memory sync** | Your memory follows you across machines | Local memory shipped; cloud sync on the roadmap |
 
 ---
 
