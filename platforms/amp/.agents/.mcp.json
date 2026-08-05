@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "gald3r": {
-      "command": "gald3r",
-      "args": ["mcp", "serve"]
-    }
-  }
-}
