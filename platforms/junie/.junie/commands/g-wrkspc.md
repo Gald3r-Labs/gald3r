@@ -1,7 +1,0 @@
----
-description: 'Dispatch to Workspace-Control subcommands (status/validate/member-list/init/spawn/etc.) via g-skl-workspace'
-subsystem_memberships: [WORKSPACE_COORDINATION]
----
-
-Provisioned by `gald3r platform install`.
-Documentation: https://docs.gald3r.ai

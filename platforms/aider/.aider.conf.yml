@@ -1,6 +1,0 @@
-# gald3r-managed (T407): pins CONVENTIONS.md as an always-loaded,
-# read-only context file. Aider does NOT auto-discover this file by
-# filename -- https://aider.chat/docs/usage/conventions.html -- it is
-# genuinely read ONLY when pinned here (or via `aider --read CONVENTIONS.md`).
-read:
-  - CONVENTIONS.md

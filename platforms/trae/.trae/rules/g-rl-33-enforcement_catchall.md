@@ -1,9 +1,0 @@
----
-description: "Ambient enforcement guardrails — always active regardless of which agent is loaded"
-globs:
-alwaysApply: true
-subsystem_memberships: [PROJECT_IDENTITY_SETUP]
----
-
-Provisioned by `gald3r platform install`.
-Documentation: https://docs.gald3r.ai

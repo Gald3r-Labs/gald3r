@@ -1,9 +1,0 @@
----
-description: Agents must update CHANGELOG.md and README.md when completing user-facing feature tasks
-globs: ["**/*.md", "**/*.mdc", "**/*.ps1", "**/*.json"]
-alwaysApply: true
-subsystem_memberships: [RELEASE_AND_VERSIONING]
----
-
-Provisioned by `gald3r platform install`.
-Documentation: https://docs.gald3r.ai

@@ -1,9 +1,0 @@
----
-description: 'Guide creation of PLAN.md, PROJECT.md, and SUBSYSTEMS.md via the gald3r planning workflow.'
-argument-hint: '[brief project description]'
-subsystem_memberships: [RELEASE_AND_VERSIONING]
-execution_tier: prompt_only
----
-
-Provisioned by `gald3r platform install`.
-Documentation: https://docs.gald3r.ai

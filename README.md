@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Gald3r-Labs/gald3r/releases"><img src="https://img.shields.io/badge/version-4.0.0-blue" alt="version 4.0.0" /></a>
+  <a href="https://github.com/Gald3r-Labs/gald3r_core/releases"><img src="https://img.shields.io/badge/version-4.0.0-blue" alt="version 4.0.0" /></a>
   <a href="https://github.com/Gald3r-Labs/gald3r_core"><img src="https://img.shields.io/badge/engine-gald3r__core-6f42c1" alt="engine" /></a>
   <a href="https://github.com/Gald3r-Labs/gald3r_core/releases"><img src="https://img.shields.io/badge/OS-Windows%20%C2%B7%20macOS%20%C2%B7%20Linux-informational" alt="Windows, macOS, Linux" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-FSL--1.1--Apache-green" alt="license" /></a>
@@ -25,7 +25,19 @@
   <a href="PLATFORM_SUPPORT.html">All 38 platforms</a>
 </p>
 
-<p align="center"><strong>Runs on Windows, macOS, and Linux</strong> — same `.gald3r/` behavior everywhere.</p>
+---
+
+## v4.0.0 — public beta
+
+**The first three-platform signed release is out now (4.0.0-beta.3).**
+
+- **Windows** — Authenticode-signed `gald3r.exe` + `gald3rw.exe`, and a signed `.msi` installer
+- **macOS** — codesigned `gald3r` binary (Developer ID, Apple-notarized) and a `.pkg` installer
+- **Linux** — binary + install tarball (checksum-verified `install.sh`)
+
+Everything — the framework, all 38 platform overlays, the task engine — ships in
+**one binary** and provisions from it. This repo is the product's front door; the
+binary does the rest.
 
 ---
 
@@ -39,153 +51,73 @@ So you re-explain. Every time. In every tool.
 
 ## What gald3r does
 
-gald3r installs a `.gald3r/` folder in your project — plain markdown, tracked in git, owned
-by you. Your tasks, bugs, plans, constraints, and architecture decisions live there.
+gald3r puts a `.gald3r/` folder in your project — plain markdown files for tasks, bugs,
+plans, constraints, and cross-project coordination. Every AI coding tool you use reads
+and writes the same files:
 
-Every AI tool you use reads the same folder.
+- **Tasks and bugs** that live in your repo, in your git history — not in one tool's memory
+- **Constraints** your AI agents must follow — user-authored, per-project law
+- **Plans and PRDs** that survive restarts, tool swaps, and team changes
+- **A deterministic engine** (`gald3r`) that runs the boring parts with zero LLM calls
 
-```
-your-project/
-├── .gald3r/          ← the shared brain: tasks, bugs, plans, constraints
-├── .claude/          ← Claude Code reads these
-├── .cursor/          ← Cursor reads these
-└── AGENTS.md         ← every other platform reads this
-```
-
-Switch tools mid-task and the context follows you. Your teammate clones the repo and their
-AI already knows the project. Nothing lives in a vendor's session history.
-
----
-
-## Two pieces, one product
-
-**gald3r 4.0** is a matched pair. This repo is half of it.
-
-| | | |
-|---|---|---|
-| **gald3r** (this repo) | The framework | The `.gald3r/` brain, plus 116 skills, 182 commands, 13 rules, 38 hooks, and 13 agents — packaged for 38 AI coding platforms. This is what lands *in your project*. |
-| **[gald3r_core](https://github.com/Gald3r-Labs/gald3r_core)** | The engine | One signed binary — the same codebase built for **Windows, macOS, and Linux**. Runs every deterministic operation — task and bug lifecycle, validation, the local database, multi-agent orchestration — with **zero LLM calls**. |
-
-The framework is what your AI reads. The engine is what actually executes. You can run the
-framework on its own; adding the engine makes it fast, deterministic, and enforceable.
-
-> **Getting the engine:** download the signed binary or installer from
-> **[gald3r_core releases](https://github.com/Gald3r-Labs/gald3r_core/releases)** for your OS.
-> As of the current `4.0.0-beta.1` prerelease that's a signed, Authenticode-verified Windows
-> binary and `.msi` today — macOS (notarized) and Linux ship together at the full `4.0.0`,
-> per that release's own notes. The desktop app installs from
-> **[gald3r_throne](https://github.com/Gald3r-Labs/gald3r_throne)**. Each product installs from
-> its own repo — this one carries the framework. Full docs: **[docs.gald3r.ai](https://docs.gald3r.ai)**.
+No accounts. No server. No database to operate. No Docker.
 
 ---
 
 ## Quick start
 
-### Copy the template
+**1. Get the binary** — from **[gald3r_core releases](https://github.com/Gald3r-Labs/gald3r_core/releases)**:
 
-```bash
-git clone https://github.com/Gald3r-Labs/gald3r.git
-cp -r gald3r/project_template/. /path/to/your/project/
-```
-
-Open your project and run `/g-setup` (Claude Code) or `@g-setup` (Cursor). That's it —
-the brain is live and your AI can see it.
-
-### Or use the installer (any of 38 platforms)
-
-```bash
-# macOS / Linux
-python setup_gald3r_project.py --target-path "/path/to/MyProject"
-
-# one platform only
-python setup_gald3r_project.py --target-path "/path/to/MyProject" --platform windsurf
-```
-
-```powershell
-# Windows
-.\setup_gald3r_project.bat -TargetPath "C:\MyProject"
-.\setup_gald3r_project.bat -TargetPath "C:\MyProject" -Platform cursor
-```
-
-No accounts. No API keys beyond the ones your AI tool already has. No server, no database,
-no Docker.
-
----
-
-## What you get
-
-- **A brain that survives restarts** — tasks, bugs, plans, and constraints in plain markdown,
-  in your repo, in your git history
-- **116 skills** covering the work you actually do: code review, QA, planning, task
-  management, release, security scanning, research
-- **182 commands** you invoke straight from chat — `/g-status`, `/g-go`, `/g-task-new`,
-  `/g-bug-report`, `/g-plan`
-- **38 hooks** that fire on real IDE events — session start, file save, pre-commit — so
-  discipline is *enforced*, not merely suggested
-- **13 rules** loaded every session to keep the agent honest
-- **13 specialized agents** for review, verification, QA, and infrastructure work
-- **38 platforms supported**, with Cursor and Claude Code at full parity
-
----
-
-## Platform support
-
-| Platform | Tier | What it gets |
-|---|---|---|
-| **Cursor**, **Claude Code** | Tier 1 | Everything — rules, skills, commands, hooks, agents |
-| **Windsurf, Cline, Roo, Aider, Copilot, Codex, Gemini, Qwen, Continue** | Tier 2 | Rules + shared brain + `AGENTS.md` |
-| **27 more** | Tier 3 | Shared brain + `AGENTS.md`, rules where the platform supports them |
-
-Full matrix: [PLATFORM_SUPPORT.html](PLATFORM_SUPPORT.html) ·
-[PLATFORM_CAPABILITY_MATRIX.md](PLATFORM_CAPABILITY_MATRIX.md)
-
-Every tier reads the same `.gald3r/` folder. A Tier 3 tool and a Tier 1 tool working the
-same repo stay in sync.
-
----
-
-## Commands you'll use first
-
-| Command | What it does |
+| OS | Fastest path |
 |---|---|
-| `/g-setup` | Initialize gald3r in a project |
-| `/g-status` | Project health — tasks, bugs, blockers, what's next |
-| `/g-task-new` | Create a task, fully specced |
-| `/g-bug-report` | File and triage a bug |
-| `/g-go` | Autonomous work session on the next task, with independent review |
-| `/g-plan` | Update the project plan |
-| `/g-medic` | Diagnose and repair the gald3r install |
+| **Windows** | Download `gald3r-windows-x86_64.msi`, run it, open a new terminal |
+| **macOS** | Download `gald3r-macos-arm64.pkg`, double-click, follow the prompts |
+| **Linux** | `curl -LO .../releases/latest/download/gald3r-linux-x86_64.tar.gz && tar xzf gald3r-linux-x86_64.tar.gz && ./gald3r-*-linux-x86_64/install.sh` |
 
-Cursor uses `@g-` instead of `/g-`. Same commands, same brain.
+Verify with `gald3r --version`. (Full per-OS instructions, checksums, and source builds:
+**[docs.gald3r.ai/install](https://docs.gald3r.ai)**.)
 
-Full catalog: [gald3r Wiki](https://github.com/Gald3r-Labs/gald3r/wiki)
+**2. Put the brain in your project:**
+
+```bash
+cd /path/to/your/project
+gald3r setup                      # creates .gald3r/ and walks you through
+gald3r platform install cursor    # or: claude, codex, opencode, copilot, windsurf, ...
+```
+
+**3. Open your AI tool and go.** `/g-setup` in Claude Code, `@g-setup` in Cursor —
+the brain is live and every AI you point at the repo can see it.
 
 ---
 
 ## What's in this repo
 
-```
-project_template/    ← what gets copied into your project
-platforms/           ← per-platform payloads (38 of them)
-setup_gald3r_project.py / .bat / .sh   ← the installers
-PLATFORM_SUPPORT.html                  ← the full support matrix
-releases/            ← release notes archive
-```
+This repo is gald3r's **front door** — a landing page, not an install dependency:
+
+| Path | What it is |
+|---|---|
+| `README.md` | This page |
+| `PLATFORM_SUPPORT.html` | The full 38-platform support matrix |
+| `ROADMAP.md` | Where the product is going |
+| `CHANGELOG.md` | Release history |
+| `LICENSE`, `NOTICE` | License (FSL-1.1-Apache-2.0) |
+| `VERSION` | Current version marker |
+
+Everything that used to live here as file trees — the per-platform skill/command/rule
+overlays and the project template — now **ships inside the binary** and is generated
+by it: `gald3r platform install <platform>` writes the exact overlay for your AI tool,
+always current with your binary version, on **all 38 supported platforms**. One binary,
+every tool, no template copies to drift.
+
+- **The engine**: [gald3r_core](https://github.com/Gald3r-Labs/gald3r_core) (releases)
+- **The docs**: [docs.gald3r.ai](https://docs.gald3r.ai)
+- **The desktop app**: [gald3r_throne](https://github.com/Gald3r-Labs/gald3r_throne)
+- **Contributing**: development happens in the private engine repo — see
+  [gald3r_core](https://github.com/Gald3r-Labs/gald3r_core) for the public mirror.
 
 ---
-
-## Contributing
-
-Issues and PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-[Fair Source License 1.1 (FSL-1.1-Apache)](LICENSE) — see [NOTICE](NOTICE) for third-party
-attributions.
-
----
-
-<p align="center">
-  <em>gald3r 4.0 · framework + <a href="https://github.com/Gald3r-Labs/gald3r_core">engine</a></em><br />
-  <a href="CHANGELOG.md">Changelog</a> · <a href="ROADMAP.md">Roadmap</a>
-</p>
+[FSL-1.1-Apache-2.0](LICENSE) — free to use; converts to Apache 2.0 on the same
+schedule. See [NOTICE](NOTICE) for attribution.
