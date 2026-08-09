@@ -12,6 +12,19 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.4] - 2026-08-09
+
+- gald3r install update works again: downloads the per-platform archive,
+  verifies it against SHA256SUMS.txt (fail-closed), extracts, and replaces the
+  running binary safely. Sibling binaries you already have are refreshed too.
+  (This fixes beta.3's known issue -- one last manual install gets you here.)
+- Intel Macs no longer download the Apple Silicon build by mistake.
+- Autopilot's deterministic dispatch now merges to your repo's actual branch
+  (master/trunk/anything), not a hardcoded main.
+- Engine CI is fully green on Linux again; one real SDK fix landed on the way
+  (missing-executable errors now surface as the typed NOT_FOUND error on all
+  platforms).
+
 ## [5.0.0-beta.3] - 2026-08-09
 
 Autopilot economics release: the swarm now materializes.
