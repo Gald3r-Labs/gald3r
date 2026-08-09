@@ -12,6 +12,41 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.3] - 2026-08-09
+
+Autopilot economics release: the swarm now materializes.
+
+- Deterministic implementer dispatch: when a coordinator ends an iteration with
+  zero implementers despite runnable work, the outer loop provisions implementer
+  runs itself (worktree-isolated; opt out with --no-deterministic-dispatch).
+- Capacity circuit breaker: consecutive advertised-but-unmaterialized capacity
+  halts the loop with exit code 3 instead of silently burning the budget
+  (--capacity-violation-limit, --no-capacity-breaker).
+- Review-phase iterations are skipped for free when nothing awaits verification.
+- Iteration accounting diffs the git checkpoint: real commits are never reported
+  as zero throughput again.
+- gald3r run --approval-mode=ask: stream-json tool calls can require an
+  approval_request/approval_response round trip on stdin (fail-closed on
+  timeout or closed stdin).
+- Update in place: gald3r install update (SHA-256 verified).
+
+## [5.0.0-beta.2] - 2026-08-09
+
+- Release assets consolidated to one archive per platform with version-less
+  names, so /releases/latest/download links never go stale.
+- Signed installers: Windows .msi (Authenticode), macOS .pkg (Developer ID +
+  notarized), Linux tarball with install.sh.
+
+## [5.0.0-beta.1] - 2026-08-09
+
+The Go rewrite. The engine is now a single fast native binary on every platform:
+startup drops from 8-11s to ~120-190ms; no Python, no runtime to install.
+
+- .gald3rsecret: keep sensitive files out of AI prompts, logs, and the cloud.
+- .gald3rignore gains ! re-include negation.
+- Restored/added verbs: search, validate, context, task next, task stale-claims.
+- Auto-backup before schema migrations; safer upgrade path.
+
 ## [4.0.0-beta.3] - 2026-08-05
 
 **The first three-platform signed release — and the storefront becomes a front door.**
