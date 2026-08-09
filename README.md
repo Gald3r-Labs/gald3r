@@ -28,7 +28,7 @@
 
 ## v5.0.0 — public beta
 
-**The Go rewrite is out now — 5.0.0-beta.1, signed on Windows, macOS, and Linux.**
+**The Go rewrite is out now — signed on Windows, macOS, and Linux.** The version badge above always shows the newest release; every link below resolves to it.
 
 | OS | Installer | Portable (all binaries) |
 |---|---|---|
@@ -38,6 +38,13 @@
 
 <sub>Authenticode-signed on Windows, Developer-ID codesigned + Apple-notarized on macOS,
 sha256 sidecars on every asset. These links always resolve to the newest release.</sub>
+
+**Companion apps** — optional, installed separately:
+
+| App | What it is | Get it |
+|---|---|---|
+| **Throne** | Desktop control center for gald3r projects (Windows/macOS/Linux) | `gald3r install throne` — fetches the latest signed build from [gald3r_throne releases](https://github.com/Gald3r-Labs/gald3r_throne/releases) (minisign-verified) |
+| **Longship** | Terminal UI for chat + swarm work, same engine | Ships with the gald3r binary work — distribution landing in an upcoming beta |
 
 Everything — the framework, all 38 platform overlays, the task engine — ships in
 **one binary** and provisions from it. This repo is the product's front door; the
