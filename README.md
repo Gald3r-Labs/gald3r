@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Gald3r-Labs/gald3r_core/releases"><img src="https://img.shields.io/badge/version-5.0.0--beta.1-blue" alt="version 5.0.0-beta.1" /></a>
+  <a href="https://github.com/Gald3r-Labs/gald3r_core/releases"><img src="https://img.shields.io/github/v/release/Gald3r-Labs/gald3r_core?include_prereleases&label=version&color=blue" alt="latest gald3r version" /></a>
   <a href="https://github.com/Gald3r-Labs/gald3r_core"><img src="https://img.shields.io/badge/engine-gald3r__core-6f42c1" alt="engine" /></a>
   <a href="https://github.com/Gald3r-Labs/gald3r_core/releases"><img src="https://img.shields.io/badge/OS-Windows%20%C2%B7%20macOS%20%C2%B7%20Linux-informational" alt="Windows, macOS, Linux" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-FSL--1.1--Apache-green" alt="license" /></a>
