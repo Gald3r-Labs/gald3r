@@ -12,6 +12,33 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.1] - 2026-08-09
+
+**The Go rewrite — gald3r is now a fast, signed, native binary on every platform.**
+
+### Changed
+- The engine is rewritten from Python to Go. **Startup drops from 8–11s to ~120ms** — every
+  command, hook, and status check is effectively instant.
+- One signed **and notarized** binary set for Windows, macOS (Apple Silicon + Intel), and Linux.
+  No Python, no runtime to install — download, run, done.
+
+### Added
+- **`.gald3rsecret`** — mark sensitive files (API keys, credential YAMLs) so your AI tools can see
+  they exist but never read their contents into a prompt, a log, or the cloud. Fully offline-safe.
+- **`.gald3rignore` re-include (`!`)** and clearer defaults — both files are now scaffolded with
+  commented examples on setup so you can see what they do.
+- Restored/added verbs incl. **`search`** (searches your `.gald3r/` even when it's git-ignored),
+  **`validate`**, **`context`**, and native **`task next` / `task stale-claims`**.
+- **Auto-backup before schema migrations** (`schema-migrate` snapshots `.gald3r/` first).
+
+### Fixed
+- Task/bug board operations are faster and more consistent; stale in-progress claims are now
+  surfaced and can be released cleanly instead of sitting invisible.
+- The upgrade path is safer end-to-end (auto-backup, corrupt-status repair, clearer `doctor`).
+
+**Downloads:** the [latest gald3r_core release](https://github.com/Gald3r-Labs/gald3r_core/releases/latest)
+(installers + per-platform binaries, signed).
+
 ## [4.0.0-beta.3] - 2026-08-05
 
 **The first three-platform signed release — and the storefront becomes a front door.**
