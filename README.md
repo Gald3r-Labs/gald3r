@@ -44,7 +44,7 @@ sha256 sidecars on every asset. These links always resolve to the newest release
 | App | What it is | Get it |
 |---|---|---|
 | **Throne** | Desktop control center for gald3r projects (Windows/macOS/Linux) | `gald3r install throne` — fetches the latest signed build from [gald3r_throne releases](https://github.com/Gald3r-Labs/gald3r_throne/releases) (minisign-verified) |
-| **Longship** | Terminal UI for chat + swarm work, same engine | Ships with the gald3r binary work — distribution landing in an upcoming beta |
+| **Longship** | Terminal UI for chat + swarm work, same engine | Built on the same engine — public distribution lands in an upcoming beta |
 
 Everything — the framework, all 38 platform overlays, the task engine — ships in
 **one binary** and provisions from it. This repo is the product's front door; the
