@@ -28,7 +28,7 @@
 
 ## v5.0.0 — public beta
 
-**The Go rewrite is out now — 5.0.0-beta.1, signed on Windows, macOS, and Linux.**
+**The Go rewrite is out now: 5.0.0-beta.1, signed on Windows, macOS, and Linux.**
 
 | OS | Installers | Binaries |
 |---|---|---|
