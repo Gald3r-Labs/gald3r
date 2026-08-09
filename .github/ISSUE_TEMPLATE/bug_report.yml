@@ -1,95 +1,145 @@
-name: Bug Report
-description: Report a bug in gald3r
-title: "[Bug]: "
-labels: ["bug"]
+name: 🐛 Bug report
+description: Something in gald3r isn't working the way it should.
+title: "[bug]: "
+labels: ["bug", "needs-triage"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to report a bug. The more detail you provide, the faster we can fix it.
-
-  - type: dropdown
-    id: platform
-    attributes:
-      label: AI Platform / IDE
-      description: Which AI coding platform or IDE are you using gald3r with?
-      options:
-        - Cursor
-        - Claude Code (CLI)
-        - GitHub Copilot
-        - Kiro (Amazon)
-        - Windsurf
-        - Cline (VS Code)
-        - Roo Code
-        - Aider
-        - Augment Code
-        - Gemini CLI
-        - OpenCode (sst.dev)
-        - Codex CLI (OpenAI)
-        - Goose (Block)
-        - JetBrains Junie
-        - Warp Terminal
-        - OpenHands / OpenDevin
-        - Replit Agent
-        - Mistral Vibe
-        - Qwen Code
-        - Multiple platforms
-        - Other (describe below)
-    validations:
-      required: true
+        Thanks for reporting. The three dropdowns below — **which component**, **which platform you run it in**,
+        and **which OS** — are the most useful thing you can give us. They route the report to the right place fast.
 
   - type: dropdown
     id: component
     attributes:
-      label: gald3r Component
-      description: Which part of gald3r is broken?
+      label: Which component?
+      description: Which binary or app is misbehaving? "Not sure" is a fine answer.
       options:
-        - Task Management (.gald3r/ / TASKS.md)
-        - Commands (g-go, g-mission, g-task-add, etc.)
-        - Skills (g-skl-*)
-        - Agents (g-agnt-*)
-        - Rules (g-rl-*)
-        - Hooks
-        - Platform parity / sync scripts
-        - gald3r_install / setup
-        - WPAC / Workspace-Control
-        - MCP / Valhalla backend
-        - Documentation
-        - Other
+        - "gald3r (the CLI)"
+        - "gald3rw (Windows MCP launcher — no-console)"
+        - "gald3r-mcp (MCP server)"
+        - "gald3r-api (HTTP API host)"
+        - "gald3r-hearth (loopback cache)"
+        - "gald3r-acp (editor / ACP host)"
+        - "gald3r-valkyrie (world_tree connector)"
+        - "Longship (terminal UI)"
+        - "Throne (desktop app)"
+        - "The installed overlay (skills / rules / commands / hooks in my IDE)"
+        - "Multiple / the whole install"
+        - "Not sure"
     validations:
       required: true
 
-  - type: textarea
-    id: description
+  - type: dropdown
+    id: platform
     attributes:
-      label: What happened?
-      description: Clear description of the bug. Include steps to reproduce.
-      placeholder: "Steps to reproduce:\n1. Run @g-...\n2. ...\n\nExpected: ...\nActual: ..."
+      label: AI platform / IDE in use
+      description: Where are you running gald3r? gald3r installs into all of these — the overlay differs per platform, so this matters.
+      options:
+        - "Claude Code"
+        - "Cursor"
+        - "GitHub Copilot"
+        - "Codex CLI (OpenAI)"
+        - "OpenCode (sst.dev)"
+        - "Windsurf"
+        - "Cline (VS Code)"
+        - "Roo Code"
+        - "Aider"
+        - "Augment Code"
+        - "Gemini CLI"
+        - "Kiro (Amazon)"
+        - "Goose (Block)"
+        - "JetBrains Junie"
+        - "Warp Terminal"
+        - "OpenHands / OpenDevin"
+        - "Replit Agent"
+        - "Mistral Vibe"
+        - "Qwen Code"
+        - "gald3r native / standalone (no IDE)"
+        - "Multiple platforms"
+        - "Other (describe below)"
     validations:
       required: true
 
-  - type: textarea
-    id: logs
+  - type: dropdown
+    id: os
     attributes:
-      label: Error Output / Logs
-      description: Paste any relevant error messages, agent output, or logs
-      render: shell
+      label: Operating system
+      options:
+        - "Windows (x64)"
+        - "macOS (Apple Silicon / arm64)"
+        - "macOS (Intel / x64)"
+        - "Linux (x64)"
+        - "Linux (arm64)"
+        - "Other / multiple"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install_method
+    attributes:
+      label: How did you install it?
+      options:
+        - "Windows installer (.msi)"
+        - "Windows .exe (direct)"
+        - "macOS installer (.pkg)"
+        - "macOS binary (direct)"
+        - "Linux tarball (install.sh)"
+        - "Linux package (.deb)"
+        - "Homebrew"
+        - "npm (@gald3r/cli)"
+        - "Built from source"
+        - "Other / not sure"
+    validations:
+      required: true
 
   - type: input
     id: version
     attributes:
-      label: gald3r Version
-      description: Check your .gald3r/.identity file for gald3r_version
-      placeholder: "1.7.0"
-
-  - type: input
-    id: os
-    attributes:
-      label: Operating System
-      placeholder: "Windows 11 / macOS 15 / Ubuntu 24.04"
+      label: Version
+      description: "First line of `gald3r --version` (e.g. `gald3r version 5.0.0-beta.1`)."
+      placeholder: "gald3r version 5.0.0-beta.1"
+    validations:
+      required: true
 
   - type: textarea
-    id: context
+    id: what_happened
     attributes:
-      label: Additional Context
-      description: Anything else that might help
+      label: What happened?
+      description: What did you do, and what went wrong? Screenshots welcome.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: The exact commands or clicks. If we can reproduce it, we can fix it.
+      placeholder: |
+        1. gald3r ...
+        2. ...
+        3. see error
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect instead?
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant output / logs
+      description: "Paste terminal output or the error. Auto-formatted as code — no backticks needed."
+      render: shell
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and this isn't a duplicate.
+          required: true
+        - label: I'm on the latest release (or I've said which version above).
+          required: true
+        - label: This is not a security vulnerability (those go to a private advisory, not here).
+          required: true

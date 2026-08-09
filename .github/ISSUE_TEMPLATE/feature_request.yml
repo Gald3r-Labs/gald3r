@@ -1,60 +1,48 @@
-name: Feature Request
-description: Suggest a new feature or improvement for gald3r
-title: "[Feature]: "
-labels: ["enhancement"]
+name: ✨ Feature request / enhancement
+description: Suggest a new capability or an improvement to an existing one.
+title: "[feature]: "
+labels: ["enhancement", "needs-triage"]
 body:
   - type: markdown
     attributes:
-      value: |
-        Have an idea to make gald3r better? We'd love to hear it.
+      value: "Ideas and rough sketches are welcome — you don't need a full proposal."
 
   - type: dropdown
-    id: platform
+    id: area
     attributes:
-      label: AI Platform / IDE
-      description: Which platform would benefit from this feature?
+      label: Which area?
       options:
-        - Cursor
-        - Claude Code (CLI)
-        - GitHub Copilot
-        - Kiro (Amazon)
-        - Windsurf
-        - Cline (VS Code)
-        - Roo Code
-        - Aider
-        - Augment Code
-        - Gemini CLI
-        - OpenCode (sst.dev)
-        - Codex CLI (OpenAI)
-        - Goose (Block)
-        - JetBrains Junie
-        - Warp Terminal
-        - OpenHands / OpenDevin
-        - Replit Agent
-        - Mistral Vibe
-        - Qwen Code
-        - All platforms
-        - Platform-agnostic / framework level
+        - "gald3r (the CLI)"
+        - "MCP / editor integration"
+        - "gald3r-api / world_tree (cloud, sync, subscriptions)"
+        - "Longship (terminal UI)"
+        - "Throne (desktop app)"
+        - "Task / bug / project management (.gald3r board)"
+        - "Swarm / autopilot / g-go"
+        - "Install / packaging / platform overlays"
+        - "Something new / other"
     validations:
       required: true
 
   - type: dropdown
-    id: component
+    id: platform
     attributes:
-      label: gald3r Component
-      description: Which area of gald3r would this affect?
+      label: AI platform / IDE (if platform-specific)
+      description: Leave as "Not platform-specific" if it applies everywhere.
       options:
-        - New Command (g-*)
-        - New Skill (g-skl-*)
-        - New Agent (g-agnt-*)
-        - New Rule (g-rl-*)
-        - Task Management system
-        - WPAC / Workspace-Control
-        - Platform parity / sync
-        - gald3r_install / setup
-        - MCP / Valhalla backend
-        - Documentation
-        - Other
+        - "Not platform-specific"
+        - "Claude Code"
+        - "Cursor"
+        - "GitHub Copilot"
+        - "Codex CLI (OpenAI)"
+        - "OpenCode (sst.dev)"
+        - "Windsurf"
+        - "Cline (VS Code)"
+        - "Roo Code"
+        - "Aider"
+        - "Gemini CLI"
+        - "gald3r native / standalone"
+        - "Other"
     validations:
       required: true
 
@@ -62,28 +50,24 @@ body:
     id: problem
     attributes:
       label: What problem does this solve?
-      description: Describe the pain point or gap you're hitting today
-      placeholder: "When I try to... I have to... which is painful because..."
+      description: What are you trying to do that's hard or impossible today?
     validations:
       required: true
 
   - type: textarea
-    id: solution
+    id: proposal
     attributes:
-      label: Proposed Solution
-      description: How would you like to see this work?
-      placeholder: "It would be great if @g-command-name could..."
-    validations:
-      required: true
+      label: What would you like to see?
 
   - type: textarea
     id: alternatives
     attributes:
-      label: Alternatives Considered
-      description: Have you found any workarounds or alternatives?
+      label: Alternatives or workarounds you've tried
 
-  - type: textarea
-    id: context
+  - type: checkboxes
+    id: checks
     attributes:
-      label: Additional Context
-      description: Any other context, screenshots, or examples
+      label: Before submitting
+      options:
+        - label: I searched existing issues and discussions for this idea.
+          required: true

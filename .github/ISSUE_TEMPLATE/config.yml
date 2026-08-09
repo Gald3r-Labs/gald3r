@@ -1,8 +1,15 @@
+# .github/ISSUE_TEMPLATE/config.yml — IDENTICAL across gald3r_core and gald3r
+# (owner ruling 2026-08-09: the binary and the platform-templates product are
+# one thing; both repos funnel reports to one canonical place). Blank issues
+# off so every report comes through a structured form.
 blank_issues_enabled: false
 contact_links:
-  - name: gald3r Wiki
-    url: https://github.com/wrm3/gald3r/wiki
-    about: Browse the full documentation before opening an issue
-  - name: Discussions
-    url: https://github.com/wrm3/gald3r/discussions
-    about: For general conversation, ideas, and show-and-tell
+  - name: 📖 Documentation
+    url: https://docs.gald3r.ai
+    about: Install guide, quickstart, CLI reference, and troubleshooting — check here first.
+  - name: 💬 Discussions
+    url: https://github.com/Gald3r-Labs/gald3r_core/discussions
+    about: Ideas, show-and-tell, and general conversation that isn't a bug or a specific request.
+  - name: 🔒 Report a security vulnerability (PRIVATE)
+    url: https://github.com/Gald3r-Labs/gald3r_core/security/advisories/new
+    about: Never file security issues publicly. Use a private advisory so it can be fixed before disclosure.
