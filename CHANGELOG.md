@@ -28,7 +28,9 @@ Autopilot economics release: the swarm now materializes.
 - gald3r run --approval-mode=ask: stream-json tool calls can require an
   approval_request/approval_response round trip on stdin (fail-closed on
   timeout or closed stdin).
-- Update in place: gald3r install update (SHA-256 verified).
+- Known issue: 'gald3r install update' in fielded builds requests a retired
+  asset name and fails (BUG-774, fix in the next beta) -- update by running
+  the installer for your OS from the releases page instead.
 
 ## [5.0.0-beta.2] - 2026-08-09
 
