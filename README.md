@@ -30,11 +30,11 @@
 
 **The Go rewrite is out now — 5.0.0-beta.1, signed on Windows, macOS, and Linux.**
 
-| OS | Installers | Binaries |
+| OS | Installer | Portable (all binaries) |
 |---|---|---|
-| **Windows** | [**gald3r-windows-x86_64.msi**](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-windows-x86_64.msi) (signed) | [gald3r.exe](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-windows-x86_64.exe) · [gald3rw.exe](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3rw-windows-x86_64.exe) |
-| **macOS** | [**gald3r-macos-arm64.pkg**](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-macos-arm64.pkg) (signed) | [gald3r](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-macos-arm64) |
-| **Linux** | [**gald3r-linux-x86_64.tar.gz**](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-linux-x86_64.tar.gz) (with `install.sh`) | [gald3r](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-linux-x86_64) |
+| **Windows** | [**gald3r-windows-x86_64.msi**](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-windows-x86_64.msi) (signed) | [gald3r-windows-x86_64.zip](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-windows-x86_64.zip) |
+| **macOS** | [**gald3r-macos-arm64.pkg**](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-macos-arm64.pkg) (signed) | [gald3r-macos-arm64.tar.gz](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-macos-arm64.tar.gz) |
+| **Linux** | [**gald3r-linux-x86_64.tar.gz**](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-linux-x86_64.tar.gz) (with `install.sh`) | [gald3r-linux-x86_64.tar.gz](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-linux-x86_64.tar.gz) |
 
 <sub>Authenticode-signed on Windows, Developer-ID codesigned + Apple-notarized on macOS,
 sha256 sidecars on every asset. These links always resolve to the newest release.</sub>
