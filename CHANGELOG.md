@@ -12,6 +12,26 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.5] - 2026-08-09
+
+Provider routing release: a rate-limited AI provider no longer stops your work.
+
+- The autopilot coordinator is no longer hardcoded to the Claude CLI: a Cursor
+  host defaults to cursor-agent, and the full routing surface works -- CLI
+  flags (--provider/--model plus per-role --coordinator/--implementer/
+  --reviewer -provider/-model), all six GALD3R_GGO_* environment variables,
+  and AGENT_CONFIG keys, with a documented precedence order (flag beats env
+  beats config beats host default).
+- Hit a provider quota wall mid-run? The run no longer dies: the refusal
+  costs no budget, gald3r falls back to a healthy configured provider (opt
+  out with --no-provider-fallback), and if nothing is available it stops
+  honestly with the provider's own quota-reset time, a distinct
+  PROVIDER_UNAVAILABLE state, and exit code 4.
+- cursor-agent runs now report token counts and honor the context-exhaustion
+  safety stop.
+
+Update: gald3r install update
+
 ## [5.0.0-beta.4] - 2026-08-09
 
 - gald3r install update works again: downloads the per-platform archive,
