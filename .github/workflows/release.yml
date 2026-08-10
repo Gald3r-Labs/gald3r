@@ -35,31 +35,14 @@ jobs:
           echo "Release notes extracted for v$VERSION"
           cat release_notes.txt
 
-      - name: Create release archive
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          # Core content lives in project_template/ — always included
-          ZIP_ARGS=("project_template/" "README.md" "CHANGELOG.md" "LICENSE")
-          # Include platforms/ only in the flagship repo (not present in platform repos)
-          [ -d "platforms" ] && ZIP_ARGS+=("platforms/")
-          # Include setup scripts only if they exist
-          [ -f "setup_gald3r_project.ps1" ] && ZIP_ARGS+=("setup_gald3r_project.ps1")
-          [ -f "setup_gald3r_project.bat" ] && ZIP_ARGS+=("setup_gald3r_project.bat")
-          [ -f "setup_gald3r_project.sh" ]  && ZIP_ARGS+=("setup_gald3r_project.sh")
-          [ -f "instructions_new_project.md" ]      && ZIP_ARGS+=("instructions_new_project.md")
-          [ -f "instructions_existing_project.md" ] && ZIP_ARGS+=("instructions_existing_project.md")
-          zip -r "gald3r-template-v${VERSION}.zip" \
-            "${ZIP_ARGS[@]}" \
-            -x "*.git*" \
-            -x "*__pycache__*" \
-            -x "*.pyc"
-          echo "Archive created: gald3r-template-v${VERSION}.zip"
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: "gald3r v${{ steps.version.outputs.version }}"
           body_path: release_notes.txt
-          files: "gald3r-template-v${{ steps.version.outputs.version }}.zip"
           draft: false
-          prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') }}
+          prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-alpha') }}
+          # Betas publish as LATEST, not prerelease (owner ruling 2026-08-09:
+          # /releases/latest download links + the dynamic version badge must
+          # follow betas). Only -rc/-alpha stay prerelease.
+          make_latest: ${{ !(contains(github.ref_name, '-rc') || contains(github.ref_name, '-alpha')) }}
