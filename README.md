@@ -101,6 +101,53 @@ the brain is live and every AI you point at the repo can see it.
 
 ---
 
+<!-- BEGIN: gald3r-platform-list -->
+## Supported Platforms
+
+gald3r installs the same `.gald3r/` task board, bug tracker, and CRASH overlay into every platform below — one binary, `gald3r platform install <name>`, and the files that platform actually reads land in your project. Full capability breakdown: [PLATFORM_SUPPORT.md](PLATFORM_SUPPORT.md).
+
+- **[Aider](https://gald3r-labs.github.io/gald3r_core/latest/platforms/aider/)** — also searched as aider-chat, Aider AI
+- **[Amp](https://gald3r-labs.github.io/gald3r_core/latest/platforms/amp/)** — also searched as Amp Code, Sourcegraph Amp
+- **[AstrBot](https://gald3r-labs.github.io/gald3r_core/latest/platforms/astrbot/)**
+- **[Augment Code](https://gald3r-labs.github.io/gald3r_core/latest/platforms/augment/)** — also searched as Auggie, Auggie CLI
+- **[Claude Code](https://gald3r-labs.github.io/gald3r_core/latest/platforms/claude/)** — also searched as Claude, Anthropic Claude Code
+- **[Cline](https://gald3r-labs.github.io/gald3r_core/latest/platforms/cline/)**
+- **[Continue.dev](https://gald3r-labs.github.io/gald3r_core/latest/platforms/continue/)** — also searched as Continue
+- **[Cursor](https://gald3r-labs.github.io/gald3r_core/latest/platforms/cursor/)** — also searched as Cursor IDE
+- **[Deep Code CLI](https://gald3r-labs.github.io/gald3r_core/latest/platforms/deepcode/)** — also searched as Deep Code, deepcode-cli
+- **[Devin Desktop](https://gald3r-labs.github.io/gald3r_core/latest/platforms/windsurf/)** — also searched as Windsurf, Cascade IDE
+- **[GitHub Copilot](https://gald3r-labs.github.io/gald3r_core/latest/platforms/copilot/)** — also searched as Copilot, GitHub Copilot CLI
+- **[Google Antigravity](https://gald3r-labs.github.io/gald3r_core/latest/platforms/antigravity/)** — also searched as Antigravity IDE, Antigravity
+- **[Goose](https://gald3r-labs.github.io/gald3r_core/latest/platforms/goose/)** — also searched as Block Goose, Goose AI agent
+- **[Hermes Agent](https://gald3r-labs.github.io/gald3r_core/latest/platforms/hermes/)** — also searched as Nous Hermes Agent, Nous Research Hermes
+- **[JetBrains Junie](https://gald3r-labs.github.io/gald3r_core/latest/platforms/junie/)** — also searched as Junie
+- **[Kilo Code](https://gald3r-labs.github.io/gald3r_core/latest/platforms/kilo-code/)** — also searched as KiloCode
+- **[Kimi Code](https://gald3r-labs.github.io/gald3r_core/latest/platforms/kimi/)** — also searched as Kimi Code CLI, Moonshot Kimi Code, kimi-cli
+- **[Kiro](https://gald3r-labs.github.io/gald3r_core/latest/platforms/kiro/)** — also searched as Kiro IDE, Amazon Kiro
+- **[Kiro CLI](https://gald3r-labs.github.io/gald3r_core/latest/platforms/kiro-cli/)** — also searched as Amazon Q Developer CLI, Q Developer CLI
+- **[Mistral Vibe CLI](https://gald3r-labs.github.io/gald3r_core/latest/platforms/mistral/)** — also searched as mistral-vibe, Mistral Code
+- **[OpenAI Codex](https://gald3r-labs.github.io/gald3r_core/latest/platforms/codex/)** — also searched as Codex CLI, Codex
+- **[OpenClaw](https://gald3r-labs.github.io/gald3r_core/latest/platforms/openclaw/)**
+- **[OpenCode](https://gald3r-labs.github.io/gald3r_core/latest/platforms/opencode/)** — also searched as sst/opencode
+- **[OpenHands](https://gald3r-labs.github.io/gald3r_core/latest/platforms/openhands/)** — also searched as All Hands AI, OpenDevin
+- **[Pi](https://gald3r-labs.github.io/gald3r_core/latest/platforms/pi/)** — also searched as badlogic/pi-mono, Pi coding agent
+- **[Qoder](https://gald3r-labs.github.io/gald3r_core/latest/platforms/qoder/)** — also searched as Alibaba Qoder
+- **[Qwen Code](https://gald3r-labs.github.io/gald3r_core/latest/platforms/qwen/)** — also searched as Alibaba Qwen Code
+- **[Replit Agent](https://gald3r-labs.github.io/gald3r_core/latest/platforms/replit/)** — also searched as Replit
+- **[Roo Code](https://gald3r-labs.github.io/gald3r_core/latest/platforms/roo/)** — also searched as Roo Cline
+- **[SubQ Code](https://gald3r-labs.github.io/gald3r_core/latest/platforms/subq/)** — also searched as SubQ
+- **[Tencent CodeBuddy Code](https://gald3r-labs.github.io/gald3r_core/latest/platforms/codebuddy/)** — also searched as CodeBuddy
+- **[TRAE](https://gald3r-labs.github.io/gald3r_core/latest/platforms/trae/)** — also searched as ByteDance TRAE, TRAE IDE
+- **[Void](https://gald3r-labs.github.io/gald3r_core/latest/platforms/void/)** — also searched as Void IDE
+- **[Warp](https://gald3r-labs.github.io/gald3r_core/latest/platforms/warp/)** — also searched as Warp terminal, Warp Oz
+- **[Xiaomi MiMo-Code](https://gald3r-labs.github.io/gald3r_core/latest/platforms/mimo-code/)** — also searched as MiMo-Code, MiMo Code
+- **[ZCode](https://gald3r-labs.github.io/gald3r_core/latest/platforms/zcode/)** — also searched as Z.ai ZCode, GLM ZCode
+- **[Zed](https://gald3r-labs.github.io/gald3r_core/latest/platforms/zed/)** — also searched as Zed Editor
+
+<!-- END: gald3r-platform-list -->
+
+---
+
 ## The gald3r system — who does what
 
 One product family, five pieces. ● owns it · ◐ involved in it.
