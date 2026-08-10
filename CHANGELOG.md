@@ -12,6 +12,34 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.8] - 2026-08-10
+
+The observability release: a swarm can never run dark again.
+
+- Live event stream: every autopilot run now narrates itself the moment
+  things happen -- claims, agent spawns, merges, harvests, breakers,
+  costs -- as [AUTOPILOT][EVENT] lines in your session AND a durable
+  per-run event ledger. New: gald3r autopilot events --follow tails a
+  live run from any other terminal.
+- Heartbeats and a stall watchdog: long iterations now beat every 15
+  minutes with liveness diagnostics, and a frozen coordinator (the
+  74-minute silent-stall class) is detected within minutes -- claims
+  released, one retry, then a loud named halt. Never an hour of
+  silence.
+- autopilot status now tells the truth: it reads the same candidate
+  board the loop itself uses (it previously read an unrelated legacy
+  queue), and task show --json exposes claim ownership.
+- Every Windows binary now has a face: Mjolnir-derived icons and real
+  Gald3r Labs version metadata in Explorer, Task Manager, and
+  Add/Remove Programs.
+- Find your platform: 37 new docs pages -- one per supported platform
+  -- at docs.gald3r.ai, matching the new Supported Platforms section in
+  this README.
+- Config hot-reload no longer races itself on Windows; a new CI gate
+  guarantees every shipped verb has documentation.
+
+Update: gald3r install update
+
 ## [5.0.0-beta.7] - 2026-08-10
 
 The harvest release -- and Longship's debut: finished work always comes
