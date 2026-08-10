@@ -12,6 +12,34 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.6] - 2026-08-10
+
+The autopilot integrity release: bugs are workable, work is unlosable,
+parallelism is honest, and local AI works out of the box.
+
+- New gald3r go-bug: autopilot can now FIX bugs, not just log them -- the
+  full claim, agent turn, self-verify, resolve cycle, wired into
+  deterministic dispatch. A bug backlog becomes reachable work and
+  --min-severity finally gates something real. An empty bug queue no longer
+  ends a run while tasks remain.
+- Rescue commits: if a run dies mid-iteration (provider refusal, breaker,
+  fatal signal), uncommitted run-authored work lands in a named wip(rescue)
+  commit -- never lost to a cleanup, and never touching your own
+  pre-existing uncommitted edits.
+- Honest parallelism: implementer counts only count buckets that actually
+  landed work; idle or failed buckets are loudly diagnosed; a dispatch that
+  produces nothing counts as a capacity violation (consecutive AND
+  cumulative breakers).
+- Local AI out of the box: gald3r init-providers discovers a running Ollama
+  server over HTTP (no CLI needed), the documented setup path just works,
+  and the .gald3rsecret no-cloud tier correctly treats loopback AI as local
+  (LAN endpoints require an explicit opt-in).
+- New CI parity gates: advertised flags and documented environment
+  variables are now mechanically verified against the binary on every
+  change -- the lost-surface defect class is structurally dead.
+
+Update: gald3r install update
+
 ## [5.0.0-beta.5] - 2026-08-09
 
 Provider routing release: a rate-limited AI provider no longer stops your work.
