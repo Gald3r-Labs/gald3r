@@ -12,6 +12,40 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.7] - 2026-08-10
+
+The harvest release -- and Longship's debut: finished work always comes
+home, and the Agentic Focus Terminal is now in the box.
+
+- The harvest gate: work an autopilot agent completes in a worktree is now
+  automatically committed and merged into your checkout -- at every
+  iteration close and once more at run end. A merge that is not safe leaves
+  the work preserved on its own branch, never destroyed, with a line naming
+  why. Runs can no longer report "zero work" while finished code sits
+  stranded.
+- Longship ships in every install bundle: gald3r-longship, the terminal
+  chat app, is now an eighth signed binary in the platform archives -- with
+  a guided first-run: launch it with zero config and it walks you through
+  picking a provider (a running Ollama or LM Studio is offered as the
+  no-key instant path), then drops you straight into chat. No more fatal
+  error before you even see the app.
+- gald3r context now binds to the CALLING session's own transcript and
+  never guesses -- previously, on a machine with several live sessions, it
+  could silently measure a different session and report it as real. Cursor
+  sessions get their own measurement source with the same honesty contract.
+- Stale claims release themselves at run end; the worktree janitor no
+  longer abandons a sweep at the first dirty worktree; long healthy
+  iterations can no longer be killed by a stop-escalation ceiling shorter
+  than the coordinator's own timeout; and every cost figure says
+  "(estimated)" when it is one -- with real per-model pricing now wired
+  into the loop.
+- upgrade-project --dry-run is now truly read-only (it previously refreshed
+  the overlay and wrote a backup), upgrades take an automatic pre-flight
+  backup, search --path accepts a single file, and a mistyped task/bug
+  subcommand tells you what it was and suggests the closest real one.
+
+Update: gald3r install update
+
 ## [5.0.0-beta.6] - 2026-08-10
 
 The autopilot integrity release: bugs are workable, work is unlosable,
