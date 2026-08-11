@@ -12,6 +12,30 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.10] - 2026-08-11
+
+The delivered-orders release: spawned agents finally receive their instructions.
+
+- The brief actually reaches the agent now. Headless CLI agents
+  (cursor-agent, claude) were being launched without their
+  instructions -- a real agent would run for minutes and change
+  nothing. The prompt is now handed over the way those CLIs expect,
+  so implementer and coordinator turns do the work they were asked to.
+- Failures tell you why. Every loop-spawned worker's output is
+  captured to a per-run log and the failing lines are quoted in the
+  failure message -- no more bare "exited 1" with nothing to act on.
+- What you asked for is what runs: the resolved provider and model
+  travel explicitly with each spawned worker, and go / go-code /
+  go-bug / go-review all accept --provider directly.
+- Review runs on subscriptions too. The reviewer role can now drive
+  cursor-agent, so verification passes work on a machine with no API
+  keys -- and a verdict is only accepted from real recorded evidence,
+  never from a clean exit code.
+- Quality of life: crash telemetry and backup archives can no longer
+  dirty your working tree or block a run, and the docs gained a cost
+  guide for choosing how you loop (in-session pipelines vs spawned
+  CLI sessions vs API-key providers).
+
 ## [5.0.0-beta.9] - 2026-08-11
 
 The throughput release: your subscriptions now do the work.
