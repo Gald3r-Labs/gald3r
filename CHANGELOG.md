@@ -12,6 +12,32 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.12] - 2026-08-11
+
+The eyes-and-teeth release: a stalled swarm can no longer hide, and
+stopping one actually stops it.
+
+- A worker that produces nothing gets caught: a per-worker liveness
+  watchdog kills any bucket that goes silent, reports what it captured,
+  and the loop MOVES ON to the next item instead of freezing forever
+  behind one wedged process. The heartbeat now ticks through the entire
+  dispatch window, so a quiet run always tells you it is alive.
+- `gald3r autopilot stop --now` is genuinely immediate: it terminates
+  the recorded process tree and finalizes the run marker itself -- no
+  more killing by PID and hand-editing files to recover.
+- Honest events: `bucket_planned` (intent) is now separate from
+  `bucket_spawned` (worker confirmed running), so telemetry can never
+  again claim five workers dispatched when none started.
+- Claude-subscription users get autonomous implementers: `--provider
+  claude` now genuinely drives the claude CLI instead of silently
+  demanding an API key -- proven end-to-end with a real agent fixing a
+  real bug before this release was cut.
+- Every shipped @g-* command works as written: ten internal playbooks
+  the commands reference are now retrievable, guarded by a test that
+  walks every shipped command; and a mistyped subcommand errors with a
+  did-you-mean across all 55 command groups instead of silently
+  printing help.
+
 ## [5.0.0-beta.11] - 2026-08-11
 
 The unblocked release: every kind of repo can loop now.
