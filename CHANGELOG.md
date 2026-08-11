@@ -12,6 +12,26 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.11] - 2026-08-11
+
+The unblocked release: every kind of repo can loop now.
+
+- The one-second bucket deaths are over. If your project gitignores its
+  .gald3r/ folder -- the normal setup for application repos -- spawned
+  workers used to land in a workspace with no task specs at all and die
+  instantly. gald3r now detects that shape and points every worker at
+  the real project state automatically, with a clear line in the log
+  saying so.
+- The @g-go command fallback works again: the instructions those
+  commands fetch are no longer refused by the assistant-facing gate.
+- Backup archives can no longer dirty your tree and block a run -- the
+  ignore rule now heals itself at loop start, no reinstall needed.
+- Memory upgrades: per-agent memory loadouts (give your reviewer and
+  implementer different working memory), a skill-extraction pipeline
+  that distills reusable skills from completed work (human-approved
+  before anything ships), and session-local notes no longer leak into
+  memory recall.
+
 ## [5.0.0-beta.10] - 2026-08-11
 
 The delivered-orders release: spawned agents finally receive their instructions.
