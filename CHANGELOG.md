@@ -12,6 +12,36 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.9] - 2026-08-11
+
+The throughput release: your subscriptions now do the work.
+
+- Autonomous implementers on subscription credentials: go-code and
+  go-bug can now drive the same cursor-agent/claude CLI your
+  subscription already pays for -- no API keys required. On a
+  subscription-only machine, autopilot buckets actually implement and
+  fix instead of failing in one second (the root cause behind every
+  zero-throughput run since beta.3, found by beta.8's own diagnostics).
+  A do-nothing agent can never fake a fix: evidence of real change is
+  required before anything resolves.
+- A doomed run refuses at startup with the remedy named -- before
+  claiming work or creating worktrees -- and the circuit breaker names
+  the shared cause when every failure is the same one.
+- Review phase unstuck: awaiting-verification work dispatches again
+  (the empty-queue miscount that let review items age forever is
+  fixed).
+- Harvest merges for real: diverged-but-clean bucket branches land via
+  a proper merge commit; genuine conflicts surface exact copy-paste
+  recovery commands. The first-merge-strands-the-rest era is over.
+- Live run events can stream to world_tree subscribers (opt-in
+  --publish-events; durable offline queue, never slows a run).
+- Component activation telemetry is back (crash-stats records real
+  usage again), config hot-reload is race-free on Windows, backup zips
+  and telemetry logs can no longer block a run's preflight, and every
+  shipped verb now has documentation enforced by CI.
+
+Update: gald3r install update
+
 ## [5.0.0-beta.8] - 2026-08-10
 
 The observability release: a swarm can never run dark again.
