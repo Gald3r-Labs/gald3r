@@ -12,6 +12,25 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.15] - 2026-08-12
+
+The report-it release: real throughput on every configuration, and a
+one-command way to tell us when anything still goes wrong.
+
+- Worker agents are invoked correctly for non-interactive use across every
+  supported agent CLI -- the missing print-mode and trust flags explained
+  both the silent hangs and the "completed but changed nothing" runs. A
+  worker that produces zero output is now honestly counted as a failure,
+  and every worker's own output lands in its per-task log.
+- Stale working copies refresh themselves before dispatch, so finished work
+  always merges; stopping a run releases exactly the claims it interrupted.
+- NEW: `gald3r gfix` -- when something fails, gald3r drafts a complete bug
+  report from its own logs, scrubs personal information automatically (and
+  shows you what it removed), lets you edit the draft, and only files a
+  prefilled GitHub issue after your explicit confirmation. Duplicates are
+  detected and pointed at the existing issue. You choose the offer level
+  once: off, critical-only, or all.
+
 ## [5.0.0-beta.14] - 2026-08-12
 
 The throughput release: the last field blocker is dead, and projects get a
