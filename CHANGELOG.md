@@ -12,6 +12,27 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.13] - 2026-08-12
+
+The restored-playbook release: the autonomous loop got its full operating
+knowledge back -- and proved it live before shipping.
+
+- The autopilot coordinator's internal briefing is whole again: restored
+  from the era when multi-hour unattended runs just worked, carried inside
+  the binary, and adapted to the current engine. Coordinators receive
+  complete work-item detail up front and delegate immediately instead of
+  re-reading the project or quietly doing everything themselves.
+- Every built-in pipeline playbook was audited line-by-line against its
+  proven predecessor; dozens of lost operating rules are back, and every
+  "the binary enforces this" claim was verified against the actual code --
+  the untrue ones now say honestly what is and isn't automated yet.
+- `gald3r go-preflight` genuinely performs its documented safety checks:
+  cross-project inbox conflict detection and a clean-status sweep across
+  workspace member repositories, with clear remediation output.
+- Proven before the cut: a real end-to-end autonomous run on this exact
+  build -- live coordinator, live worker agents, three tasks implemented,
+  independently reviewed, and completed, with a clean halt.
+
 ## [5.0.0-beta.12] - 2026-08-11
 
 The eyes-and-teeth release: a stalled swarm can no longer hide, and
