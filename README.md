@@ -148,6 +148,24 @@ gald3r installs the same `.gald3r/` task board, bug tracker, and CRASH overlay i
 
 ---
 
+## Works With
+
+gald3r doesn't just live *inside* Claude Code and Cursor — it can drive them headlessly for
+autonomous pipelines, and it talks straight to your model backend of choice, local or cloud:
+
+| Backend | What it is | Docs |
+|---|---|---|
+| **[Claude Code](https://gald3r-labs.github.io/gald3r_core/latest/platforms/claude/)** | Anthropic's terminal coding agent — `g-go`/`g-go-go` drive it headlessly for autonomous coding | [Platform guide](https://gald3r-labs.github.io/gald3r_core/latest/platforms/claude/) |
+| **[Cursor](https://gald3r-labs.github.io/gald3r_core/latest/platforms/cursor/)** | The `cursor-agent` CLI — same headless autopilot story, one flag away | [Platform guide](https://gald3r-labs.github.io/gald3r_core/latest/platforms/cursor/) |
+| **[Ollama](https://ollama.com)** | Local model runtime — `gald3r init-providers` auto-discovers every model you've pulled | [Provider docs](https://gald3r-labs.github.io/gald3r_core/latest/providers/) |
+| **[LM Studio](https://lmstudio.ai)** | Local model runtime with a GGUF library and its own local server | [Provider docs](https://gald3r-labs.github.io/gald3r_core/latest/providers/) |
+| **[OpenRouter](https://openrouter.ai)** | One API key, every hosted model — `openai_compat`, no adapter needed | [Provider docs](https://gald3r-labs.github.io/gald3r_core/latest/providers/) |
+| **Unsloth Studio** ![NEW](https://img.shields.io/badge/NEW-orange?style=flat-square) | Built-in `unsloth` provider id, bearer-token auth, `localhost:8888/v1` by default — gald3r's first-supporter, day-one integration | [Provider docs](https://gald3r-labs.github.io/gald3r_core/latest/providers/) |
+
+Full local + cloud provider setup: **[Models & Providers](https://gald3r-labs.github.io/gald3r_core/latest/providers/)**.
+
+---
+
 ## The gald3r system — who does what
 
 One product family, five pieces. ● owns it · ◐ involved in it.
