@@ -12,6 +12,26 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.16] - 2026-08-12
+
+The complete-briefs release: spawned agents now receive their entire
+instructions, every time, at any size.
+
+- Agent briefs (coordinator, implementer, reviewer) are delivered whole via
+  file handoff instead of being squeezed through OS command-line limits --
+  no more truncated instructions on any platform, and every delivered brief
+  is kept on disk so you can see exactly what an agent was told.
+- Windows launcher shims (used by some agent CLIs) are detected and routed
+  to file delivery automatically, even for small briefs.
+- Every free-text CLI option now accepts --<flag>-file PATH and '-' for
+  stdin, so multi-line content never fights shell quoting.
+- gald3r selftest now validates hook wiring for every installed platform
+  overlay, understands the opt-in git-hooks setup, and checks active
+  constraints; gald3r doctor flags stale or shadowed gald3r binaries on
+  PATH, including version mismatches.
+- Local AI docs now cover Unsloth Studio setup alongside Ollama, LM Studio,
+  vLLM, and llama.cpp.
+
 ## [5.0.0-beta.15] - 2026-08-12
 
 The report-it release: real throughput on every configuration, and a
