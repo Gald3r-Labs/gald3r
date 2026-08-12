@@ -12,6 +12,29 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.14] - 2026-08-12
+
+The throughput release: the last field blocker is dead, and projects get a
+cleaner shape plus three new ways to capture work.
+
+- Worker agents now receive their FULL instructions (task description,
+  acceptance criteria, working contract) instead of a title-only fragment,
+  and Windows PowerShell-script-installed AI CLIs launch correctly -- the
+  defect family behind every silent stall since beta.3, root-caused by the
+  beta.13 diagnostics and proven fixed on the exact failing configuration.
+- Cleaner project layout: SDLC files live under .gald3r/project/; existing
+  projects keep working and migrate only when you choose (gald3r layout
+  migrate, dry-run by default).
+- NEW: per-file Ideas with a regenerated board, a user-only TO-DO commitment
+  tier (idea -> to-do -> task lifecycle), and Architecture Decision Records
+  with an immutable supersede chain. PRDs repaired end-to-end.
+- NEW: Record a Skill -- demonstrate a workflow once inside a recording
+  window and gald3r compiles it into a real, invocable skill.
+- First-supporter integration for Unsloth Studio as a built-in local
+  model provider.
+- Stop orders are scoped to their run; stale ones can no longer consume a
+  fresh launch. Harvested work no longer drags transient markers into main.
+
 ## [5.0.0-beta.13] - 2026-08-12
 
 The restored-playbook release: the autonomous loop got its full operating
