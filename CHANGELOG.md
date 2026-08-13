@@ -12,6 +12,13 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.20] - 2026-08-13
+
+Autopilot now runs multiple implementers at once.
+
+- `gald3r autopilot loop` / `@g-go-go` fans out coding agents in parallel by default. Use `--no-code-swarm` when you need one-at-a-time.
+- Merge-back stays serialized so parallel worktrees do not wedge the git lock.
+
 ## [5.0.0-beta.19] - 2026-08-13
 
 The sequential-path survivability release: one loop, honest go-bug, live bucket logs.
