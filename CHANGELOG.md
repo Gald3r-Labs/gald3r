@@ -12,6 +12,15 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.19] - 2026-08-13
+
+The sequential-path survivability release: one loop, honest go-bug, live bucket logs.
+
+- Silent buckets are killed after 30 minutes by default (was 5); the heartbeat can see bucket output, and a still-running bucket writes a live log.
+- `VERDICT: FAIL` keeps the bug open. Empty specs fall back to the file/database. Title-only Critical bugs are not dispatched. Isolated-worktree briefs tell the agent to commit on that branch.
+- A second `autopilot loop` is refused while one is alive. Graceful stop skips remaining buckets and kills the in-flight one after three minutes. Starting a new loop releases leftover go-bug claims from a previous binary.
+- Implementer briefs name configured MCP servers (host:port only). `install update` lists leftover gald3r PIDs after rename-aside. Windows INFO lines no longer show up as crash spam.
+
 ## [5.0.0-beta.18] - 2026-08-13
 
 Docs match the binary: `@g-go-go` runs one implementer at a time. Parallel
