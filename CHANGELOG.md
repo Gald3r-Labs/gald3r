@@ -12,6 +12,14 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.21] - 2026-08-13
+
+Field fix so a live autopilot loop can finish and harvest.
+
+- Allowlisted board-file writes mid-loop no longer block harvest or the next worktree.
+- A title-only Critical bug is skipped instead of claimed-then-refused, so it does not trip the capacity breaker or reopen paused/resolved work at teardown.
+- Autopilot coordinator and implementer children now see the project directory Claude hooks expect.
+
 ## [5.0.0-beta.20] - 2026-08-13
 
 Autopilot now runs multiple implementers at once.
