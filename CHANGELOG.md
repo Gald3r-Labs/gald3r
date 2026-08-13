@@ -12,6 +12,25 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.17] - 2026-08-13
+
+The field-follow-up release: a finished turn is trusted over plumbing noise.
+
+- A completed no-commit turn counts as real work, so a correct "nothing to
+  change" triage no longer trips the capacity breaker and kills a run that
+  still has queued work. Claims from buckets that die at run-end are released
+  instead of occupying worker slots forever.
+- On Cursor, review without an explicit provider prefers the Cursor agent
+  over a missing local model. A transport error is a run problem, not a mass
+  FAIL of every task under review. A complete implementation is not marked
+  failed because teardown hit a brief unauthorized blip. Textual review
+  verdicts still count if the JSON file write is blocked.
+- `constraint add --rule-file` works without a dummy argument; update and
+  delete can repair a bad row. `gfix` warns at draft time if GitHub CLI is
+  missing or not logged in.
+- Git applies to the main checkout wait on an index lock and retry instead
+  of deleting the lockfile.
+
 ## [5.0.0-beta.16] - 2026-08-12
 
 The complete-briefs release: spawned agents now receive their entire
