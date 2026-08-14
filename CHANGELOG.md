@@ -12,6 +12,14 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.22] - 2026-08-14
+
+g-go stays on the model you launched from. Autopilot names its models up front.
+
+- `g-go` / `g-go-code` / `g-go-review` inherit the IDE you are in. They no longer switch to a pinned model from project config.
+- Autopilot (`gald3r autopilot loop` / `@g-go-go`) requires `--provider` and `--model` (or the per-role flags) and prints which model each role will use before it starts.
+- BUGS.md is a slim table of links, matching TASKS.md. Repair an already-swollen index with `gald3r bug regenerate-index --apply`.
+
 ## [5.0.0-beta.21] - 2026-08-13
 
 Field fix so a live autopilot loop can finish and harvest.
