@@ -12,6 +12,14 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.23] - 2026-08-14
+
+Autopilot runs implementers in parallel. Vault-first research is on.
+
+- Autopilot runs implementers in parallel by default. Use `--no-code-swarm` for one-at-a-time. Sibling count defaults to 5 (recommended 3–8). `--budget` is an attempt cap; `0` means unlimited.
+- Agents search the local knowledgebase before the internet. Memory recall treats ingested research notes as first-class results.
+- A local scheduler can wake HEARTBEAT rows without keeping Throne open. Doctor `--apply` upgrades a legacy WPAC inbox.
+
 ## [5.0.0-beta.22] - 2026-08-14
 
 g-go stays on the model you launched from. Autopilot names its models up front.
