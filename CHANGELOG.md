@@ -12,6 +12,24 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.25] - 2026-08-15
+
+The stability build: state reconciliation, safe upgrades, and budgets
+that mean what they say.
+
+- Budget in one sentence: the number of tasks and bugs the loop will
+  attempt to handle. Reviews never consume budget, and completed work
+  gets reviewed and finalized before anything new starts.
+- The board never lies: failed or empty merges roll back and requeue,
+  claims release themselves, killed workers leave logs and ledger
+  events, and end-of-run summaries report real PASS/FAIL counts.
+- Safe upgrades: install update detects wrapper scripts on PATH and
+  updates the real install; doctor flags stale copies and mismatches.
+- MCP servers launch reliably: generated configs point at the exact
+  installed binary, not a PATH search.
+- Every guide and playbook now uses the plain gald3r command -- no
+  Python environment is ever required.
+
 ## [5.0.0-beta.24] - 2026-08-15
 
 Autopilot reviews each finished item in the same loop. Harvest keeps completed task files.
