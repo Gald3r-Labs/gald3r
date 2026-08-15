@@ -12,6 +12,21 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.26] - 2026-08-15
+
+The throughput build: the loop spends its budget on work an agent can
+actually finish, and hands everything else to you -- once.
+
+- Human-gated items park in your attention queue after one attempt
+  instead of being re-implemented forever; every item caps at three
+  attempts per run with a named reason.
+- The picker never offers human-gated or already-merged work, and
+  parallelism holds at your --lanes setting even when a worker dies.
+- Windows: worktree markers ride through antivirus file locks; repos
+  that keep .gald3r/ out of git stop seeing refused staging messages.
+- Run backlog-curate before your first beta.26 loop so the whole
+  budget goes to real, landable work.
+
 ## [5.0.0-beta.25] - 2026-08-15
 
 The stability build: state reconciliation, safe upgrades, and budgets
