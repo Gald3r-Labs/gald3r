@@ -12,6 +12,14 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.24] - 2026-08-15
+
+Autopilot reviews each finished item in the same loop. Harvest keeps completed task files.
+
+- Autopilot now reviews each finished item in the same loop instead of waiting for a later batch pass.
+- Completed task files survive harvest. Leftover scratch files and local scheduler or vault-ingest state no longer stop a run.
+- Worktrees keep the controller board database. Child checkouts no longer rebase shared board indexes onto main.
+
 ## [5.0.0-beta.23] - 2026-08-14
 
 Autopilot runs implementers in parallel. Vault-first research is on.
