@@ -12,6 +12,26 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.30] - 2026-08-16
+
+The discipline build: branch discipline for the loop's git work, live
+lane visibility, and a forensically complete ledger.
+
+- Two opt-in branch modes: session branches collect the loop's own
+  bookkeeping commits into one reviewable unit; branch-in-place runs solo
+  sequential work on a feature branch in your checkout with no separate
+  worktree directory. Both off by default -- nothing changes unless you
+  turn them on.
+- `gald3r autopilot status` shows a per-lane liveness table: which signal
+  channel last showed life for each active agent; hung agents are named
+  as hung.
+- Every agent action leaves a durable event -- claims, verdicts, spawns,
+  gate decisions -- so `gald3r autopilot replay` reconstructs any run
+  with zero gaps.
+- Runaway-protection counters measure consecutive trouble since the last
+  productive iteration, never lifetime totals -- long healthy runs can no
+  longer accumulate into a false stop.
+
 ## [5.0.0-beta.29] - 2026-08-16
 
 The trust build: verdicts are law, the docs are professional, nothing
