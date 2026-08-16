@@ -12,6 +12,21 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.29] - 2026-08-16
+
+The trust build: verdicts are law, the docs are professional, nothing
+internal leaks.
+
+- A reviewer's written verdict can never be suppressed because its prose
+  resembled an error message; items whose reviews never conclude park for
+  human attention after three attempts.
+- The documentation site rebuilt: dedicated Commands / Skills / Agents /
+  Verbs pages, headliner navigation, full currency, and a permanent
+  sanitization layer so internal references can never reach a public page.
+- Session goals, the codename registry, and five decision-framework
+  commands now have their slash-command surfaces in every IDE overlay.
+- Generated configuration templates carry plain product comments only.
+
 ## [5.0.0-beta.28] - 2026-08-16
 
 The resilience build -- plus a thinking toolkit and two navigation aids.
