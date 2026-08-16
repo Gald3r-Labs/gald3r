@@ -12,6 +12,30 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.27] - 2026-08-16
+
+The supervision build: a running loop is either shipping work or telling
+you exactly why not -- never silently spinning.
+
+- Reviews finish everything: bug fixes get fresh-eyes verdict turns too,
+  so completed-but-unverified work drains instead of accumulating
+  (`gald3r go-bug-review`).
+- Fresh work outranks repeat offenders: the picker remembers, across
+  runs, which items keep producing no real change and demotes them --
+  never drops them.
+- Safety gates always arm: missing provider telemetry now falls back to
+  computed proxies (wall-clock, iteration count, output volume) with a
+  once-per-run banner saying exactly which gates run on what; a run that
+  iterates without completing anything trips a no-progress breaker.
+- Silent workers get reclaimed: liveness now reads real work signals
+  (board writes, worktree activity) -- a quietly-working agent lives, a
+  wedged one is killed, named, and its lane refills immediately.
+- Worker agents can no longer stop the loop that spawned them.
+- Briefs trust your board: a task's own recorded notes outrank any stale
+  repository document that contradicts them.
+- `gald3r doctor` and the running loop now agree on workspace
+  participation via one shared detection rule.
+
 ## [5.0.0-beta.26] - 2026-08-15
 
 The throughput build: the loop spends its budget on work an agent can
