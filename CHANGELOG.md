@@ -12,6 +12,26 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.28] - 2026-08-16
+
+The resilience build -- plus a thinking toolkit and two navigation aids.
+
+- One stuck task can never crash a run: root fix, graceful refusal, and a
+  recovery net around the scheduler.
+- Budget exhaustion finishes in-flight work (merge + review) before ending;
+  leftovers report honestly in one line.
+- Blocked work stays blocked -- every dependency mechanism honored through
+  one shared rule.
+- `gald3r autopilot replay RUN_ID`: reconstruct any past run from its
+  durable records -- debugging is one command, not archaeology.
+- Session goals (`gald3r sesh-goal`): tell the AI where the session is
+  headed and it holds the course.
+- Codename registry (`gald3r codename`): internal names mapped to plain
+  ones -- resolve "that thing that does X" to its real name instantly.
+- Five decision frameworks: g-thinker, g-ooda, g-mdmp, g-ipb, g-stz.
+- Agent child processes no longer flash console windows or steal keyboard
+  focus on Windows.
+
 ## [5.0.0-beta.27] - 2026-08-16
 
 The supervision build: a running loop is either shipping work or telling
