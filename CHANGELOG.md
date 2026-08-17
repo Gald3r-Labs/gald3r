@@ -12,6 +12,27 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.32] - 2026-08-17
+
+The recovery build: nothing wasted, nothing lost.
+
+- Already-done work stays done: items whose changes already landed on
+  main are detected before an agent launches (a cheap git check, not a
+  paid session) and routed durably to verification; a fresh run can
+  never re-offer them, and an all-excluded queue stops calmly as idle.
+- Crashed agents resume their conversation: session identity is
+  recorded at launch, and a watchdog-killed or crashed agent resumes
+  with full working context (budget-capped, fresh-start fallback),
+  with the continuity chain visible in replay.
+- Agents message each other mid-run: the new `gald3r msg` surface
+  delivers addressed messages between the coordinator and workers,
+  durably recorded and rendered as a conversation in replay.
+- Failure cleanup is complete: leftover worktrees from killed or
+  crashed agents are reliably reclaimed (with or without their
+  bookkeeping marker), and unmerged work is never destroyed.
+- Reviews are sandboxed at the storage layer; run summaries show
+  this-run counts beside all-time totals; dry-run is fully truthful.
+
 ## [5.0.0-beta.31] - 2026-08-17
 
 The fortress build: whole classes of annoyance become impossible.
