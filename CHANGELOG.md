@@ -12,6 +12,27 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.31] - 2026-08-17
+
+The fortress build: whole classes of annoyance become impossible.
+
+- Focus theft is over: every child process spawns through one shared
+  hidden-spawn mechanism, enforced by an automated gate so the fix can
+  never erode.
+- `gald3r status` reorganized into grouped sections -- tasks, bugs, your
+  board, suggested next actions ranked by the loop's own scoring, and
+  project state -- readable at a glance.
+- Health checks can no longer green-lie: validation, database sync, and
+  verification enforce one shared contract; an un-ingestable record
+  fails loudly at every layer.
+- Doctor's version warning and its prescribed migration finally agree --
+  running the fix clears the warning.
+- Safer concurrent work: task/bug creation during an active run routes
+  through the safe intake queue on every documented signal; Cursor
+  sessions read their own context honestly.
+- Brand magenta everywhere, `--color` control for piped shells, and log
+  files permanently free of color codes.
+
 ## [5.0.0-beta.30] - 2026-08-16
 
 The discipline build: branch discipline for the loop's git work, live
