@@ -12,6 +12,19 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.33] - 2026-08-18
+
+The honest-numbers build: every number true, every dollar governed.
+
+- Real cost governance: actual agent spend parsed and accumulated; the
+  spending ceiling works; budgets are hard (retries and resumes count).
+- No self-deadlocks: the loop's database files are guaranteed ignored
+  everywhere, and automated commits can never sweep them into history.
+- No false demotions: only reviews that actually ran count against a
+  task; already-landed items get their free review and a real verdict.
+- Truthful diagnostics: capacity messages report what happened, name
+  real blockers, and every summary number derives from one source.
+
 ## [5.0.0-beta.32] - 2026-08-17
 
 The recovery build: nothing wasted, nothing lost.
