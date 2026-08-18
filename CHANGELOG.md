@@ -12,6 +12,17 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.34] - 2026-08-18
+
+**The safe-hands build.** Autopilot idle never burns money (skip + idle-iteration
+limit); legitimate no-code-change fixes count as successes (no false failures or
+capacity downgrades); crashed sessions' work lands on dedicated rescue branches,
+never the working branch; cross-project inbox rebuilds union files with the
+database so messages never vanish. New: a local push-to-talk voice preview with
+transcripts always visible, subsystem-scoped agent messaging with an approve
+step, richer run summaries, Windows test-infrastructure reliability, and the
+complete Go backend foundation for the next-generation desktop experience.
+
 ## [5.0.0-beta.33] - 2026-08-18
 
 The honest-numbers build: every number true, every dollar governed.
