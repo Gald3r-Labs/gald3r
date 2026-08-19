@@ -12,6 +12,17 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.35] - 2026-08-19
+
+**The tight-ship build.** Eleven verified fixes shipped the morning after the
+field reports arrived: the dispatcher obeys its own eligibility math; failures
+can never masquerade as successes (no-commit branches, narration, overlay-only
+evidence, and admits-unchanged passes all guarded); hangs caught in minutes via
+the vendor tool's own progress counter; unpriced providers fail closed so
+unattended runs cannot burn unmetered; multi-line notes no longer desync the
+database; teardown races no longer steal work slots; and queued drafts plus
+cross-project messages are picked up at every iteration boundary.
+
 ## [5.0.0-beta.34] - 2026-08-18
 
 **The safe-hands build.** Autopilot idle never burns money (skip + idle-iteration
