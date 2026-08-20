@@ -12,6 +12,20 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.36] - 2026-08-20
+
+**The earned-merge build.** Implemented work now stays off your main branch until
+the independent review actually passes — a failed review leaves main untouched and
+keeps the work aside for the retry, and loaded project constraints are enforced as
+a hard pre-merge gate. The autopilot recognizes when an open bug was already fixed
+and closes it with provenance instead of spending an implementation slot proving
+there is nothing to do (field runs were losing roughly a third of their budget to
+these no-ops). Parallel sessions no longer collide over shared editor config on
+Windows, crashed runs no longer leave stale coordination locks (dead locks are
+reclaimed automatically, with a `--break-lock` escape hatch), status history
+records what the agent actually said rather than raw protocol output, and bugs
+waiting on something external can now be marked **Blocked**.
+
 ## [5.0.0-beta.35] - 2026-08-19
 
 **The tight-ship build.** Eleven verified fixes shipped the morning after the
