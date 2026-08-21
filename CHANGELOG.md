@@ -1,9 +1,5 @@
 # Changelog
 
-## [5.0.0-beta.38] - 2026-08-21
-
-Autonomous runs now know when to stop and ask. An item that fails review three times is parked for human attention instead of being retried forever; a reviewer that gives up mid-review counts as a failed review; and database records with no backing file can no longer be offered to reviewers -- ending the loop where one broken entry starved every other piece of work.
-
 All notable changes to the gald3r framework are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) ·
 gald3r uses [Semantic Versioning](https://semver.org/).
@@ -15,6 +11,10 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 > [Gald3r-Labs/gald3r_core](https://github.com/Gald3r-Labs/gald3r_core/blob/main/CHANGELOG.md).
 
 ---
+
+## [5.0.0-beta.38] - 2026-08-21
+
+Autonomous runs now know when to stop and ask. An item that fails review three times is parked for human attention instead of being retried forever; a reviewer that gives up mid-review counts as a failed review; and database records with no backing file can no longer be offered to reviewers -- ending the loop where one broken entry starved every other piece of work.
 
 ## [5.0.0-beta.37] - 2026-08-21
 
