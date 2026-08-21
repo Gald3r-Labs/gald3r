@@ -12,6 +12,23 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.37] - 2026-08-21
+
+**The truth-telling build.** Closes the second wave of field reports from live
+multi-agent runs. Autonomous runs can no longer hang, lie, or burn silently: a
+vendor CLI that stops producing output is detected within minutes and cleaned up
+instead of holding a claim for hours, every run — including crashes — ends with a
+final summary, cost telemetry labels unpriced usage honestly instead of showing
+$0.00 (with a new breaker that halts runaway unpriced burn), and dry-run mode is
+a true no-op again. The project board is harder to corrupt: constraint editing no
+longer destroys definition text, dependencies/titles/descriptions are editable
+straight from the CLI, and every record move regenerates the file at its
+destination and verifies nothing was lost before removing the original. Hot-inbox
+drafts are picked up before every agent spawn — not just once per cycle. Upgrades
+stamp the version they migrated *to*, the doctor warns when the coordination
+folder is invisible to git, and cross-project messages fall back to direct file
+delivery when the central transport is unavailable.
+
 ## [5.0.0-beta.36] - 2026-08-20
 
 **The earned-merge build.** Implemented work now stays off your main branch until
