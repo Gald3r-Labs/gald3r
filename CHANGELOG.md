@@ -12,6 +12,10 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.39] - 2026-08-23
+
+**An autopilot you can leave running.** Two days of monitored multi-lane runs surfaced a family of boundary failures -- work lost between runs, verified work demoted because a merge could not land, bug fixes dying at rebase for reasons that were never content conflicts -- and each is closed: interrupted implementations resume on their own branch, a reviewed PASS is never rolled back (ordinary main-branch drift now merges automatically), retired or mis-scoped merge gates no longer refuse finished work, and every change's release note survives review and lands on main. Also new: backup/restore for the project database, typed record-mutation functions and MCP update tools for every record class, vault sharing brackets with scope-aware recall, inbound messages and phone-originated steering delivered into a running session, graceful `gald3r shutdown`, cross-vendor `gald3r xreview`, and a live Backlog Momentum panel in Throne.
+
 ## [5.0.0-beta.38] - 2026-08-21
 
 Autonomous runs now know when to stop and ask. An item that fails review three times is parked for human attention instead of being retried forever; a reviewer that gives up mid-review counts as a failed review; and database records with no backing file can no longer be offered to reviewers -- ending the loop where one broken entry starved every other piece of work.
