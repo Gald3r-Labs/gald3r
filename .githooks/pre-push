@@ -1,0 +1,84 @@
+#!/bin/sh
+# Gald3r-Labs public-repo commit identity guard -- pre-push backstop
+# (BUG-1268 / T1042).
+#
+# The pre-commit stage (./pre-commit) only catches identity on THIS machine
+# at commit time. A commit made elsewhere -- a different machine/session
+# where the guard was never installed, or a local `--no-verify` -- can still
+# reach `git push` from here. This stage re-checks every commit in the range
+# about to be pushed and refuses the push if any of them carries a
+# non-allowlisted identity. This is exactly the BUG-1268 field scenario:
+# commit b0cbe6b landed with the personal identity because no guard existed
+# anywhere in the chain, on any machine, at either stage.
+#
+# Deliberately an ALLOWLIST -- see ./pre-commit's header for why.
+#
+# Install (once per clone, local-only -- never --global, see T1042):
+#   git config --local core.hooksPath .githooks
+#
+# git feeds this hook one line per ref being pushed on stdin:
+#   <local ref> <local oid> <remote ref> <remote oid>
+
+zero="0000000000000000000000000000000000000000"
+
+is_allowed_email() {
+    email_lc=$(printf '%s' "$1" | tr 'A-Z' 'a-z')
+    case "$email_lc" in
+        release@gald3r.ai|wrm3@gald3r.ai) return 0 ;;
+        *@users.noreply.github.com) return 0 ;;
+    esac
+    return 1
+}
+
+blocked=""
+
+while read -r local_ref local_oid remote_ref remote_oid; do
+    [ "$local_oid" = "$zero" ] && continue   # deleting a ref -- nothing to check
+    if [ "$remote_oid" = "$zero" ]; then
+        # Brand-new ref: no remote base to diff against. Falls back to the
+        # tip commit only (not full ancestry) -- cheap and catches the
+        # common case (a fresh branch's HEAD carries the bad identity)
+        # without walking potentially unbounded history on a new ref.
+        range="$local_oid"
+    else
+        range="$remote_oid..$local_oid"
+    fi
+
+    log=$(git log --format='%H%x09%ae%x09%ce' "$range" 2>/dev/null)
+    [ -z "$log" ] && continue
+
+    old_ifs="$IFS"
+    IFS='
+'
+    for line in $log; do
+        IFS="$old_ifs"
+        sha=$(printf '%s' "$line" | cut -f1)
+        ae=$(printf '%s' "$line" | cut -f2)
+        ce=$(printf '%s' "$line" | cut -f3)
+        IFS='
+'
+        [ -z "$sha" ] && continue
+        if ! is_allowed_email "$ae" || ! is_allowed_email "$ce"; then
+            blocked="$blocked
+  $sha  author=$ae committer=$ce"
+        fi
+    done
+    IFS="$old_ifs"
+done
+
+if [ -n "$blocked" ]; then
+    echo "BLOCK: push refused -- commit(s) carry a non-allowlisted public-repo identity:"
+    echo "$blocked"
+    echo
+    echo "This is a PUBLIC Gald3r-Labs repo. Every commit must use one of:"
+    echo "  gald3r-release-bot <release@gald3r.ai>  (automated / agent commits)"
+    echo "  wrm3@gald3r.ai, or a GitHub noreply address (unavoidable human commits)"
+    echo
+    echo "See gald3r_core's docs/maintainer/RELEASE_RUNBOOK.md ->"
+    echo "'Public-repo commit identity (T1042)' for the full contract, and for"
+    echo "whether a rewrite is warranted (published-history rewrite is a"
+    echo "separate, owner-gated decision -- never assumed by this hook)."
+    exit 1
+fi
+
+exit 0

@@ -1,0 +1,73 @@
+#!/bin/sh
+# Gald3r-Labs public-repo commit identity guard -- pre-commit stage
+# (BUG-1268 / T1042).
+#
+# Any commit landing on a PUBLIC Gald3r-Labs repo (gald3r, gald3r_throne,
+# gald3r_core) must carry one of the identities documented in gald3r_core's
+# docs/maintainer/RELEASE_RUNBOOK.md, "Public-repo commit identity (T1042)"
+# section:
+#   - gald3r-release-bot <release@gald3r.ai>   (automated / agent commits)
+#   - wrm3@gald3r.ai, or a GitHub noreply address (unavoidable human commits)
+#
+# This check is deliberately an ALLOWLIST, not a denylist: the forbidden
+# personal identities are never named anywhere in this script, so the guard
+# itself can never leak them into a public repo's own history -- that is
+# exactly the class of exposure BUG-1268 exists to close (commit b0cbe6b on
+# the gald3r marketing repo carried the forbidden identity because nothing
+# enforced the T1042 contract locally).
+#
+# Install (once per clone, local-only -- never --global, see T1042):
+#   git config --local core.hooksPath .githooks
+#
+# Deliberate human override (matches git's own escape hatch):
+#   git commit --no-verify
+
+is_allowed_email() {
+    email_lc=$(printf '%s' "$1" | tr 'A-Z' 'a-z')
+    case "$email_lc" in
+        release@gald3r.ai|wrm3@gald3r.ai) return 0 ;;
+        *@users.noreply.github.com) return 0 ;;
+    esac
+    return 1
+}
+
+check_ident() {
+    # $1 = raw `git var GIT_*_IDENT` output: "Name <email> ts tz"
+    ident="$1"
+    email=$(printf '%s' "$ident" | sed -n 's/.*<\(.*\)>.*/\1/p')
+    [ -z "$email" ] && return 0   # couldn't parse -- fail open, don't block on a shape surprise
+    is_allowed_email "$email"
+}
+
+author_ident=$(git var GIT_AUTHOR_IDENT 2>/dev/null)
+committer_ident=$(git var GIT_COMMITTER_IDENT 2>/dev/null)
+
+fail=0
+if [ -n "$author_ident" ] && ! check_ident "$author_ident"; then
+    echo "BLOCK: commit author identity is not on the public-repo allowlist:"
+    echo "  $author_ident"
+    fail=1
+fi
+if [ -n "$committer_ident" ] && ! check_ident "$committer_ident"; then
+    echo "BLOCK: commit committer identity is not on the public-repo allowlist:"
+    echo "  $committer_ident"
+    fail=1
+fi
+
+if [ "$fail" -eq 1 ]; then
+    echo
+    echo "This is a PUBLIC Gald3r-Labs repo. Commits must use one of:"
+    echo "  gald3r-release-bot <release@gald3r.ai>  (automated / agent commits)"
+    echo "  wrm3@gald3r.ai, or a GitHub noreply address (unavoidable human commits)"
+    echo
+    echo "Fix the local (per-repo, never --global) identity:"
+    echo "  git config --local user.name  'gald3r-release-bot'"
+    echo "  git config --local user.email 'release@gald3r.ai'"
+    echo
+    echo "See gald3r_core's docs/maintainer/RELEASE_RUNBOOK.md ->"
+    echo "'Public-repo commit identity (T1042)' for the full contract."
+    echo "Deliberate override: git commit --no-verify"
+    exit 1
+fi
+
+exit 0
