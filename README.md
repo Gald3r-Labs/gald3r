@@ -26,6 +26,42 @@
 
 ---
 
+<h2 align="center">🎬 COMING SOON — your AI team gets a face. And a stage. And a show.</h2>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/status-in%20the%20studio-ff2d78?style=for-the-badge" alt="in the studio" />
+  <img src="https://img.shields.io/badge/going-LIVE%20soon-8a2be2?style=for-the-badge" alt="going live soon" />
+  <img src="https://img.shields.io/badge/24%2F7-broadcast-ffb400?style=for-the-badge" alt="24/7 broadcast" />
+</p>
+
+<p align="center"><strong>Stop watching scrolling logs.</strong><br/>
+gald3r's next act puts your entire AI crew inside a living, walkable 3D world —<br/>
+characters with names, faces, voices, and desks, performing your project's <em>real work</em> in real time.<br/>
+Watch them huddle over a bug. Argue in the war room. Celebrate a release by the pool.<br/>
+Then step in yourself — on screen or in VR — and run the room.</p>
+
+<!-- STUDIO SHOTS: drop captures into assets/studio/ and uncomment
+<p align="center">
+  <img src="assets/studio/shot_01.jpg" width="49%" alt="the estate, live" />
+  <img src="assets/studio/shot_02.jpg" width="49%" alt="the war room at work" />
+</p>
+<p align="center">
+  <img src="assets/studio/shot_03.jpg" width="49%" alt="poolside, off hours" />
+  <img src="assets/studio/shot_04.jpg" width="49%" alt="night shift" />
+</p>
+-->
+
+<p align="center">And it's bigger than code. The same stage is built for <strong>every kind of project gald3r runs</strong> —<br/>
+podcasts and newscasts with an anchor desk, music and video productions, episodic shows, skits,<br/>
+choose-your-own-adventure worlds — describe your set in plain words, drop in reference pictures,<br/>
+and the creator studio builds the world, the cast, and the show around <em>your</em> project.<br/>
+Any project type. Any theme. Yours. Broadcast it 24/7.</p>
+
+<p align="center"><em>Built on the gald3r engine below — the shared brain becomes a shared world.<br/>
+First look is coming to the stream. Watch this space.</em></p>
+
+---
+
 ## v5.0.0 — public beta
 
 **The Go rewrite is out now — signed on Windows, macOS, and Linux.** The version badge above always shows the newest release; every link below resolves to it.
