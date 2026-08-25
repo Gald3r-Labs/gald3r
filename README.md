@@ -34,6 +34,10 @@
   <img src="https://img.shields.io/badge/24%2F7-broadcast-ffb400?style=for-the-badge" alt="24/7 broadcast" />
 </p>
 
+<p align="center">
+  <img src="img/Coming_Soon.png" alt="" width="85%" />
+</p>
+
 <p align="center"><strong>Stop watching scrolling logs.</strong><br/>
 gald3r's next act puts your entire AI crew inside a living, walkable 3D world —<br/>
 characters with names, faces, voices, and desks, performing your project's <em>real work</em> in real time.<br/>
@@ -135,6 +139,42 @@ gald3r platform install cursor    # or: claude, codex, opencode, copilot, windsu
 **3. Open your AI tool and go.** `/g-setup` in Claude Code, `@g-setup` in Cursor —
 the brain is live and every AI you point at the repo can see it.
 
+**4. Your first five minutes** — everything works from any terminal, any tool:
+
+```bash
+gald3r status                     # where the project stands, at a glance
+gald3r task add "Ship the login fix" --origin owner-verbatim \
+  --objective "Fix the redirect loop on login and prove it with a test" \
+  --why "Users bounce on every failed login" --impacted src/auth
+gald3r task list                  # the board, priority-sorted
+gald3r doctor                     # health check: config, PATH, platform overlays
+```
+
+Tasks carry their full story by design — who asked, what for, why, and what it
+touches — so an AI (or a teammate) reading the task three weeks from now doesn't
+have to re-derive your intent. Bugs work the same way: `gald3r bug add`.
+
+---
+
+## Keeping gald3r up to date
+
+New releases ship frequently. The update ritual, in order:
+
+```bash
+gald3r install update                    # fetch + install the newest signed release
+gald3r -v                                # confirm the new version took
+gald3r platform install cursor --force   # regenerate each AI tool's overlay
+gald3r platform install claude --force   #   (--force overwrites the old files;
+gald3r platform install codex --force    #    run one line per tool you use)
+gald3r upgrade-project                   # migrate .gald3r/ to the new schema
+gald3r doctor                            # verify everything landed clean
+gald3r task-sync-check -fix              # reconcile any index/file drift
+```
+
+The platform overlays are generated **from** the binary, so re-running
+`platform install --force` after every update keeps your AI tools' commands and
+skills exactly in sync with the engine version you're running.
+
 ---
 
 <!-- BEGIN: gald3r-platform-list -->
@@ -199,6 +239,65 @@ autonomous pipelines, and it talks straight to your model backend of choice, loc
 | **Unsloth Studio** ![NEW](https://img.shields.io/badge/NEW-orange?style=flat-square) | Built-in `unsloth` provider id, bearer-token auth, `localhost:8888/v1` by default — gald3r's first-supporter, day-one integration | [Provider docs](https://gald3r-labs.github.io/gald3r_core/latest/providers/) |
 
 Full local + cloud provider setup: **[Models & Providers](https://gald3r-labs.github.io/gald3r_core/latest/providers/)**.
+
+---
+
+## Autopilot — one loop, any brain
+
+`gald3r autopilot loop` claims work off your board, implements it, reviews it, and
+repeats — unattended. Every role (coordinator / implementer / reviewer) takes an
+explicit provider **and** model; nothing is silently defaulted. `--budget` caps
+implementation starts, `--lanes` caps parallel implementers.
+
+**Cursor** (all three roles on Cursor's hosted Grok):
+
+```bash
+gald3r autopilot loop --budget 8 --lanes 3 --coordinator-provider cursor-agent --coordinator-model cursor-grok-4.6-high-fast --implementer-provider cursor-agent --implementer-model cursor-grok-4.6-high-fast --reviewer-provider cursor-agent --reviewer-model cursor-grok-4.6-high-fast
+```
+
+> Cursor slug caveat: `cursor-agent` doesn't validate model names — an unrecognized
+> slug silently runs (and bills) against a fallback model. Probe a new slug first:
+> `cursor-agent -p "reply OK" --model <slug>`.
+
+**Claude Code** (all three roles on Anthropic):
+
+```bash
+gald3r autopilot loop --budget 8 --lanes 3 --coordinator-provider claude --coordinator-model claude-sonnet-5 --implementer-provider claude --implementer-model claude-sonnet-5 --reviewer-provider claude --reviewer-model claude-sonnet-5
+```
+
+**OpenRouter — Ox Alpha workers** (1M-context stealth model, free tier; the
+coordinator role currently requires a CLI agent — expansion to every provider is
+on the roadmap):
+
+```bash
+gald3r autopilot loop --budget 8 --lanes 3 --coordinator-provider claude --coordinator-model claude-sonnet-5 --implementer-provider openrouter --implementer-model stealth/ox-alpha --reviewer-provider openrouter --reviewer-model stealth/ox-alpha
+```
+
+**Ollama — Qwen 3.8 27B on your own GPU** (4-bit fits a 24 GB card; workers cost $0):
+
+```bash
+gald3r autopilot loop --budget 8 --lanes 3 --coordinator-provider claude --coordinator-model claude-sonnet-5 --implementer-provider ollama --implementer-model qwen3.8:27b --reviewer-provider ollama --reviewer-model qwen3.8:27b
+```
+
+**Ollama — Ornith 1.5 9B on your own GPU** (small, fast, fine for light lanes):
+
+```bash
+gald3r autopilot loop --budget 8 --lanes 3 --coordinator-provider claude --coordinator-model claude-sonnet-5 --implementer-provider ollama --implementer-model ornith:9b --reviewer-provider ollama --reviewer-model ornith:9b
+```
+
+**Unsloth Studio — Qwen 3.8 27B implementing, DeepSeek-V4-Flash reviewing**
+(Unsloth's [Dynamic 3.0 GGUFs](https://unsloth.ai/docs/basics/dynamic-3.0-ggufs) and
+[DeepSeek-V4](https://unsloth.ai/docs/models/deepseek-v4) — match the model ids to
+what your Unsloth Studio instance lists; `UNSLOTH_API_KEY` required):
+
+```bash
+gald3r autopilot loop --budget 8 --lanes 3 --coordinator-provider claude --coordinator-model claude-sonnet-5 --implementer-provider unsloth --implementer-model Qwen3.8-27B-GGUF --reviewer-provider unsloth --reviewer-model DeepSeek-V4-Flash-GGUF
+```
+
+Mix freely: a hosted frontier coordinator with local $0 workers is the
+cost-efficient default. Register your endpoints once in `providers.yaml`
+(`gald3r init-providers`, then `gald3r providers add`) and every example above
+routes through it.
 
 ---
 
