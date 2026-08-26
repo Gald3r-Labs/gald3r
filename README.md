@@ -44,6 +44,10 @@ characters with names, faces, voices, and desks, performing your project's <em>r
 Watch them huddle over a bug. Argue in the war room. Celebrate a release by the pool.<br/>
 Then step in yourself — on screen or in VR — and run the room.</p>
 
+<p align="center">
+  <img src="img/Coming_Soon_2.png" alt="the whole estate at night — cast roster, room-by-room navigation, walk mode, creator studio" width="85%" />
+</p>
+
 <!-- STUDIO SHOTS: drop captures into assets/studio/ and uncomment
 <p align="center">
   <img src="assets/studio/shot_01.jpg" width="49%" alt="the estate, live" />
