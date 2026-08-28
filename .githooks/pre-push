@@ -39,12 +39,15 @@ while read -r local_ref local_oid remote_ref remote_oid; do
         # tip commit only (not full ancestry) -- cheap and catches the
         # common case (a fresh branch's HEAD carries the bad identity)
         # without walking potentially unbounded history on a new ref.
-        range="$local_oid"
+        # NOTE the -1 below is load-bearing: `git log <sha>` with no bound
+        # walks the ENTIRE ancestry, which both hangs on a large repo and
+        # re-litigates ancient pre-guard history -- exactly the tag-push
+        # hang this comment always claimed to avoid (fixed 2026-08-28
+        # during the v5.0.0-beta.44 cut; the code previously omitted -1).
+        log=$(git log -1 --format='%H%x09%ae%x09%ce' "$local_oid" 2>/dev/null)
     else
-        range="$remote_oid..$local_oid"
+        log=$(git log --format='%H%x09%ae%x09%ce' "$remote_oid..$local_oid" 2>/dev/null)
     fi
-
-    log=$(git log --format='%H%x09%ae%x09%ce' "$range" 2>/dev/null)
     [ -z "$log" ] && continue
 
     old_ifs="$IFS"
