@@ -12,6 +12,48 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.45] - 2026-08-31
+
+Your repo can answer you now. Talk to it from the terminal or a slash
+command — same brain as Throne — instead of opening a second editor
+window on the board.
+
+### Talk to the project
+
+- `gald3r project-agent status`, `ask`, and `chat` — or `@g-project-agent`
+- Same engine Throne and the resident connector already use
+- Set `GALD3R_AGENT_FITOUT` to pick the domain fit-out (terminal and Throne)
+- Agents offer Valkyrie when you need a live question to another project,
+  not only when you name it
+
+### Worktrees that clean up
+
+- Windows no longer dies on the first Permission denied from Defender,
+  Cursor, or the search indexer
+- Cleanup retries the lock, names leftovers that still will not delete,
+  and reclaims folders git already unregistered
+
+### Autopilot you can actually steer
+
+- `--gauntlet` on every `@g-go*` command (off by default; same knobs as
+  the autopilot loop)
+- `-1` turns a numeric cutoff off — no more fake `999999999`
+- Dispatch briefs can be a file path instead of a 4–5 KB paste
+- A graceful stop finishes in-flight work; only `--now` abandons it
+- Merged work is verified, not re-implemented from a stale bug text
+
+### Faster lookups, safer vault
+
+- `gald3r search` is about 10× faster on a large tree (seconds, not
+  minutes) — agents stop falling back to blind grep
+- Vault ingest commits the vault repo after a write, so research is not
+  sitting uncommitted on disk
+
+### New commands
+
+- `/g-cm` — CARVER matrix for what to do next
+- `/g-gilf` — senior-expert answers, no 101-level padding
+
 ## [5.0.0-beta.44] - 2026-08-28
 
 **Your completed work stays completed.** This release closes a defect class that could silently revert already-resolved tasks and bugs during autonomous merges — closed structurally, at every layer: agent worktrees no longer see board records at all, commit safety fails closed whenever a merge or conflicted state is in progress, claim cleanup can never overwrite a resolution that landed in the meantime, and completing a task now requires its acceptance criteria ticked at write time. Autonomous runs also got dramatically faster to finish what they start: merge-gate checks across pending branches run in parallel instead of one at a time, each lane is watched individually by silence (a dead lane frees its slot while healthy siblings keep working), results credit the moment each lane reports, and known-failing merge attempts are remembered instead of retried from scratch. Your agents inherit new shipped discipline — a three-verdict verification contract for proving a fix actually works, a flake-handling protocol with a shared known-flaky-tests index, a standing merge-conflict-resolution brief, and a two-phase reviewer flow measured at a fraction of the previous review cost. Installs get cleaner too: internal maintainer content that had leaked into shipped rule files is scrubbed (upgrading overwrites the affected files), a release gate keeps it from ever shipping again, and bug routing is explicit — your project's defects go on your board, suspected gald3r defects go upstream via `gald3r gfix`. Also new: a backlog Momentum Board inside Throne, an update alert when a newer release is available, code navigation with `gald3r graph explore|impact|callers` plus an MCP equivalent, and `COMMANDMENTS.md` — an owner-editable home for your project's guiding principles.
