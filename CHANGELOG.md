@@ -12,6 +12,39 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.46] - 2026-09-01
+
+Your project's agent can now address another project's agent on the event
+wire — delivery still waits on a server catalog deploy.
+
+### Ask another project
+
+- Same-machine asks still write the local mailbox, as before.
+- `gald3r project-agent ask --to-project <id> …` queues a remote question and
+  flushes the outbox immediately.
+- The resident Valkyrie inbox loop now drains that same outbox on every tick,
+  so answers are not stranded on disk.
+- You need a signed-in session. Team coordination (or the Redis coordination
+  add-on) is required; solo and harvest keys are refused.
+- Production `api.gald3r.ai` does not yet list the new event types in its
+  catalog (checked against the live OpenAPI enum). Source has them; the
+  running API does not. Until that deploy, a remote publish will be rejected.
+
+### Board collisions, not folder sync
+
+- Incoming field-level collisions are kept as a visible conflict log.
+  Nothing last-write-wins. Status reports a pending-conflict count.
+- This is not instant sync of `.gald3r/` folders, task files, or the local
+  database. Server board writers stay gated.
+- Do not treat this cut as a multi-user coordination product. The
+  verification ladder is still the wedge.
+
+### Left out on purpose
+
+- No `task claim` alias, Longship chat-join, entitlement-flag seed, or
+  error-intake work in this binary.
+- No Postgres ingest for mailbox or conflict rows.
+
 ## [5.0.0-beta.45] - 2026-08-31
 
 Your repo can answer you now. Talk to it from the terminal or a slash
