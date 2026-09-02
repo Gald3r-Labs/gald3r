@@ -12,6 +12,15 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.48] - 2026-09-02
+
+Your project agents can now talk, and you can put all of them in one room.
+
+### Talk to your project agents
+
+- The per-project chat answers through a model when one is available: it reads the project first (search, board, status) and asks a local runtime such as Ollama or LM Studio to answer over that context. Name a provider in the project config to choose one; nothing paid is ever picked for you. With no model reachable you still get the grounded structured answer, clearly marked as such, and every answer shows which model or fallback produced it.
+- The Council Room convenes every project agent in the workspace at once: pick who joins, mute or remove anyone, ask one question, confirm how many agents it will reach, and watch the answers land in one transcript attributed to each project. Open it from the Workspace page.
+
 ## [5.0.0-beta.47] - 2026-09-02
 
 Throne starts showing you the whole workspace, and the engine stops accepting work nobody can verify.
