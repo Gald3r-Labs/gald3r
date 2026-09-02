@@ -12,6 +12,21 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.49] - 2026-09-02
+
+Company admins run their own team, and the IDE shows you every AI edit before it touches a file.
+
+### See the change before it lands
+
+- In the Throne IDE, a proposed edit to the file you have open appears as a diff. Accept or reject each hunk, or all at once; nothing is written until you press Apply, and only the hunks you accepted are merged, through the same save path and conflict check as a manual save.
+- Today the proposal comes from the clipboard entry point; the agent will feed the same review path next.
+
+### Company Admin
+
+- Owners and admins get a Company Admin section on the Company page: change a member's role, remove a member, and invite new people by email, each with a confirm step.
+- A billing card shows the plan, licenses purchased against licenses in use, usage for the period, and a button to the billing portal. Subscription status and renewal date say plainly when they are not yet available to org admins rather than guessing.
+- Regular members keep the read-only company overview; admin controls never appear for them.
+
 ## [5.0.0-beta.48] - 2026-09-02
 
 Your project agents can now talk, and you can put all of them in one room.
