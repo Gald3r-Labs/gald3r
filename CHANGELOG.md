@@ -12,6 +12,38 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.47] - 2026-09-02
+
+Throne starts showing you the whole workspace, and the engine stops accepting work nobody can verify.
+
+### Throne: see the workspace, not just the project
+
+- A Workspace graph opens the Workspace page: every project in your workspace as a node with its name and project type, a lit indicator when that project's Valkyrie connector is running, and a badge when its project agent is fitted out. Projects the manifest names but cannot resolve are listed separately instead of silently dropped.
+- The Momentum board now lives inside the Project page, so opening a project shows its totals, overview tiles and tasks by status without a detour.
+- The coordinators view gains an Organization scope beside the per-project one, and tells you plainly when you do not have access to an organization's presence rather than showing an empty room.
+- When world_tree is unreachable, the coordinator graph still shows a Valkyrie connector that is running on this machine.
+
+### Throne: decisions, history and settings
+
+- An Approvals queue on the Mission Control page lists actions agents are waiting on; approve with an optional note or reject with a required reason, backed by a durable ledger.
+- Chat history is real: sessions come from a ledger with no cap and page back to the oldest one. Recording sessions from the assistant is the next step.
+- The scheduler settings page shows whether the local scheduler is running, its process id and last tick, and lets you change the cadence of the two default inbox jobs.
+- The AI Assistant provider picker only offers providers the app can actually chat through, and says so when saved credentials exist but none are usable.
+- Every gated page uses the same upgrade affordance: required tier, reason, and a button to billing.
+
+### Engine: acceptance criteria are part of coding now
+
+- Claiming a task without acceptance criteria warns you; finishing it is refused until criteria exist, and one command can add them and complete in the same call.
+- A review PASS on a task with no criteria is recorded as a FAIL with the reason "No acceptance criteria to test", so the item goes back to the implementer with the fix spelled out.
+- `gald3r task claim` is a verb.
+- Two project-agent jobs run every 15 minutes by default: the agent inbox poll and a free, local read of the WPAC file inbox. No host scheduler, no paid calls.
+
+### Fixes
+
+- Human-action requests sent through the ask verb now always reach the sibling project's inbox, even when the server answered.
+- The WPAC inbox stops re-listing closed messages whose files were deleted.
+- Throne's WebView polls carry the native session token through a host-side request, ending the false "session expired" bounce after login, and the frontend typecheck passes again.
+
 ## [5.0.0-beta.46] - 2026-09-01
 
 Your project's agent can now address another project's agent on the event
