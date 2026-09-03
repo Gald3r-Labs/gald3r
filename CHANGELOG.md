@@ -12,6 +12,38 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.50] - 2026-09-03
+
+This cut ships gald3r_ide, a standalone code editor built on the same editor core as Throne, and puts every AI edit in front of you as a diff before it touches disk. It also fixes the four problems reported from a real workplace install this week.
+
+### gald3r_ide, a new binary
+
+- One screen: file tree, tabs, editor, a collapsible agent panel, and a status bar. `gald3r_ide <path>` opens a file or a folder; a bare launch reopens your last folder.
+- Right-click "Open with gald3r_agent" on any file or folder in Windows Explorer, registered by the installer or by `gald3r_ide --register-shell`, removed by `--unregister-shell`.
+- The editor, file tree, search, tabs, diff view and settings are one shared package used by both gald3r_ide and Throne, so the two never drift apart. Colors are identical in both, light and dark.
+
+### Editing with an agent, on your terms
+
+- The agent works through three primitives only: read a file, propose an edit, or run a command. A proposed edit renders as a diff you accept or reject hunk by hunk; nothing is written until you accept. A command runs only after you approve it, and every proposal and decision lands in the approvals ledger.
+- Language files: 25 languages defined as editable JSON files, including Go, PowerShell, Batch, Dockerfile, git config files, TOON, and the PL/SQL, PostgreSQL, SQLite and DuckDB SQL dialects, each with folding and comment toggling. Map your own extensions from the settings page.
+- Keybinding presets: VS Code (default), Notepad++ and UltraEdit, switchable from the editor's right-click menu.
+- An editor settings page for fonts, theme, keybindings, language files and the agent provider, shared by Throne's IDE and gald3r_ide.
+
+### Company Admin
+
+- The billing card shows your subscription status, renewal date, and seats purchased, assigned and pending, with a direct link to the billing portal.
+- Add users to your company and assign their licenses first, then invite them to teams. Pending invites, seat counts, and an out-of-seats path to billing sit on the same page.
+
+### Reporting problems
+
+- `gald3r gfix` files field reports through your gald3r account when you are signed in; GitHub CLI and the browser remain the fallbacks. Windows-edited drafts no longer fail on line endings, and a missing repository label no longer files a report twice.
+
+### Fixes from the field
+
+- Autopilot no longer halts on its own log files or on draft reports, and no longer holds high-score reviewer passes for a human signature unless you turn that on in your agent config.
+- Workspace messages sent by member id now reach the member you named, and the workspace member guard understands the current manifest format instead of letting every write through.
+- Sign-in errors no longer reveal whether an email exists.
+
 ## [5.0.0-beta.49] - 2026-09-02
 
 Company admins run their own team, and the IDE shows you every AI edit before it touches a file.
