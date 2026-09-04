@@ -12,6 +12,45 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.0-beta.51] - 2026-09-04
+
+Throne, gald3r_ide and the CLI now ship together on one tag.
+
+### Highlights
+
+**Throne ships with gald3r now.** This is the first release where the Throne desktop app and the new gald3r_ide editor are built and published on the same tag as the CLI, at the same version. The separate Throne 0.x line is retired; install Throne from this release's assets.
+
+**Throne sign-in works on the Wails build.** Sign-in, session restore, refresh, logout and the folder picker all complete; the desktop app reports its real version and the in-app updater only ever offers a newer release.
+
+**Lessons become product.** gald3r now carries a first commandment, scaffolded into every new project: anything an agent learns while operating your project must land in shipped prose or enforcing code, never only in a session's memory. `gald3r commandment` manages the list, `gald3r doctor` checks it, and the session-start banner shows it.
+
+### Throne
+- Sign-in, session probe, refresh, logout and the authenticated host proxy answer the page instead of hanging.
+- Folder picker, terminal, language servers and agent runs work in the desktop app.
+- Real build version; updater never offers an older build and stays quiet on a dev build.
+- Theme builder: theme, cast, region, location, prop and SOUL editors read and write the on-disk theme pack; the character pipeline runs against the local sidecar; floor plans persist through a native binding; prototypes that have no backend sit behind a hidden feature gate with an honest notice.
+- Navigation: Diagnostics and operator settings move behind one Admin button; IDE Manager collapses to Files, Review and a tabbed Manager; Comms cards and the workspace graph navigate.
+- Packs page controls either work or are gone; IDE Manager toggles persist or say they do not.
+- Database Admin shows a live, read-only view of your project database.
+- The 3D estate stage no longer posts activity data to arbitrary frames.
+- Language packs: bring your own editor language definitions as JSON, import and export them from settings, manage them with `gald3r languages pack`.
+
+### CLI and framework
+- `gald3r workspace peer resolve` and a new PreToolUse hook stop messages from being written into retired or unknown peer projects; `workspace outbox send` refuses those destinations.
+- `gald3r inbox` absorbs queued drafts in filing order, names the id it assigned, and keeps their acceptance criteria.
+- `gald3r worktree cleanup` unlinks junctions and symlinks before removing anything.
+- `gald3r login --status` names the signed-in account; `gald3r config agent show` lists only real keys.
+- Shipped help, playbooks and skills carry instructions and remedies only; CI keeps internal ticket history out of them.
+- A standing lane-brief playbook asset and a lane merge gate for coordinators running parallel implementation lanes.
+
+### Release engineering
+- One tag builds the CLI set, Throne installers for Windows, Linux and macOS, and gald3r_ide, with checksums and signatures covering all of them.
+- CI builds the Throne frontend and compiles the desktop app on every push before a cut can break.
+
+### Upgrade
+- CLI: `gald3r install update`.
+- Throne: download the installer for your platform from this release's assets. The old 0.3.0 app should be uninstalled first.
+
 ## [5.0.0-beta.50] - 2026-09-03
 
 This cut ships gald3r_ide, a standalone code editor built on the same editor core as Throne, and puts every AI edit in front of you as a diff before it touches disk. It also fixes the four problems reported from a real workplace install this week.
