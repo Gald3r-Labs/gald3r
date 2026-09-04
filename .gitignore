@@ -78,6 +78,11 @@ worktrees/
 !/scripts/check_member_repo_gald3r_guard.ps1
 !/scripts/remediate_member_gald3r_marker.ps1
 !/scripts/validate_workspace_members_gald3r.ps1
+# Release-note tooling: the Release workflow RUNS release_download_block.py,
+# so it has to be tracked. backfill_release_downloads.py is its maintainer-side
+# companion for filling the block in on releases cut before it existed.
+!/scripts/release_download_block.py
+!/scripts/backfill_release_downloads.py
 
 # Research and temp (not tracked in public repo)
 research/

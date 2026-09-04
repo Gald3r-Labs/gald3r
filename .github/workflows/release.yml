@@ -35,6 +35,23 @@ jobs:
           echo "Release notes extracted for v$VERSION"
           cat release_notes.txt
 
+      # The files live on Gald3r-Labs/gald3r_core, not here. Without this step a
+      # reader who clicks a release on this repo finds notes and nothing to
+      # download -- which is exactly what happened for all 72 releases before it
+      # existed. release_download_block.py builds the header from the matching
+      # engine release's REAL asset list, so it can never link to a file that is
+      # not published; a tag with no engine release degrades to a pointer at the
+      # newest one rather than a dead link.
+      - name: Prepend download links to the release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/release_download_block.py "${GITHUB_REF_NAME}" --out download_block.md
+          cat download_block.md release_notes.txt > body.md
+          mv body.md release_notes.txt
+          echo "--- final release body ---"
+          cat release_notes.txt
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
