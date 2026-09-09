@@ -4,10 +4,12 @@ on:
   push:
     tags:
       - 'v*'
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Existing release tag to check (does not publish)'
+        description: 'Published release tag to check (does not publish)'
         required: true
         type: string
 
@@ -30,12 +32,18 @@ jobs:
           python-version: '3.11'
       - name: Test the read-only metadata contract
         run: python -B -m unittest discover -s tests -p 'test_check_release_metadata.py'
+      - name: Defer public metadata check until publication
+        if: github.event_name == 'push'
+        run: echo 'Tag tests passed; release metadata is not checked until publication or manual dispatch.'
       # The private unified release pipeline owns draft notes, assets and
       # publication coordination. This repository must not regenerate a body,
       # change historical beta/prerelease flags, or publish on tag arrival.
       # Full inventory/hash validation belongs to that single private gate.
-      - name: Check existing notes and download metadata
+      # Tag arrival can precede upstream draft asset uploads. A read-only token
+      # is not expected to see drafts; validate public metadata after publication.
+      - name: Check published notes and download metadata
+        if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
-        run: python -B .github/scripts/check_release_metadata.py --tag "$RELEASE_TAG"
+          RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
+        run: python -B .github/scripts/check_release_metadata.py --tag "$RELEASE_TAG" --require-published

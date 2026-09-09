@@ -51,11 +51,14 @@ def check_metadata(tag, pages):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--tag", required=True)
+    parser.add_argument("--require-published", action="store_true",
+                        help="Refuse drafts; used by the read-only public workflow")
     args = parser.parse_args(argv)
     try:
         version_tuple(args.tag)
-        # Authenticated pagination can include this repository's drafts; the
-        # by-tag API endpoint can hide a draft. No write method is ever used.
+        # Only a caller with push access can see drafts in this list. The public
+        # workflow uses a read-only token and checks published releases only.
+        # Direct maintainers may inspect visible drafts without this option.
         result = subprocess.run(
             ["gh", "api", "--hostname", "github.com", "--method", "GET",
              f"repos/{REPOSITORY}/releases?per_page=100", "--paginate", "--slurp"],
@@ -64,6 +67,8 @@ def main(argv=None):
         if result.returncode:
             raise ValueError("Release metadata is unavailable; verify read permission and retry")
         state = check_metadata(args.tag, json.loads(result.stdout))
+        if args.require_published and state != "published":
+            raise ValueError("Release is still a draft; publish upstream before this public check")
     except (ValueError, OSError, subprocess.TimeoutExpired) as exc:
         print(f"Release metadata check failed: {exc}", file=sys.stderr)
         return 1

@@ -93,6 +93,24 @@ class MetadataTests(unittest.TestCase):
             self.assertEqual(checker.main(["--tag", "v5.0.54"]), 1)
             self.assertEqual(run.call_count, 1)
 
+    def test_public_workflow_mode_refuses_visible_draft(self):
+        with patch.object(checker.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, json.dumps([[release()]]), "")) as run:
+            self.assertEqual(checker.main(["--tag", "v5.0.54", "--require-published"]), 1)
+            self.assertEqual(run.call_count, 1)
+
+    def test_public_workflow_mode_accepts_published_metadata(self):
+        with patch.object(checker.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, json.dumps([[release(draft=False)]]), "")) as run:
+            self.assertEqual(checker.main(["--tag", "v5.0.54", "--require-published"]), 0)
+            self.assertEqual(run.call_count, 1)
+
+    def test_tag_push_does_not_query_partial_or_invisible_drafts(self):
+        workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+        self.assertIn("release:\n    types: [published]", workflow)
+        self.assertIn("if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'", workflow)
+        self.assertIn("--require-published", workflow)
+        self.assertIn("inputs.tag || github.event.release.tag_name", workflow)
+        self.assertNotIn("inputs.tag || github.ref_name", workflow)
+
     def test_workflow_has_no_writer_and_retains_readonly_permissions(self):
         workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
         self.assertIn("contents: read", workflow)
