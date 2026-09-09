@@ -33,9 +33,9 @@
 <p align="center">
   <a href="https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-windows-x86_64.msi"><img src="https://img.shields.io/badge/Windows-.msi%20installer-0078D6?style=for-the-badge&logo=windows&logoColor=white" alt="Download gald3r for Windows" /></a>
   &nbsp;
-  <a href="https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-macos-arm64.pkg"><img src="https://img.shields.io/badge/macOS-.pkg%20installer-111111?style=for-the-badge&logo=apple&logoColor=white" alt="Download gald3r for macOS" /></a>
+  <a href="https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-suite-macos-arm64.pkg"><img src="https://img.shields.io/badge/macOS-.pkg%20installer-111111?style=for-the-badge&logo=apple&logoColor=white" alt="Download gald3r for macOS" /></a>
   &nbsp;
-  <a href="https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-linux-x86_64.tar.gz"><img src="https://img.shields.io/badge/Linux-.tar.gz-FCC624?style=for-the-badge&logo=linux&logoColor=black" alt="Download gald3r for Linux" /></a>
+  <a href="https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-suite-linux-x86_64.tar.gz"><img src="https://img.shields.io/badge/Linux-.tar.gz-FCC624?style=for-the-badge&logo=linux&logoColor=black" alt="Download gald3r for Linux" /></a>
 </p>
 
 <p align="center">
@@ -89,50 +89,48 @@ First look is coming to the stream. Watch this space.</em></p>
 
 ---
 
+<!-- BEGIN: gald3r-downloads -->
 ## Downloads
 
-**v5.0.0 public beta — the Go rewrite, out now for Windows, macOS and Linux.**
-Every link below always resolves to the newest release, so they never go stale.
-Browse the raw list any time at **[gald3r_core releases](https://github.com/Gald3r-Labs/gald3r_core/releases)**.
+**gald3r 5.0.55 — choose one recommended download for your computer.**
+Core includes the command-line engine and companion programs, including Longship.
+Throne is the desktop control center; IDE is the editor. Suite installers let you choose applications.
 
-### gald3r — the engine (this is the one you want)
-
-| OS | Installer | Portable archive | Checksums |
-|---|---|---|---|
-| **Windows** x86_64 | [**`gald3r-windows-x86_64.msi`**](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-windows-x86_64.msi) · signed | [`gald3r-windows-x86_64.zip`](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-windows-x86_64.zip) | [SHA256SUMS.txt](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/SHA256SUMS.txt) |
-| **macOS** Apple Silicon | [**`gald3r-macos-arm64.pkg`**](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-macos-arm64.pkg) · signed + notarized | [`gald3r-macos-arm64.tar.gz`](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-macos-arm64.tar.gz) | [SHA256SUMS.txt](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/SHA256SUMS.txt) |
-| **macOS** Intel | [**`gald3r-macos-x86_64.pkg`**](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-macos-x86_64.pkg) · signed + notarized | [`gald3r-macos-x86_64.tar.gz`](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-macos-x86_64.tar.gz) | [SHA256SUMS.txt](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/SHA256SUMS.txt) |
-| **Linux** x86_64 | [**`gald3r-linux-x86_64.tar.gz`**](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r-linux-x86_64.tar.gz) · includes `install.sh` | same archive | [SHA256SUMS.txt](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/SHA256SUMS.txt) |
-
-### Desktop apps — shipped on the same release, same version
-
-Since v5.0.0-beta.51 Throne and gald3r_ide are built from the same tag as the engine and
-published beside it. There is no separate Throne download page any more.
-
-| OS | Throne — desktop control center | gald3r_ide — standalone editor |
+| Platform / processor | Recommended download | Applications and installation |
 |---|---|---|
-| **Windows** x86_64 | [**`gald3r_throne-windows-installer.exe`**](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r_throne-windows-installer.exe) | [**`gald3r_ide-windows-installer.exe`**](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r_ide-windows-installer.exe) |
-| **macOS** Apple Silicon | [`gald3r_throne-macos-arm64-unsigned.tar.gz`](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r_throne-macos-arm64-unsigned.tar.gz) · unsigned | [`gald3r_ide-macos-arm64-unsigned.tar.gz`](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r_ide-macos-arm64-unsigned.tar.gz) · unsigned |
-| **macOS** Intel | — not built yet | — not built yet |
-| **Linux** x86_64 | [`gald3r_throne-linux-amd64.tar.gz`](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r_throne-linux-amd64.tar.gz) | [`gald3r_ide-linux-amd64.tar.gz`](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/gald3r_ide-linux-amd64.tar.gz) |
+| Windows — Intel/AMD 64-bit (x86_64) | [Download suite installer (.msi)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r-windows-x86_64.msi) | Signed. Choose Core, Throne and/or IDE, then choose the destination. |
+| Linux — Intel/AMD 64-bit (x86_64) | [Download suite installer bundle (.tar.gz)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r-suite-linux-x86_64.tar.gz) | Includes Core, Throne and IDE. Extract it, read its README, then run `sh install.sh` from the extracted suite directory. |
+| macOS — Apple silicon (ARM64, M-series) | [Download suite installer (.pkg)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r-suite-macos-arm64.pkg) | Signed and notarized, including the desktop apps. Choose Core, Throne and/or IDE. |
+| macOS — Intel (x86_64) | [Download Core installer (.pkg)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r-macos-x86_64.pkg) | Signed and notarized. Core and companions only; Throne and IDE are not supplied for Intel Macs. |
 
-<sub>
-<strong>Verifying a download.</strong> One combined [SHA256SUMS.txt](https://github.com/Gald3r-Labs/gald3r_core/releases/latest/download/SHA256SUMS.txt) covers every asset on the release —
-check yours with <code>sha256sum -c</code> (Linux), <code>shasum -a 256 -c</code> (macOS), or
-<code>Get-FileHash</code> (Windows). The engine installers are Authenticode-signed on Windows and
-Developer-ID codesigned + Apple-notarized on macOS.<br />
-<strong>macOS desktop builds are unsigned</strong> for now, so Gatekeeper will warn — right-click →
-Open, or clear the quarantine flag yourself. Signing them is tracked work.<br />
-<strong>Throne's in-app updater is not live yet.</strong> Install and update it from this page until it is.
-</sub>
+[Download SHA-256 checksums](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/SHA256SUMS.txt) to verify your download.
 
-**Longship** — the terminal UI for chat and swarm work — runs on the same engine; public
-distribution lands in an upcoming beta.
+### Before installing
 
-Everything else — the framework, all 38 platform overlays, the task engine — ships in
-**one binary** and provisions from it. This repo is the product's front door; the
-binary does the rest.
+- **Linux:** the suite uses a shell-script installer, not a `.deb` or `.rpm` package. It offers application and destination options. Desktop apps require WebKit2GTK 4.1; the installer does not install system dependencies or run `sudo`. Linux ARM64 is not supplied in this release.
+- **Mac:** the Apple-silicon suite installs desktop apps in `/Applications` and commands in `/usr/local/bin`. These locations are fixed for this release. Deselecting an application does not uninstall an existing copy.
+- **Updates:** use the suite download to update desktop applications. `gald3r install update` updates Core and companions, not the entire suite.
+- **Not a USB workspace:** these downloads do not provide the planned Portable Gald3r environment carrying settings, projects, AI models and dependencies on a removable drive.
+- All shipped applications use the same release version. GitHub's automatically added “Source code” ZIP/tar.gz files are not installers.
 
+<details>
+<summary>Advanced: Core-only installers and standalone binary archives</summary>
+
+These alternatives are for manual or Core-only installations. Most users should choose a recommended installer above.
+A **binary archive** is a compressed application bundle, not a self-contained portable workspace.
+
+| Platform | Core and companions only | Separate desktop applications |
+|---|---|---|
+| Windows x86_64 | [Core binary archive (.zip)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r-windows-x86_64.zip) — no Throne or IDE | Use the suite installer and select the application(s) you want. |
+| Linux x86_64 | [Core archive with install.sh (.tar.gz)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r-linux-x86_64.tar.gz) | [Throne binary archive](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r_throne-linux-amd64.tar.gz) · [IDE binary archive](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r_ide-linux-amd64.tar.gz) |
+| macOS Apple silicon | [Core-only installer (.pkg)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r-macos-arm64.pkg) · [Core binary archive (.tar.gz)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r-macos-arm64.tar.gz) | [Throne unsigned archive](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r_throne-macos-arm64-unsigned.tar.gz) · [IDE unsigned archive](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r_ide-macos-arm64-unsigned.tar.gz) |
+| macOS Intel | [Core-only installer (.pkg)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r-macos-x86_64.pkg) · [Core binary archive (.tar.gz)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r-macos-x86_64.tar.gz) | Not supplied for Intel Macs. |
+
+The two Mac Core archives contain the command-line programs and installation/uninstallation scripts, compiled separately for Apple silicon and Intel. They do not contain Throne or IDE.
+**Only the separate Mac desktop archives are unsigned.** The recommended Apple-silicon suite contains signed desktop apps and is notarized; use that installer instead of these unsigned alternatives.
+
+</details>
+<!-- END: gald3r-downloads -->
 
 ---
 
@@ -161,16 +159,9 @@ No accounts. No server. No database to operate. No Docker.
 
 ## Quick start
 
-**1. Get the binary** — from **[gald3r_core releases](https://github.com/Gald3r-Labs/gald3r_core/releases)**:
+**1. Install Gald3r:** choose your platform's recommended [installer above](#downloads). On Linux, extract the suite archive and follow its included README. On Windows or Mac, open the installer and choose the applications you need.
 
-| OS | Fastest path |
-|---|---|
-| **Windows** | Download `gald3r-windows-x86_64.msi`, run it, open a new terminal |
-| **macOS** | Download `gald3r-macos-arm64.pkg`, double-click, follow the prompts |
-| **Linux** | `curl -LO .../releases/latest/download/gald3r-linux-x86_64.tar.gz && tar xzf gald3r-linux-x86_64.tar.gz && ./gald3r-*-linux-x86_64/install.sh` |
-
-Verify with `gald3r --version`. (Full per-OS instructions, checksums, and source builds:
-**[docs.gald3r.ai/install](https://docs.gald3r.ai)**.)
+If you selected Core, open a new terminal and verify with `gald3r --version`.
 
 **2. Put the brain in your project:**
 
@@ -372,8 +363,8 @@ One product family, five pieces. ● owns it · ◐ involved in it.
 | **Release & code signing** | One tag → signed binaries for all three OSes | ● owns the pipeline | | | | | [docs](https://docs.gald3r.ai) |
 | **MCP server** | Other AI tools query your gald3r brain as MCP tools | ● owns it | | | | | [docs](https://docs.gald3r.ai) |
 
-`gald3r_core`, `gald3r_throne`, `world_tree`, and `gald3r_longship` ship as compiled
-binaries (the first two public, the rest private) — this repo carries the framework
+`gald3r_core`, `gald3r_throne`, and `gald3r_longship` ship publicly as compiled
+binaries; `world_tree` is private — this repo carries the framework
 they all serve, plus everything below.
 
 ### In the forge — honestly unfinished
@@ -384,7 +375,6 @@ Marketable, on the way, and labeled as such:
 |---|---|---|
 | **Marketplace** | A curated, signed plugin registry on world_tree | Design (blocked on the cloud registry); git-installed plugins work today |
 | **Custom themes** | A visual editor for your own report themes | Theme definitions ship; editor in progress |
-| **Suite installer** | One manifest install: core + longship + throne together | Design complete; implementation next |
 | **Scoped memory sync** | Your memory follows you across machines | Local memory shipped; cloud sync on the roadmap |
 
 ---
