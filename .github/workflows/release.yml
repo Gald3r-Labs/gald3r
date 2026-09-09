@@ -1,65 +1,41 @@
-name: Release
+name: Validate release metadata
 
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing release tag to check (does not publish)'
+        required: true
+        type: string
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  release:
-    name: Create GitHub Release
+  validate:
+    name: Check existing release metadata (read-only)
     runs-on: ubuntu-latest
-
+    timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-
-      - name: Extract version from tag
-        id: version
-        run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
-
-      - name: Extract changelog section
-        id: changelog
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          # Extract the section for this version from CHANGELOG.md
-          # Looks for ## [VERSION] through the next ## [ line
-          awk "/^## \[$VERSION\]/{found=1; next} found && /^## \[/{exit} found{print}" CHANGELOG.md > release_notes.txt
-          # Trim leading/trailing blank lines
-          sed -i '/./,$!d' release_notes.txt
-          echo "Release notes extracted for v$VERSION"
-          cat release_notes.txt
-
-      # The files live on Gald3r-Labs/gald3r_core, not here. Without this step a
-      # reader who clicks a release on this repo finds notes and nothing to
-      # download -- which is exactly what happened for all 72 releases before it
-      # existed. release_download_block.py builds the header from the matching
-      # engine release's REAL asset list, so it can never link to a file that is
-      # not published; a tag with no engine release degrades to a pointer at the
-      # newest one rather than a dead link.
-      - name: Prepend download links to the release notes
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test the read-only metadata contract
+        run: python -B -m unittest discover -s tests -p 'test_check_release_metadata.py'
+      # The private unified release pipeline owns draft notes, assets and
+      # publication coordination. This repository must not regenerate a body,
+      # change historical beta/prerelease flags, or publish on tag arrival.
+      # Full inventory/hash validation belongs to that single private gate.
+      - name: Check existing notes and download metadata
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          python3 scripts/release_download_block.py "${GITHUB_REF_NAME}" --out download_block.md
-          cat download_block.md release_notes.txt > body.md
-          mv body.md release_notes.txt
-          echo "--- final release body ---"
-          cat release_notes.txt
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: "gald3r v${{ steps.version.outputs.version }}"
-          body_path: release_notes.txt
-          draft: false
-          prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-alpha') }}
-          # Betas publish as LATEST, not prerelease (owner ruling 2026-08-09:
-          # /releases/latest download links + the dynamic version badge must
-          # follow betas). Only -rc/-alpha stay prerelease.
-          make_latest: ${{ !(contains(github.ref_name, '-rc') || contains(github.ref_name, '-alpha')) }}
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: python -B .github/scripts/check_release_metadata.py --tag "$RELEASE_TAG"
