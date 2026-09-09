@@ -12,6 +12,33 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.54] - 2026-09-09
+
+One release number for Core, its companion programs, Throne, and IDE, with downloads grouped by operating system.
+
+### Installation and version checks
+
+- The Linux suite combines Core, Throne, and IDE in one download, with component and destination choices.
+- The native Apple-silicon installer combines Core, its companions, Throne and IDE with component choices and a completion screen.
+- Release checks compare each application's reported version against the cut version before packaging.
+- Both public gald3r repositories receive identical download files and checksums.
+
+### Reliability
+
+- This cut includes the installer, platform-integration, and CI corrections prepared since the last published release, 5.0.52.
+- The unpublished 5.0.53 draft is superseded by this release. Its existing artifacts are not relabelled or mixed into the new cut.
+
+### Upgrade
+
+- CLI: `gald3r install update`.
+- Desktop applications: use the download for your operating system from the release page. Review the installation notes and signature limitations before installing.
+
+### Known diagnostic limitations
+
+- Codex diagnostics can incorrectly label a fresh overlay as stale or miss its installed platform specifications. Repeated force-reinstallation does not resolve that diagnostic mismatch.
+- The platform verifier currently reports a TOML configuration check as passing without parsing it. The generated Codex configuration was independently parsed for this release.
+- Generated Codex hooks passed isolated execution and UTF-8 capture checks. This does not certify that every user's Codex host has enabled and trusted those hooks.
+
 ## [5.0.52] - 2026-09-06
 
 One resident process per project now serves your editors, your agents and the mesh. This is the first plain-numbered release: 5.0.52 follows 5.0.0-beta.51 and the beta suffix is retired.
