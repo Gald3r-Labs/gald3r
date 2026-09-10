@@ -92,18 +92,18 @@ First look is coming to the stream. Watch this space.</em></p>
 <!-- BEGIN: gald3r-downloads -->
 ## Downloads
 
-**gald3r 5.0.55 — choose one recommended download for your computer.**
+**gald3r 5.0.56 — choose one recommended download for your computer.**
 Core includes the command-line engine and companion programs, including Longship.
 Throne is the desktop control center; IDE is the editor. Suite installers let you choose applications.
 
 | Platform / processor | Recommended download | Applications and installation |
 |---|---|---|
-| Windows — Intel/AMD 64-bit (x86_64) | [Download suite installer (.msi)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r-windows-x86_64.msi) | Signed. Choose Core, Throne and/or IDE, then choose the destination. |
-| Linux — Intel/AMD 64-bit (x86_64) | [Download suite installer bundle (.tar.gz)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r-suite-linux-x86_64.tar.gz) | Includes Core, Throne and IDE. Extract it, read its README, then run `sh install.sh` from the extracted suite directory. |
-| macOS — Apple silicon (ARM64, M-series) | [Download suite installer (.pkg)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r-suite-macos-arm64.pkg) | Signed and notarized, including the desktop apps. Choose Core, Throne and/or IDE. |
-| macOS — Intel (x86_64) | [Download Core installer (.pkg)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r-macos-x86_64.pkg) | Signed and notarized. Core and companions only; Throne and IDE are not supplied for Intel Macs. |
+| Windows — Intel/AMD 64-bit (x86_64) | [Download suite installer (.msi)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.56/gald3r-windows-x86_64.msi) | Signed. Choose Core, Throne and/or IDE, then choose the destination. |
+| Linux — Intel/AMD 64-bit (x86_64) | [Download suite installer bundle (.tar.gz)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.56/gald3r-suite-linux-x86_64.tar.gz) | Includes Core, Throne and IDE. Extract it, read its README, then run `sh install.sh` from the extracted suite directory. |
+| macOS — Apple silicon (ARM64, M-series) | [Download suite installer (.pkg)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.56/gald3r-suite-macos-arm64.pkg) | Signed and notarized, including the desktop apps. Choose Core, Throne and/or IDE. |
+| macOS — Intel (x86_64) | [Download Core installer (.pkg)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.56/gald3r-macos-x86_64.pkg) | Signed and notarized. Core and companions only; Throne and IDE are not supplied for Intel Macs. |
 
-[Download SHA-256 checksums](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/SHA256SUMS.txt) to verify your download.
+[Download SHA-256 checksums](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.56/SHA256SUMS.txt) to verify your download.
 
 ### Before installing
 
@@ -121,10 +121,10 @@ A **binary archive** is a compressed application bundle, not a self-contained po
 
 | Platform | Core and companions only | Separate desktop applications |
 |---|---|---|
-| Windows x86_64 | [Core binary archive (.zip)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r-windows-x86_64.zip) — no Throne or IDE | Use the suite installer and select the application(s) you want. |
-| Linux x86_64 | [Core archive with install.sh (.tar.gz)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r-linux-x86_64.tar.gz) | [Throne binary archive](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r_throne-linux-amd64.tar.gz) · [IDE binary archive](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r_ide-linux-amd64.tar.gz) |
-| macOS Apple silicon | [Core-only installer (.pkg)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r-macos-arm64.pkg) · [Core binary archive (.tar.gz)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r-macos-arm64.tar.gz) | [Throne unsigned archive](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r_throne-macos-arm64-unsigned.tar.gz) · [IDE unsigned archive](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r_ide-macos-arm64-unsigned.tar.gz) |
-| macOS Intel | [Core-only installer (.pkg)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r-macos-x86_64.pkg) · [Core binary archive (.tar.gz)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.55/gald3r-macos-x86_64.tar.gz) | Not supplied for Intel Macs. |
+| Windows x86_64 | [Core binary archive (.zip)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.56/gald3r-windows-x86_64.zip) — no Throne or IDE | Use the suite installer and select the application(s) you want. |
+| Linux x86_64 | [Core archive with install.sh (.tar.gz)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.56/gald3r-linux-x86_64.tar.gz) | [Throne binary archive](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.56/gald3r_throne-linux-amd64.tar.gz) · [IDE binary archive](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.56/gald3r_ide-linux-amd64.tar.gz) |
+| macOS Apple silicon | [Core-only installer (.pkg)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.56/gald3r-macos-arm64.pkg) · [Core binary archive (.tar.gz)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.56/gald3r-macos-arm64.tar.gz) | [Throne unsigned archive](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.56/gald3r_throne-macos-arm64-unsigned.tar.gz) · [IDE unsigned archive](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.56/gald3r_ide-macos-arm64-unsigned.tar.gz) |
+| macOS Intel | [Core-only installer (.pkg)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.56/gald3r-macos-x86_64.pkg) · [Core binary archive (.tar.gz)](https://github.com/Gald3r-Labs/gald3r/releases/download/v5.0.56/gald3r-macos-x86_64.tar.gz) | Not supplied for Intel Macs. |
 
 The two Mac Core archives contain the command-line programs and installation/uninstallation scripts, compiled separately for Apple silicon and Intel. They do not contain Throne or IDE.
 **Only the separate Mac desktop archives are unsigned.** The recommended Apple-silicon suite contains signed desktop apps and is notarized; use that installer instead of these unsigned alternatives.

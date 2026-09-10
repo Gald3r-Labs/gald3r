@@ -12,6 +12,28 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.56] - 2026-09-10
+
+### Windows installer repair
+
+- Fixed the empty Custom Setup screen that prevented installation. Core, Throne and IDE are selectable again, with destination selection and working Next/Back navigation.
+- Added a native installer wizard check to the release acceptance tests.
+- The MSI installs the Windows application suite. The standalone ZIP contains Core and its companions.
+
+### Reliable updates and service restart
+
+- Project upgrades now stop identified project services after the required backup and before changing project files. Binary updates verify the download before stopping affected services.
+- Successfully updated project residents restart automatically and must pass a health check. Editor-owned MCP connections reconnect through their host; interactive sessions are not replayed automatically.
+- Updates stop with an error if affected services remain running. Force termination is available explicitly through `--force-stop-running`.
+- Installing identical binaries avoids unnecessary file replacement and backup churn while still checking for surviving sessions.
+- Locked files and failed restarts are reported as failures instead of being hidden behind a successful update message.
+
+### Project upgrade repair
+
+- Fixed validation that incorrectly rejected current framework specifications.
+- Restored capability inventory backfill and verification for supported project layouts.
+- Excluded temporary test directories at the project root from overlay and learned-fact scans while preserving checks of real project content.
+
 ## [5.0.54] - 2026-09-09
 
 One release number for Core, its companion programs, Throne, and IDE, with downloads grouped by operating system.
