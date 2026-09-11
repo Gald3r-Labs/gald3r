@@ -12,6 +12,38 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.0.57] - 2026-09-11
+
+This release focuses on reliable autonomous runs and safer project upgrades.
+
+### Autonomous work that keeps moving
+
+- Swarm workers report results to their coordinator. The coordinator owns board
+  changes and saves Markdown projections at a safe boundary, preventing status
+  updates from blocking the run with their own pending files.
+- Completion checks distinguish tasks from bugs with the same number. Ordinary
+  words in a ticket title no longer count as evidence that its code already exists.
+- Claude workers retain subscription authentication while avoiding unnecessary
+  lifecycle hooks. Finished verdicts no longer wait indefinitely for child exit.
+- Code and review swarm commands expose value and severity range filters.
+
+### Safer upgrades
+
+- Root instruction refreshes preserve operator text outside managed blocks.
+- Legacy cleanup preserves files unless their replacement content is identical.
+- Legacy decision ledgers can be imported without restarting their IDs, and
+  maintenance tasks are accepted consistently.
+- Generated MCP configuration no longer embeds a resident bearer token.
+- Windows setup detects older machine-wide desktop installations and explains
+  how to remove them before continuing.
+
+### Research and progress
+
+- Vault searches give more weight to matching titles and tags.
+- Momentum reports distinguish consolidations from completed work.
+- Scheduled playlist ingestion supports pause, resume, immediate triggering and
+  watermarks that prevent repeated ingestion of the same item.
+
 ## [5.0.56] - 2026-09-10
 
 ### Windows installer repair
