@@ -12,6 +12,81 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.1.0] - 2026-09-16
+
+**A rebuilt foundation for autonomous software delivery.** Gald3r 5.1.0 overhauls the workflow behind autopilot and the `g-go-*` commands: selecting work, assigning agents, tracking attempts, reviewing changes, merging results, recovering interruptions, and cleaning up afterward.
+
+If you use agents to do real project work, this is the upgrade to pay attention to. The focus is the expensive part of agentic development: keeping parallel work coordinated, preserving progress when sessions stop, and getting reviewed code into the project without losing track of what actually landed.
+
+### One delivery workflow, from ticket to landed code
+
+- **A shared task and bug lifecycle.** Selection, claims, implementation, independent review, integration and completion use consistent rules across the supported autopilot and swarm routes.
+- **Reviewed is different from delivered.** An accepted review remains distinguishable from work that has actually reached its integration target. Status views show the next action instead of collapsing everything into "done."
+- **Better dispatch decisions.** Human approvals and environment requirements are checked before work is assigned. Bug dispatch respects severity and declared scope, deferring conflicting work without claiming it first.
+
+### Multiple swarms, one coordinated project
+
+- **Run compatible swarms simultaneously in separate checkouts.** Controllers share the project's authoritative board, negotiate ownership and reserve their work. Integration into a shared target is serialized.
+- **Keep expired controllers from writing as if they still own the run.** Controller leases and generation checks reject stale ownership when work resumes or changes hands.
+- **Keep board bookkeeping out of worker merges.** Workers return code and evidence; the coordinator owns task and bug updates. Deferred Markdown exports reduce competition over generated indexes and ticket files, with pending exports recorded for recovery.
+
+### Recovery that retains the work you already paid for
+
+- **Resume an accepted result without buying the same review again.** Durable review evidence and integration checkpoints allow an interrupted merge or export to resume without inventing another verdict or increasing the failure count.
+- **Handle session stops and context exhaustion explicitly.** Worker progress observation, executor handoff and preserved late reports make interrupted work recoverable through the original attempt.
+- **Escalate difficult work deliberately.** Persistent failure history supports a configured higher-level engineer/model and eventual user attention. Infrastructure and unavailable-model retries have their own handling instead of being treated as ordinary implementation failures. Owner-approved retries are scoped and bounded.
+- **Retry temporary provider throttling with backoff.** A transient service restriction is distinguished from an account spending or usage limit; a genuine account limit still stops the run.
+
+### Leaner worktrees and accountable cleanup
+
+- **Avoid unnecessary graph work in disposable checkouts.** Automatic Cartograph rebuilds in new worktrees are now opt-in; graph work can still be requested when it is needed.
+- **Reclaim only work that is safe to reclaim.** Cleanup checks ownership and active claims, preserves dirty or unmerged work and review evidence, and reports why a checkout remains.
+- **Verify that cleanup actually happened.** Both the directory and Git worktree registration are checked. Windows lock retries and retained cleanup records make incomplete removal visible and recoverable.
+- **Keep recovery scoped.** Claim release, result reconciliation and cleanup stay tied to the owning run and selected items, protecting neighboring swarms.
+
+### Visibility across the tools you use
+
+CLI, Throne and generated board views share lifecycle details, failure reasons and next actions, including accepted work awaiting integration and outstanding cleanup or export work. SQLite and PostgreSQL-backed World Tree paths gain corresponding lifecycle, retry and integration safeguards.
+
+### Tested as a release, not just as isolated code
+
+The final signed Windows CLI completed dry-run, apply and repeat upgrades across **11 real workspace repositories: 33 successful upgrade commands**. Final CLI/MCP checks passed in all 11, and 31 installed guard checks passed. The release pipeline also passed actual Windows installer install/upgrade acceptance and macOS signing/notarization checks. These checks establish the tested paths; they are not a claim of identical behavior in every IDE or a measured speed/cost improvement.
+
+**Upgrade note:** server-backed features require a compatible World Tree server. Updating the CLI does not deploy that server. Use the suite installer for desktop applications; `gald3r install update` updates Core and its companions. Restart existing agent sessions to load updated binaries.
+
+## [5.0.58] - 2026-09-12
+
+**Safer upgrades, stronger recovery, and better session capture.** Gald3r 5.0.58 strengthens the foundation that existing projects depend on: preserving local behavior during upgrades, recovering older project records, and recording what agents actually did.
+
+### Upgrade your tools without losing your project
+
+- **Preserve local customizations and files with uncertain origins.** Platform upgrades retain content they cannot safely identify as replaceable framework output. Skill-directory files participate in edit protection, backups and provenance tracking.
+- **Protect owner configuration.** Repeated upgrades replace only recognized generated annotations, preserving later settings, timestamps and original text formatting.
+- **Make incomplete upgrades visible.** Upgrade reports retain an incomplete checkpoint before finalization and report failures to save the final result. A changed version stamp alone is not treated as proof of success.
+- **Exercise real existing workspaces.** Release admission requires candidate-specific upgrade evidence across the configured workspace, including backups, repeat upgrades, preservation checks and explicit warning triage.
+
+### Recover project history faithfully
+
+- Legacy decision recovery preserves original ledger backups, Windows line endings and UTF-8 markers.
+- Constraint migration accepts supported severity spellings without rewriting their original meaning, while unknown values still require reconciliation.
+- Export recovery checks existing provenance permissions before replacing files, and upgrade backups avoid duplicate entries for overlapping report paths.
+
+### Capture real conversations across agent platforms
+
+- Windows Codex hooks use the native PowerShell host correctly and preserve blocking exit codes. Capture distinguishes human messages from injected setup context while retaining repeated turns and assistant replies.
+- Native Windows Cursor capture handles its UTF-8 input and preserves Markdown horizontal rules inside answers. Interactive capture was verified; non-interactive Cursor modes that omit prompt/stop events cannot provide the same complete history.
+- OpenCode capture can read the selected project's native SQLite session. Session-end ingestion processes chat logs without a global scan or pruning pass.
+
+### More dependable project-to-project coordination
+
+- Valkyrie exposes event-inbox authentication, access, rate-limit and transport failures and backs off instead of presenting an empty poll as success.
+- Cross-project event delivery checks the intended destination. Peer asks distinguish unconfirmed delivery from a successful response.
+- File-only WPAC delivery reports missing destinations and retains distinct records for repeated sends.
+
+FreeToken connection guidance is also included for local AI through its OpenAI-compatible endpoint. Distribution checks reject missing or mismatched embedded source provenance so a release identifies the code it actually contains.
+
+**Looking ahead:** the broader task lifecycle, simultaneous-swarm coordination and worktree cleanup overhaul ships in **5.1.0**. This entry describes the foundation shipped in 5.0.58, rather than attributing later functionality to an earlier release.
+
 ## [5.0.57] - 2026-09-11
 
 This release focuses on reliable autonomous runs and safer project upgrades.
