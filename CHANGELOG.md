@@ -12,6 +12,29 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.1.1] - 2026-09-20
+
+**Repairing upgrades and review recovery after 5.1.0.** Gald3r 5.1.1 addresses problems in existing project boards, review-only swarms and provider-account handling. It builds on 5.1.0's delivery workflow with fixes for blocked work and interrupted updates.
+
+### Preserve and recover existing project records
+
+- **Keep task and bug values intact during updates.** Board exports preserve quoted text and field types. Legacy identifiers with leading zeros resolve correctly instead of making completed records appear pending.
+- **Finish pending board updates safely.** Normal exports and successful upgrades settle pending regeneration work. Failed or interrupted work remains recorded for recovery; concurrent requests are preserved.
+- **Make cleanup problems visible.** A stuck task or bug cleanup no longer changes how unrelated records are read. Incomplete cleanup appears in diagnostics and remains eligible for retry.
+
+### Understand why a review cannot start
+
+- **Get a reason and a next action for each refused item.** Review-only runs stop when every selected item is blocked, instead of replaying the same queue unchanged.
+- **Recover reviews against the intended code.** Older items awaiting verification can be admitted with explicit implementation evidence while preserving their history and failure counts. Review guidance checks the complete implementation snapshot and acceptance criteria.
+- **Keep review outcomes separate from integration recovery.** An accepted review awaiting integration is reported separately from a failed review. Review-only failures return to the board for a separate implementation run.
+
+### Clearer provider errors and search results
+
+- **See provider-account configuration failures through chat responses.** Structured fallback results are identified, and queued messages are retained without repeatedly retrying an unchanged transport failure.
+- **Follow long searches.** Broad text searches stream progress and support an explicit total timeout. Incomplete searches report partial results and a distinct exit status.
+
+**Upgrade note:** use the suite installer to update desktop applications; `gald3r install update` updates Core and its companions. Restart existing agent sessions to load updated binaries. Server-backed features require a compatible World Tree deployment; updating the CLI does not deploy that server.
+
 ## [5.1.0] - 2026-09-16
 
 **A rebuilt foundation for autonomous software delivery.** Gald3r 5.1.0 overhauls the workflow behind autopilot and the `g-go-*` commands: selecting work, assigning agents, tracking attempts, reviewing changes, merging results, recovering interruptions, and cleaning up afterward.
