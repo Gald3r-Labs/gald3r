@@ -12,6 +12,46 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.1.2] - 2026-11-25
+
+**Faster replies, one coding agent by default, and a lighter workflow for non-code projects.** Gald3r 5.1.2 is a patch release for 5.1.1. It removes a long pause after every agent reply, makes the autopilot loop run a single coding agent unless you ask for more, adds a lightweight workflow for research and other non-software projects, and fixes seven problems reported from real use.
+
+### No more waiting after each reply
+
+- **Stop hooks no longer hold a reply for minutes.** After every reply, a hook rebuilt the whole notes-vault index. On a large vault that took minutes. The rebuild now runs in the background, at most every 15 minutes, and only rewrites what changed. This applies to Claude Code and Cursor.
+- **Your own `index.md` files are left alone.** The vault index hook no longer overwrites a hand-written `index.md`.
+- **Every Stop hook now has a time limit**, so one stuck hook cannot hold a reply.
+
+### One coding agent by default
+
+- **The autopilot loop runs one coding agent unless you ask for more.** The default was five in parallel. Use `--lanes N` to opt in to the multi-agent swarm, which is now labelled experimental. If you relied on the old default, pass `--lanes 5`.
+- **Worktrees are capped.** A work item can hold at most two live worktrees, and a repository has a total cap (8 by default, raise it with `GALD3R_MAX_WORKTREES`). When a cap is reached nothing is deleted: the loop tells you, and `gald3r worktree cleanup --apply` removes what is safe to remove. If you have leftover worktrees from earlier runs you may see this message on your first run.
+- **Long test suites are no longer cut off.** The pre-review check no longer stops `go test` after 10 minutes. It reports progress every minute, and Ctrl+C stops it cleanly.
+
+### A lighter workflow for non-code projects
+
+- **SDLC Lite.** Research, knowledge-store and similar projects now default to a lightweight flow: claim, do the work, an independent review, done. No swarm and no worktrees. Software projects keep the existing managed pipeline.
+- **You choose per project or per item.** Set `sdlc_mode: lite` or `sdlc_mode: heavy` in the frontmatter of `.gald3r/PROJECT.md`, or on a single task or bug. The `/g-go` family of commands reports which mode it used and why.
+- **Existing research-type projects change behaviour.** Their `/g-go` commands now use the lite flow. To keep the managed pipeline, set `sdlc_mode: heavy` in `.gald3r/PROJECT.md`.
+
+### Fixes from your reports
+
+- `gald3r bug list` failed on a project database created by an older release.
+- A review-only run could not start because the preflight refused files Gald3r itself writes.
+- A status update printed success on a gated task while nothing had changed.
+- An upgrade wrote `.gald3r` as the project name in generated board headings.
+- `config agent set` showed "not set" for a value that existed.
+- Review tokens could not be passed from Windows PowerShell 5.1. There is now a `--review-expectation-file` option.
+- `gald3r doctor` recommended a maintainer-only command.
+- Agents were refused when writing a report to `.gald3r/reports/`, the folder Gald3r tells them to use. Reports no longer need an active-agent marker.
+- The helper that arms a `.gald3r` write said its marker lasted 300 seconds when it lasts 120, and reported success when it had written nothing. It now says what happened.
+
+### A tighter `.gald3r` write guard
+
+- **Odd spellings of a board path no longer skip the guard.** On Windows, a path written with a trailing dot, a short 8.3 name, a network-share form or different letter case reached board files without the guard checking it. The guard now asks the file system whether a path is inside the board instead of comparing text.
+
+**Upgrade note:** use the suite installer to update desktop applications; `gald3r install update` updates Core and its companions. Then run `gald3r upgrade-project` in each project so the updated hooks and commands are installed, and restart existing agent sessions.
+
 ## [5.1.1] - 2026-09-20
 
 **Repairing upgrades and review recovery after 5.1.0.** Gald3r 5.1.1 addresses problems in existing project boards, review-only swarms and provider-account handling. It builds on 5.1.0's delivery workflow with fixes for blocked work and interrupted updates.
