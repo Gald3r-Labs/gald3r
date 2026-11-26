@@ -14,7 +14,7 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ## [5.1.3] - 2026-11-26
 
-**Gald3r stops rewriting your files behind your back, and keeps its scratch work out of your home folder.** Gald3r 5.1.3 is a patch release for 5.1.2. It fixes two background rewrites of project files, finishes a fix from a field report, keeps portable installs self-contained, and moves test and scratch folders next to the repository they belong to.
+**Gald3r stops rewriting your files behind your back, and keeps its scratch work out of your home folder.** Gald3r 5.1.3 is a patch release for 5.1.2. It fixes two background rewrites of project files, finishes a fix from a field report, moves part of a portable install's data into its own folder, and moves test and scratch folders next to the repository they belong to.
 
 ### Your project files are left alone
 
@@ -39,9 +39,9 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 - **A plain claim no longer prints an autopilot event line** when no autopilot run is active.
 - **The "other sessions are writing" warning no longer counts your own commands.** An agent shell that starts a new process for every command was warned about itself after each board write.
 
-### Portable installs stay portable
+### Portable installs: a partial fix
 
-- **Embedded system data now stays inside the portable folder.** With a `.gald3r_portable` marker next to the executable, `gald3r doctor` and other commands still unpacked about 180 files into the user profile. They now go under the portable folder. Normal installs are unchanged.
+- **Embedded system data in portable mode: partly fixed.** With a `.gald3r_portable` marker next to the executable, `gald3r doctor` and other commands unpacked about 180 files into the user profile. In 5.1.3 those files are written to the portable folder, but on Windows a second copy is still written to the user profile (`%LOCALAPPDATA%\gald3r\embedded_sysdata\5.1.3`). The rest of the fix is planned for 5.1.4. Normal installs are unchanged. *Corrected on 2026-11-26 after checking the published build: this note first said the data stays inside the portable folder.*
 
 ### Scratch work lives next to the repository
 
