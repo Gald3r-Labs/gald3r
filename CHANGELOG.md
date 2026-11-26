@@ -12,6 +12,49 @@ gald3r uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [5.1.3] - 2026-11-26
+
+**Gald3r stops rewriting your files behind your back, and keeps its scratch work out of your home folder.** Gald3r 5.1.3 is a patch release for 5.1.2. It fixes two background rewrites of project files, finishes a fix from a field report, keeps portable installs self-contained, and moves test and scratch folders next to the repository they belong to.
+
+### Your project files are left alone
+
+- **`HEARTBEAT.md` keeps your comments and formatting.** When the scheduler added its default routines, it rewrote the whole file and dropped every comment and quote. It now writes nothing when the routines are already there, and adds only a missing routine without touching the rest.
+- **`INBOX.md` is no longer rewritten just because time passed.** The automatic inbox check rebuilt the index whenever the Age column changed, which left an uncommitted change in the project after almost every session. It now skips the write when nothing else differs. Regenerating the index yourself works as before.
+
+### Fixes from your reports
+
+- **Linked projects can start a review-only run.** The preflight refused the peer snapshot files Gald3r keeps under `.gald3r/linking/_peers/`. They are now accepted. This completes the review-run fix that 5.1.2 began.
+
+- **The honesty gate no longer reads "deploy verified" as a ship claim.** A commit that only moved a task to awaiting-verification could block a review-only run. Real ship claims are still caught.
+- **`/g-pt`, `/g-status` and the status skill no longer name things the binary does not have.** They referred to a `project-type` verb, a value chart and two JSON fields that do not exist. The text now describes what the release actually provides.
+- **Stopping an autopilot run works on a project that has no `logs` folder yet.** The stop request failed with a missing-file error.
+- **Housekeeping no longer blocks a run on Gald3r's own lifecycle-evidence files** in a project whose ignore file is older than those files.
+
+### Clearer task and bug output
+
+- **`task show` and `bug show` show which acceptance criteria are ticked**, as `[x]` or `[ ]`.
+- **They also show the workflow mode in effect** and where it came from: the item itself, `PROJECT.md`, the workspace controller, `.identity`, the project type, or the built-in default. `--json` carries the same two values as `sdlc_mode_resolved` and `sdlc_mode_source`. `sdlc_mode: full` is accepted and currently runs the heavy workflow; the full workflow is not in this release.
+- **You can set the mode when you create an item:** `task add --sdlc-mode lite` or `--sdlc-mode heavy`, and the same on `bug add`.
+- **A task that was handed back no longer looks claimed.** `task show` printed the previous holder on a pending task. A claim on a task in progress or awaiting verification is still shown, and is marked when it has expired.
+- **A plain claim no longer prints an autopilot event line** when no autopilot run is active.
+- **The "other sessions are writing" warning no longer counts your own commands.** An agent shell that starts a new process for every command was warned about itself after each board write.
+
+### Portable installs stay portable
+
+- **Embedded system data now stays inside the portable folder.** With a `.gald3r_portable` marker next to the executable, `gald3r doctor` and other commands still unpacked about 180 files into the user profile. They now go under the portable folder. Normal installs are unchanged.
+
+### Scratch work lives next to the repository
+
+- **One place for worktrees and scratch folders.** Worktrees already go in a sibling folder named after the repository, `<repository>_worktrees`. Scratch work now goes in `_scratch` inside that same folder: `gald3r selftest` creates its temporary project there, and the shipped agent guidance tells agents to put test folders, throwaway clones and scratch homes there too, never in your home folder or loose in the system temp folder.
+- **Leftovers can be cleaned up.** `gald3r worktree janitor` reports stale test folders in `_scratch` and removes them when you pass the apply option. It does not touch anything else in that folder.
+
+### For people who build Gald3r from source
+
+- **Running the tests no longer touches your real Gald3r data.** Test runs wrote fixture data into the per-user store, which could overwrite a machine's identity and billing-trust record. Every test binary now redirects its home, configuration and temp folders to a per-run folder under `_scratch`, and the per-user path lookups refuse a path inside the real home during a test. When the tests run outside a repository the per-run folder falls back to the system temp folder, with a warning.
+- **Desktop app builds are reproducible.** The Throne and IDE frontends now build from tracked lockfiles, so a release build no longer changes when a dependency publishes a new version.
+
+**Upgrade note:** use the suite installer to update desktop applications; `gald3r install update` updates Core and its companions. Then run `gald3r upgrade-project` in each project so the updated rules, skills and hooks are installed, and restart existing agent sessions.
+
 ## [5.1.2] - 2026-11-25
 
 **Faster replies, one coding agent by default, and a lighter workflow for non-code projects.** Gald3r 5.1.2 is a patch release for 5.1.1. It removes a long pause after every agent reply, makes the autopilot loop run a single coding agent unless you ask for more, adds a lightweight workflow for research and other non-software projects, and fixes seven problems reported from real use.
